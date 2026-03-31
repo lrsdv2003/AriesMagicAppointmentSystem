@@ -1,0 +1,24 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.2.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AriesMagicAppointmentSystem", "AriesMagicAppointmentSystem.csproj", "{009D3CDE-F34F-DD5A-C0C9-2C0D08DD9C8A}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{009D3CDE-F34F-DD5A-C0C9-2C0D08DD9C8A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{009D3CDE-F34F-DD5A-C0C9-2C0D08DD9C8A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{009D3CDE-F34F-DD5A-C0C9-2C0D08DD9C8A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{009D3CDE-F34F-DD5A-C0C9-2C0D08DD9C8A}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {7732F20B-D037-4F66-9301-91E350D183DE}
+	EndGlobalSection
+EndGlobal
