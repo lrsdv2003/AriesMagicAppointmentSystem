@@ -1,0 +1,32 @@
+@model AriesMagicAppointmentSystem.Models.Service
+
+@{
+    ViewData["Title"] = "Archive Service";
+}
+
+<div class="page-header">
+    <div>
+        <h1>Archive Service</h1>
+        <p class="page-subtitle">This will hide the service from the active list.</p>
+    </div>
+</div>
+
+<div class="card-clean">
+    <h4 class="mb-3">Are you sure you want to archive this service?</h4>
+    <dl class="row details-list mb-4">
+        <dt class="col-sm-3">Name</dt>
+        <dd class="col-sm-9">@Model.Name</dd>
+
+        <dt class="col-sm-3">Price</dt>
+        <dd class="col-sm-9">₱@Model.Price.ToString("N2")</dd>
+
+        <dt class="col-sm-3">Duration</dt>
+        <dd class="col-sm-9">@Model.DurationInHours hour(s)</dd>
+    </dl>
+
+    <form asp-action="Archive" class="d-flex gap-2">
+        <input type="hidden" asp-for="Id" />
+        <button type="submit" class="btn btn-danger">Archive</button>
+        <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>

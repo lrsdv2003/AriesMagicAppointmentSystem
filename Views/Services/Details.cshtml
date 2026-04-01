@@ -1,0 +1,42 @@
+@model AriesMagicAppointmentSystem.Models.Service
+
+@{
+    ViewData["Title"] = "Service Details";
+}
+
+<div class="page-header">
+    <div>
+        <h1>Service Details</h1>
+        <p class="page-subtitle">View complete service information.</p>
+    </div>
+</div>
+
+<div class="card-clean">
+    <dl class="row details-list mb-4">
+        <dt class="col-sm-3">Name</dt>
+        <dd class="col-sm-9">@Model.Name</dd>
+
+        <dt class="col-sm-3">Price</dt>
+        <dd class="col-sm-9">₱@Model.Price.ToString("N2")</dd>
+
+        <dt class="col-sm-3">Duration</dt>
+        <dd class="col-sm-9">@Model.DurationInHours hour(s)</dd>
+
+        <dt class="col-sm-3">Archived</dt>
+        <dd class="col-sm-9">
+            @if (Model.IsArchived)
+            {
+                <span class="status-badge">Archived</span>
+            }
+            else
+            {
+                <span class="status-badge">Active</span>
+            }
+        </dd>
+    </dl>
+
+    <div class="d-flex gap-2">
+        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">Edit</a>
+        <a asp-action="Index" class="btn btn-secondary">Back</a>
+    </div>
+</div>

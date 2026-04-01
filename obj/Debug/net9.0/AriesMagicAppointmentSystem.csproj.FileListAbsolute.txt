@@ -21,7 +21,6 @@ C:\Users\EJ Ridge\OneDrive - STI College Ortigas-Cainta\Capstone\AriesMagicAppoi
 C:\Users\EJ Ridge\OneDrive - STI College Ortigas-Cainta\Capstone\AriesMagicAppointmentSystem\obj\Debug\net9.0\scopedcss\Views\Shared\_Layout.cshtml.rz.scp.css
 C:\Users\EJ Ridge\OneDrive - STI College Ortigas-Cainta\Capstone\AriesMagicAppointmentSystem\obj\Debug\net9.0\scopedcss\bundle\AriesMagicAppointmentSystem.styles.css
 C:\Users\EJ Ridge\OneDrive - STI College Ortigas-Cainta\Capstone\AriesMagicAppointmentSystem\obj\Debug\net9.0\scopedcss\projectbundle\AriesMagicAppointmentSystem.bundle.scp.css
-C:\Users\EJ Ridge\OneDrive - STI College Ortigas-Cainta\Capstone\AriesMagicAppointmentSystem\obj\Debug\net9.0\compressed\oa8z56o2f5-b9sayid5wm.gz
 C:\Users\EJ Ridge\OneDrive - STI College Ortigas-Cainta\Capstone\AriesMagicAppointmentSystem\obj\Debug\net9.0\compressed\1utgjt0v1r-61n19gt1b8.gz
 C:\Users\EJ Ridge\OneDrive - STI College Ortigas-Cainta\Capstone\AriesMagicAppointmentSystem\obj\Debug\net9.0\compressed\p66yz6odl4-xtxxf3hu2r.gz
 C:\Users\EJ Ridge\OneDrive - STI College Ortigas-Cainta\Capstone\AriesMagicAppointmentSystem\obj\Debug\net9.0\compressed\pfy86icy3t-bqjiyaj88i.gz
@@ -227,3 +226,4 @@ C:\Users\EJ Ridge\OneDrive - STI College Ortigas-Cainta\Capstone\AriesMagicAppoi
 C:\Users\EJ Ridge\OneDrive - STI College Ortigas-Cainta\Capstone\AriesMagicAppointmentSystem\bin\Debug\net9.0\runtimes\win\lib\net6.0\System.Windows.Extensions.dll
 C:\Users\EJ Ridge\OneDrive - STI College Ortigas-Cainta\Capstone\AriesMagicAppointmentSystem\obj\Debug\net9.0\AriesMag.FEA61BF9.Up2Date
 C:\Users\EJ Ridge\OneDrive - STI College Ortigas-Cainta\Capstone\AriesMagicAppointmentSystem\obj\Debug\net9.0\AriesMagicAppointmentSystem.sourcelink.json
+C:\Users\EJ Ridge\OneDrive - STI College Ortigas-Cainta\Capstone\AriesMagicAppointmentSystem\obj\Debug\net9.0\compressed\oa8z56o2f5-rn8rrt1rle.gz

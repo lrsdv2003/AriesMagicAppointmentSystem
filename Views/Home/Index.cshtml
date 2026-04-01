@@ -1,8 +1,14 @@
 ﻿@{
-    ViewData["Title"] = "Home Page";
+    ViewData["Title"] = "Home";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="hero-clean">
+    <h1>Aries Magic Appointment System</h1>
+    <p>
+        A modern booking and payment verification system for managing services, schedules, and client appointments with a clean and efficient workflow.
+    </p>
+    <div class="d-flex justify-content-center gap-2 flex-wrap">
+        <a asp-controller="Services" asp-action="Index" class="btn btn-primary">Manage Services</a>
+        <a asp-controller="Home" asp-action="Privacy" class="btn btn-secondary">Learn More</a>
+    </div>
 </div>
