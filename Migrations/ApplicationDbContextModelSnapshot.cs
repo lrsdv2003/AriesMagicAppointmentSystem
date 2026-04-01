@@ -42,6 +42,9 @@ namespace AriesMagicAppointmentSystem.Migrations
                     b.Property<DateTime>("EventDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("InternalNotes")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<bool>("IsCompletedLocked")
                         .HasColumnType("bit");
 
@@ -95,6 +98,44 @@ namespace AriesMagicAppointmentSystem.Migrations
                     b.ToTable("BookingTimelines");
                 });
 
+            modelBuilder.Entity("AriesMagicAppointmentSystem.Models.Notification", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Link")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("ReadAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Notifications");
+                });
+
             modelBuilder.Entity("AriesMagicAppointmentSystem.Models.Payment", b =>
                 {
                     b.Property<int>("Id")
@@ -133,6 +174,50 @@ namespace AriesMagicAppointmentSystem.Migrations
                     b.ToTable("Payments");
                 });
 
+            modelBuilder.Entity("AriesMagicAppointmentSystem.Models.RescheduleRequest", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AdminRemarks")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("BookingId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("RequestedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("RequestedEndTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("RequestedStartTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("ReviewedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BookingId");
+
+                    b.ToTable("RescheduleRequests");
+                });
+
             modelBuilder.Entity("AriesMagicAppointmentSystem.Models.Service", b =>
                 {
                     b.Property<int>("Id")
@@ -149,7 +234,8 @@ namespace AriesMagicAppointmentSystem.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
 
                     b.Property<decimal>("Price")
                         .HasColumnType("decimal(18,2)");
@@ -173,7 +259,8 @@ namespace AriesMagicAppointmentSystem.Migrations
 
                     b.Property<string>("FullName")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
 
                     b.Property<string>("PasswordHash")
                         .IsRequired()
@@ -218,6 +305,17 @@ namespace AriesMagicAppointmentSystem.Migrations
                     b.Navigation("Booking");
                 });
 
+            modelBuilder.Entity("AriesMagicAppointmentSystem.Models.Notification", b =>
+                {
+                    b.HasOne("AriesMagicAppointmentSystem.Models.User", "User")
+                        .WithMany("Notifications")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("AriesMagicAppointmentSystem.Models.Payment", b =>
                 {
                     b.HasOne("AriesMagicAppointmentSystem.Models.Booking", "Booking")
@@ -229,9 +327,22 @@ namespace AriesMagicAppointmentSystem.Migrations
                     b.Navigation("Booking");
                 });
 
+            modelBuilder.Entity("AriesMagicAppointmentSystem.Models.RescheduleRequest", b =>
+                {
+                    b.HasOne("AriesMagicAppointmentSystem.Models.Booking", "Booking")
+                        .WithMany("RescheduleRequests")
+                        .HasForeignKey("BookingId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Booking");
+                });
+
             modelBuilder.Entity("AriesMagicAppointmentSystem.Models.Booking", b =>
                 {
                     b.Navigation("Payments");
+
+                    b.Navigation("RescheduleRequests");
 
                     b.Navigation("TimelineEvents");
                 });
@@ -244,6 +355,8 @@ namespace AriesMagicAppointmentSystem.Migrations
             modelBuilder.Entity("AriesMagicAppointmentSystem.Models.User", b =>
                 {
                     b.Navigation("Bookings");
+
+                    b.Navigation("Notifications");
                 });
 #pragma warning restore 612, 618
         }

@@ -1,0 +1,57 @@
+@model AriesMagicAppointmentSystem.ViewModels.BookingCreateViewModel
+
+@{
+    ViewData["Title"] = "Create Booking";
+}
+
+<div class="page-header">
+    <div>
+        <h1>Create Booking</h1>
+        <p class="page-subtitle">Submit a new booking request.</p>
+    </div>
+</div>
+
+<div class="form-card">
+    <form asp-action="Create">
+        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+        <div class="mb-3">
+            <label asp-for="ClientId" class="form-label"></label>
+            <select asp-for="ClientId" asp-items="Model.Clients" class="form-control">
+                <option value="">-- Select Client --</option>
+            </select>
+            <span asp-validation-for="ClientId" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="ServiceId" class="form-label"></label>
+            <select asp-for="ServiceId" asp-items="Model.Services" class="form-control">
+                <option value="">-- Select Service --</option>
+            </select>
+            <span asp-validation-for="ServiceId" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="EventDate" class="form-label"></label>
+            <input asp-for="EventDate" class="form-control" />
+            <span asp-validation-for="EventDate" class="text-danger"></span>
+        </div>
+
+        <div class="mb-4">
+            <label asp-for="StartTime" class="form-label"></label>
+            <input asp-for="StartTime" class="form-control" />
+            <span asp-validation-for="StartTime" class="text-danger"></span>
+        </div>
+
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary">Create Booking</button>
+            <a asp-action="Index" class="btn btn-secondary">Back</a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

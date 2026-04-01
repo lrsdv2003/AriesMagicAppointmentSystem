@@ -1,0 +1,44 @@
+@model IEnumerable<AriesMagicAppointmentSystem.Models.Booking>
+
+@{
+    ViewData["Title"] = "Pending Bookings";
+}
+
+<div class="page-header">
+    <div>
+        <h1>Pending Bookings</h1>
+        <p class="page-subtitle">Review and process new booking requests.</p>
+    </div>
+</div>
+
+<div class="table-clean">
+    <table class="table align-middle">
+        <thead>
+            <tr>
+                <th>Client</th>
+                <th>Service</th>
+                <th>Date</th>
+                <th>Start</th>
+                <th>End</th>
+                <th class="text-end">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+@foreach (var item in Model)
+{
+            <tr>
+                <td>@item.Client?.FullName</td>
+                <td>@item.Service?.Name</td>
+                <td>@item.EventDate.ToString("MMM dd, yyyy")</td>
+                <td>@item.StartTime.ToString("hh:mm tt")</td>
+                <td>@item.EndTime.ToString("hh:mm tt")</td>
+                <td class="text-end">
+                    <a asp-action="Approve" asp-route-id="@item.Id" class="btn btn-sm btn-success">Approve</a>
+                    <a asp-action="Decline" asp-route-id="@item.Id" class="btn btn-sm btn-danger">Decline</a>
+                    <a asp-action="AddNote" asp-route-id="@item.Id" class="btn btn-sm btn-secondary">Add Note</a>
+                </td>
+            </tr>
+}
+        </tbody>
+    </table>
+</div>

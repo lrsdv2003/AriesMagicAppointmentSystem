@@ -1,0 +1,31 @@
+@model AriesMagicAppointmentSystem.Models.Booking
+
+@{
+    ViewData["Title"] = "Complete Booking";
+}
+
+<div class="page-header">
+    <div>
+        <h1>Complete Booking</h1>
+        <p class="page-subtitle">Mark this booking as completed.</p>
+    </div>
+</div>
+
+<div class="card-clean">
+    <dl class="row details-list mb-4">
+        <dt class="col-sm-3">Client</dt>
+        <dd class="col-sm-9">@Model.Client?.FullName</dd>
+
+        <dt class="col-sm-3">Service</dt>
+        <dd class="col-sm-9">@Model.Service?.Name</dd>
+
+        <dt class="col-sm-3">Date</dt>
+        <dd class="col-sm-9">@Model.EventDate.ToString("MMM dd, yyyy")</dd>
+    </dl>
+
+    <form asp-action="Complete" class="d-flex gap-2">
+        <input type="hidden" asp-for="Id" />
+        <button type="submit" class="btn btn-success">Mark Completed</button>
+        <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>

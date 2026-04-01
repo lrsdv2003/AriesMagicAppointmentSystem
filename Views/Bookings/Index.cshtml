@@ -1,0 +1,55 @@
+@using AriesMagicAppointmentSystem.Models
+@model IEnumerable<AriesMagicAppointmentSystem.Models.Booking>
+
+@{
+    ViewData["Title"] = "Bookings";
+}
+
+<div class="page-header">
+    <div>
+        <h1>Bookings</h1>
+        <p class="page-subtitle">View and manage booking requests.</p>
+    </div>
+    <div>
+        <a asp-action="Create" class="btn btn-primary">Create Booking</a>
+        <a asp-action="Pending" class="btn btn-secondary">Pending Bookings</a>
+    </div>
+</div>
+
+<div class="table-clean">
+    <table class="table align-middle">
+        <thead>
+            <tr>
+                <th>Client</th>
+                <th>Service</th>
+                <th>Event Date</th>
+                <th>Start Time</th>
+                <th>End Time</th>
+                <th>Status</th>
+                <th>Note</th>
+                <th class="text-end">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+            <tr>
+                <td>@item.Client?.FullName</td>
+                <td>@item.Service?.Name</td>
+                <td>@item.EventDate.ToString("MMM dd, yyyy")</td>
+                <td>@item.StartTime.ToString("hh:mm tt")</td>
+                <td>@item.EndTime.ToString("hh:mm tt")</td>
+                <td><span class="status-badge">@item.Status</span></td>
+                <td>@item.InternalNotes</td>
+                <td class="text-end">
+                    <a asp-action="AddNote" asp-route-id="@item.Id" class="btn btn-sm btn-secondary">Note</a>
+                    @if (item.Status == BookingStatus.Confirmed)
+                    {
+                        <a asp-action="Complete" asp-route-id="@item.Id" class="btn btn-sm btn-success">Complete</a>
+                    }
+                </td>
+            </tr>
+            }
+        </tbody>
+    </table>
+</div>

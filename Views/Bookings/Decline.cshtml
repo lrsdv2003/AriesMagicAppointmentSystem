@@ -1,0 +1,37 @@
+@model AriesMagicAppointmentSystem.Models.Booking
+
+@{
+    ViewData["Title"] = "Decline Booking";
+}
+
+<div class="page-header">
+    <div>
+        <h1>Decline Booking</h1>
+        <p class="page-subtitle">Reject this booking request.</p>
+    </div>
+</div>
+
+<div class="card-clean">
+    <dl class="row details-list mb-4">
+        <dt class="col-sm-3">Client</dt>
+        <dd class="col-sm-9">@Model.Client?.FullName</dd>
+
+        <dt class="col-sm-3">Service</dt>
+        <dd class="col-sm-9">@Model.Service?.Name</dd>
+
+        <dt class="col-sm-3">Date</dt>
+        <dd class="col-sm-9">@Model.EventDate.ToString("MMM dd, yyyy")</dd>
+
+        <dt class="col-sm-3">Start</dt>
+        <dd class="col-sm-9">@Model.StartTime.ToString("hh:mm tt")</dd>
+
+        <dt class="col-sm-3">End</dt>
+        <dd class="col-sm-9">@Model.EndTime.ToString("hh:mm tt")</dd>
+    </dl>
+
+    <form asp-action="Decline" class="d-flex gap-2">
+        <input type="hidden" asp-for="Id" />
+        <button type="submit" class="btn btn-danger">Decline Booking</button>
+        <a asp-action="Pending" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>

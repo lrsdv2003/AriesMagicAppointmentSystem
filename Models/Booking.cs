@@ -4,6 +4,7 @@ namespace AriesMagicAppointmentSystem.Models
 {
     public class Booking
     {
+        
         public int Id { get; set; }
 
         [Required]
@@ -30,6 +31,7 @@ namespace AriesMagicAppointmentSystem.Models
         public bool IsCompletedLocked { get; set; } = false;
 
         public string? ReopenReason { get; set; }
+        public string? InternalNotes { get; set; }
 
         public ICollection<Payment> Payments { get; set; } = new List<Payment>();
         public ICollection<BookingTimeline> TimelineEvents { get; set; } = new List<BookingTimeline>();
