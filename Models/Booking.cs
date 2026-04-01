@@ -24,8 +24,7 @@ namespace AriesMagicAppointmentSystem.Models
         public DateTime EndTime { get; set; }
 
         [Required]
-        public string Status { get; set; } = "Pending";
-
+        public string Status { get; set; } = BookingStatus.Pending;
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 
         public bool IsCompletedLocked { get; set; } = false;
@@ -34,5 +33,6 @@ namespace AriesMagicAppointmentSystem.Models
 
         public ICollection<Payment> Payments { get; set; } = new List<Payment>();
         public ICollection<BookingTimeline> TimelineEvents { get; set; } = new List<BookingTimeline>();
+        public ICollection<RescheduleRequest> RescheduleRequests { get; set; } = new List<RescheduleRequest>();
     }
 }

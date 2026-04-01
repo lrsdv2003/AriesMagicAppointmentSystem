@@ -15,5 +15,7 @@ namespace AriesMagicAppointmentSystem.Data
         public DbSet<Booking> Bookings { get; set; }
         public DbSet<Payment> Payments { get; set; }
         public DbSet<BookingTimeline> BookingTimelines { get; set; }
+        public DbSet<RescheduleRequest> RescheduleRequests { get; set; }
+        public DbSet<Notification> Notifications { get; set; }
     }
 }
