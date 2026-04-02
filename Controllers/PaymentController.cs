@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace AriesMagicAppointmentSystem.Controllers
 {
@@ -18,33 +19,39 @@ namespace AriesMagicAppointmentSystem.Controllers
         }
 
         // CLIENT: upload payment proof
+        [Authorize(Roles = "Client")]
         public async Task<IActionResult> Upload()
         {
+            var appUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
             var viewModel = new PaymentUploadViewModel
             {
-                Bookings = await GetAwaitingDownpaymentBookingsAsync()
+                Bookings = await GetAwaitingDownpaymentBookingsAsync(appUserId)
             };
 
             return View(viewModel);
         }
 
         [HttpPost]
+        [Authorize(Roles = "Client")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Upload(PaymentUploadViewModel model)
         {
+            var appUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
             if (!ModelState.IsValid)
             {
-                model.Bookings = await GetAwaitingDownpaymentBookingsAsync();
+                model.Bookings = await GetAwaitingDownpaymentBookingsAsync(appUserId);
                 return View(model);
             }
 
             var booking = await _context.Bookings
-                .FirstOrDefaultAsync(b => b.Id == model.BookingId);
+                .FirstOrDefaultAsync(b => b.Id == model.BookingId && b.ApplicationUserId == appUserId);
 
             if (booking == null || booking.Status != BookingStatus.AwaitingDownpayment)
             {
                 ModelState.AddModelError("", "Selected booking is invalid for payment upload.");
-                model.Bookings = await GetAwaitingDownpaymentBookingsAsync();
+                model.Bookings = await GetAwaitingDownpaymentBookingsAsync(appUserId);
                 return View(model);
             }
 
@@ -74,14 +81,18 @@ namespace AriesMagicAppointmentSystem.Controllers
             return RedirectToAction(nameof(MyUploads));
         }
 
-        // CLIENT: view uploaded payments
+        // CLIENT: view own uploaded payments
+        [Authorize(Roles = "Client")]
         public async Task<IActionResult> MyUploads()
         {
+            var appUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
             var payments = await _context.Payments
                 .Include(p => p.Booking)
                     .ThenInclude(b => b!.Client)
                 .Include(p => p.Booking)
                     .ThenInclude(b => b!.Service)
+                .Where(p => p.Booking != null && p.Booking.ApplicationUserId == appUserId)
                 .OrderByDescending(p => p.UploadedAt)
                 .ToListAsync();
 
@@ -123,6 +134,7 @@ namespace AriesMagicAppointmentSystem.Controllers
         }
 
         [HttpPost, ActionName("Verify")]
+        [Authorize(Roles = "Admin")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> VerifyConfirmed(int id)
         {
@@ -162,6 +174,7 @@ namespace AriesMagicAppointmentSystem.Controllers
         }
 
         // ADMIN: reject confirm page
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Reject(int? id)
         {
             if (id == null) return NotFound();
@@ -179,6 +192,7 @@ namespace AriesMagicAppointmentSystem.Controllers
         }
 
         [HttpPost, ActionName("Reject")]
+        [Authorize(Roles = "Admin")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RejectConfirmed(int id, string? rejectionReason)
         {
@@ -202,16 +216,17 @@ namespace AriesMagicAppointmentSystem.Controllers
             return RedirectToAction(nameof(PendingVerification));
         }
 
-        private async Task<List<SelectListItem>> GetAwaitingDownpaymentBookingsAsync()
+        private async Task<List<SelectListItem>> GetAwaitingDownpaymentBookingsAsync(string? appUserId)
         {
             return await _context.Bookings
                 .Include(b => b.Client)
                 .Include(b => b.Service)
-                .Where(b => b.Status == BookingStatus.AwaitingDownpayment)
+                .Where(b => b.Status == BookingStatus.AwaitingDownpayment
+                         && b.ApplicationUserId == appUserId)
                 .Select(b => new SelectListItem
                 {
                     Value = b.Id.ToString(),
-                    Text = b.Client!.FullName + " - " + b.Service!.Name + " - " + b.EventDate.ToString("MMM dd, yyyy")
+                    Text = b.Service!.Name + " - " + b.EventDate.ToString("MMM dd, yyyy")
                 })
                 .ToListAsync();
         }

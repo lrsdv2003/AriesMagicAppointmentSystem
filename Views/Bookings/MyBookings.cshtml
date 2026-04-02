@@ -1,0 +1,41 @@
+@model IEnumerable<AriesMagicAppointmentSystem.Models.Booking>
+
+@{
+    ViewData["Title"] = "My Bookings";
+}
+
+<div class="page-header">
+    <div>
+        <h1>My Bookings</h1>
+        <p class="page-subtitle">Track your submitted booking requests.</p>
+    </div>
+    <div>
+        <a asp-action="Create" class="btn btn-primary">Create Booking</a>
+    </div>
+</div>
+
+<div class="table-clean">
+    <table class="table align-middle">
+        <thead>
+            <tr>
+                <th>Service</th>
+                <th>Event Date</th>
+                <th>Start</th>
+                <th>End</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+@foreach (var item in Model)
+{
+            <tr>
+                <td>@item.Service?.Name</td>
+                <td>@item.EventDate.ToString("MMM dd, yyyy")</td>
+                <td>@item.StartTime.ToString("hh:mm tt")</td>
+                <td>@item.EndTime.ToString("hh:mm tt")</td>
+                <td><span class="status-badge">@item.Status</span></td>
+            </tr>
+}
+        </tbody>
+    </table>
+</div>

@@ -16,14 +16,6 @@
         <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
 
         <div class="mb-3">
-            <label asp-for="ClientId" class="form-label"></label>
-            <select asp-for="ClientId" asp-items="Model.Clients" class="form-control">
-                <option value="">-- Select Client --</option>
-            </select>
-            <span asp-validation-for="ClientId" class="text-danger"></span>
-        </div>
-
-        <div class="mb-3">
             <label asp-for="ServiceId" class="form-label"></label>
             <select asp-for="ServiceId" asp-items="Model.Services" class="form-control">
                 <option value="">-- Select Service --</option>
@@ -45,7 +37,7 @@
 
         <div class="d-flex gap-2">
             <button type="submit" class="btn btn-primary">Create Booking</button>
-            <a asp-action="Index" class="btn btn-secondary">Back</a>
+            <a asp-action="MyBookings" class="btn btn-secondary">Back</a>
         </div>
     </form>
 </div>

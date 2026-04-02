@@ -10,6 +10,7 @@ namespace AriesMagicAppointmentSystem.Models
         [Required]
         public int ClientId { get; set; }
         public User? Client { get; set; }
+        public string? ApplicationUserId { get; set; }
 
         [Required]
         public int ServiceId { get; set; }

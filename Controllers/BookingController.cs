@@ -2,19 +2,23 @@ using AriesMagicAppointmentSystem.Data;
 using AriesMagicAppointmentSystem.Models;
 using AriesMagicAppointmentSystem.ViewModels;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace AriesMagicAppointmentSystem.Controllers
 {
     public class BookingsController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly UserManager<ApplicationUser> _userManager;
 
-        public BookingsController(ApplicationDbContext context)
+        public BookingsController(ApplicationDbContext context, UserManager<ApplicationUser> userManager)
         {
             _context = context;
+            _userManager = userManager;
         }
 
         public async Task<IActionResult> Index()
@@ -28,12 +32,27 @@ namespace AriesMagicAppointmentSystem.Controllers
             return View(bookings);
         }
 
+        [Authorize(Roles = "Client")]
+        public async Task<IActionResult> MyBookings()
+        {
+            var appUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            var bookings = await _context.Bookings
+                .Include(b => b.Client)
+                .Include(b => b.Service)
+                .Where(b => b.ApplicationUserId == appUserId)
+                .OrderByDescending(b => b.CreatedAt)
+                .ToListAsync();
+
+            return View(bookings);
+        }
+
+        [Authorize(Roles = "Client")]
         public async Task<IActionResult> Create()
         {
             var viewModel = new BookingCreateViewModel
             {
                 EventDate = DateTime.Today,
-                Clients = await GetClientListAsync(),
                 Services = await GetServiceListAsync()
             };
 
@@ -41,25 +60,49 @@ namespace AriesMagicAppointmentSystem.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Client")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(BookingCreateViewModel model)
         {
             if (!ModelState.IsValid)
             {
-                model.Clients = await GetClientListAsync();
                 model.Services = await GetServiceListAsync();
                 return View(model);
             }
 
             var selectedService = await _context.Services
-            .FirstOrDefaultAsync(s => s.Id == model.ServiceId && !s.IsArchived);
+                .FirstOrDefaultAsync(s => s.Id == model.ServiceId && !s.IsArchived);
 
             if (selectedService == null)
             {
                 ModelState.AddModelError("", "Selected service is invalid.");
-                model.Clients = await GetClientListAsync();
                 model.Services = await GetServiceListAsync();
                 return View(model);
+            }
+
+            var appUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var appUser = await _userManager.GetUserAsync(User);
+
+            if (string.IsNullOrEmpty(appUserId) || appUser == null)
+            {
+                return Challenge();
+            }
+
+            var legacyClient = await _context.LegacyUsers
+                .FirstOrDefaultAsync(u => u.Email == appUser.Email);
+
+            if (legacyClient == null)
+            {
+                legacyClient = new User
+                {
+                    FullName = appUser.FullName,
+                    Email = appUser.Email!,
+                    PasswordHash = "IDENTITY_MANAGED",
+                    Role = "Client"
+                };
+
+                _context.LegacyUsers.Add(legacyClient);
+                await _context.SaveChangesAsync();
             }
 
             var startDateTime = model.EventDate.Date.Add(model.StartTime);
@@ -68,7 +111,6 @@ namespace AriesMagicAppointmentSystem.Controllers
             if (await HasReachedDailyConfirmedLimit(model.EventDate))
             {
                 ModelState.AddModelError("", "This date already has the maximum of 3 confirmed bookings.");
-                model.Clients = await GetClientListAsync();
                 model.Services = await GetServiceListAsync();
                 return View(model);
             }
@@ -76,14 +118,14 @@ namespace AriesMagicAppointmentSystem.Controllers
             if (await HasBookingConflict(startDateTime, endDateTime))
             {
                 ModelState.AddModelError("", "The selected time conflicts with an existing confirmed booking, including the 1-hour buffer.");
-                model.Clients = await GetClientListAsync();
                 model.Services = await GetServiceListAsync();
                 return View(model);
             }
 
             var booking = new Booking
             {
-                ClientId = model.ClientId,
+                ClientId = legacyClient.Id,
+                ApplicationUserId = appUserId,
                 ServiceId = model.ServiceId,
                 EventDate = model.EventDate.Date,
                 StartTime = startDateTime,
@@ -96,20 +138,19 @@ namespace AriesMagicAppointmentSystem.Controllers
             _context.Bookings.Add(booking);
             await _context.SaveChangesAsync();
 
-            var timelineEntry = new BookingTimeline
+            _context.BookingTimelines.Add(new BookingTimeline
             {
                 BookingId = booking.Id,
                 EventType = TimelineEventType.BookingCreated,
                 Notes = "Booking was created by client.",
                 CreatedAt = DateTime.Now
-            };
+            });
 
-            _context.BookingTimelines.Add(timelineEntry);
             await _context.SaveChangesAsync();
 
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction(nameof(MyBookings));
         }
-        
+
         [Authorize(Roles = "Staff")]
         public async Task<IActionResult> Pending()
         {
@@ -122,6 +163,7 @@ namespace AriesMagicAppointmentSystem.Controllers
 
             return View(pendingBookings);
         }
+
         [Authorize(Roles = "Staff")]
         public async Task<IActionResult> Approve(int? id)
         {
@@ -138,6 +180,7 @@ namespace AriesMagicAppointmentSystem.Controllers
         }
 
         [HttpPost, ActionName("Approve")]
+        [Authorize(Roles = "Staff")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ApproveConfirmed(int id)
         {
@@ -160,6 +203,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             return RedirectToAction(nameof(Pending));
         }
 
+        [Authorize(Roles = "Staff")]
         public async Task<IActionResult> Decline(int? id)
         {
             if (id == null) return NotFound();
@@ -175,6 +219,7 @@ namespace AriesMagicAppointmentSystem.Controllers
         }
 
         [HttpPost, ActionName("Decline")]
+        [Authorize(Roles = "Staff")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeclineConfirmed(int id)
         {
@@ -197,6 +242,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             return RedirectToAction(nameof(Pending));
         }
 
+        [Authorize(Roles = "Staff")]
         public async Task<IActionResult> Complete(int? id)
         {
             if (id == null) return NotFound();
@@ -212,6 +258,7 @@ namespace AriesMagicAppointmentSystem.Controllers
         }
 
         [HttpPost, ActionName("Complete")]
+        [Authorize(Roles = "Staff")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CompleteConfirmed(int id)
         {
@@ -234,58 +281,8 @@ namespace AriesMagicAppointmentSystem.Controllers
 
             return RedirectToAction(nameof(Index));
         }
-        private async Task<List<SelectListItem>> GetClientListAsync()
-        {
-            return await _context.LegacyUsers
-                .Where(u => u.Role == "Client")
-                .Select(u => new SelectListItem
-                {
-                    Value = u.Id.ToString(),
-                    Text = u.FullName
-                })
-                .ToListAsync();
-        }
 
-        private async Task<List<SelectListItem>> GetServiceListAsync()
-        {
-            return await _context.Services
-                .Where(s => !s.IsArchived)
-                .Select(s => new SelectListItem
-                {
-                    Value = s.Id.ToString(),
-                    Text = s.Name
-                })
-                .ToListAsync();
-        }
-        private async Task<bool> HasBookingConflict(DateTime requestedStart, DateTime requestedEnd)
-        {
-            var confirmedBookings = await _context.Bookings
-            .Where(b => b.Status == BookingStatus.Confirmed)
-            .ToListAsync();
-
-            foreach (var booking in confirmedBookings)
-            {
-                var existingStart = booking.StartTime;
-                var existingEndWithBuffer = booking.EndTime.AddHours(1);
-
-                 bool overlaps = requestedStart < existingEndWithBuffer && requestedEnd > existingStart;
-
-                if (overlaps)
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-        private async Task<bool> HasReachedDailyConfirmedLimit(DateTime eventDate)
-        {
-            var confirmedCount = await _context.Bookings
-            .CountAsync(b => b.Status == BookingStatus.Confirmed
-                      && b.EventDate.Date == eventDate.Date);
-
-            return confirmedCount >= 3;
-        }
+        [Authorize(Roles = "Staff")]
         public async Task<IActionResult> AddNote(int? id)
         {
             if (id == null) return NotFound();
@@ -301,6 +298,7 @@ namespace AriesMagicAppointmentSystem.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Staff")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> AddNote(int id, string internalNotes)
         {
@@ -312,13 +310,48 @@ namespace AriesMagicAppointmentSystem.Controllers
 
             return RedirectToAction(nameof(Index));
         }
-        /*
-          IIIII   L       OOO     V     V   EEEEE    GGGGG    AAAAA    BBBBBB
-            I     L      O   O    V     V   E       G        A     A   B     B
-            I     L      O   O     V   V    EEEE    G  GGG   AAAAAAA   BBBBBB
-            I     L      O   O      V V     E       G    G   A     A   B     B
-          IIIII   LLLLL   OOO        V      EEEEE    GGGGG   A     A   BBBBBB
-        */
-           
+
+        private async Task<List<SelectListItem>> GetServiceListAsync()
+        {
+            return await _context.Services
+                .Where(s => !s.IsArchived)
+                .Select(s => new SelectListItem
+                {
+                    Value = s.Id.ToString(),
+                    Text = s.Name
+                })
+                .ToListAsync();
+        }
+
+        private async Task<bool> HasBookingConflict(DateTime requestedStart, DateTime requestedEnd)
+        {
+            var confirmedBookings = await _context.Bookings
+                .Where(b => b.Status == BookingStatus.Confirmed)
+                .ToListAsync();
+
+            foreach (var booking in confirmedBookings)
+            {
+                var existingStart = booking.StartTime;
+                var existingEndWithBuffer = booking.EndTime.AddHours(1);
+
+                bool overlaps = requestedStart < existingEndWithBuffer && requestedEnd > existingStart;
+
+                if (overlaps)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private async Task<bool> HasReachedDailyConfirmedLimit(DateTime eventDate)
+        {
+            var confirmedCount = await _context.Bookings
+                .CountAsync(b => b.Status == BookingStatus.Confirmed
+                              && b.EventDate.Date == eventDate.Date);
+
+            return confirmedCount >= 3;
+        }
     }
 }
