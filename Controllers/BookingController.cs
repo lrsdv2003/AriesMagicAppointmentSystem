@@ -148,6 +148,19 @@ namespace AriesMagicAppointmentSystem.Controllers
 
             await _context.SaveChangesAsync();
 
+            var staffUsers = await _context.LegacyUsers
+                .Where(u => u.Role == "Staff")
+                .ToListAsync();
+
+            foreach (var staff in staffUsers)
+            {
+                await CreateNotificationAsync(
+                    staff.Id,
+                    "New Booking Submitted",
+                    $"A new booking was submitted by {legacyClient.FullName}.",
+                    "/Bookings/Pending");
+            }
+
             return RedirectToAction(nameof(MyBookings));
         }
 
@@ -200,6 +213,12 @@ namespace AriesMagicAppointmentSystem.Controllers
 
             await _context.SaveChangesAsync();
 
+            await CreateNotificationAsync(
+                booking.ClientId,
+                "Booking Approved",
+                "Your booking has been approved and is now awaiting downpayment.",
+                "/Bookings/MyBookings");
+
             return RedirectToAction(nameof(Pending));
         }
 
@@ -238,6 +257,12 @@ namespace AriesMagicAppointmentSystem.Controllers
             });
 
             await _context.SaveChangesAsync();
+
+            await CreateNotificationAsync(
+                booking.ClientId,
+                "Booking Declined",
+                "Your booking request was declined.",
+                "/Bookings/MyBookings");
 
             return RedirectToAction(nameof(Pending));
         }
@@ -278,6 +303,12 @@ namespace AriesMagicAppointmentSystem.Controllers
             });
 
             await _context.SaveChangesAsync();
+
+            await CreateNotificationAsync(
+                booking.ClientId,
+                "Booking Completed",
+                "Your booking has been marked as completed.",
+                "/Bookings/MyBookings");
 
             return RedirectToAction(nameof(Index));
         }
@@ -352,6 +383,20 @@ namespace AriesMagicAppointmentSystem.Controllers
                               && b.EventDate.Date == eventDate.Date);
 
             return confirmedCount >= 3;
+        }
+        private async Task CreateNotificationAsync(int userId, string title, string message, string? link = null)
+        {
+            _context.Notifications.Add(new Notification
+            {
+                UserId = userId,
+                Title = title,
+                Message = message,
+                Link = link,
+                IsRead = false,
+                CreatedAt = DateTime.Now
+            });
+
+            await _context.SaveChangesAsync();
         }
     }
 }

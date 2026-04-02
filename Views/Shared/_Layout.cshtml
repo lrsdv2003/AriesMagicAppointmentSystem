@@ -25,42 +25,59 @@
                 <div class="collapse navbar-collapse" id="mainNavbar">
                     <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-2">
                         <li class="nav-item">
-                            <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" asp-controller="Services" asp-action="Index">Services</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" asp-controller="Bookings" asp-action="Index">Bookings</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" asp-controller="Payments" asp-action="Upload">Payments</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" asp-controller="Payments" asp-action="PendingVerification">Verify Payments</a>
-                        </li>
-                            <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-2">
-                        <li class="nav-item">
-                            <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" asp-controller="Services" asp-action="Index">Services</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" asp-controller="Bookings" asp-action="Index">Bookings</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" asp-controller="Payments" asp-action="Upload">Payments</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" asp-controller="Payments" asp-action="PendingVerification">Verify Payments</a>
+                            <a class="nav-link" asp-controller="Home" asp-action="Index">Home</a>
                         </li>
 
                         @if (User.Identity != null && User.Identity.IsAuthenticated)
                         {
+                            @if (User.IsInRole("Client"))
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-controller="Bookings" asp-action="MyBookings">My Bookings</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-controller="Bookings" asp-action="Create">Book Now</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-controller="Payments" asp-action="Upload">Upload Payment</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-controller="Payments" asp-action="MyUploads">My Payments</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-controller="Notifications" asp-action="Index">Notifications</a>
+                                </li>
+                            }
+
+                            @if (User.IsInRole("Staff"))
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-controller="Services" asp-action="Index">Services</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-controller="Bookings" asp-action="Pending">Pending Bookings</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-controller="Bookings" asp-action="Index">All Bookings</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-controller="Notifications" asp-action="Index">Notifications</a>
+                                </li>
+                            }
+
+                            @if (User.IsInRole("Admin"))
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-controller="Payments" asp-action="PendingVerification">Verify Payments</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-controller="Bookings" asp-action="Index">All Bookings</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-controller="Notifications" asp-action="Index">Notifications</a>
+                                </li>
+                            }
+
                             <li class="nav-item">
                                 <span class="nav-link">Hello, @User.Identity.Name</span>
                             </li>
@@ -76,29 +93,10 @@
                             <li class="nav-item">
                                 <a class="nav-link" asp-controller="Account" asp-action="Login">Login</a>
                             </li>
-                        @if (User.Identity != null && User.Identity.IsAuthenticated)
-                            {
-                                <li class="nav-item">
-                                    <span class="nav-link">Hello, @User.Identity.Name</span>
-                                </li>
-                                <li class="nav-item">
-                                    <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
-                                        @Html.AntiForgeryToken()
-                                        <button type="submit" class="btn btn-secondary btn-sm">Logout</button>
-                                    </form>
-                                </li>
-                            }
-                            else
-                            {
-                                <li class="nav-item">
-                                    <a class="nav-link" asp-controller="Account" asp-action="Login">Login</a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link" asp-controller="Account" asp-action="Register">Register</a>
-                                </li>
-                            }
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Account" asp-action="Register">Register</a>
+                            </li>
                         }
-                    </ul>
                     </ul>
                 </div>
             </div>

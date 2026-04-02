@@ -109,6 +109,19 @@ namespace AriesMagicAppointmentSystem.Controllers
 
             await _context.SaveChangesAsync();
 
+            var adminUsers = await _context.LegacyUsers
+                .Where(u => u.Role == "Admin")
+                .ToListAsync();
+
+            foreach (var admin in adminUsers)
+            {
+                await CreateNotificationAsync(
+                    admin.Id,
+                    "Payment Awaiting Verification",
+                    "A client uploaded a payment proof that needs verification.",
+                    "/Payments/PendingVerification");
+            }
+
             return RedirectToAction(nameof(MyUploads));
         }
 
@@ -198,6 +211,15 @@ namespace AriesMagicAppointmentSystem.Controllers
 
             await _context.SaveChangesAsync();
 
+            if (payment.Booking != null)
+            {
+                await CreateNotificationAsync(
+                    payment.Booking.ClientId,
+                    "Payment Verified",
+                    "Your payment has been verified and your booking is now confirmed.",
+                    "/Bookings/MyBookings");
+            }
+
             return RedirectToAction(nameof(PendingVerification));
         }
 
@@ -240,6 +262,15 @@ namespace AriesMagicAppointmentSystem.Controllers
 
             await _context.SaveChangesAsync();
 
+            if (payment.Booking != null)
+            {
+                await CreateNotificationAsync(
+                    payment.Booking.ClientId,
+                    "Payment Rejected",
+                    "Your payment proof was rejected. Please upload a new downpayment proof.",
+                    "/Payments/MyUploads");
+            }
+
             return RedirectToAction(nameof(PendingVerification));
         }
 
@@ -256,6 +287,20 @@ namespace AriesMagicAppointmentSystem.Controllers
                     Text = b.Service!.Name + " - " + b.EventDate.ToString("MMM dd, yyyy")
                 })
                 .ToListAsync();
+        }
+        private async Task CreateNotificationAsync(int userId, string title, string message, string? link = null)
+        {
+            _context.Notifications.Add(new Notification
+            {
+                UserId = userId,
+                Title = title,
+                Message = message,
+                Link = link,
+                IsRead = false,
+                CreatedAt = DateTime.Now
+            });
+
+            await _context.SaveChangesAsync();
         }
     }
 }
