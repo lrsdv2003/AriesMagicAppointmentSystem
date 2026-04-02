@@ -32,9 +32,8 @@
                 <td>₱@item.Amount.ToString("N2")</td>
                 <td>@item.ProofImagePath</td>
                 <td>@item.UploadedAt.ToString("MMM dd, yyyy hh:mm tt")</td>
-                <td class="text-end">
-                    <a asp-action="Verify" asp-route-id="@item.Id" class="btn btn-sm btn-success">Verify</a>
-                    <a asp-action="Reject" asp-route-id="@item.Id" class="btn btn-sm btn-danger">Reject</a>
+                <td>
+                    <img src="@item.ProofImagePath" alt="Payment Proof" style="max-width: 120px; border-radius: 10px;" />
                 </td>
             </tr>
 }

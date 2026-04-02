@@ -12,13 +12,14 @@ namespace AriesMagicAppointmentSystem.Controllers
     public class PaymentsController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly IWebHostEnvironment _environment;
 
-        public PaymentsController(ApplicationDbContext context)
+        public PaymentsController(ApplicationDbContext context, IWebHostEnvironment environment)
         {
             _context = context;
+            _environment = environment;
         }
 
-        // CLIENT: upload payment proof
         [Authorize(Roles = "Client")]
         public async Task<IActionResult> Upload()
         {
@@ -55,11 +56,41 @@ namespace AriesMagicAppointmentSystem.Controllers
                 return View(model);
             }
 
+            if (model.ProofImage == null || model.ProofImage.Length == 0)
+            {
+                ModelState.AddModelError("", "Please upload a proof image.");
+                model.Bookings = await GetAwaitingDownpaymentBookingsAsync(appUserId);
+                return View(model);
+            }
+
+            var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp" };
+            var extension = Path.GetExtension(model.ProofImage.FileName).ToLowerInvariant();
+
+            if (!allowedExtensions.Contains(extension))
+            {
+                ModelState.AddModelError("", "Only JPG, JPEG, PNG, and WEBP files are allowed.");
+                model.Bookings = await GetAwaitingDownpaymentBookingsAsync(appUserId);
+                return View(model);
+            }
+
+            var uploadsFolder = Path.Combine(_environment.WebRootPath, "uploads", "payments");
+            Directory.CreateDirectory(uploadsFolder);
+
+            var uniqueFileName = $"{Guid.NewGuid()}{extension}";
+            var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await model.ProofImage.CopyToAsync(stream);
+            }
+
+            var relativePath = $"/uploads/payments/{uniqueFileName}";
+
             var payment = new Payment
             {
                 BookingId = model.BookingId,
                 Amount = model.Amount,
-                ProofImagePath = model.ProofImagePath,
+                ProofImagePath = relativePath,
                 Status = PaymentStatus.Pending,
                 UploadedAt = DateTime.Now
             };
@@ -81,7 +112,6 @@ namespace AriesMagicAppointmentSystem.Controllers
             return RedirectToAction(nameof(MyUploads));
         }
 
-        // CLIENT: view own uploaded payments
         [Authorize(Roles = "Client")]
         public async Task<IActionResult> MyUploads()
         {
@@ -99,7 +129,6 @@ namespace AriesMagicAppointmentSystem.Controllers
             return View(payments);
         }
 
-        // ADMIN: list pending verifications
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> PendingVerification()
         {
@@ -115,7 +144,6 @@ namespace AriesMagicAppointmentSystem.Controllers
             return View(pendingPayments);
         }
 
-        // ADMIN: confirm verify page
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Verify(int? id)
         {
@@ -173,7 +201,6 @@ namespace AriesMagicAppointmentSystem.Controllers
             return RedirectToAction(nameof(PendingVerification));
         }
 
-        // ADMIN: reject confirm page
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Reject(int? id)
         {

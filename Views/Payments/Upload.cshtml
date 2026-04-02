@@ -12,7 +12,7 @@
 </div>
 
 <div class="form-card">
-    <form asp-action="Upload">
+    <form asp-action="Upload" method="post" enctype="multipart/form-data">
         <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
 
         <div class="mb-3">
@@ -30,9 +30,9 @@
         </div>
 
         <div class="mb-4">
-            <label asp-for="ProofImagePath" class="form-label"></label>
-            <input asp-for="ProofImagePath" class="form-control" placeholder="example: /uploads/payment1.jpg" />
-            <span asp-validation-for="ProofImagePath" class="text-danger"></span>
+            <label asp-for="ProofImage" class="form-label"></label>
+            <input asp-for="ProofImage" type="file" class="form-control" accept=".jpg,.jpeg,.png,.webp" />
+            <span asp-validation-for="ProofImage" class="text-danger"></span>
         </div>
 
         <div class="d-flex gap-2">

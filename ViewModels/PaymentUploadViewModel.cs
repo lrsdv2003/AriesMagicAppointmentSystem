@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace AriesMagicAppointmentSystem.ViewModels
@@ -14,8 +15,8 @@ namespace AriesMagicAppointmentSystem.ViewModels
         public decimal Amount { get; set; }
 
         [Required]
-        [Display(Name = "Proof Image Path")]
-        public string ProofImagePath { get; set; } = string.Empty;
+        [Display(Name = "Proof Image")]
+        public IFormFile ProofImage { get; set; } = default!;
 
         public List<SelectListItem> Bookings { get; set; } = new();
     }
