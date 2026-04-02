@@ -1,0 +1,43 @@
+@model IEnumerable<AriesMagicAppointmentSystem.Models.Payment>
+
+@{
+    ViewData["Title"] = "My Uploaded Payments";
+}
+
+<div class="page-header">
+    <div>
+        <h1>Uploaded Payments</h1>
+        <p class="page-subtitle">Review submitted payment proofs and their status.</p>
+    </div>
+    <div>
+        <a asp-action="Upload" class="btn btn-primary">Upload Another</a>
+    </div>
+</div>
+
+<div class="table-clean">
+    <table class="table align-middle">
+        <thead>
+            <tr>
+                <th>Client</th>
+                <th>Service</th>
+                <th>Amount</th>
+                <th>Proof</th>
+                <th>Status</th>
+                <th>Uploaded</th>
+            </tr>
+        </thead>
+        <tbody>
+@foreach (var item in Model)
+{
+            <tr>
+                <td>@item.Booking?.Client?.FullName</td>
+                <td>@item.Booking?.Service?.Name</td>
+                <td>₱@item.Amount.ToString("N2")</td>
+                <td>@item.ProofImagePath</td>
+                <td><span class="status-badge">@item.Status</span></td>
+                <td>@item.UploadedAt.ToString("MMM dd, yyyy hh:mm tt")</td>
+            </tr>
+}
+        </tbody>
+    </table>
+</div>

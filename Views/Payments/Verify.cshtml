@@ -1,0 +1,34 @@
+@model AriesMagicAppointmentSystem.Models.Payment
+
+@{
+    ViewData["Title"] = "Verify Payment";
+}
+
+<div class="page-header">
+    <div>
+        <h1>Verify Payment</h1>
+        <p class="page-subtitle">Confirm this payment and mark the booking as confirmed.</p>
+    </div>
+</div>
+
+<div class="card-clean">
+    <dl class="row details-list mb-4">
+        <dt class="col-sm-3">Client</dt>
+        <dd class="col-sm-9">@Model.Booking?.Client?.FullName</dd>
+
+        <dt class="col-sm-3">Service</dt>
+        <dd class="col-sm-9">@Model.Booking?.Service?.Name</dd>
+
+        <dt class="col-sm-3">Amount</dt>
+        <dd class="col-sm-9">₱@Model.Amount.ToString("N2")</dd>
+
+        <dt class="col-sm-3">Proof</dt>
+        <dd class="col-sm-9">@Model.ProofImagePath</dd>
+    </dl>
+
+    <form asp-action="Verify" class="d-flex gap-2">
+        <input type="hidden" asp-for="Id" />
+        <button type="submit" class="btn btn-success">Verify Payment</button>
+        <a asp-action="PendingVerification" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>

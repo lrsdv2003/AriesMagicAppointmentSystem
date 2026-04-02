@@ -1,0 +1,43 @@
+@model IEnumerable<AriesMagicAppointmentSystem.Models.Payment>
+
+@{
+    ViewData["Title"] = "Pending Payment Verification";
+}
+
+<div class="page-header">
+    <div>
+        <h1>Pending Payment Verification</h1>
+        <p class="page-subtitle">Review uploaded payment proofs awaiting admin approval.</p>
+    </div>
+</div>
+
+<div class="table-clean">
+    <table class="table align-middle">
+        <thead>
+            <tr>
+                <th>Client</th>
+                <th>Service</th>
+                <th>Amount</th>
+                <th>Proof</th>
+                <th>Uploaded</th>
+                <th class="text-end">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+@foreach (var item in Model)
+{
+            <tr>
+                <td>@item.Booking?.Client?.FullName</td>
+                <td>@item.Booking?.Service?.Name</td>
+                <td>₱@item.Amount.ToString("N2")</td>
+                <td>@item.ProofImagePath</td>
+                <td>@item.UploadedAt.ToString("MMM dd, yyyy hh:mm tt")</td>
+                <td class="text-end">
+                    <a asp-action="Verify" asp-route-id="@item.Id" class="btn btn-sm btn-success">Verify</a>
+                    <a asp-action="Reject" asp-route-id="@item.Id" class="btn btn-sm btn-danger">Reject</a>
+                </td>
+            </tr>
+}
+        </tbody>
+    </table>
+</div>
