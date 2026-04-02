@@ -4,9 +4,11 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using AriesMagicAppointmentSystem.Data;
 using AriesMagicAppointmentSystem.Models;
+using Microsoft.AspNetCore.Authorization;
 
 namespace AriesMagicAppointmentSystem.Controllers
 {
+    [Authorize(Roles = "Staff,Admin")]
     public class ServicesController : Controller
     {
         private readonly ApplicationDbContext _context;

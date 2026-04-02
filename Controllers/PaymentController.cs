@@ -1,6 +1,7 @@
 using AriesMagicAppointmentSystem.Data;
 using AriesMagicAppointmentSystem.Models;
 using AriesMagicAppointmentSystem.ViewModels;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -88,6 +89,7 @@ namespace AriesMagicAppointmentSystem.Controllers
         }
 
         // ADMIN: list pending verifications
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> PendingVerification()
         {
             var pendingPayments = await _context.Payments
@@ -103,6 +105,7 @@ namespace AriesMagicAppointmentSystem.Controllers
         }
 
         // ADMIN: confirm verify page
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Verify(int? id)
         {
             if (id == null) return NotFound();

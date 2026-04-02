@@ -1,6 +1,7 @@
 using AriesMagicAppointmentSystem.Data;
 using AriesMagicAppointmentSystem.Models;
 using AriesMagicAppointmentSystem.ViewModels;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -109,7 +110,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             return RedirectToAction(nameof(Index));
         }
         
-
+        [Authorize(Roles = "Staff")]
         public async Task<IActionResult> Pending()
         {
             var pendingBookings = await _context.Bookings
@@ -121,7 +122,7 @@ namespace AriesMagicAppointmentSystem.Controllers
 
             return View(pendingBookings);
         }
-
+        [Authorize(Roles = "Staff")]
         public async Task<IActionResult> Approve(int? id)
         {
             if (id == null) return NotFound();
@@ -235,7 +236,7 @@ namespace AriesMagicAppointmentSystem.Controllers
         }
         private async Task<List<SelectListItem>> GetClientListAsync()
         {
-            return await _context.Users
+            return await _context.LegacyUsers
                 .Where(u => u.Role == "Client")
                 .Select(u => new SelectListItem
                 {
@@ -311,6 +312,13 @@ namespace AriesMagicAppointmentSystem.Controllers
 
             return RedirectToAction(nameof(Index));
         }
+        /*
+          IIIII   L       OOO     V     V   EEEEE    GGGGG    AAAAA    BBBBBB
+            I     L      O   O    V     V   E       G        A     A   B     B
+            I     L      O   O     V   V    EEEE    G  GGG   AAAAAAA   BBBBBB
+            I     L      O   O      V V     E       G    G   A     A   B     B
+          IIIII   LLLLL   OOO        V      EEEEE    GGGGG   A     A   BBBBBB
+        */
            
     }
 }
