@@ -1,0 +1,45 @@
+@model AriesMagicAppointmentSystem.Models.RescheduleRequest
+
+@{
+    ViewData["Title"] = "Reject Reschedule";
+}
+
+<div class="page-header">
+    <div>
+        <h1>Reject Reschedule</h1>
+        <p class="page-subtitle">Reject this reschedule request.</p>
+    </div>
+</div>
+
+<div class="form-card">
+    <dl class="row details-list mb-4">
+        <dt class="col-sm-3">Client</dt>
+        <dd class="col-sm-9">@Model.Booking?.Client?.FullName</dd>
+
+        <dt class="col-sm-3">Service</dt>
+        <dd class="col-sm-9">@Model.Booking?.Service?.Name</dd>
+
+        <dt class="col-sm-3">Requested Date</dt>
+        <dd class="col-sm-9">@Model.RequestedDate.ToString("MMM dd, yyyy")</dd>
+
+        <dt class="col-sm-3">Requested Start</dt>
+        <dd class="col-sm-9">@Model.RequestedStartTime.ToString("hh:mm tt")</dd>
+
+        <dt class="col-sm-3">Reason</dt>
+        <dd class="col-sm-9">@Model.Reason</dd>
+    </dl>
+
+    <form asp-action="Reject">
+        <input type="hidden" asp-for="Id" />
+
+        <div class="mb-4">
+            <label class="form-label">Admin Remarks</label>
+            <textarea name="adminRemarks" class="form-control" rows="4"></textarea>
+        </div>
+
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-danger">Reject</button>
+            <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>

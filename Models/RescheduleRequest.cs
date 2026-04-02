@@ -24,6 +24,7 @@ namespace AriesMagicAppointmentSystem.Models
 
         [Required]
         public string Status { get; set; } = RescheduleRequestStatus.Pending;
+
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 
         public DateTime? ReviewedAt { get; set; }

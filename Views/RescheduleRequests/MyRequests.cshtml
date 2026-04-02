@@ -1,0 +1,43 @@
+@model IEnumerable<AriesMagicAppointmentSystem.Models.RescheduleRequest>
+
+@{
+    ViewData["Title"] = "My Reschedule Requests";
+}
+
+<div class="page-header">
+    <div>
+        <h1>My Reschedule Requests</h1>
+        <p class="page-subtitle">Track the status of your reschedule requests.</p>
+    </div>
+    <div>
+        <a asp-action="Create" class="btn btn-primary">New Request</a>
+    </div>
+</div>
+
+<div class="table-clean">
+    <table class="table align-middle">
+        <thead>
+            <tr>
+                <th>Service</th>
+                <th>Requested Date</th>
+                <th>Requested Start</th>
+                <th>Status</th>
+                <th>Reason</th>
+                <th>Admin Remarks</th>
+            </tr>
+        </thead>
+        <tbody>
+@foreach (var item in Model)
+{
+            <tr>
+                <td>@item.Booking?.Service?.Name</td>
+                <td>@item.RequestedDate.ToString("MMM dd, yyyy")</td>
+                <td>@item.RequestedStartTime.ToString("hh:mm tt")</td>
+                <td><span class="status-badge">@item.Status</span></td>
+                <td>@item.Reason</td>
+                <td>@item.AdminRemarks</td>
+            </tr>
+}
+        </tbody>
+    </table>
+</div>

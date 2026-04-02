@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("AriesMagicAppointmentSystem")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+b26fc92bcf73fde463d1c9a857f542e2f9bbe096")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+2fc3bfbf18fff2991fa7bb1b45fab1221d3ee1b8")]
 [assembly: System.Reflection.AssemblyProductAttribute("AriesMagicAppointmentSystem")]
 [assembly: System.Reflection.AssemblyTitleAttribute("AriesMagicAppointmentSystem")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
