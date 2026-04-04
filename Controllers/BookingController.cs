@@ -1,5 +1,6 @@
 using AriesMagicAppointmentSystem.Data;
 using AriesMagicAppointmentSystem.Models;
+using AriesMagicAppointmentSystem.Services;
 using AriesMagicAppointmentSystem.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -14,11 +15,16 @@ namespace AriesMagicAppointmentSystem.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly IEmailService _emailService;
 
-        public BookingsController(ApplicationDbContext context, UserManager<ApplicationUser> userManager)
+        public BookingsController(
+            ApplicationDbContext context,
+            UserManager<ApplicationUser> userManager,
+            IEmailService emailService)
         {
             _context = context;
             _userManager = userManager;
+            _emailService = emailService;
         }
 
         public async Task<IActionResult> Index()
@@ -160,6 +166,23 @@ namespace AriesMagicAppointmentSystem.Controllers
                     $"A new booking was submitted by {legacyClient.FullName}.",
                     "/Bookings/Pending");
             }
+            var staffEmails = await _context.LegacyUsers
+                .Where(u => u.Role == "Staff")
+                .Select(u => u.Email)
+                .ToListAsync();
+
+            foreach (var email in staffEmails)
+            {
+                await _emailService.SendEmailAsync(
+                    email,
+                    "New Booking Submitted",
+                    $@"
+                    <h2>New Booking Submitted</h2>
+                    <p>A new booking was submitted by <strong>{legacyClient.FullName}</strong>.</p>
+                    <p>Service: <strong>{selectedService.Name}</strong></p>
+                    <p>Date: <strong>{model.EventDate:MMMM dd, yyyy}</strong></p>
+                    <p>Please review it in the staff dashboard.</p>");
+            }
 
             return RedirectToAction(nameof(MyBookings));
         }
@@ -219,6 +242,21 @@ namespace AriesMagicAppointmentSystem.Controllers
                 "Your booking has been approved and is now awaiting downpayment.",
                 "/Bookings/MyBookings");
 
+            var bookingWithClient = await _context.Bookings
+                .Include(b => b.Client)
+                .FirstOrDefaultAsync(b => b.Id == id);
+
+            if (bookingWithClient != null && bookingWithClient.Client != null)
+            {
+                await _emailService.SendEmailAsync(
+                    bookingWithClient.Client.Email,
+                    "Booking Approved",
+                    @"
+                    <h2>Your Booking Was Approved</h2>
+                    <p>Your booking has been approved and is now awaiting downpayment.</p>
+                    <p>Please log in to the system and upload your payment proof.</p>");
+            }
+
             return RedirectToAction(nameof(Pending));
         }
 
@@ -263,6 +301,21 @@ namespace AriesMagicAppointmentSystem.Controllers
                 "Booking Declined",
                 "Your booking request was declined.",
                 "/Bookings/MyBookings");
+
+            var bookingWithClient = await _context.Bookings
+                .Include(b => b.Client)
+                .FirstOrDefaultAsync(b => b.Id == id);
+
+            if (bookingWithClient != null && bookingWithClient.Client != null)
+            {
+                await _emailService.SendEmailAsync(
+                    bookingWithClient.Client.Email,
+                    "Booking Declined",
+                    @"
+                    <h2>Your Booking Was Declined</h2>
+                    <p>We’re sorry, but your booking request was declined.</p>
+                    <p>Please contact the team or create a new booking request if needed.</p>");
+            }
 
             return RedirectToAction(nameof(Pending));
         }
@@ -309,6 +362,21 @@ namespace AriesMagicAppointmentSystem.Controllers
                 "Booking Completed",
                 "Your booking has been marked as completed.",
                 "/Bookings/MyBookings");
+
+            var bookingWithClient = await _context.Bookings
+                .Include(b => b.Client)
+                .FirstOrDefaultAsync(b => b.Id == id);
+
+            if (bookingWithClient != null && bookingWithClient.Client != null)
+            {
+                await _emailService.SendEmailAsync(
+                    bookingWithClient.Client.Email,
+                    "Booking Completed",
+                    @"
+                    <h2>Your Booking Was Completed</h2>
+                    <p>Your booking has been marked as completed.</p>
+                    <p>Thank you for choosing Aries Magic.</p>");
+            }
 
             return RedirectToAction(nameof(Index));
         }

@@ -1,5 +1,6 @@
 using AriesMagicAppointmentSystem.Data;
 using AriesMagicAppointmentSystem.Models;
+using AriesMagicAppointmentSystem.Services;
 using AriesMagicAppointmentSystem.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -13,10 +14,12 @@ namespace AriesMagicAppointmentSystem.Controllers
     public class RescheduleRequestsController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly IEmailService _emailService;
 
-        public RescheduleRequestsController(ApplicationDbContext context)
+        public RescheduleRequestsController(ApplicationDbContext context, IEmailService emailService)
         {
             _context = context;
+            _emailService = emailService;
         }
 
         // CLIENT: create request
@@ -209,6 +212,21 @@ namespace AriesMagicAppointmentSystem.Controllers
                 "Your reschedule request was approved.",
                 "/RescheduleRequests/MyRequests");
 
+            var bookingWithClient = await _context.Bookings
+                .Include(b => b.Client)
+                .FirstOrDefaultAsync(b => b.Id == request.Booking.Id);
+
+            if (bookingWithClient != null && bookingWithClient.Client != null)
+            {
+                await _emailService.SendEmailAsync(
+                    bookingWithClient.Client.Email,
+                    "Reschedule Approved",
+                    @"
+                    <h2>Your Reschedule Request Was Approved</h2>
+                    <p>Your booking schedule has been updated successfully.</p>
+                    <p>Please log in to view the updated booking details.</p>");
+            }
+
             return RedirectToAction(nameof(Index));
         }
 
@@ -260,6 +278,21 @@ namespace AriesMagicAppointmentSystem.Controllers
                 "Reschedule Rejected",
                 "Your reschedule request was rejected.",
                 "/RescheduleRequests/MyRequests");
+
+            var bookingWithClient = await _context.Bookings
+                .Include(b => b.Client)
+                .FirstOrDefaultAsync(b => b.Id == request.Booking.Id);
+
+            if (bookingWithClient != null && bookingWithClient.Client != null)
+            {
+                await _emailService.SendEmailAsync(
+                    bookingWithClient.Client.Email,
+                    "Reschedule Rejected",
+                    $@"
+                    <h2>Your Reschedule Request Was Rejected</h2>
+                    <p>Your reschedule request was not approved.</p>
+                    <p>Remarks: {adminRemarks}</p>");
+            }
 
             return RedirectToAction(nameof(Index));
         }
