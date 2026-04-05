@@ -2,13 +2,178 @@
     ViewData["Title"] = "Home";
 }
 
-<div class="hero-clean">
-    <h1>Aries Magic Appointment System</h1>
-    <p>
-        A modern booking and payment verification system for managing services, schedules, and client appointments with a clean and efficient workflow.
-    </p>
-    <div class="d-flex justify-content-center gap-2 flex-wrap">
-        <a asp-controller="Services" asp-action="Index" class="btn btn-primary">Manage Services</a>
-        <a asp-controller="Home" asp-action="Privacy" class="btn btn-secondary">Learn More</a>
+<section class="hero-section mb-5">
+    <div class="hero-content">
+        <span class="hero-badge">Professional Event Entertainment</span>
+        <h1>Bring Magic, Wonder, and Fun to Your Special Event</h1>
+        <p>
+            Aries the Magic Artist delivers memorable performances for birthdays, celebrations,
+            and special occasions. Book your event online, choose your package, and stay updated every step of the way.
+        </p>
+        <div class="hero-actions">
+            <a asp-controller="Bookings" asp-action="Create" class="btn btn-primary">Book Now</a>
+            <a href="#packages" class="btn btn-secondary">Explore Packages</a>
+        </div>
     </div>
-</div>
+</section>
+
+<section class="section-block">
+    <div class="section-heading">
+        <h2>Why Choose Aries?</h2>
+        <p>
+            A complete event entertainment experience with reliable booking, easy updates,
+            and a performance designed to leave a lasting impression.
+        </p>
+    </div>
+
+    <div class="info-grid">
+        <div class="info-card">
+            <h4>Interactive Performances</h4>
+            <p>Enjoy exciting and engaging magic performances that keep audiences entertained.</p>
+        </div>
+        <div class="info-card">
+            <h4>Simple Booking Process</h4>
+            <p>Request your schedule online, upload your payment proof, and receive booking confirmation with ease.</p>
+        </div>
+        <div class="info-card">
+            <h4>Reliable Updates</h4>
+            <p>Track approvals, payment verification, and reschedule requests in one system.</p>
+        </div>
+    </div>
+</section>
+
+<section id="packages" class="section-block">
+    <div class="section-heading">
+        <h2>Our Packages</h2>
+        <p>Find the best entertainment package for your event.</p>
+    </div>
+
+    <div class="package-grid">
+        <div class="package-card">
+            <div class="package-label">Popular</div>
+            <h3>Premium Package</h3>
+            <p class="package-price">₱19,800</p>
+            <p class="package-description">A strong all-around entertainment package for celebrations and parties.</p>
+            <ul>
+                <li>Interactive magic performance</li>
+                <li>Audience participation</li>
+                <li>Perfect for birthdays and private events</li>
+            </ul>
+        </div>
+
+        <div class="package-card featured-package">
+            <div class="package-label">Best Value</div>
+            <h3>Deluxe Package</h3>
+            <p class="package-price">₱20,000</p>
+            <p class="package-description">An upgraded package that adds more excitement and variety to your event.</p>
+            <ul>
+                <li>Enhanced performance set</li>
+                <li>Bubble show inclusion</li>
+                <li>Great for energetic audiences</li>
+            </ul>
+        </div>
+
+        <div class="package-card">
+            <div class="package-label">Complete</div>
+            <h3>All-In Package</h3>
+            <p class="package-price">₱24,500</p>
+            <p class="package-description">A premium full-experience package for clients who want the complete show.</p>
+            <ul>
+                <li>Complete entertainment experience</li>
+                <li>Premium add-ons included</li>
+                <li>Ideal for larger and special events</li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+<section class="section-block">
+    <div class="section-heading">
+        <h2>Event Highlights</h2>
+        <p>A glimpse of the kind of fun and memorable moments Aries brings to every event.</p>
+    </div>
+
+    <div class="gallery-grid">
+        <div class="gallery-card">
+            <div class="gallery-placeholder">Performance Photo</div>
+        </div>
+        <div class="gallery-card">
+            <div class="gallery-placeholder">Audience Interaction</div>
+        </div>
+        <div class="gallery-card">
+            <div class="gallery-placeholder">Special Event Moment</div>
+        </div>
+    </div>
+</section>
+
+<section class="section-block">
+    <div class="section-heading">
+        <h2>What Clients Can Expect</h2>
+        <p>A simple and guided process from booking request to event confirmation.</p>
+    </div>
+
+    <div class="steps-grid">
+        <div class="step-card">
+            <span class="step-number">01</span>
+            <h4>Choose a Package</h4>
+            <p>Select the package and preferred date that works best for your event.</p>
+        </div>
+        <div class="step-card">
+            <span class="step-number">02</span>
+            <h4>Submit a Request</h4>
+            <p>Send your booking request through the system and wait for approval.</p>
+        </div>
+        <div class="step-card">
+            <span class="step-number">03</span>
+            <h4>Upload Downpayment</h4>
+            <p>Once approved, upload your proof of payment for admin verification.</p>
+        </div>
+        <div class="step-card">
+            <span class="step-number">04</span>
+            <h4>Receive Confirmation</h4>
+            <p>Your booking becomes confirmed after successful payment verification.</p>
+        </div>
+    </div>
+</section>
+
+<section class="section-block">
+    <div class="section-heading">
+        <h2>Client Feedback</h2>
+        <p>Here are sample testimonial areas you can later replace with real client quotes.</p>
+    </div>
+
+    <div class="testimonial-grid">
+        <div class="testimonial-card">
+            <p>
+                “A very entertaining and memorable experience. The whole event felt more lively and magical.”
+            </p>
+            <h5>- Happy Client</h5>
+        </div>
+        <div class="testimonial-card">
+            <p>
+                “The booking process was easy to follow, and the performance was fun for both kids and adults.”
+            </p>
+            <h5>- Event Organizer</h5>
+        </div>
+        <div class="testimonial-card">
+            <p>
+                “Professional, engaging, and perfect for celebrations. Highly recommended for special occasions.”
+            </p>
+            <h5>- Satisfied Customer</h5>
+        </div>
+    </div>
+</section>
+
+<section class="cta-section">
+    <div class="cta-card">
+        <h2>Ready to Create a Magical Event?</h2>
+        <p>
+            Book your preferred package today and let Aries the Magic Artist bring excitement,
+            entertainment, and unforgettable moments to your celebration.
+        </p>
+        <div class="hero-actions">
+            <a asp-controller="Bookings" asp-action="Create" class="btn btn-primary">Start Booking</a>
+            <a asp-controller="Account" asp-action="Register" class="btn btn-secondary">Create Account</a>
+        </div>
+    </div>
+</section>

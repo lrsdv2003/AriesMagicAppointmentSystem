@@ -4,42 +4,45 @@
     ViewData["Title"] = "Login";
 }
 
-<div class="page-header">
-    <div>
-        <h1>Login</h1>
-        <p class="page-subtitle">Sign in to access your account.</p>
+<section class="auth-section">
+    <div class="auth-card">
+        <div class="auth-header">
+            <span class="hero-badge">Welcome Back</span>
+            <h1>Login to Your Account</h1>
+            <p>
+                Access your bookings, payments, notifications, and reschedule requests.
+            </p>
+        </div>
+
+        <form asp-action="Login" method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+            <input type="hidden" name="returnUrl" value="@ViewData["ReturnUrl"]" />
+
+            <div class="mb-3">
+                <label asp-for="Email" class="form-label"></label>
+                <input asp-for="Email" class="form-control" placeholder="Enter your email" />
+                <span asp-validation-for="Email" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Password" class="form-label"></label>
+                <input asp-for="Password" class="form-control" placeholder="Enter your password" />
+                <span asp-validation-for="Password" class="text-danger"></span>
+            </div>
+
+            <div class="form-check mb-4">
+                <input asp-for="RememberMe" class="form-check-input" />
+                <label asp-for="RememberMe" class="form-check-label"></label>
+            </div>
+
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-primary">Login</button>
+                <a asp-controller="Account" asp-action="Register" class="btn btn-secondary">Create Client Account</a>
+            </div>
+        </form>
     </div>
-</div>
-
-<div class="form-card">
-    <form asp-action="Login" method="post">
-        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
-
-        <input type="hidden" name="returnUrl" value="@ViewData["ReturnUrl"]" />
-
-        <div class="mb-3">
-            <label asp-for="Email" class="form-label"></label>
-            <input asp-for="Email" class="form-control" />
-            <span asp-validation-for="Email" class="text-danger"></span>
-        </div>
-
-        <div class="mb-3">
-            <label asp-for="Password" class="form-label"></label>
-            <input asp-for="Password" class="form-control" />
-            <span asp-validation-for="Password" class="text-danger"></span>
-        </div>
-
-        <div class="form-check mb-4">
-            <input asp-for="RememberMe" class="form-check-input" />
-            <label asp-for="RememberMe" class="form-check-label"></label>
-        </div>
-
-        <div class="d-flex gap-2">
-            <button type="submit" class="btn btn-primary">Login</button>
-            <a asp-controller="Home" asp-action="Index" class="btn btn-secondary">Back</a>
-        </div>
-    </form>
-</div>
+</section>
 
 @section Scripts {
     @{

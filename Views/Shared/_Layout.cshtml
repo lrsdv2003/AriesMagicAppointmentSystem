@@ -11,105 +11,55 @@
 </head>
 <body>
     <header>
-        <nav class="navbar navbar-expand-lg custom-navbar sticky-top">
-            <div class="container">
-                <a class="navbar-brand fw-bold" asp-area="" asp-controller="Home" asp-action="Index">
-                    Aries Magic
-                </a>
+        <ul class="navbar-nav ms-auto d-flex flex-row align-items-center gap-3">
+            <li class="nav-item">
+                <a class="nav-link" asp-controller="Home" asp-action="Index">Home</a>
+            </li>
 
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar"
-                        aria-controls="mainNavbar" aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
+            @if (User.Identity != null && User.Identity.IsAuthenticated)
+            {
+                @if (User.IsInRole("Client"))
+                {
+                    <li class="nav-item">
+                        <a class="nav-link" asp-controller="Bookings" asp-action="MyBookings">My Bookings</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" asp-controller="Bookings" asp-action="Create">Book Now</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" asp-controller="Payments" asp-action="Upload">Upload Payment</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" asp-controller="Payments" asp-action="MyUploads">My Payments</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" asp-controller="RescheduleRequests" asp-action="MyRequests">My Reschedules</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link nav-notification-link" asp-controller="Notifications" asp-action="Index">Notifications</a>
+                    </li>
+                }
 
-                <div class="collapse navbar-collapse" id="mainNavbar">
-                    <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-2">
-                        <li class="nav-item">
-                            <a class="nav-link" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-
-                        @if (User.Identity != null && User.Identity.IsAuthenticated)
-                        {
-                            @if (User.IsInRole("Client"))
-                            {
-                                <li class="nav-item">
-                                    <a class="nav-link" asp-controller="Bookings" asp-action="MyBookings">My Bookings</a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link" asp-controller="Bookings" asp-action="Create">Book Now</a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link" asp-controller="Payments" asp-action="Upload">Upload Payment</a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link" asp-controller="Payments" asp-action="MyUploads">My Payments</a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link" asp-controller="RescheduleRequests" asp-action="MyRequests">My Reschedules</a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link" asp-controller="Notifications" asp-action="Index">Notifications</a>
-                                </li>
-                            }
-
-                            @if (User.IsInRole("Staff"))
-                            {
-                                <li class="nav-item">
-                                    <a class="nav-link" asp-controller="Services" asp-action="Index">Services</a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link" asp-controller="Bookings" asp-action="Pending">Pending Bookings</a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link" asp-controller="Bookings" asp-action="Index">All Bookings</a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link" asp-controller="RescheduleRequests" asp-action="Index">Reschedules</a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link" asp-controller="Notifications" asp-action="Index">Notifications</a>
-                                </li>
-                            }
-
-                            @if (User.IsInRole("Admin"))
-                            {
-                                <li class="nav-item">
-                                    <a class="nav-link" asp-controller="Payments" asp-action="PendingVerification">Verify Payments</a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link" asp-controller="Bookings" asp-action="Index">All Bookings</a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link" asp-controller="RescheduleRequests" asp-action="Index">Reschedules</a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link" asp-controller="Notifications" asp-action="Index">Notifications</a>
-                                </li>
-                            }
-
-                            <li class="nav-item">
-                                <span class="nav-link">Hello, @User.Identity.Name</span>
-                            </li>
-                            <li class="nav-item">
-                                <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
-                                    @Html.AntiForgeryToken()
-                                    <button type="submit" class="btn btn-secondary btn-sm">Logout</button>
-                                </form>
-                            </li>
-                        }
-                        else
-                        {
-                            <li class="nav-item">
-                                <a class="nav-link" asp-controller="Account" asp-action="Login">Login</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" asp-controller="Account" asp-action="Register">Register</a>
-                            </li>
-                        }
-                    </ul>
-                </div>
-            </div>
-        </nav>
+                <li class="nav-item">
+                    <span class="nav-link">Hello, @User.Identity.Name</span>
+                </li>
+                <li class="nav-item">
+                    <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-secondary btn-sm">Logout</button>
+                    </form>
+                </li>
+            }
+            else
+            {
+                <li class="nav-item">
+                    <a class="nav-link" asp-controller="Account" asp-action="Login">Login</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" asp-controller="Account" asp-action="Register">Register</a>
+                </li>
+            }
+        </ul>
     </header>
 
     <main class="main-content">
@@ -119,9 +69,32 @@
     </main>
 
     <footer class="custom-footer">
-        <div class="container d-flex flex-column flex-md-row justify-content-between align-items-center">
-            <span>&copy; 2026 - Aries Magic Appointment System</span>
-            <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+        <div class="container">
+            <div class="footer-grid">
+                <div>
+                    <h5>Aries Magic</h5>
+                    <p class="footer-text">
+                        Making celebrations more memorable through engaging event entertainment and a smooth online booking experience.
+                    </p>
+                </div>
+                <div>
+                    <h5>Quick Links</h5>
+                    <ul class="footer-links">
+                        <li><a asp-controller="Home" asp-action="Index">Home</a></li>
+                        <li><a asp-controller="Bookings" asp-action="Create">Book Now</a></li>
+                        <li><a asp-controller="Account" asp-action="Register">Register</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h5>Contact</h5>
+                    <p class="footer-text">
+                        For inquiries and booking support, clients may reach out through the platform and registered email updates.
+                    </p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                &copy; 2026 - Aries Magic Appointment System
+            </div>
         </div>
     </footer>
 

@@ -1,0 +1,111 @@
+@{
+    var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
+    var currentAction = ViewContext.RouteData.Values["action"]?.ToString();
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Aries Magic Dashboard</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/AriesMagicAppointmentSystem.styles.css" asp-append-version="true" />
+</head>
+<body class="dashboard-body">
+    <div class="dashboard-shell">
+        <aside class="dashboard-sidebar">
+            <div>
+                <div class="sidebar-brand">
+                    <a asp-controller="Home" asp-action="Index">Aries Magic</a>
+                </div>
+
+                <div class="sidebar-section-label">Dashboard</div>
+
+                <nav class="sidebar-nav">
+                    @if (User.Identity != null && User.Identity.IsAuthenticated)
+                    {
+                        @if (User.IsInRole("Staff"))
+                        {
+                            <a asp-controller="Bookings" asp-action="Pending"
+                               class="sidebar-link @(currentController == "Bookings" && currentAction == "Pending" ? "active" : "")">
+                                Pending Bookings
+                            </a>
+                            <a asp-controller="Bookings" asp-action="Index"
+                               class="sidebar-link @(currentController == "Bookings" && currentAction == "Index" ? "active" : "")">
+                                All Bookings
+                            </a>
+                            <a asp-controller="Services" asp-action="Index"
+                               class="sidebar-link @(currentController == "Services" ? "active" : "")">
+                                Services
+                            </a>
+                            <a asp-controller="RescheduleRequests" asp-action="Index"
+                               class="sidebar-link @(currentController == "RescheduleRequests" ? "active" : "")">
+                                Reschedules
+                            </a>
+                            <a asp-controller="Notifications" asp-action="Index"
+                            class="sidebar-link @(currentController == "Notifications" ? "active" : "")">
+                                Notifications
+                            </a>
+                        }
+
+                        @if (User.IsInRole("Admin"))
+                        {
+                            <a asp-controller="Payments" asp-action="PendingVerification"
+                               class="sidebar-link @(currentController == "Payments" && currentAction == "PendingVerification" ? "active" : "")">
+                                Verify Payments
+                            </a>
+                            <a asp-controller="Bookings" asp-action="Index"
+                               class="sidebar-link @(currentController == "Bookings" && currentAction == "Index" ? "active" : "")">
+                                All Bookings
+                            </a>
+                            <a asp-controller="RescheduleRequests" asp-action="Index"
+                               class="sidebar-link @(currentController == "RescheduleRequests" ? "active" : "")">
+                                Reschedules
+                            </a>
+                            <a asp-controller="Notifications" asp-action="Index"
+                               class="sidebar-link @(currentController == "Notifications" ? "active" : "")">
+                                Notifications
+                            </a>
+                        }
+                    }
+                </nav>
+            </div>
+
+            <div class="sidebar-footer">
+                @if (User.Identity != null && User.Identity.IsAuthenticated)
+                {
+                    <div class="sidebar-user-card">
+                        <div class="sidebar-user-label">Signed in as</div>
+                        <div class="sidebar-user-name">@User.Identity.Name</div>
+                    </div>
+
+                    <form asp-controller="Account" asp-action="Logout" method="post">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-light btn-sm w-100">Logout</button>
+                    </form>
+                }
+            </div>
+        </aside>
+
+        <main class="dashboard-main">
+            <header class="dashboard-topbar">
+                <div>
+                    <div class="dashboard-topbar-label">Aries Magic Internal Panel</div>
+                    <h1 class="dashboard-title">@ViewData["Title"]</h1>
+                </div>
+            </header>
+
+            <section class="dashboard-content">
+                @RenderBody()
+            </section>
+        </main>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

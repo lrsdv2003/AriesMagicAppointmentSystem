@@ -1,41 +1,83 @@
-@model IEnumerable<AriesMagicAppointmentSystem.Models.Payment>
+@model IEnumerable<AriesMagicAppointmentSystem.Models.Booking>
 
 @{
-    ViewData["Title"] = "Uploaded Payments";
+    ViewData["Title"] = "My Bookings";
 }
 
 <div class="page-header">
     <div>
-        <h1>Uploaded Payments</h1>
-        <p class="page-subtitle">Review submitted payment proofs and their status.</p>
+        <h1>My Bookings</h1>
+        <p class="page-subtitle">Track your submitted bookings and their current status.</p>
     </div>
     <div>
-        <a asp-action="Upload" class="btn btn-primary">Upload Another</a>
+        <a asp-action="Create" class="btn btn-primary">Create Booking</a>
+    </div>
+</div>
+
+<div class="dashboard-stats">
+    <div class="stat-card">
+        <div class="stat-label">Total Bookings</div>
+        <div class="stat-value">@Model.Count()</div>
+        <div class="stat-subtext">All bookings submitted using your account.</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Confirmed</div>
+        <div class="stat-value">@Model.Count(x => x.Status == AriesMagicAppointmentSystem.Models.BookingStatus.Confirmed)</div>
+        <div class="stat-subtext">Bookings that are fully approved and confirmed.</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Pending Updates</div>
+        <div class="stat-value">@Model.Count(x => x.Status != AriesMagicAppointmentSystem.Models.BookingStatus.Completed && x.Status != AriesMagicAppointmentSystem.Models.BookingStatus.Declined)</div>
+        <div class="stat-subtext">Bookings still active in the workflow.</div>
     </div>
 </div>
 
 <div class="table-clean">
     <table class="table align-middle">
+        @if (!Model.Any())
+        {
+            <div class="empty-state">
+                <h3>No records yet</h3>
+                <p>There is nothing to display here right now.</p>
+            </div>
+        }
+        else
+        {
+            <div class="table-clean">
+                <table class="table align-middle">
+                    ...
+                </table>
+            </div>
+        }
         <thead>
             <tr>
                 <th>Service</th>
-                <th>Amount</th>
-                <th>Proof</th>
+                <th>Event Date</th>
+                <th>Start</th>
+                <th>End</th>
                 <th>Status</th>
-                <th>Uploaded</th>
             </tr>
         </thead>
         <tbody>
 @foreach (var item in Model)
 {
+    var statusClass = item.Status switch
+                {
+                    "Pending" => "status-pending",
+                    "AwaitingDownpayment" => "status-awaiting",
+                    "AwaitingVerification" => "status-awaiting",
+                    "Confirmed" => "status-confirmed",
+                    "Completed" => "status-completed",
+                    "Declined" => "status-declined",
+                    "Expired" => "status-expired",
+                    _ => "status-read"
+                };
             <tr>
-                <td>@item.Booking?.Service?.Name</td>
-                <td>₱@item.Amount.ToString("N2")</td>
-                <td>
-                    <img src="@item.ProofImagePath" alt="Payment Proof" style="max-width: 120px; border-radius: 10px;" />
-                </td>
-                <td><span class="status-badge">@item.Status</span></td>
-                <td>@item.UploadedAt.ToString("MMM dd, yyyy hh:mm tt")</td>
+                <td>@item.Service?.Name</td>
+                <td>@item.EventDate.ToString("MMM dd, yyyy")</td>
+                <td>@item.StartTime.ToString("hh:mm tt")</td>
+                <td>@item.EndTime.ToString("hh:mm tt")</td>
+                <td><span class="status-badge @statusClass">@item.Status</span></td>
             </tr>
 }
         </tbody>

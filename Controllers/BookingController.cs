@@ -27,6 +27,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             _emailService = emailService;
         }
 
+        [Authorize(Roles = "Staff,Admin")]
         public async Task<IActionResult> Index()
         {
             var bookings = await _context.Bookings
