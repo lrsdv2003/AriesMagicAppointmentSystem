@@ -1,21 +1,54 @@
 @model IEnumerable<AriesMagicAppointmentSystem.Models.RescheduleRequest>
 
 @{
-    ViewData["Title"] = "My Reschedule Requests";
+    ViewData["Title"] = "My Reschedules";
 }
 
 <div class="page-header">
     <div>
         <h1>My Reschedule Requests</h1>
-        <p class="page-subtitle">Track the status of your reschedule requests.</p>
+        <p class="page-subtitle">Track the status of your requests to change a booking schedule.</p>
     </div>
     <div>
         <a asp-action="Create" class="btn btn-primary">New Request</a>
     </div>
 </div>
 
+<div class="dashboard-stats">
+    <div class="stat-card">
+        <div class="stat-label">Total Requests</div>
+        <div class="stat-value">@Model.Count()</div>
+        <div class="stat-subtext">All reschedule requests submitted using your account.</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Approved</div>
+        <div class="stat-value">@Model.Count(x => x.Status == AriesMagicAppointmentSystem.Models.RescheduleRequestStatus.Approved)</div>
+        <div class="stat-subtext">Requests that were successfully approved.</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Pending</div>
+        <div class="stat-value">@Model.Count(x => x.Status == AriesMagicAppointmentSystem.Models.RescheduleRequestStatus.Pending)</div>
+        <div class="stat-subtext">Requests waiting for review and final decision.</div>
+    </div>
+</div>
+
 <div class="table-clean">
     <table class="table align-middle">
+        @if (!Model.Any())
+        {
+            <div class="empty-state">
+                <h3>No records yet</h3>
+                <p>There is nothing to display here right now.</p>
+            </div>
+        }
+        else
+        {
+            <div class="table-clean">
+                <table class="table align-middle">
+                    ...
+                </table>
+            </div>
+        }
         <thead>
             <tr>
                 <th>Service</th>
@@ -29,6 +62,17 @@
         <tbody>
 @foreach (var item in Model)
 {
+    var statusClass = item.Status switch
+                {
+                    "Pending" => "status-pending",
+                    "AwaitingDownpayment" => "status-awaiting",
+                    "AwaitingVerification" => "status-awaiting",
+                    "Confirmed" => "status-confirmed",
+                    "Completed" => "status-completed",
+                    "Declined" => "status-declined",
+                    "Expired" => "status-expired",
+                    _ => "status-read"
+                };
             <tr>
                 <td>@item.Booking?.Service?.Name</td>
                 <td>@item.RequestedDate.ToString("MMM dd, yyyy")</td>

@@ -1,13 +1,32 @@
 @model IEnumerable<AriesMagicAppointmentSystem.Models.RescheduleRequest>
 
 @{
+    Layout = "_DashboardLayout";
     ViewData["Title"] = "Reschedule Requests";
 }
+
+<div class="dashboard-stats">
+    <div class="stat-card">
+        <div class="stat-label">Total Requests</div>
+        <div class="stat-value">@Model.Count()</div>
+        <div class="stat-subtext">All client reschedule requests currently recorded.</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Pending Review</div>
+        <div class="stat-value">@Model.Count(x => x.Status == AriesMagicAppointmentSystem.Models.RescheduleRequestStatus.Pending)</div>
+        <div class="stat-subtext">Requests still waiting for final admin action.</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Decision Stage</div>
+        <div class="stat-value">Admin</div>
+        <div class="stat-subtext">Approve or reject requests while checking schedule conflicts.</div>
+    </div>
+</div>
 
 <div class="page-header">
     <div>
         <h1>Reschedule Requests</h1>
-        <p class="page-subtitle">Review client reschedule requests.</p>
+        <p class="page-subtitle">Review client requests to change their booking schedule.</p>
     </div>
 </div>
 

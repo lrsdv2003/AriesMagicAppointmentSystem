@@ -1,18 +1,55 @@
 @model IEnumerable<AriesMagicAppointmentSystem.Models.Notification>
 
 @{
+    Layout = User.IsInRole("Client") ? "_Layout" : "_DashboardLayout";
     ViewData["Title"] = "Notifications";
+}
+
+@if (!User.IsInRole("Client"))
+{
+    <div class="dashboard-stats">
+        <div class="stat-card">
+            <div class="stat-label">Total Notifications</div>
+            <div class="stat-value">@Model.Count()</div>
+            <div class="stat-subtext">Recent updates related to system workflow activity.</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Unread</div>
+            <div class="stat-value">@Model.Count(x => !x.IsRead)</div>
+            <div class="stat-subtext">Notifications that still need attention.</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Status</div>
+            <div class="stat-value">Live</div>
+            <div class="stat-subtext">Notification feed updates as workflow actions happen.</div>
+        </div>
+    </div>
 }
 
 <div class="page-header">
     <div>
         <h1>Notifications</h1>
-        <p class="page-subtitle">Your recent system updates and alerts.</p>
+        <p class="page-subtitle">Your recent system alerts and workflow updates.</p>
     </div>
 </div>
 
 <div class="table-clean">
     <table class="table align-middle">
+        @if (!Model.Any())
+        {
+            <div class="empty-state">
+                <h3>No records yet</h3>
+                <p>There is nothing to display here right now.</p>
+            </div>
+        }
+        else
+        {
+            <div class="table-clean">
+                <table class="table align-middle">
+                    ...
+                </table>
+            </div>
+        }
         <thead>
             <tr>
                 <th>Status</th>
@@ -25,24 +62,17 @@
         <tbody>
 @foreach (var item in Model)
 {
-            <tr>
-                <td>
-                    @if (item.IsRead)
-                    {
-                        <span class="status-badge">Read</span>
-                    }
-                    else
-                    {
-                        <span class="status-badge">Unread</span>
-                    }
-                </td>
-                <td>@item.Title</td>
-                <td>@item.Message</td>
-                <td>@item.CreatedAt.ToString("MMM dd, yyyy hh:mm tt")</td>
-                <td class="text-end">
-                    <a asp-action="Open" asp-route-id="@item.Id" class="btn btn-sm btn-primary">Open</a>
-                </td>
-            </tr>
+    var notifClass = item.IsRead ? "status-read" : "status-unread";
+
+    <tr>
+        <td>
+            <span class="status-badge @notifClass">
+                @(item.IsRead ? "Read" : "Unread")
+            </span>
+        </td>
+        <td>@item.Title</td>
+        <td>@item.Message</td>
+    </tr>
 }
         </tbody>
     </table>

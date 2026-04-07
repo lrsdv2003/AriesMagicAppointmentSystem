@@ -1,5 +1,6 @@
 using AriesMagicAppointmentSystem.Data;
 using AriesMagicAppointmentSystem.Models;
+using AriesMagicAppointmentSystem.Services;
 using AriesMagicAppointmentSystem.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -13,11 +14,13 @@ namespace AriesMagicAppointmentSystem.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly IWebHostEnvironment _environment;
+        private readonly IEmailService _emailService;
 
-        public PaymentsController(ApplicationDbContext context, IWebHostEnvironment environment)
+        public PaymentsController(ApplicationDbContext context, IWebHostEnvironment environment, IEmailService emailService)
         {
             _context = context;
             _environment = environment;
+            _emailService = emailService;
         }
 
         [Authorize(Roles = "Client")]
@@ -122,6 +125,22 @@ namespace AriesMagicAppointmentSystem.Controllers
                     "/Payments/PendingVerification");
             }
 
+            var adminEmails = await _context.LegacyUsers
+                .Where(u => u.Role == "Admin")
+                .Select(u => u.Email)
+                .ToListAsync();
+
+            foreach (var email in adminEmails)
+            {
+                await _emailService.SendEmailAsync(
+                    email,
+                    "Payment Awaiting Verification",
+                    @"
+                    <h2>Payment Awaiting Verification</h2>
+                    <p>A client uploaded a payment proof that requires verification.</p>
+                    <p>Please check the admin payment verification page.</p>");
+            }
+
             return RedirectToAction(nameof(MyUploads));
         }
 
@@ -220,6 +239,24 @@ namespace AriesMagicAppointmentSystem.Controllers
                     "/Bookings/MyBookings");
             }
 
+            if (payment.Booking != null)
+            {
+                var bookingWithClient = await _context.Bookings
+                    .Include(b => b.Client)
+                    .FirstOrDefaultAsync(b => b.Id == payment.Booking.Id);
+
+                if (bookingWithClient != null && bookingWithClient.Client != null)
+                {
+                    await _emailService.SendEmailAsync(
+                        bookingWithClient.Client.Email,
+                        "Payment Verified and Booking Confirmed",
+                        @"
+                        <h2>Your Payment Was Verified</h2>
+                        <p>Your payment has been verified and your booking is now confirmed.</p>
+                        <p>Thank you for your downpayment.</p>");
+                }
+            }
+
             return RedirectToAction(nameof(PendingVerification));
         }
 
@@ -269,6 +306,24 @@ namespace AriesMagicAppointmentSystem.Controllers
                     "Payment Rejected",
                     "Your payment proof was rejected. Please upload a new downpayment proof.",
                     "/Payments/MyUploads");
+            }
+            if (payment.Booking != null)
+            {
+                var bookingWithClient = await _context.Bookings
+                    .Include(b => b.Client)
+                    .FirstOrDefaultAsync(b => b.Id == payment.Booking.Id);
+
+                if (bookingWithClient != null && bookingWithClient.Client != null)
+                {
+                    await _emailService.SendEmailAsync(
+                        bookingWithClient.Client.Email,
+                        "Payment Rejected",
+                        $@"
+                        <h2>Your Payment Was Rejected</h2>
+                        <p>Your payment proof was rejected.</p>
+                        <p>Reason: {rejectionReason}</p>
+                        <p>Please upload a new proof of downpayment.</p>");
+                }
             }
 
             return RedirectToAction(nameof(PendingVerification));

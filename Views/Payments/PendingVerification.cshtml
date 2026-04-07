@@ -1,18 +1,52 @@
 @model IEnumerable<AriesMagicAppointmentSystem.Models.Payment>
 
 @{
+    Layout = "_DashboardLayout";
     ViewData["Title"] = "Pending Payment Verification";
 }
+
+<div class="dashboard-stats">
+    <div class="stat-card">
+        <div class="stat-label">Pending Payments</div>
+        <div class="stat-value">@Model.Count()</div>
+        <div class="stat-subtext">Payment proofs currently awaiting admin review.</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Review Queue</div>
+        <div class="stat-value">Active</div>
+        <div class="stat-subtext">Verify or reject uploaded payment proof from clients.</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Workflow Stage</div>
+        <div class="stat-value">Admin</div>
+        <div class="stat-subtext">Final confirmation happens after payment verification.</div>
+    </div>
+</div>
 
 <div class="page-header">
     <div>
         <h1>Pending Payment Verification</h1>
-        <p class="page-subtitle">Review uploaded payment proofs awaiting admin approval.</p>
+        <p class="page-subtitle">Review payment proofs uploaded by clients and confirm valid downpayments.</p>
     </div>
 </div>
 
 <div class="table-clean">
     <table class="table align-middle">
+        @if (!Model.Any())
+        {
+            <div class="empty-state">
+                <h3>No records yet</h3>
+                <p>There is nothing to display here right now.</p>
+            </div>
+        }
+        else
+        {
+            <div class="table-clean">
+                <table class="table align-middle">
+                    ...
+                </table>
+            </div>
+        }
         <thead>
             <tr>
                 <th>Client</th>
@@ -26,14 +60,31 @@
         <tbody>
 @foreach (var item in Model)
 {
+    var statusClass = item.Status switch
+                {
+                    "Pending" => "status-pending",
+                    "AwaitingDownpayment" => "status-awaiting",
+                    "AwaitingVerification" => "status-awaiting",
+                    "Confirmed" => "status-confirmed",
+                    "Completed" => "status-completed",
+                    "Declined" => "status-declined",
+                    "Expired" => "status-expired",
+                    _ => "status-read"
+                };
             <tr>
                 <td>@item.Booking?.Client?.FullName</td>
                 <td>@item.Booking?.Service?.Name</td>
                 <td>₱@item.Amount.ToString("N2")</td>
-                <td>@item.ProofImagePath</td>
-                <td>@item.UploadedAt.ToString("MMM dd, yyyy hh:mm tt")</td>
                 <td>
                     <img src="@item.ProofImagePath" alt="Payment Proof" style="max-width: 120px; border-radius: 10px;" />
+                </td>
+                <td>@item.UploadedAt.ToString("MMM dd, yyyy hh:mm tt")</td>
+                <td>
+                    <span class="status-badge @statusClass">@item.Status</span>
+                </td>
+                <td class="text-end">
+                    <a asp-action="Verify" asp-route-id="@item.Id" class="btn btn-sm btn-success">Verify</a>
+                    <a asp-action="Reject" asp-route-id="@item.Id" class="btn btn-sm btn-danger">Reject</a>
                 </td>
             </tr>
 }

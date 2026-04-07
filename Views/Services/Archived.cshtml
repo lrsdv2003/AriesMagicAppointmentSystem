@@ -1,13 +1,32 @@
 @model IEnumerable<AriesMagicAppointmentSystem.Models.Service>
 
 @{
+    Layout = "_DashboardLayout";
     ViewData["Title"] = "Archived Services";
 }
+
+<div class="dashboard-stats">
+    <div class="stat-card">
+        <div class="stat-label">Archived Services</div>
+        <div class="stat-value">@Model.Count()</div>
+        <div class="stat-subtext">Packages currently hidden from the client booking list.</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Restore Ready</div>
+        <div class="stat-value">Yes</div>
+        <div class="stat-subtext">Archived services can be reactivated anytime.</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Control</div>
+        <div class="stat-value">Staff</div>
+        <div class="stat-subtext">Use restore to make a service bookable again.</div>
+    </div>
+</div>
 
 <div class="page-header">
     <div>
         <h1>Archived Services</h1>
-        <p class="page-subtitle">Restore previously archived services.</p>
+        <p class="page-subtitle">Review and restore previously archived service packages.</p>
     </div>
     <div>
         <a asp-action="Index" class="btn btn-secondary">Back to Active</a>
