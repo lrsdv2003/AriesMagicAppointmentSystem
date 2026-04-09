@@ -13,8 +13,21 @@
                 Access your bookings, payments, notifications, and reschedule requests.
             </p>
         </div>
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="alert alert-success mb-3">
+                @TempData["SuccessMessage"]
+            </div>
+        }
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="alert alert-danger mb-3">
+                @TempData["ErrorMessage"]
+            </div>
+        }
+        <form asp-controller="Account" asp-action="Login" method="post">
+            @Html.AntiForgeryToken()
 
-        <form asp-action="Login" method="post">
             <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
 
             <input type="hidden" name="returnUrl" value="@ViewData["ReturnUrl"]" />
@@ -38,9 +51,18 @@
 
             <div class="d-grid gap-2">
                 <button type="submit" class="btn btn-primary">Login</button>
-                <a asp-controller="Account" asp-action="Register" class="btn btn-secondary">Create Client Account</a>
             </div>
         </form>
+
+        <div class="auth-footer-text">
+            <p class="mb-1">
+                <a asp-controller="Account" asp-action="ForgotPassword">Forgot Password?</a>
+            </p>
+            <p class="mb-0">
+                Don’t have an account yet?
+                <a asp-controller="Account" asp-action="Register">Create one here</a>
+            </p>
+        </div>
     </div>
 </section>
 

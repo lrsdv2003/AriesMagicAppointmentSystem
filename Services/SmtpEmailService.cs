@@ -1,7 +1,8 @@
 using AriesMagicAppointmentSystem.Models;
+using MailKit.Net.Smtp;
+using MailKit.Security;
 using Microsoft.Extensions.Options;
-using System.Net;
-using System.Net.Mail;
+using MimeKit;
 
 namespace AriesMagicAppointmentSystem.Services
 {
@@ -16,23 +17,29 @@ namespace AriesMagicAppointmentSystem.Services
 
         public async Task SendEmailAsync(string toEmail, string subject, string htmlBody)
         {
-            using var message = new MailMessage
+            var message = new MimeMessage();
+
+            message.From.Add(new MailboxAddress(_settings.SenderName, _settings.SenderEmail));
+            message.To.Add(MailboxAddress.Parse(toEmail));
+            message.Subject = subject;
+
+            var bodyBuilder = new BodyBuilder
             {
-                From = new MailAddress(_settings.SenderEmail, _settings.SenderName),
-                Subject = subject,
-                Body = htmlBody,
-                IsBodyHtml = true
+                HtmlBody = htmlBody
             };
 
-            message.To.Add(toEmail);
+            message.Body = bodyBuilder.ToMessageBody();
 
-            using var client = new SmtpClient(_settings.Host, _settings.Port)
-            {
-                Credentials = new NetworkCredential(_settings.Username, _settings.Password),
-                EnableSsl = _settings.EnableSsl
-            };
+            using var client = new SmtpClient();
 
-            await client.SendMailAsync(message);
+            var socketOption = _settings.EnableSsl
+                ? SecureSocketOptions.StartTls
+                : SecureSocketOptions.Auto;
+
+            await client.ConnectAsync(_settings.Host, _settings.Port, socketOption);
+            await client.AuthenticateAsync(_settings.Username, _settings.Password);
+            await client.SendAsync(message);
+            await client.DisconnectAsync(true);
         }
     }
 }

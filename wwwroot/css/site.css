@@ -878,3 +878,21 @@ hr {
   color: var(--muted);
   margin-bottom: 0;
 }
+.register-card {
+  max-width: 620px;
+}
+
+.register-badge {
+  background: #ecfdf3;
+  color: #15803d;
+}
+
+.auth-footer-text {
+  margin-top: 1.5rem;
+  text-align: center;
+  color: var(--muted);
+}
+
+.auth-footer-text a {
+  font-weight: 600;
+}
