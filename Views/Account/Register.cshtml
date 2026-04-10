@@ -25,7 +25,16 @@
                 <input asp-for="FullName" class="form-control" placeholder="Enter your full name" />
                 <span asp-validation-for="FullName" class="text-danger"></span>
             </div>
-
+            <div class="mb-3">
+                <label asp-for="PhoneNumber" class="form-label"></label>
+                <input asp-for="PhoneNumber"
+                class="form-control"
+                placeholder="e.g. 09123456789"
+                maxlength="11"
+                inputmode="numeric"
+                pattern="^09\d{9}$" />
+                <span asp-validation-for="PhoneNumber" class="text-danger"></span>
+            </div>
             <div class="mb-3">
                 <label asp-for="Email" class="form-label"></label>
                 <input asp-for="Email" class="form-control" placeholder="Enter your email" />
@@ -61,4 +70,15 @@
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const phoneInput = document.querySelector('input[name="PhoneNumber"]');
+
+            if (phoneInput) {
+                phoneInput.addEventListener("input", function () {
+                    this.value = this.value.replace(/\D/g, "").slice(0, 11);
+                });
+            }
+        });
+    </script>
 }

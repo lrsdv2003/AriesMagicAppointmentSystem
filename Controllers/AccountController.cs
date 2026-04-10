@@ -52,6 +52,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                 UserName = model.Email,
                 Email = model.Email,
                 FullName = model.FullName,
+                PhoneNumber = model.PhoneNumber,
                 EmailConfirmed = true
             };
 

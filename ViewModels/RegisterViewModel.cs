@@ -13,6 +13,12 @@ namespace AriesMagicAppointmentSystem.ViewModels
         public string Email { get; set; } = string.Empty;
 
         [Required]
+        [Phone]
+        [Display(Name = "Phone Number")]
+        [RegularExpression(@"^09\d{9}$", ErrorMessage = "Phone number must start with 09 and contain 11 digits.")]
+        public string PhoneNumber { get; set; } = string.Empty;
+
+        [Required]
         [DataType(DataType.Password)]
         public string Password { get; set; } = string.Empty;
 
