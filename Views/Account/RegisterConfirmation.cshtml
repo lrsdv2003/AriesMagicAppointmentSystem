@@ -1,0 +1,19 @@
+@{
+    ViewData["Title"] = "Registration Successful";
+}
+
+<section class="auth-section">
+    <div class="auth-card">
+        <div class="auth-header">
+            <span class="hero-badge">Check Your Email</span>
+            <h1>Registration Successful</h1>
+            <p>
+                Your account has been created. Please check your email and click the confirmation link before logging in.
+            </p>
+        </div>
+
+        <div class="d-grid gap-2">
+            <a asp-controller="Account" asp-action="Login" class="btn btn-primary">Back to Login</a>
+        </div>
+    </div>
+</section>

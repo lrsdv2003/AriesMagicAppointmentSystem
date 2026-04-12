@@ -53,7 +53,8 @@ namespace AriesMagicAppointmentSystem.Controllers
                 Email = model.Email,
                 FullName = model.FullName,
                 PhoneNumber = model.PhoneNumber,
-                EmailConfirmed = true
+                EmailConfirmed = false,
+                CreatedAt = DateTime.UtcNow
             };
 
             var result = await _userManager.CreateAsync(user, model.Password);
@@ -69,10 +70,51 @@ namespace AriesMagicAppointmentSystem.Controllers
             }
 
             await _userManager.AddToRoleAsync(user, "Client");
-
+            var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+            var encodedToken = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(token));
+            var confirmationLink = Url.Action(
+                nameof(ConfirmEmail),
+                "Account",
+                new { userId = user.Id, token = encodedToken },
+                Request.Scheme);
+                var message = $@"
+                <p>Hello {user.FullName},</p>
+                <p>Thank you for registering in Aries Magic Appointment System.</p>
+                <p>Please confirm your email by clicking the link below:</p>
+                <p><a href='{confirmationLink}'>Confirm My Email</a></p>
+                <p>If you did not create this account, you may ignore this email.</p>";
+                await _emailService.SendEmailAsync(user.Email!, "Confirm Your Email", message);
+                return RedirectToAction(nameof(RegisterConfirmation));
+        }
+        [AllowAnonymous]
+        public IActionResult RegisterConfirmation()
+        {
+            return View();
+        }
+        [AllowAnonymous]
+        public async Task<IActionResult> ConfirmEmail(string? userId, string? token)
+        {
+            if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(token))
+        {
+            TempData["ErrorMessage"] = "Invalid email confirmation request.";
             return RedirectToAction(nameof(Login));
         }
-
+        var user = await _userManager.FindByIdAsync(userId);
+        if (user == null)
+        {
+            TempData["ErrorMessage"] = "User not found.";
+            return RedirectToAction(nameof(Login));
+        }
+        var decodedToken = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(token));
+        var result = await _userManager.ConfirmEmailAsync(user, decodedToken);
+        if (!result.Succeeded)
+        {
+            TempData["ErrorMessage"] = "Email confirmation failed.";
+            return RedirectToAction(nameof(Login));
+        }
+        TempData["SuccessMessage"] = "Your email has been confirmed successfully. You may now log in.";
+        return RedirectToAction(nameof(Login));
+        }
         [AllowAnonymous]
         public IActionResult Login(string? returnUrl = null)
         {
@@ -86,54 +128,56 @@ namespace AriesMagicAppointmentSystem.Controllers
         public async Task<IActionResult> Login(LoginViewModel model, string? returnUrl = null)
         {
             ViewData["ReturnUrl"] = returnUrl;
-
             if (!ModelState.IsValid)
             {
                 return View(model);
             }
-
             var user = await _userManager.FindByEmailAsync(model.Email);
             if (user == null)
             {
                 ModelState.AddModelError("", "Invalid login attempt.");
                 return View(model);
             }
-
+            if (!user.EmailConfirmed)
+            {
+                var expiryDays = 3;
+                if (user.CreatedAt.AddDays(expiryDays) < DateTime.UtcNow)
+            {
+                await _userManager.DeleteAsync(user);
+                ModelState.AddModelError("", "Your unverified account has expired. Please register again.");
+                return View(model);
+            }
+            ModelState.AddModelError("", "Please confirm your email first before logging in.");
+            return View(model);
+            }
             var result = await _signInManager.PasswordSignInAsync(
                 user.UserName!,
                 model.Password,
                 model.RememberMe,
                 lockoutOnFailure: false);
-
-            if (!result.Succeeded)
+                if (!result.Succeeded)
             {
                 ModelState.AddModelError("", "Invalid login attempt.");
                 return View(model);
-            }
-
-            if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
-            {
-                return Redirect(returnUrl);
-            }
-
-            if (await _userManager.IsInRoleAsync(user, "Admin"))
-            {
-                return RedirectToAction("PendingVerification", "Payments");
-            }
-
-            if (await _userManager.IsInRoleAsync(user, "Staff"))
-            {
-                return RedirectToAction("Pending", "Bookings");
-            }
-
-            if (await _userManager.IsInRoleAsync(user, "Client"))
-            {
-                return RedirectToAction("Index", "Bookings");
-            }
-
-            return RedirectToAction("Index", "Home");
-        }
-
+                }
+                if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
+                {
+                    return Redirect(returnUrl);
+                }
+                if (await _userManager.IsInRoleAsync(user, "Admin"))
+                {
+                    return RedirectToAction("PendingVerification", "Payments");
+                }
+                if (await _userManager.IsInRoleAsync(user, "Staff"))
+                {
+                    return RedirectToAction("Pending", "Bookings");
+                }
+                if (await _userManager.IsInRoleAsync(user, "Client"))
+                {
+                    return RedirectToAction("Index", "Bookings");
+                }
+                return RedirectToAction("Index", "Home");
+                }
         [Authorize]
         [HttpPost]
         [ValidateAntiForgeryToken]
