@@ -1,0 +1,134 @@
+@model IEnumerable<AriesMagicAppointmentSystem.Models.Booking>
+@using AriesMagicAppointmentSystem.Models
+
+@{
+    Layout = "_DashboardLayout";
+    ViewData["Title"] = "Calendar";
+}
+
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css" rel="stylesheet" />
+
+<div class="dashboard-stats">
+    <div class="stat-card">
+        <div class="stat-label">Total Confirmed Events</div>
+        <div class="stat-value">@Model.Count()</div>
+        <div class="stat-subtext">All confirmed bookings currently shown in the calendar.</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">This Month</div>
+        <div class="stat-value">@Model.Count(x => x.EventDate.Month == DateTime.Now.Month && x.EventDate.Year == DateTime.Now.Year)</div>
+        <div class="stat-subtext">Confirmed bookings scheduled this month.</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Upcoming Events</div>
+        <div class="stat-value">@Model.Count(x => x.EventDate.Date >= DateTime.Today)</div>
+        <div class="stat-subtext">Confirmed bookings from today onward.</div>
+    </div>
+</div>
+
+<div class="page-header">
+    <div>
+        <h1>Calendar</h1>
+        <p class="page-subtitle">Visual schedule of confirmed bookings and event dates.</p>
+    </div>
+</div>
+
+<div class="card-clean mb-4">
+    <div id="calendar"></div>
+</div>
+
+<div class="table-clean">
+    <table class="table align-middle">
+        <thead>
+            <tr>
+                <th>Client</th>
+                <th>Service</th>
+                <th>Event Date</th>
+                <th>Start</th>
+                <th>End</th>
+                <th>Status</th>
+                <th>Note</th>
+                <th class="text-end">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+@foreach (var item in Model.OrderBy(x => x.EventDate).ThenBy(x => x.StartTime))
+{
+    var statusClass = item.Status switch
+    {
+        BookingStatus.Pending => "status-pending",
+        BookingStatus.AwaitingDownpayment => "status-awaiting",
+        BookingStatus.AwaitingVerification => "status-awaiting",
+        BookingStatus.Confirmed => "status-confirmed",
+        BookingStatus.Completed => "status-completed",
+        BookingStatus.Declined => "status-declined",
+        BookingStatus.Expired => "status-expired",
+        _ => "status-read"
+    };
+
+            <tr>
+                <td>@item.Client?.FullName</td>
+                <td>@item.Service?.Name</td>
+                <td>@item.EventDate.ToString("MMM dd, yyyy")</td>
+                <td>@item.StartTime.ToString("hh:mm tt")</td>
+                <td>@item.EndTime.ToString("hh:mm tt")</td>
+                <td><span class="status-badge @statusClass">@item.Status</span></td>
+                <td>@item.InternalNotes</td>
+                <td class="text-end">
+                    <a asp-controller="Bookings" asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-secondary">
+                        View
+                    </a>
+                </td>
+            </tr>
+}
+        </tbody>
+    </table>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var calendarEl = document.getElementById('calendar');
+
+            var events = [
+                @foreach (var item in Model)
+                {
+                    var title = (item.Service?.Name ?? "Booking").Replace("'", "\\'");
+                    var start = item.EventDate.Date.Add(item.StartTime.TimeOfDay).ToString("yyyy-MM-ddTHH:mm:ss");
+                    var end = item.EventDate.Date.Add(item.EndTime.TimeOfDay).ToString("yyyy-MM-ddTHH:mm:ss");
+
+                    <text>
+                    {
+                        id: '@item.Id',
+                        title: '@title',
+                        start: '@start',
+                        end: '@end',
+                        url: '@Url.Action("Details", "Bookings", new { id = item.Id })'
+                    },
+                    </text>
+                }
+            ];
+
+            var calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                height: 'auto',
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: ''
+                },
+                events: events,
+                eventClick: function (info) {
+                    if (info.event.url) {
+                        info.jsEvent.preventDefault();
+                        window.location.href = info.event.url;
+                    }
+                }
+            });
+
+            calendar.render();
+        });
+    </script>
+}

@@ -1,0 +1,181 @@
+@model AriesMagicAppointmentSystem.ViewModels.ReportDashboardViewModel
+
+@{
+    Layout = "_DashboardLayout";
+    ViewData["Title"] = "Reports";
+}
+
+<div class="page-header">
+    <div>
+        <h1>Reports & Analytics</h1>
+        <p class="page-subtitle">Track booking performance, payment activity, and business analytics.</p>
+    </div>
+</div>
+
+<div class="dashboard-stats">
+    <div class="stat-card">
+        <div class="stat-label">Total Bookings</div>
+        <div class="stat-value">@Model.TotalBookings</div>
+        <div class="stat-subtext">All booking records in the system.</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Confirmed</div>
+        <div class="stat-value">@Model.ConfirmedBookings</div>
+        <div class="stat-subtext">Bookings fully approved and confirmed.</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Expired</div>
+        <div class="stat-value">@Model.ExpiredBookings</div>
+        <div class="stat-subtext">Bookings that are no longer valid.</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Cancelled</div>
+        <div class="stat-value">@Model.CancelledBookings</div>
+        <div class="stat-subtext">Bookings declined or cancelled.</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Total Revenue</div>
+        <div class="stat-value">₱@Model.TotalRevenue.ToString("N0")</div>
+        <div class="stat-subtext">Revenue from verified payments only.</div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-lg-6">
+        <div class="dashboard-panel">
+            <h3>Monthly Bookings</h3>
+            <p class="page-subtitle">Last 6 months booking trend</p>
+            <canvas id="monthlyBookingsChart" height="140"></canvas>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="dashboard-panel">
+            <h3>Revenue Trend</h3>
+            <p class="page-subtitle">Last 6 months revenue performance</p>
+            <canvas id="revenueTrendChart" height="140"></canvas>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-lg-6">
+        <div class="dashboard-panel">
+            <h3>Payment Status Distribution</h3>
+            <p class="page-subtitle">Current payment status breakdown</p>
+            <canvas id="paymentStatusChart" height="220"></canvas>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="dashboard-panel">
+            <h3>Payment Summary</h3>
+            <p class="page-subtitle">Detailed payment breakdown</p>
+
+            <div class="d-flex justify-content-between py-3 border-bottom">
+                <span>Pending</span>
+                <strong>@Model.PendingCount</strong>
+            </div>
+            <div class="d-flex justify-content-between py-3 border-bottom">
+                <span>Verified</span>
+                <strong>@Model.VerifiedCount</strong>
+            </div>
+            <div class="d-flex justify-content-between py-3 border-bottom">
+                <span>Rejected</span>
+                <strong>@Model.RejectedCount</strong>
+            </div>
+            <div class="d-flex justify-content-between pt-4">
+                <span>Total Bookings</span>
+                <strong>@Model.TotalBookings</strong>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="dashboard-panel">
+    <h3>Performance Metrics</h3>
+    <p class="page-subtitle">Key performance indicators this month</p>
+
+    <div class="dashboard-stats mt-3">
+        <div class="stat-card text-center">
+            <div class="stat-value">@Model.ConfirmationRate.ToString("N1")%</div>
+            <div class="stat-subtext">Booking Confirmation Rate</div>
+        </div>
+        <div class="stat-card text-center">
+            <div class="stat-value">₱@Model.AverageBookingValue.ToString("N0")</div>
+            <div class="stat-subtext">Average Booking Value</div>
+        </div>
+        <div class="stat-card text-center">
+            <div class="stat-value">@Model.AveragePaymentProcessingDays.ToString("N1") days</div>
+            <div class="stat-subtext">Avg Payment Processing</div>
+        </div>
+        <div class="stat-card text-center">
+            <div class="stat-value">@Model.CustomerRetentionRate.ToString("N1")%</div>
+            <div class="stat-subtext">Customer Retention Rate</div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        const monthlyLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.MonthlyLabels));
+        const monthlyBookingCounts = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.MonthlyBookingCounts));
+        const monthlyRevenue = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.MonthlyRevenue));
+
+        const paymentCounts = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(new[] {
+            Model.PendingCount,
+            Model.VerifiedCount,
+            Model.RejectedCount
+        }));
+
+        new Chart(document.getElementById('monthlyBookingsChart'), {
+            type: 'bar',
+            data: {
+                labels: monthlyLabels,
+                datasets: [{
+                    label: 'Bookings',
+                    data: monthlyBookingCounts,
+                    borderRadius: 10
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        });
+
+        new Chart(document.getElementById('revenueTrendChart'), {
+            type: 'line',
+            data: {
+                labels: monthlyLabels,
+                datasets: [{
+                    label: 'Revenue',
+                    data: monthlyRevenue,
+                    tension: 0.35,
+                    fill: false
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        });
+
+        new Chart(document.getElementById('paymentStatusChart'), {
+            type: 'pie',
+            data: {
+                labels: ['Pending', 'Verified', 'Rejected'],
+                datasets: [{
+                    data: paymentCounts
+                }]
+            },
+            options: {
+                responsive: true
+            }
+        });
+    </script>
+}

@@ -19,9 +19,9 @@ namespace AriesMagicAppointmentSystem.Data
                     await roleManager.CreateAsync(new IdentityRole(role));
                 }
             }
-            /*await EnsureUserAsync(
+            await EnsureUserAsync(
                 userManager,
-                email: "johnmichaelps21@gmail.com",
+                email: "client@ariesmagic.com",
                 password: "client123",
                 fullName: "Default Client",
                 role: "Client");
@@ -38,7 +38,7 @@ namespace AriesMagicAppointmentSystem.Data
                 email: "johnmichaelps21@gmail.com",
                 password: "staff123",
                 fullName: "Staff User",
-                role: "Staff");*/
+                role: "Staff");
         }
 
         private static async Task EnsureUserAsync(
