@@ -1,4 +1,4 @@
-    @{
+@{
     var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
     var currentAction = ViewContext.RouteData.Values["action"]?.ToString();
 }
@@ -9,6 +9,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - Aries Magic Dashboard</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/AriesMagicAppointmentSystem.styles.css" asp-append-version="true" />
@@ -44,10 +45,6 @@
                                class="sidebar-link @(currentController == "RescheduleRequests" ? "active" : "")">
                                 Reschedules
                             </a>
-                            <a asp-controller="Notifications" asp-action="Index"
-                            class="sidebar-link @(currentController == "Notifications" ? "active" : "")">
-                                Notifications
-                            </a>
                         }
 
                         @if (User.IsInRole("Admin"))
@@ -72,41 +69,84 @@
                                class="sidebar-link @(currentController == "Reports" ? "active" : "")">
                                 Reports
                             </a>
-                            <a asp-controller="Notifications" asp-action="Index"
-                               class="sidebar-link @(currentController == "Notifications" ? "active" : "")">
-                                Notifications
-                            </a>                
                         }
                     }
                 </nav>
             </div>
 
-            <div class="sidebar-footer">
-                @if (User.Identity != null && User.Identity.IsAuthenticated)
-                {
-                    <div class="sidebar-user-card">
-                        <div class="sidebar-user-label">Signed in as</div>
-                        <div class="sidebar-user-name">@User.Identity.Name</div>
-                    </div>
-
-                    <form asp-controller="Account" asp-action="Logout" method="post">
-                        @Html.AntiForgeryToken()
-                        <button type="submit" class="btn btn-light btn-sm w-100">Logout</button>
-                    </form>
-                }
-            </div>
+            
         </aside>
 
         <main class="dashboard-main">
             <header class="dashboard-topbar">
-                <div>
-                    <div class="dashboard-topbar-label">Aries Magic Internal Panel</div>
+                <div class="topbar-left">
                     <h1 class="dashboard-title">@ViewData["Title"]</h1>
+                </div>
+
+                <div class="topbar-right">
+                    <div class="topbar-search">
+                        <span class="topbar-search-icon">⌕</span>
+                        <input type="text" placeholder="Search bookings, clients..." />
+                    </div>
+
+                    <a asp-controller="Notifications" asp-action="Index" class="topbar-icon topbar-bell" title="Notifications">
+                        <span>🔔</span>
+                        <span class="notif-dot"></span>
+                    </a>
+
+                    <button type="button" class="topbar-icon" title="Settings">
+                        ⚙
+                    </button>
+
+                    <div class="topbar-user-dropdown">
+                        @{
+                            var userRole = "User";
+                            if (User.IsInRole("Admin"))
+                            {
+                                userRole = "Admin";
+                            }
+                            else if (User.IsInRole("Staff"))
+                            {
+                                userRole = "Staff";
+                            }
+                        }
+                    <div class="topbar-user-text">
+                        <div class="topbar-user-name">@userRole User</div>
+                        <div class="topbar-user-email">@User.Identity?.Name</div>
+                    </div>
+                    <div class="topbar-avatar">AM</div>
+                    <button type="button"
+                        class="topbar-logout-trigger"
+                        title="Logout"
+                        data-bs-toggle="modal"
+                        data-bs-target="#logoutConfirmModal">
+                     <i class="bi bi-box-arrow-right topbar-chevron"></i>
+                    </button>      
                 </div>
             </header>
 
             <section class="dashboard-content">
                 @RenderBody()
+                <div class="modal fade" id="logoutConfirmModal" tabindex="-1" aria-labelledby="logoutConfirmModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content logout-modal">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="logoutConfirmModalLabel">Confirm Logout</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                Are you sure you want to logout?
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-danger">Logout</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </section>
         </main>
     </div>
@@ -115,5 +155,26 @@
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
+    <script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const toggle = document.getElementById("userMenuToggle");
+        const menu = document.getElementById("userMenu");
+
+        if (toggle && menu) {
+            toggle.addEventListener("click", function (e) {
+                e.stopPropagation();
+                menu.classList.toggle("show");
+            });
+
+            document.addEventListener("click", function () {
+                menu.classList.remove("show");
+            });
+
+            menu.addEventListener("click", function (e) {
+                e.stopPropagation();
+            });
+        }
+    });
+</script>
 </body>
 </html>
