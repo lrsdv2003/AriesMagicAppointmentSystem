@@ -138,6 +138,11 @@ namespace AriesMagicAppointmentSystem.Controllers
                 ModelState.AddModelError("", "Incorrect Email or Password.");
                 return View(model);
             }
+            if (!user.IsActive)
+            {
+                ModelState.AddModelError("", "Your account has been disabled. Please contact the administrator.");
+                return View(model);
+            }
             if (!user.EmailConfirmed)
             {
                 var expiryDays = 3;

@@ -1,0 +1,290 @@
+@model IEnumerable<AriesMagicAppointmentSystem.Models.ApplicationUser>
+
+@{
+    Layout = "_DashboardLayout";
+    ViewData["Title"] = "User Management";
+    var users = Model ?? Enumerable.Empty<AriesMagicAppointmentSystem.Models.ApplicationUser>();
+}
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success mb-3">
+        @TempData["SuccessMessage"]
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger mb-3">
+        @TempData["ErrorMessage"]
+    </div>
+}
+
+<div class="dashboard-stats">
+    <div class="stat-card">
+        <div class="stat-label">Total Staff</div>
+        <div class="stat-value">@users.Count()</div>
+        <div class="stat-subtext">All staff accounts currently stored in the system.</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Active Staff</div>
+        <div class="stat-value">@users.Count(x => x.IsActive)</div>
+        <div class="stat-subtext">Staff accounts that can access the system.</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Disabled Staff</div>
+        <div class="stat-value">@users.Count(x => !x.IsActive)</div>
+        <div class="stat-subtext">Staff accounts that are currently blocked from login.</div>
+    </div>
+</div>
+
+<div class="page-header">
+    <div>
+        <h1>User Management</h1>
+        <p class="page-subtitle">Create, update, and control internal staff accounts.</p>
+    </div>
+
+    <div class="d-flex gap-2 align-items-center">
+        <div class="table-search-wrap">
+            <input type="text" class="form-control table-search" placeholder="Search staff..." />
+        </div>
+
+        <select class="form-select table-filter">
+            <option>All</option>
+            <option>Active</option>
+            <option>Disabled</option>
+        </select>
+
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createStaffModal">
+            Create Staff Account
+        </button>
+    </div>
+</div>
+
+@if (!users.Any())
+{
+    <div class="empty-state">
+        <h3>No staff accounts yet</h3>
+        <p>There are no staff users to display right now.</p>
+    </div>
+}
+else
+{
+    <div class="table-clean">
+        <table class="table align-middle">
+            <thead>
+                <tr>
+                    <th>Staff Name</th>
+                    <th>Email</th>
+                    <th>Phone Number</th>
+                    <th>Role</th>
+                    <th>Status</th>
+                    <th>Created At</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in users)
+                {
+                    var statusClass = item.IsActive ? "status-confirmed" : "status-declined";
+                    var statusText = item.IsActive ? "Active" : "Disabled";
+
+                    <tr>
+                        <td>@item.FullName</td>
+                        <td>@item.Email</td>
+                        <td>@item.PhoneNumber</td>
+                        <td>Staff</td>
+                        <td>
+                            <span class="status-badge @statusClass">@statusText</span>
+                        </td>
+                        <td>@item.CreatedAt.ToString("MMM dd, yyyy")</td>
+                        <td class="text-end">
+                            <button type="button"
+                                    class="btn btn-sm btn-secondary"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#editStaffModal-@item.Id">
+                                Edit
+                            </button>
+
+                            @if (item.IsActive)
+                            {
+                                <button type="button"
+                                        class="btn btn-sm btn-danger"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#disableStaffModal-@item.Id">
+                                    Disable
+                                </button>
+                            }
+                            else
+                            {
+                                <button type="button"
+                                        class="btn btn-sm btn-success"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#activateStaffModal-@item.Id">
+                                    Activate
+                                </button>
+                            }
+                        </td>
+                    </tr>
+
+                    <!-- Edit Modal -->
+                    <div class="modal fade" id="editStaffModal-@item.Id" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered modal-lg">
+                            <div class="modal-content custom-modal">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Edit Staff Account</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+
+                                <form asp-controller="UserManagement" asp-action="EditStaff" method="post">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="Id" value="@item.Id" />
+
+                                    <div class="modal-body">
+                                        <p class="modal-subtitle">Update the selected staff account information.</p>
+
+                                        <div class="row g-3">
+                                            <div class="col-md-6">
+                                                <label class="form-label">Full Name</label>
+                                                <input type="text" name="FullName" class="form-control" value="@item.FullName" required />
+                                            </div>
+
+                                            <div class="col-md-6">
+                                                <label class="form-label">Email</label>
+                                                <input type="email" name="Email" class="form-control" value="@item.Email" required />
+                                            </div>
+
+                                            <div class="col-md-6">
+                                                <label class="form-label">Phone Number</label>
+                                                <input type="text" name="PhoneNumber" class="form-control" value="@item.PhoneNumber" required />
+                                            </div>
+
+                                            <div class="col-md-6">
+                                                <label class="form-label">Status</label>
+                                                <input type="text" class="form-control" value="@statusText" disabled />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Disable Modal -->
+                    <div class="modal fade" id="disableStaffModal-@item.Id" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content custom-modal">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Disable Staff Account</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+
+                                <div class="modal-body">
+                                    Are you sure you want to disable <strong>@item.FullName</strong>? This user will no longer be able to log in.
+                                </div>
+
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+
+                                    <form asp-controller="UserManagement" asp-action="DisableStaff" method="post" class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@item.Id" />
+                                        <button type="submit" class="btn btn-danger">Disable</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Activate Modal -->
+                    <div class="modal fade" id="activateStaffModal-@item.Id" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content custom-modal">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Activate Staff Account</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+
+                                <div class="modal-body">
+                                    Are you sure you want to activate <strong>@item.FullName</strong>? This user will be able to log in again.
+                                </div>
+
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+
+                                    <form asp-controller="UserManagement" asp-action="ActivateStaff" method="post" class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@item.Id" />
+                                        <button type="submit" class="btn btn-success">Activate</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+<!-- Create Staff Modal -->
+<div class="modal fade" id="createStaffModal" tabindex="-1" aria-labelledby="createStaffModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content custom-modal">
+            <div class="modal-header">
+                <h5 class="modal-title" id="createStaffModalLabel">Create Staff Account</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <form asp-controller="UserManagement" asp-action="CreateStaff" method="post">
+                @Html.AntiForgeryToken()
+
+                <div class="modal-body">
+                    <p class="modal-subtitle">Create a new internal staff account for system access.</p>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Full Name</label>
+                            <input type="text" name="FullName" class="form-control" placeholder="Enter full name" required />
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Email</label>
+                            <input type="email" name="Email" class="form-control" placeholder="Enter email address" required />
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Phone Number</label>
+                            <input type="text" name="PhoneNumber" class="form-control" placeholder="Enter phone number" required />
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Role</label>
+                            <input type="text" class="form-control" value="Staff" disabled />
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Password</label>
+                            <input type="password" name="Password" class="form-control" placeholder="Enter password" required />
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Confirm Password</label>
+                            <input type="password" name="ConfirmPassword" class="form-control" placeholder="Confirm password" required />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Account</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

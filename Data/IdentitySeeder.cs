@@ -24,21 +24,21 @@ namespace AriesMagicAppointmentSystem.Data
                 email: "client@ariesmagic.com",
                 password: "client123",
                 fullName: "Default Client",
-                role: "Client");
+                role: "Client");*/
 
             await EnsureUserAsync(
                 userManager,
-                email: "admin@ariesmagic.com",
+                email: "admin2@ariesmagic.com",
                 password: "admin123",
                 fullName: "System Admin",
                 role: "Admin");
 
             await EnsureUserAsync(
                 userManager,
-                email: "johnmichaelps21@gmail.com",
+                email: "staff@ariesmagic.com",
                 password: "staff123",
                 fullName: "Staff User",
-                role: "Staff");*/
+                role: "Staff");
         }
 
         private static async Task EnsureUserAsync(

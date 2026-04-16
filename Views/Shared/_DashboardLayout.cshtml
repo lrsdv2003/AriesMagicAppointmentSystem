@@ -53,6 +53,17 @@
                             class="sidebar-link @(currentController == "Payments" && currentAction == "PendingVerification" ? "active" : "")">
                                 Verify Payments
                             </a>
+<<<<<<< HEAD
+=======
+                            <a asp-controller="Bookings" asp-action="Index"
+                               class="sidebar-link @(currentController == "Bookings" && currentAction == "Index" ? "active" : "")">
+                                All Bookings
+                            </a>
+                            <a asp-controller="UserManagement" asp-action="Index"
+                               class="sidebar-link @(currentController == "UserManagement" && currentAction == "Index" ? "active" : "")">
+                               User Management
+                            </a>
+>>>>>>> b4911443ec16bc4383f249546728b2f35db5e3de
                             <a asp-controller="Calendar" asp-action="Index"
                             class="sidebar-link @(currentController == "Calendar" ? "active" : "")">
                                 Calendar
