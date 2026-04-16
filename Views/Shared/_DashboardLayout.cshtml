@@ -57,6 +57,10 @@
                                class="sidebar-link @(currentController == "Bookings" && currentAction == "Index" ? "active" : "")">
                                 All Bookings
                             </a>
+                            <a asp-controller="UserManagement" asp-action="Index"
+                               class="sidebar-link @(currentController == "UserManagement" && currentAction == "Index" ? "active" : "")">
+                               User Management
+                            </a>
                             <a asp-controller="Calendar" asp-action="Index"
                                class="sidebar-link @(currentController == "Calendar" ? "active" : "")">
                                 Calendar
