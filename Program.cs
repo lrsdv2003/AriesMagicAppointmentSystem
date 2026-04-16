@@ -58,10 +58,23 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
+// Apply migrations first, then seed roles/users
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
-    await IdentitySeeder.SeedAsync(services);
+
+    try
+    {
+        var dbContext = services.GetRequiredService<ApplicationDbContext>();
+        await dbContext.Database.MigrateAsync();
+
+        await IdentitySeeder.SeedAsync(services);
+    }
+    catch (Exception ex)
+    {
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "An error occurred while migrating or seeding the database.");
+    }
 }
 
 app.Run();

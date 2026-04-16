@@ -135,7 +135,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             var user = await _userManager.FindByEmailAsync(model.Email);
             if (user == null)
             {
-                ModelState.AddModelError("", "Invalid login attempt.");
+                ModelState.AddModelError("", "Incorrect Email or Password.");
                 return View(model);
             }
             if (!user.EmailConfirmed)
