@@ -4,12 +4,12 @@ namespace AriesMagicAppointmentSystem.Models
 {
     public class Booking
     {
-        
         public int Id { get; set; }
 
         [Required]
         public int ClientId { get; set; }
         public User? Client { get; set; }
+
         public string? ApplicationUserId { get; set; }
 
         [Required]
@@ -27,6 +27,7 @@ namespace AriesMagicAppointmentSystem.Models
 
         [Required]
         public string Status { get; set; } = BookingStatus.Pending;
+
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 
         public bool IsCompletedLocked { get; set; } = false;
