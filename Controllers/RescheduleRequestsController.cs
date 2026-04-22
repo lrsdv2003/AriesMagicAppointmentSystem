@@ -43,13 +43,19 @@ namespace AriesMagicAppointmentSystem.Controllers
         public async Task<IActionResult> Create(RescheduleRequestCreateViewModel model)
         {
             var appUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
+            if (model.RequestedDate.Date < DateTime.Today)
+            {
+                ModelState.AddModelError("RequestedDate", "Past dates are not allowed.");
+            }
+            if (model.RequestedDate.Date == DateTime.Today && model.RequestedStartTime < DateTime.Now.TimeOfDay)
+            {
+                ModelState.AddModelError("RequestedStartTime", "Past time is not allowed for today.");
+            }
             if (!ModelState.IsValid)
             {
                 model.Bookings = await GetEligibleClientBookingsAsync(appUserId);
                 return View(model);
             }
-
             var booking = await _context.Bookings
                 .Include(b => b.Service)
                 .FirstOrDefaultAsync(b => b.Id == model.BookingId && b.ApplicationUserId == appUserId);

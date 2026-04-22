@@ -27,7 +27,6 @@ namespace AriesMagicAppointmentSystem.Models
 
         [Required]
         public string Status { get; set; } = BookingStatus.Pending;
-
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 
         public bool IsCompletedLocked { get; set; } = false;

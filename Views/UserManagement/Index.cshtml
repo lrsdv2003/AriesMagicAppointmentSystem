@@ -40,25 +40,29 @@
 
 <div class="page-header">
     <div>
-        <h1>User Management</h1>
         <p class="page-subtitle">Create, update, and control internal staff accounts.</p>
     </div>
 
-    <div class="d-flex gap-2 align-items-center">
-        <div class="table-search-wrap">
-            <input type="text" class="form-control table-search" placeholder="Search staff..." />
-        </div>
-
-        <select class="form-select table-filter">
-            <option>All</option>
-            <option>Active</option>
-            <option>Disabled</option>
-        </select>
-
-        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createStaffModal">
-            Create Staff Account
-        </button>
+    <form method="get" class="d-flex gap-2 align-items-center" id="filterForm">
+    <div class="table-search-wrap">
+        <input type="text"
+               id="searchInput"
+               name="search"
+               class="form-control table-search"
+               placeholder="Search staff..."
+               value="@Context.Request.Query["search"]" />
     </div>
+
+    <select name="status" class="form-select table-filter" onchange="this.form.submit()">
+        <option value="All" selected="@(Context.Request.Query["status"] == "All" || string.IsNullOrEmpty(Context.Request.Query["status"]) ? "selected" : null)">All</option>
+        <option value="Active" selected="@(Context.Request.Query["status"] == "Active" ? "selected" : null)">Active</option>
+        <option value="Disabled" selected="@(Context.Request.Query["status"] == "Disabled" ? "selected" : null)">Disabled</option>
+    </select>
+
+    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createStaffModal">
+        Create Staff Account
+    </button>
+</form>
 </div>
 
 @if (!users.Any())
@@ -288,3 +292,14 @@ else
         </div>
     </div>
 </div>
+<script>
+    let searchTimer;
+
+    document.getElementById("searchInput").addEventListener("keyup", function () {
+        clearTimeout(searchTimer);
+
+        searchTimer = setTimeout(() => {
+            document.getElementById("filterForm").submit();
+        }, 400);
+    });
+</script>

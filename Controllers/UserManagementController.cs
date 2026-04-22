@@ -16,7 +16,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             _userManager = userManager;
         }
 
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string? search, string? status = "All")
         {
             var staffUsers = new List<ApplicationUser>();
 
@@ -27,6 +27,29 @@ namespace AriesMagicAppointmentSystem.Controllers
                     staffUsers.Add(user);
                 }
             }
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var lowered = search.ToLower();
+
+                staffUsers = staffUsers.Where(u =>
+                    (u.FullName != null && u.FullName.ToLower().Contains(lowered)) ||
+                    (u.Email != null && u.Email.ToLower().Contains(lowered)) ||
+                    (u.PhoneNumber != null && u.PhoneNumber.ToLower().Contains(lowered)))
+                    .ToList();
+            }
+
+            if (status == "Active")
+            {
+                staffUsers = staffUsers.Where(u => u.IsActive).ToList();
+            }
+            else if (status == "Disabled")
+            {
+                staffUsers = staffUsers.Where(u => !u.IsActive).ToList();
+            }
+
+            ViewBag.Search = search;
+            ViewBag.Status = status;
 
             return View(staffUsers);
         }

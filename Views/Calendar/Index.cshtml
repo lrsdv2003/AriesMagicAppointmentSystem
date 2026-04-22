@@ -7,6 +7,7 @@
 }
 
 <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
 
 <div class="dashboard-stats">
     <div class="stat-card">
@@ -28,7 +29,6 @@
 
 <div class="page-header">
     <div>
-        <h1>Calendar</h1>
         <p class="page-subtitle">Visual schedule of confirmed bookings and event dates.</p>
     </div>
 </div>
@@ -85,6 +85,38 @@
     </table>
 </div>
 
+<div class="modal fade" id="reservationModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered reservation-modal-dialog">
+        <div class="modal-content reservation-modal-content">
+            <div class="modal-header reservation-modal-header">
+                <div>
+                    <h3 class="reservation-title mb-1" id="reservationServiceTitle">Reservation Details</h3>
+                    <div class="reservation-subtitle" id="reservationBookingCode">Booking ID:</div>
+                </div>
+                <button type="button" class="btn-close reservation-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body reservation-modal-body">
+                <div id="reservationCarousel" class="carousel slide" data-bs-interval="false" data-bs-touch="true">
+                    <div class="carousel-inner" id="reservationCarouselInner"></div>
+
+                    <div class="reservation-carousel-controls">
+                        <button class="carousel-control-prev custom-carousel-btn" type="button" data-bs-target="#reservationCarousel" data-bs-slide="prev">
+                            <span class="carousel-control-prev-icon"></span>
+                        </button>
+
+                        <div class="reservation-counter" id="reservationCounter">1 of 1</div>
+
+                        <button class="carousel-control-next custom-carousel-btn" type="button" data-bs-target="#reservationCarousel" data-bs-slide="next">
+                            <span class="carousel-control-next-icon"></span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
 
 @section Scripts {
@@ -98,6 +130,11 @@
                     var title = (item.Service?.Name ?? "Booking").Replace("'", "\\'");
                     var start = item.EventDate.Date.Add(item.StartTime.TimeOfDay).ToString("yyyy-MM-ddTHH:mm:ss");
                     var end = item.EventDate.Date.Add(item.EndTime.TimeOfDay).ToString("yyyy-MM-ddTHH:mm:ss");
+                    var clientName = (item.Client?.FullName ?? "N/A").Replace("'", "\\'");
+                    var serviceName = (item.Service?.Name ?? "N/A").Replace("'", "\\'");
+                    var bookingCode = $"BK-{item.CreatedAt.Year}-{item.Id:D3}";
+                    var durationHours = item.Service?.DurationInHours ?? 0;
+                    var detailsUrl = Url.Action("Details", "Bookings", new { id = item.Id });
 
                     <text>
                     {
@@ -105,7 +142,15 @@
                         title: '@title',
                         start: '@start',
                         end: '@end',
-                        url: '@Url.Action("Details", "Bookings", new { id = item.Id })'
+                        extendedProps: {
+                            bookingId: '@item.Id',
+                            bookingCode: '@bookingCode',
+                            clientName: '@clientName',
+                            serviceName: '@serviceName',
+                            status: '@item.Status',
+                            durationHours: @durationHours,
+                            detailsUrl: '@detailsUrl'
+                        }
                     },
                     </text>
                 }
@@ -121,14 +166,139 @@
                 },
                 events: events,
                 eventClick: function (info) {
-                    if (info.event.url) {
-                        info.jsEvent.preventDefault();
-                        window.location.href = info.event.url;
+                    info.jsEvent.preventDefault();
+
+                    const clickedDate = info.event.startStr.split("T")[0];
+                    const clickedBookingId = info.event.extendedProps.bookingId;
+
+                    const sameDayEvents = events.filter(e => e.start.startsWith(clickedDate));
+
+                    const clickedIndex = sameDayEvents.findIndex(x => x.extendedProps.bookingId == clickedBookingId);
+                    if (clickedIndex > 0) {
+                        const clickedItem = sameDayEvents.splice(clickedIndex, 1)[0];
+                        sameDayEvents.unshift(clickedItem);
                     }
+
+                    renderReservationSlides(sameDayEvents);
+
+                    const modal = new bootstrap.Modal(document.getElementById("reservationModal"));
+                    modal.show();
                 }
             });
 
             calendar.render();
         });
+
+        function renderReservationSlides(data) {
+            const container = document.getElementById("reservationCarouselInner");
+            const carouselElement = document.getElementById("reservationCarousel");
+
+            container.innerHTML = "";
+
+            data.forEach((item, index) => {
+                const props = item.extendedProps;
+                const statusClass = getStatusClass(props.status);
+                const activeClass = index === 0 ? "active" : "";
+
+                const formattedDateTime = `${formatDate(item.start)} at ${formatTime(item.start)}`;
+                const durationText = `Duration: ${props.durationHours} hour${props.durationHours > 1 ? "s" : ""}`;
+
+                container.innerHTML += `
+                    <div class="carousel-item ${activeClass}">
+                        <div class="reservation-slide">
+                            <div class="reservation-status-badge ${statusClass}">${props.status}</div>
+
+                            <div class="reservation-info-list">
+                                <div class="reservation-info-item">
+                                    <div class="info-icon info-client">
+                                        <i class="bi bi-person"></i>
+                                    </div>
+                                    <div>
+                                        <div class="info-label">Client</div>
+                                        <div class="info-value">${props.clientName ?? "N/A"}</div>
+                                    </div>
+                                </div>
+
+                                <div class="reservation-info-item">
+                                    <div class="info-icon info-time">
+                                        <i class="bi bi-clock"></i>
+                                    </div>
+                                    <div>
+                                        <div class="info-label">Date & Time</div>
+                                        <div class="info-value">${formattedDateTime}</div>
+                                        <div class="info-subvalue">${durationText}</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="reservation-footer">
+                                <a href="${props.detailsUrl}" class="btn reservation-details-btn">View Full Details</a>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            if (data.length > 0) {
+                const first = data[0].extendedProps;
+                document.getElementById("reservationServiceTitle").textContent = first.serviceName ?? "Reservation Details";
+                document.getElementById("reservationBookingCode").textContent = `Booking ID: ${first.bookingCode}`;
+            } else {
+                document.getElementById("reservationServiceTitle").textContent = "Reservation Details";
+                document.getElementById("reservationBookingCode").textContent = "Booking ID:";
+            }
+
+            updateReservationCounter(1, data.length);
+
+            const newCarousel = bootstrap.Carousel.getOrCreateInstance(carouselElement);
+            newCarousel.to(0);
+
+            const newElement = carouselElement.cloneNode(true);
+            carouselElement.parentNode.replaceChild(newElement, carouselElement);
+
+            bootstrap.Carousel.getOrCreateInstance(newElement).to(0);
+
+            newElement.addEventListener("slid.bs.carousel", function () {
+                const activeIndex = [...document.getElementById("reservationCarouselInner").children]
+                    .findIndex(x => x.classList.contains("active"));
+
+                const current = data[activeIndex].extendedProps;
+
+                document.getElementById("reservationServiceTitle").textContent = current.serviceName ?? "Reservation Details";
+                document.getElementById("reservationBookingCode").textContent = `Booking ID: ${current.bookingCode}`;
+                updateReservationCounter(activeIndex + 1, data.length);
+            });
+        }
+
+        function updateReservationCounter(current, total) {
+            document.getElementById("reservationCounter").textContent = `${current} of ${total}`;
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "long",
+                day: "numeric"
+            });
+        }
+
+        function formatTime(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleTimeString([], {
+                hour: "numeric",
+                minute: "2-digit"
+            });
+        }
+
+        function getStatusClass(status) {
+            const value = (status || "").toLowerCase();
+
+            if (value === "confirmed") return "confirmed";
+            if (value === "pending") return "pending";
+            if (value === "declined" || value === "rejected" || value === "cancelled") return "cancelled";
+
+            return "pending";
+        }
     </script>
 }
