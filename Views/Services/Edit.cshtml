@@ -1,53 +1,144 @@
-@{
-    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
-}
-@model AriesMagicAppointmentSystem.Models.Service
+@model AriesMagicAppointmentSystem.ViewModels.ServiceManageViewModel
 
 @{
-    ViewData["Title"] = "Edit Service";
+    Layout = "_DashboardLayout";
+    ViewData["Title"] = "Edit Package";
 }
 
 <div class="page-header">
     <div>
-        <h1>Edit Service</h1>
-        <p class="page-subtitle">Update service details.</p>
+        <h1>Edit Package</h1>
+        <p class="page-subtitle">Update package information, inclusions, and deduction rules.</p>
     </div>
 </div>
 
-<div class="form-card">
-    <form asp-action="Edit">
+<div class="dashboard-panel package-form-panel">
+    <form asp-action="Edit" method="post">
+        @Html.AntiForgeryToken()
+        <input asp-for="Id" type="hidden" />
+
         <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
 
-        <input type="hidden" asp-for="Id" />
-        <input type="hidden" asp-for="IsArchived" />
+        <div class="form-section-title">Package Information</div>
 
-        <div class="mb-3">
-            <label asp-for="Name" class="form-label"></label>
-            <input asp-for="Name" class="form-control" />
-            <span asp-validation-for="Name" class="text-danger"></span>
+        <div class="row g-3 mb-4">
+            <div class="col-md-6">
+                <label asp-for="Name" class="form-label"></label>
+                <input asp-for="Name" class="form-control" placeholder="Enter package name" />
+                <span asp-validation-for="Name" class="text-danger"></span>
+            </div>
+
+            <div class="col-md-3">
+                <label asp-for="Price" class="form-label"></label>
+                <input asp-for="Price" class="form-control" placeholder="Enter base price" />
+                <span asp-validation-for="Price" class="text-danger"></span>
+            </div>
+
+            <div class="col-md-3">
+                <label asp-for="DurationInHours" class="form-label"></label>
+                <input asp-for="DurationInHours" class="form-control" placeholder="Hours" />
+                <span asp-validation-for="DurationInHours" class="text-danger"></span>
+            </div>
+
+            <div class="col-12">
+                <label asp-for="Description" class="form-label"></label>
+                <textarea asp-for="Description" class="form-control" rows="4" placeholder="Enter package description"></textarea>
+                <span asp-validation-for="Description" class="text-danger"></span>
+            </div>
         </div>
 
-        <div class="mb-3">
-            <label asp-for="Price" class="form-label"></label>
-            <input asp-for="Price" class="form-control" />
-            <span asp-validation-for="Price" class="text-danger"></span>
+        <div class="form-section-header">
+            <div>
+                <div class="form-section-title mb-1">Package Inclusions</div>
+                <p class="page-subtitle mb-0">Edit the inclusions and their deduction amounts.</p>
+            </div>
+            <button type="button" class="btn btn-outline-primary" onclick="addInclusionRow()">Add Inclusion</button>
         </div>
 
-        <div class="mb-4">
-            <label asp-for="DurationInHours" class="form-label"></label>
-            <input asp-for="DurationInHours" class="form-control" />
-            <span asp-validation-for="DurationInHours" class="text-danger"></span>
+        <div id="inclusions-container" class="inclusion-list-wrap">
+            @for (int i = 0; i < Model.Inclusions.Count; i++)
+            {
+                <div class="row g-3 inclusion-row mb-3">
+                    <input asp-for="Inclusions[@i].Id" type="hidden" />
+
+                    <div class="col-md-5">
+                        <label class="form-label">Inclusion Name</label>
+                        <input asp-for="Inclusions[@i].Name" class="form-control" placeholder="Enter inclusion name" />
+                        <span asp-validation-for="Inclusions[@i].Name" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label">Deduction Amount</label>
+                        <input asp-for="Inclusions[@i].DeductionAmount" class="form-control" placeholder="Enter deduction amount" />
+                        <span asp-validation-for="Inclusions[@i].DeductionAmount" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-2 d-flex align-items-end">
+                        <div class="form-check mb-2">
+                            <input asp-for="Inclusions[@i].IsRemovable" class="form-check-input" />
+                            <label asp-for="Inclusions[@i].IsRemovable" class="form-check-label"></label>
+                        </div>
+                    </div>
+
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="button" class="btn btn-outline-danger w-100" onclick="removeInclusionRow(this)">Remove</button>
+                    </div>
+                </div>
+            }
         </div>
 
-        <div class="d-flex gap-2">
+        <div class="d-flex gap-2 mt-4">
             <button type="submit" class="btn btn-primary">Save Changes</button>
-            <a asp-action="Index" class="btn btn-secondary">Back</a>
+            <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
         </div>
     </form>
 </div>
 
 @section Scripts {
-    @{
-        await Html.RenderPartialAsync("_ValidationScriptsPartial");
-    }
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        let inclusionIndex = @Model.Inclusions.Count;
+
+        function addInclusionRow() {
+            const container = document.getElementById("inclusions-container");
+
+            const row = document.createElement("div");
+            row.className = "row g-3 inclusion-row mb-3";
+
+            row.innerHTML = `
+                <input name="Inclusions[${inclusionIndex}].Id" type="hidden" value="0" />
+
+                <div class="col-md-5">
+                    <label class="form-label">Inclusion Name</label>
+                    <input name="Inclusions[${inclusionIndex}].Name" class="form-control" placeholder="Enter inclusion name" />
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label">Deduction Amount</label>
+                    <input name="Inclusions[${inclusionIndex}].DeductionAmount" class="form-control" type="number" step="0.01" placeholder="Enter deduction amount" />
+                </div>
+
+                <div class="col-md-2 d-flex align-items-end">
+                    <div class="form-check mb-2">
+                        <input name="Inclusions[${inclusionIndex}].IsRemovable" class="form-check-input" type="checkbox" value="true" checked />
+                        <input name="Inclusions[${inclusionIndex}].IsRemovable" type="hidden" value="false" />
+                        <label class="form-check-label">Removable by Client</label>
+                    </div>
+                </div>
+
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="button" class="btn btn-outline-danger w-100" onclick="removeInclusionRow(this)">Remove</button>
+                </div>
+            `;
+
+            container.appendChild(row);
+            inclusionIndex++;
+        }
+
+        function removeInclusionRow(button) {
+            const row = button.closest(".inclusion-row");
+            row.remove();
+        }
+    </script>
 }

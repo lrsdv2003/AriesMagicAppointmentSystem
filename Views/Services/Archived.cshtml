@@ -2,60 +2,64 @@
 
 @{
     Layout = "_DashboardLayout";
-    ViewData["Title"] = "Archived Services";
+    ViewData["Title"] = "Archived Packages";
 }
-
-<div class="dashboard-stats">
-    <div class="stat-card">
-        <div class="stat-label">Archived Services</div>
-        <div class="stat-value">@Model.Count()</div>
-        <div class="stat-subtext">Packages currently hidden from the client booking list.</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-label">Restore Ready</div>
-        <div class="stat-value">Yes</div>
-        <div class="stat-subtext">Archived services can be reactivated anytime.</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-label">Control</div>
-        <div class="stat-value">Staff</div>
-        <div class="stat-subtext">Use restore to make a service bookable again.</div>
-    </div>
-</div>
 
 <div class="page-header">
     <div>
-        <h1>Archived Services</h1>
-        <p class="page-subtitle">Review and restore previously archived service packages.</p>
+        <h1>Archived Packages</h1>
+        <p class="page-subtitle">Review archived packages and restore them when needed.</p>
     </div>
     <div>
-        <a asp-action="Index" class="btn btn-secondary">Back to Active</a>
+        <a asp-action="Index" class="btn btn-outline-secondary">Back to Active Packages</a>
     </div>
 </div>
 
-<div class="table-clean">
-    <table class="table align-middle">
-        <thead>
-            <tr>
-                <th>Name</th>
-                <th>Price</th>
-                <th>Duration</th>
-                <th class="text-end">Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-@foreach (var item in Model)
+@if (!Model.Any())
 {
-            <tr>
-                <td>@item.Name</td>
-                <td>₱@item.Price.ToString("N2")</td>
-                <td>@item.DurationInHours hour(s)</td>
-                <td class="text-end">
-                    <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-secondary">Details</a>
-                    <a asp-action="Restore" asp-route-id="@item.Id" class="btn btn-sm btn-success">Restore</a>
-                </td>
-            </tr>
+    <div class="empty-state">
+        <h3>No archived packages</h3>
+        <p>There are currently no archived packages in the system.</p>
+    </div>
 }
-        </tbody>
-    </table>
-</div>
+else
+{
+    <div class="package-grid">
+        @foreach (var item in Model)
+        {
+            <div class="package-card archived-package-card">
+                <div class="package-card-top">
+                    <div>
+                        <h3 class="package-card-title">@item.Name</h3>
+                        <div class="package-card-badge archived-badge">Archived Package</div>
+                    </div>
+                    <div class="package-card-price">
+                        ₱@item.Price.ToString("N2")
+                    </div>
+                </div>
+
+                <div class="package-card-meta">
+                    <div class="package-meta-box">
+                        <span class="package-meta-label">Duration</span>
+                        <span class="package-meta-value">@item.DurationInHours hour(s)</span>
+                    </div>
+                    <div class="package-meta-box">
+                        <span class="package-meta-label">Status</span>
+                        <span class="package-meta-value">Archived</span>
+                    </div>
+                </div>
+
+                <div class="package-card-body">
+                    <p class="package-card-description">
+                        @(string.IsNullOrWhiteSpace(item.Description) ? "No description available for this package yet." : item.Description)
+                    </p>
+                </div>
+
+                <div class="package-card-actions">
+                    <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-light package-btn-light">Details</a>
+                    <a asp-action="Restore" asp-route-id="@item.Id" class="btn btn-success">Restore</a>
+                </div>
+            </div>
+        }
+    </div>
+}

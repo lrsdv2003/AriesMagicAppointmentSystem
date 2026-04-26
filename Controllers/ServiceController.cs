@@ -1,14 +1,13 @@
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using AriesMagicAppointmentSystem.Data;
 using AriesMagicAppointmentSystem.Models;
+using AriesMagicAppointmentSystem.ViewModels;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace AriesMagicAppointmentSystem.Controllers
 {
-    [Authorize(Roles = "Staff,Admin")]
+    [Authorize]
     public class ServicesController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -18,129 +17,240 @@ namespace AriesMagicAppointmentSystem.Controllers
             _context = context;
         }
 
+        // STAFF + ADMIN: view active packages
+        [Authorize(Roles = "Staff,Admin")]
         public async Task<IActionResult> Index()
         {
-            var activeServices = await _context.Services
+            var packages = await _context.Services
                 .Where(s => !s.IsArchived)
+                .OrderBy(s => s.Name)
                 .ToListAsync();
 
-            return View(activeServices);
+            return View(packages);
         }
 
-        public async Task<IActionResult> Archived()
-        {
-            var archivedServices = await _context.Services
-                .Where(s => s.IsArchived)
-                .ToListAsync();
-
-            return View(archivedServices);
-        }
-
+        // STAFF + ADMIN: view package details
+        [Authorize(Roles = "Staff,Admin")]
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null) return NotFound();
 
-            var service = await _context.Services.FirstOrDefaultAsync(s => s.Id == id);
-            if (service == null) return NotFound();
+            var package = await _context.Services
+                .Include(s => s.Inclusions)
+                .FirstOrDefaultAsync(s => s.Id == id);
 
-            return View(service);
+            if (package == null) return NotFound();
+
+            return View(package);
         }
 
+        // STAFF + ADMIN: view archived packages
+        [Authorize(Roles = "Staff,Admin")]
+        public async Task<IActionResult> Archived()
+        {
+            var archivedPackages = await _context.Services
+                .Where(s => s.IsArchived)
+                .OrderBy(s => s.Name)
+                .ToListAsync();
+
+            return View(archivedPackages);
+        }
+
+        // STAFF + ADMIN: create package
+        [Authorize(Roles = "Staff,Admin")]
         public IActionResult Create()
         {
-            return View();
+            var model = new ServiceManageViewModel
+            {
+                Inclusions = new List<ServiceInclusionInputViewModel>
+                {
+                    new ServiceInclusionInputViewModel()
+                }
+            };
+
+            return View(model);
         }
 
         [HttpPost]
+        [Authorize(Roles = "Staff,Admin")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(Service service)
+        public async Task<IActionResult> Create(ServiceManageViewModel model)
         {
-            if (!ModelState.IsValid) return View(service);
+            model.Inclusions = model.Inclusions
+                .Where(i => !string.IsNullOrWhiteSpace(i.Name))
+                .ToList();
 
-            service.IsArchived = false;
+            if (await _context.Services.AnyAsync(s => s.Name == model.Name))
+            {
+                ModelState.AddModelError("Name", "A package with this name already exists.");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            var service = new Service
+            {
+                Name = model.Name,
+                Price = model.Price,
+                DurationInHours = model.DurationInHours,
+                Description = model.Description,
+                IsArchived = false,
+                Inclusions = model.Inclusions.Select(i => new ServiceInclusion
+                {
+                    Name = i.Name,
+                    DeductionAmount = i.DeductionAmount,
+                    IsRemovable = i.IsRemovable
+                }).ToList()
+            };
+
             _context.Services.Add(service);
             await _context.SaveChangesAsync();
+
             return RedirectToAction(nameof(Index));
         }
-
+        // STAFF + ADMIN: edit package
+        [Authorize(Roles = "Staff,Admin")]
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null) return NotFound();
 
-            var service = await _context.Services.FindAsync(id);
+            var service = await _context.Services
+                .Include(s => s.Inclusions)
+                .FirstOrDefaultAsync(s => s.Id == id);
+
             if (service == null) return NotFound();
 
-            return View(service);
+            var model = new ServiceManageViewModel
+            {
+                Id = service.Id,
+                Name = service.Name,
+                Price = service.Price,
+                DurationInHours = service.DurationInHours,
+                Description = service.Description,
+                Inclusions = service.Inclusions.Select(i => new ServiceInclusionInputViewModel
+                {
+                    Id = i.Id,
+                    Name = i.Name,
+                    DeductionAmount = i.DeductionAmount,
+                    IsRemovable = i.IsRemovable
+                }).ToList()
+            };
+
+            if (!model.Inclusions.Any())
+            {
+                model.Inclusions.Add(new ServiceInclusionInputViewModel());
+            }
+
+            return View(model);
         }
 
         [HttpPost]
+        [Authorize(Roles = "Staff,Admin")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, Service service)
+        public async Task<IActionResult> Edit(int id, ServiceManageViewModel model)
         {
-            if (id != service.Id) return NotFound();
+            if (id != model.Id) return NotFound();
 
-            if (!ModelState.IsValid) return View(service);
+            model.Inclusions = model.Inclusions
+                .Where(i => !string.IsNullOrWhiteSpace(i.Name))
+                .ToList();
 
-            try
+            if (await _context.Services.AnyAsync(s => s.Name == model.Name && s.Id != model.Id))
             {
-                _context.Update(service);
-                await _context.SaveChangesAsync();
+                ModelState.AddModelError("Name", "A package with this name already exists.");
             }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!_context.Services.Any(e => e.Id == service.Id))
-                    return NotFound();
 
-                throw;
+            if (!ModelState.IsValid)
+            {
+                return View(model);
             }
+
+            var service = await _context.Services
+                .Include(s => s.Inclusions)
+                .FirstOrDefaultAsync(s => s.Id == id);
+
+            if (service == null) return NotFound();
+
+            service.Name = model.Name;
+            service.Price = model.Price;
+            service.DurationInHours = model.DurationInHours;
+            service.Description = model.Description;
+
+            _context.ServiceInclusions.RemoveRange(service.Inclusions);
+
+            service.Inclusions = model.Inclusions.Select(i => new ServiceInclusion
+            {
+                Name = i.Name,
+                DeductionAmount = i.DeductionAmount,
+                IsRemovable = i.IsRemovable
+            }).ToList();
+
+            await _context.SaveChangesAsync();
 
             return RedirectToAction(nameof(Index));
         }
 
+        // STAFF + ADMIN: archive package
+        [Authorize(Roles = "Staff,Admin")]
         public async Task<IActionResult> Archive(int? id)
         {
             if (id == null) return NotFound();
 
-            var service = await _context.Services.FirstOrDefaultAsync(s => s.Id == id);
-            if (service == null) return NotFound();
+            var package = await _context.Services
+                .FirstOrDefaultAsync(s => s.Id == id);
 
-            return View(service);
+            if (package == null) return NotFound();
+
+            return View(package);
         }
 
         [HttpPost, ActionName("Archive")]
+        [Authorize(Roles = "Staff,Admin")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ArchiveConfirmed(int id)
         {
-            var service = await _context.Services.FindAsync(id);
-            if (service == null) return NotFound();
+            var package = await _context.Services.FindAsync(id);
+            if (package == null) return NotFound();
 
-            service.IsArchived = true;
+            package.IsArchived = true;
             await _context.SaveChangesAsync();
 
             return RedirectToAction(nameof(Index));
         }
 
+        // STAFF + ADMIN: restore package
+        [Authorize(Roles = "Staff,Admin")]
         public async Task<IActionResult> Restore(int? id)
         {
             if (id == null) return NotFound();
 
-            var service = await _context.Services.FirstOrDefaultAsync(s => s.Id == id);
-            if (service == null) return NotFound();
+            var package = await _context.Services
+                .FirstOrDefaultAsync(s => s.Id == id);
 
-            return View(service);
+            if (package == null) return NotFound();
+
+            return View(package);
         }
 
         [HttpPost, ActionName("Restore")]
+        [Authorize(Roles = "Staff,Admin")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RestoreConfirmed(int id)
         {
-            var service = await _context.Services.FindAsync(id);
-            if (service == null) return NotFound();
+            var package = await _context.Services.FindAsync(id);
+            if (package == null) return NotFound();
 
-            service.IsArchived = false;
+            package.IsArchived = false;
             await _context.SaveChangesAsync();
 
             return RedirectToAction(nameof(Archived));
+        }
+
+        private async Task<bool> ServiceExists(int id)
+        {
+            return await _context.Services.AnyAsync(e => e.Id == id);
         }
     }
 }

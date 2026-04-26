@@ -40,8 +40,8 @@
                             </a>
 
                             <a asp-controller="Services" asp-action="Index"
-                               class="sidebar-link @(currentController == "Services" ? "active" : "")">
-                                Services
+                            class="sidebar-link @(currentController == "Services" ? "active" : "")">
+                                Packages
                             </a>
 
                             <a asp-controller="RescheduleRequests" asp-action="Index"
@@ -75,6 +75,11 @@
                             <a asp-controller="RescheduleRequests" asp-action="Index"
                                class="sidebar-link @(currentController == "RescheduleRequests" ? "active" : "")">
                                 Reschedules
+                            </a>
+
+                            <a asp-controller="Services" asp-action="Index"
+                            class="sidebar-link @(currentController == "Services" ? "active" : "")">
+                                Packages
                             </a>
 
                             <a asp-controller="Reports" asp-action="Index"

@@ -2,62 +2,66 @@
 
 @{
     Layout = "_DashboardLayout";
-    ViewData["Title"] = "Services";
+    ViewData["Title"] = "Packages";
 }
-
-<div class="dashboard-stats">
-    <div class="stat-card">
-        <div class="stat-label">Active Services</div>
-        <div class="stat-value">@Model.Count()</div>
-        <div class="stat-subtext">Currently available packages for clients to book.</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-label">Management</div>
-        <div class="stat-value">Staff</div>
-        <div class="stat-subtext">Create, edit, archive, and restore service offerings.</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-label">Availability</div>
-        <div class="stat-value">Live</div>
-        <div class="stat-subtext">Visible services are ready for booking selection.</div>
-    </div>
-</div>
 
 <div class="page-header">
     <div>
-        <h1>Active Services</h1>
-        <p class="page-subtitle">Manage the service packages available to clients.</p>
+        <h1>Packages</h1>
+        <p class="page-subtitle">Manage your event packages, pricing, duration, and package inclusions.</p>
     </div>
     <div class="d-flex gap-2">
-        <a asp-action="Create" class="btn btn-primary">Create New Service</a>
-        <a asp-action="Archived" class="btn btn-secondary">Archived Services</a>
+        <a asp-action="Create" class="btn btn-primary">Create Package</a>
+        <a asp-action="Archived" class="btn btn-outline-secondary">Archived Packages</a>
     </div>
 </div>
 
-<div class="table-clean">
-    <table class="table align-middle">
-        <thead>
-            <tr>
-                <th>Name</th>
-                <th>Price</th>
-                <th>Duration</th>
-                <th class="text-end">Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-@foreach (var item in Model)
+@if (!Model.Any())
 {
-            <tr>
-                <td>@item.Name</td>
-                <td>₱@item.Price.ToString("N2")</td>
-                <td>@item.DurationInHours hour(s)</td>
-                <td class="text-end">
-                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-warning">Edit</a>
-                    <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-secondary">Details</a>
-                    <a asp-action="Archive" asp-route-id="@item.Id" class="btn btn-sm btn-danger">Archive</a>
-                </td>
-            </tr>
+    <div class="empty-state">
+        <h3>No active packages yet</h3>
+        <p>There are currently no active packages available in the system.</p>
+    </div>
 }
-        </tbody>
-    </table>
-</div>
+else
+{
+    <div class="package-grid">
+        @foreach (var item in Model)
+        {
+            <div class="package-card">
+                <div class="package-card-top">
+                    <div>
+                        <h3 class="package-card-title">@item.Name</h3>
+                        <div class="package-card-badge">Active Package</div>
+                    </div>
+                    <div class="package-card-price">
+                        ₱@item.Price.ToString("N2")
+                    </div>
+                </div>
+
+                <div class="package-card-meta">
+                    <div class="package-meta-box">
+                        <span class="package-meta-label">Duration</span>
+                        <span class="package-meta-value">@item.DurationInHours hour(s)</span>
+                    </div>
+                    <div class="package-meta-box">
+                        <span class="package-meta-label">Status</span>
+                        <span class="package-meta-value">Active</span>
+                    </div>
+                </div>
+
+                <div class="package-card-body">
+                    <p class="package-card-description">
+                        @(string.IsNullOrWhiteSpace(item.Description) ? "No description available for this package yet." : item.Description)
+                    </p>
+                </div>
+
+                <div class="package-card-actions">
+                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-warning">Edit</a>
+                    <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-light package-btn-light">Details</a>
+                    <a asp-action="Archive" asp-route-id="@item.Id" class="btn btn-danger">Archive</a>
+                </div>
+            </div>
+        }
+    </div>
+}

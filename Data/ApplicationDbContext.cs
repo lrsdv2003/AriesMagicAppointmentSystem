@@ -19,6 +19,8 @@ namespace AriesMagicAppointmentSystem.Data
         public DbSet<RescheduleRequest> RescheduleRequests { get; set; }
         public DbSet<Notification> Notifications { get; set; }
 
+        public DbSet<ServiceInclusion> ServiceInclusions { get; set; }
+
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);

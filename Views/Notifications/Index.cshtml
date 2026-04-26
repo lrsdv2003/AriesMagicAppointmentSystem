@@ -5,74 +5,68 @@
     ViewData["Title"] = "Notifications";
 }
 
-@if (!User.IsInRole("Client"))
-{
-    <div class="dashboard-stats">
-        <div class="stat-card">
-            <div class="stat-label">Total Notifications</div>
-            <div class="stat-value">@Model.Count()</div>
-            <div class="stat-subtext">Recent updates related to system workflow activity.</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-label">Unread</div>
-            <div class="stat-value">@Model.Count(x => !x.IsRead)</div>
-            <div class="stat-subtext">Notifications that still need attention.</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-label">Status</div>
-            <div class="stat-value">Live</div>
-            <div class="stat-subtext">Notification feed updates as workflow actions happen.</div>
-        </div>
-    </div>
-}
-
-<div class="page-header">
+<div class="client-portal-header">
     <div>
-        <p class="page-subtitle">Your recent system alerts and workflow updates.</p>
+        <div class="section-kicker">Client Portal</div>
+        <h1 class="client-portal-title">Notifications</h1>
+        <p class="client-portal-text">Stay updated with your latest booking, payment, and reschedule alerts.</p>
     </div>
 </div>
 
-<div class="table-clean">
-    <table class="table align-middle">
-        @if (!Model.Any())
-        {
-            <div class="empty-state">
-                <h3>No records yet</h3>
-                <p>There is nothing to display here right now.</p>
-            </div>
-        }
-        else
-        {
-            <div class="table-clean">
-                <table class="table align-middle">
-                    ...
-                </table>
-            </div>
-        }
-        <thead>
-            <tr>
-                <th>Status</th>
-                <th>Title</th>
-                <th>Message</th>
-                <th>Date</th>
-                <th class="text-end">Action</th>
-            </tr>
-        </thead>
-        <tbody>
-@foreach (var item in Model)
-{
-    var notifClass = item.IsRead ? "status-read" : "status-unread";
+<div class="client-portal-stats">
+    <div class="client-portal-stat-card">
+        <span class="client-portal-stat-label">Total Notifications</span>
+        <strong class="client-portal-stat-value">@Model.Count()</strong>
+        <span class="client-portal-stat-note">All alerts connected to your account activity</span>
+    </div>
 
-    <tr>
-        <td>
-            <span class="status-badge @notifClass">
-                @(item.IsRead ? "Read" : "Unread")
-            </span>
-        </td>
-        <td>@item.Title</td>
-        <td>@item.Message</td>
-    </tr>
-}
-        </tbody>
-    </table>
+    <div class="client-portal-stat-card">
+        <span class="client-portal-stat-label">Unread</span>
+        <strong class="client-portal-stat-value">@Model.Count(x => !x.IsRead)</strong>
+        <span class="client-portal-stat-note">Notifications that still need your attention</span>
+    </div>
+
+    <div class="client-portal-stat-card">
+        <span class="client-portal-stat-label">Read</span>
+        <strong class="client-portal-stat-value">@Model.Count(x => x.IsRead)</strong>
+        <span class="client-portal-stat-note">Updates you have already viewed</span>
+    </div>
 </div>
+
+@if (!Model.Any())
+{
+    <div class="empty-state client-empty-state">
+        <h3>No notifications yet</h3>
+        <p>You do not have any notifications at the moment.</p>
+    </div>
+}
+else
+{
+    <div class="notification-card-list">
+        @foreach (var item in Model.OrderByDescending(x => x.CreatedAt))
+        {
+            var notifClass = item.IsRead ? "status-read" : "status-unread";
+
+            <div class="notification-card @(item.IsRead ? "notification-read" : "notification-unread")">
+                <div class="notification-card-top">
+                    <div>
+                        <div class="notification-card-title">@item.Title</div>
+                        <div class="notification-card-date">@item.CreatedAt.ToString("MMM dd, yyyy hh:mm tt")</div>
+                    </div>
+
+                    <span class="status-badge @notifClass">
+                        @(item.IsRead ? "Read" : "Unread")
+                    </span>
+                </div>
+
+                <div class="notification-card-body">
+                    <p class="notification-card-message mb-0">@item.Message</p>
+                </div>
+
+                <div class="notification-card-footer">
+                    <a asp-action="Open" asp-route-id="@item.Id" class="btn btn-primary">Open</a>
+                </div>
+            </div>
+        }
+    </div>
+}

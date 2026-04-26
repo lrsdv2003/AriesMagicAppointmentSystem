@@ -15,7 +15,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.Configure<EmailSettings>(
     builder.Configuration.GetSection("EmailSettings"));
 
-builder.Services.AddScoped<IEmailService, SmtpEmailService>();
+builder.Services.AddScoped<IEmailService, EmailSenderService>();
 
 builder.Services
     .AddIdentity<ApplicationUser, IdentityRole>(options =>
@@ -57,24 +57,15 @@ app.MapRazorPages();
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
-
 // Apply migrations first, then seed roles/users
 using (var scope = app.Services.CreateScope())
-{
-    var services = scope.ServiceProvider;
-
-    try
     {
-        var dbContext = services.GetRequiredService<ApplicationDbContext>();
-        await dbContext.Database.MigrateAsync();
+        var services = scope.ServiceProvider;
 
         await IdentitySeeder.SeedAsync(services);
+
+        var dbContext = services.GetRequiredService<ApplicationDbContext>();
+        await ServiceSeeder.SeedAsync(dbContext);
     }
-    catch (Exception ex)
-    {
-        var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "An error occurred while migrating or seeding the database.");
-    }
-}
 
 app.Run();

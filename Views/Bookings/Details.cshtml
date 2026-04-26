@@ -1,0 +1,215 @@
+@model AriesMagicAppointmentSystem.Models.Booking
+@using System.Text.Json
+
+@{
+    Layout = "_DashboardLayout";
+    ViewData["Title"] = "Booking Details";
+
+    List<string> removedInclusions = new();
+
+    if (!string.IsNullOrWhiteSpace(Model.RemovedInclusionsJson))
+    {
+        try
+        {
+            removedInclusions = JsonSerializer.Deserialize<List<string>>(Model.RemovedInclusionsJson) ?? new List<string>();
+        }
+        catch
+        {
+            removedInclusions = new List<string>();
+        }
+    }
+
+    var latestPayment = Model.Payments?
+        .OrderByDescending(p => p.UploadedAt)
+        .FirstOrDefault();
+}
+
+<div class="page-header">
+    <div>
+        <h1>Booking Details</h1>
+        <p class="page-subtitle">Review the complete booking information and package customization.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-action="Index" class="btn btn-outline-secondary">Back to Bookings</a>
+    </div>
+</div>
+
+<div class="booking-details-layout">
+    <div class="dashboard-panel">
+        <div class="form-section-title mb-3">Client & Event Information</div>
+
+        <dl class="row details-list mb-0">
+            <dt class="col-sm-4">Booking ID</dt>
+            <dd class="col-sm-8">BK-@Model.CreatedAt.Year-@Model.Id.ToString("D3")</dd>
+
+            <dt class="col-sm-4">Client Name</dt>
+            <dd class="col-sm-8">@Model.Client?.FullName</dd>
+
+            <dt class="col-sm-4">Client Email</dt>
+            <dd class="col-sm-8">@Model.Client?.Email</dd>
+
+            <dt class="col-sm-4">Event Type</dt>
+            <dd class="col-sm-8">@Model.EventType</dd>
+
+            <dt class="col-sm-4">Motif</dt>
+            <dd class="col-sm-8">@Model.Motif</dd>
+
+            <dt class="col-sm-4">Party Theme</dt>
+            <dd class="col-sm-8">@Model.PartyTheme</dd>
+
+            <dt class="col-sm-4">Party Venue</dt>
+            <dd class="col-sm-8">@Model.PartyVenue</dd>
+
+            <dt class="col-sm-4">Celebrant Name</dt>
+            <dd class="col-sm-8">@Model.CelebrantName</dd>
+
+            <dt class="col-sm-4">Age</dt>
+            <dd class="col-sm-8">@Model.Age</dd>
+
+            <dt class="col-sm-4"># of Pax</dt>
+            <dd class="col-sm-8">@Model.PaxCount</dd>
+
+            <dt class="col-sm-4">Contact Person</dt>
+            <dd class="col-sm-8">@Model.ContactPerson</dd>
+
+            <dt class="col-sm-4">Contact Number</dt>
+            <dd class="col-sm-8">@Model.ContactNumber</dd>
+
+            <dt class="col-sm-4">Event Date</dt>
+            <dd class="col-sm-8">@Model.EventDate.ToString("MMMM dd, yyyy")</dd>
+
+            <dt class="col-sm-4">Start Time</dt>
+            <dd class="col-sm-8">@Model.StartTime.ToString("hh:mm tt")</dd>
+
+            <dt class="col-sm-4">End Time</dt>
+            <dd class="col-sm-8">@Model.EndTime.ToString("hh:mm tt")</dd>
+
+            <dt class="col-sm-4">Booking Status</dt>
+            <dd class="col-sm-8">
+                @{
+                    var statusClass = Model.Status switch
+                    {
+                        "Pending" => "status-pending",
+                        "AwaitingDownpayment" => "status-awaiting",
+                        "AwaitingVerification" => "status-awaiting",
+                        "Confirmed" => "status-confirmed",
+                        "Completed" => "status-completed",
+                        "Declined" => "status-declined",
+                        "Expired" => "status-expired",
+                        _ => "status-read"
+                    };
+                }
+                <span class="status-badge @statusClass">@Model.Status</span>
+            </dd>
+        </dl>
+    </div>
+
+    <div class="dashboard-panel">
+        <div class="form-section-title mb-3">Package & Payment Summary</div>
+
+        <div class="booking-price-row">
+            <span>Selected Package</span>
+            <strong>@Model.PackageName</strong>
+        </div>
+
+        <div class="booking-price-row">
+            <span>Base Price</span>
+            <strong>₱@Model.BasePrice.ToString("N2")</strong>
+        </div>
+
+        <div class="booking-price-row">
+            <span>Final Price</span>
+            <strong>₱@Model.FinalPrice.ToString("N2")</strong>
+        </div>
+
+        <div class="booking-price-row">
+            <span>Required Downpayment</span>
+            <strong>₱@Model.RequiredDownpayment.ToString("N2")</strong>
+        </div>
+
+        <div class="booking-price-row">
+            <span>Package Duration</span>
+            <strong>@Model.Service?.DurationInHours hour(s)</strong>
+        </div>
+
+        <div class="booking-price-row">
+            <span>Latest Payment Status</span>
+            <strong>
+                @if (latestPayment == null)
+                {
+                    <span class="status-badge status-read">No Payment</span>
+                }
+                else
+                {
+                    var paymentClass = latestPayment.Status switch
+                    {
+                        "Pending" => "status-pending",
+                        "Verified" => "status-verified",
+                        "Rejected" => "status-rejected",
+                        _ => "status-read"
+                    };
+
+                    <span class="status-badge @paymentClass">@latestPayment.Status</span>
+                }
+            </strong>
+        </div>
+
+        <div class="mt-4">
+            <div class="form-section-title mb-2">Removed Inclusions</div>
+
+            @if (!removedInclusions.Any())
+            {
+                <div class="empty-state small-empty-state">
+                    <h3>No removed inclusions</h3>
+                    <p>The client kept all available package inclusions.</p>
+                </div>
+            }
+            else
+            {
+                <div class="removed-inclusion-list">
+                    @foreach (var item in removedInclusions)
+                    {
+                        <div class="removed-inclusion-chip">@item</div>
+                    }
+                </div>
+            }
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(Model.InternalNotes))
+        {
+            <div class="mt-4">
+                <div class="form-section-title mb-2">Internal Notes</div>
+                <div class="details-description-block">
+                    @Model.InternalNotes
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<div class="dashboard-panel mt-4">
+    <div class="form-section-title mb-3">Actions</div>
+
+    <div class="d-flex gap-2 flex-wrap">
+        @if (User.IsInRole("Staff"))
+        {
+            @if (Model.Status == AriesMagicAppointmentSystem.Models.BookingStatus.Pending)
+            {
+                <a asp-action="Approve" asp-route-id="@Model.Id" class="btn btn-success">Approve</a>
+                <a asp-action="Decline" asp-route-id="@Model.Id" class="btn btn-danger">Decline</a>
+            }
+
+            <a asp-action="AddNote" asp-route-id="@Model.Id" class="btn btn-outline-secondary">Add Note</a>
+
+            @if (Model.Status == AriesMagicAppointmentSystem.Models.BookingStatus.Confirmed)
+            {
+                <a asp-action="Complete" asp-route-id="@Model.Id" class="btn btn-primary">Complete</a>
+            }
+        }
+
+        @if (User.IsInRole("Admin"))
+        {
+            <a asp-controller="Payments" asp-action="PendingVerification" class="btn btn-outline-secondary">Go to Payments</a>
+        }
+    </div>
+</div>

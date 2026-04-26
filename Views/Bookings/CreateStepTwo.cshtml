@@ -1,0 +1,260 @@
+@model AriesMagicAppointmentSystem.ViewModels.BookingStepTwoViewModel
+
+@{
+    ViewData["Title"] = "Create Booking - Step 2";
+
+    var allErrors = ViewData.ModelState.Values
+        .SelectMany(v => v.Errors)
+        .Select(e => e.ErrorMessage)
+        .Where(e => !string.IsNullOrWhiteSpace(e))
+        .ToList();
+}
+
+<div class="booking-steps mb-4">
+    <div class="booking-step completed">1. Event Details</div>
+    <div class="booking-step active">2. Package Selection</div>
+</div>
+
+<div class="page-header">
+    <div>
+        <h1>Create Booking</h1>
+        <p class="page-subtitle">Step 2 of 2 — Select a package and customize its inclusions.</p>
+    </div>
+</div>
+
+@if (allErrors.Any())
+{
+    <div class="alert alert-danger mb-3">
+        <ul class="mb-0">
+            @foreach (var error in allErrors)
+            {
+                <li>@error</li>
+            }
+        </ul>
+    </div>
+}
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger mb-3">@TempData["Error"]</div>
+}
+
+<div class="dashboard-panel mb-4">
+    <h4 class="mb-3">Event Summary</h4>
+    <div class="row g-3">
+        <div class="col-md-4"><strong>Event Type:</strong> @Model.EventType</div>
+        <div class="col-md-4"><strong>Motif:</strong> @Model.Motif</div>
+        <div class="col-md-4"><strong>Date:</strong> @Model.EventDate.ToString("MMMM dd, yyyy")</div>
+        <div class="col-md-4"><strong>Time:</strong> @DateTime.Today.Add(Model.StartTime).ToString("hh:mm tt")</div>
+        <div class="col-md-4"><strong>Theme:</strong> @Model.PartyTheme</div>
+        <div class="col-md-4"><strong>Venue:</strong> @Model.PartyVenue</div>
+        <div class="col-md-4"><strong>Celebrant:</strong> @Model.CelebrantName</div>
+        <div class="col-md-4"><strong>Age:</strong> @Model.Age</div>
+        <div class="col-md-4"><strong>Pax:</strong> @Model.PaxCount</div>
+        <div class="col-md-6"><strong>Contact Person:</strong> @Model.ContactPerson</div>
+        <div class="col-md-6"><strong>Contact Number:</strong> @Model.ContactNumber</div>
+    </div>
+</div>
+
+<form asp-controller="Bookings" asp-action="SubmitBooking" method="post" id="bookingStepTwoForm">
+    @Html.AntiForgeryToken()
+
+    <input asp-for="EventType" type="hidden" />
+    <input asp-for="Motif" type="hidden" />
+    <input asp-for="EventDate" type="hidden" />
+    <input asp-for="StartTime" type="hidden" />
+    <input asp-for="PartyTheme" type="hidden" />
+    <input asp-for="PartyVenue" type="hidden" />
+    <input asp-for="CelebrantName" type="hidden" />
+    <input asp-for="Age" type="hidden" />
+    <input asp-for="PaxCount" type="hidden" />
+    <input asp-for="ContactPerson" type="hidden" />
+    <input asp-for="ContactNumber" type="hidden" />
+    <input asp-for="BasePrice" type="hidden" id="basePriceInput" />
+    <input asp-for="FinalPrice" type="hidden" id="finalPriceInput" />
+    <input asp-for="RequiredDownpayment" type="hidden" />
+
+    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+    <div class="dashboard-panel mb-4">
+        <div class="form-section-header mb-3">
+            <div>
+                <div class="form-section-title mb-1">Select Package</div>
+                <p class="page-subtitle mb-0">Choose the package you want for your event.</p>
+            </div>
+        </div>
+
+        <select asp-for="ServiceId"
+                class="form-select package-selector-dropdown"
+                onchange="window.location.href='@Url.Action("CreateStepTwo", "Bookings")?serviceId=' + this.value">
+            @foreach (var packageItem in Model.AvailablePackages)
+            {
+                <option value="@packageItem.Id">
+                    @packageItem.Name - ₱@packageItem.Price.ToString("N2")
+                </option>
+            }
+        </select>
+        <span asp-validation-for="ServiceId" class="text-danger"></span>
+    </div>
+
+    <div class="booking-package-layout">
+        <div class="dashboard-panel">
+            <div class="package-preview-header">
+                <div>
+                    <h3 class="package-preview-title">@Model.PackageName</h3>
+                    <div class="package-card-badge">Selected Package</div>
+                </div>
+                <div class="package-preview-price">₱@Model.BasePrice.ToString("N2")</div>
+            </div>
+
+            <div class="package-preview-summary mt-3">
+                <div class="package-meta-box">
+                    <span class="package-meta-label">Base Price</span>
+                    <span class="package-meta-value">₱@Model.BasePrice.ToString("N2")</span>
+                </div>
+                <div class="package-meta-box">
+                    <span class="package-meta-label">Required Downpayment</span>
+                    <span class="package-meta-value">₱2,000.00</span>
+                </div>
+            </div>
+
+            <div class="mt-4">
+                <div class="form-section-title mb-2">Package Inclusions</div>
+                <p class="page-subtitle mb-3">
+                    Uncheck removable inclusions to reduce the final package cost.
+                </p>
+
+                <div id="removedInputsContainer"></div>
+
+                <div class="booking-inclusion-list">
+                    @for (int i = 0; i < Model.Inclusions.Count; i++)
+                    {
+                        <div class="booking-inclusion-card">
+                            <div class="booking-inclusion-main">
+                                <div>
+                                    <div class="booking-inclusion-name">@Model.Inclusions[i].Name</div>
+                                    <div class="booking-inclusion-deduction">
+                                        Deduction if removed: ₱@Model.Inclusions[i].DeductionAmount.ToString("N2")
+                                    </div>
+                                </div>
+
+                                <div class="booking-inclusion-action">
+                                    @if (Model.Inclusions[i].IsRemovable)
+                                    {
+                                        <div class="form-check">
+                                            @if (Model.Inclusions[i].IsSelected)
+                                            {
+                                                <input class="form-check-input inclusion-checkbox"
+                                                       type="checkbox"
+                                                       value="@Model.Inclusions[i].Id"
+                                                       checked
+                                                       onchange="syncRemovedInclusions()" />
+                                            }
+                                            else
+                                            {
+                                                <input class="form-check-input inclusion-checkbox"
+                                                       type="checkbox"
+                                                       value="@Model.Inclusions[i].Id"
+                                                       onchange="syncRemovedInclusions()" />
+                                            }
+                                            <label class="form-check-label">Include</label>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <span class="status-badge status-read">Fixed Inclusion</span>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+
+                        <input type="hidden" name="Inclusions[@i].Id" value="@Model.Inclusions[i].Id" />
+                        <input type="hidden" name="Inclusions[@i].Name" value="@Model.Inclusions[i].Name" />
+                        <input type="hidden" name="Inclusions[@i].DeductionAmount" value="@Model.Inclusions[i].DeductionAmount.ToString(System.Globalization.CultureInfo.InvariantCulture)" />
+                        <input type="hidden" name="Inclusions[@i].IsRemovable" value="@(Model.Inclusions[i].IsRemovable ? "true" : "false")" />
+                        <input type="hidden" name="Inclusions[@i].IsSelected" value="@(Model.Inclusions[i].IsSelected ? "true" : "false")" />
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="dashboard-panel booking-price-panel">
+            <div class="form-section-title mb-3">Booking Summary</div>
+
+            <div class="booking-price-row">
+                <span>Base Price</span>
+                <strong>₱<span id="basePriceText">@Model.BasePrice.ToString("N2")</span></strong>
+            </div>
+
+            <div class="booking-price-row">
+                <span>Total Deduction</span>
+                <strong>₱<span id="deductionText">0.00</span></strong>
+            </div>
+
+            <div class="booking-price-row booking-total-row">
+                <span>Final Price</span>
+                <strong>₱<span id="finalPriceText">@Model.FinalPrice.ToString("N2")</span></strong>
+            </div>
+
+            <div class="booking-price-row">
+                <span>Required Downpayment</span>
+                <strong>₱2,000.00</strong>
+            </div>
+
+            <div class="booking-summary-note mt-3">
+                The required downpayment is fixed at ₱2,000.00 even if inclusions are removed.
+            </div>
+
+            <div class="d-flex flex-column gap-2 mt-4">
+                <button type="submit" class="btn btn-primary">Submit Booking</button>
+                <a asp-action="CreateStepOne" class="btn btn-outline-secondary">Back</a>
+            </div>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        function syncRemovedInclusions() {
+            const removedInputsContainer = document.getElementById("removedInputsContainer");
+            removedInputsContainer.innerHTML = "";
+
+            const checkboxes = document.querySelectorAll(".inclusion-checkbox");
+            let totalDeduction = 0;
+
+            checkboxes.forEach(cb => {
+                if (!cb.checked) {
+                    const hidden = document.createElement("input");
+                    hidden.type = "hidden";
+                    hidden.name = "RemovedInclusionIds";
+                    hidden.value = cb.value;
+                    removedInputsContainer.appendChild(hidden);
+
+                    const card = cb.closest(".booking-inclusion-card");
+                    const deductionText = card.querySelector(".booking-inclusion-deduction").innerText
+                        .replace("Deduction if removed: ₱", "")
+                        .replace(/,/g, "");
+
+                    totalDeduction += parseFloat(deductionText) || 0;
+                }
+            });
+
+            const basePrice = parseFloat(document.getElementById("basePriceInput").value || "0");
+            const finalPrice = basePrice - totalDeduction;
+
+            document.getElementById("deductionText").textContent =
+                totalDeduction.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+            document.getElementById("finalPriceText").textContent =
+                finalPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+            document.getElementById("finalPriceInput").value = finalPrice;
+        }
+
+        document.addEventListener("DOMContentLoaded", function () {
+            syncRemovedInclusions();
+        });
+    </script>
+}

@@ -1,87 +1,123 @@
 @model IEnumerable<AriesMagicAppointmentSystem.Models.RescheduleRequest>
 
 @{
-    ViewData["Title"] = "My Reschedules";
+    ViewData["Title"] = "My Reschedule Requests";
 }
 
-<div class="page-header">
+<div class="client-portal-header">
     <div>
-        <h1>My Reschedule Requests</h1>
-        <p class="page-subtitle">Track the status of your requests to change a booking schedule.</p>
+        <div class="section-kicker">Client Portal</div>
+        <h1 class="client-portal-title">My Reschedule Requests</h1>
+        <p class="client-portal-text">Track the status of your submitted reschedule requests and monitor admin decisions.</p>
     </div>
     <div>
-        <a asp-action="Create" class="btn btn-primary">New Request</a>
+        <a asp-action="Create" class="btn btn-primary btn-lg">New Request</a>
     </div>
 </div>
 
-<div class="dashboard-stats">
-    <div class="stat-card">
-        <div class="stat-label">Total Requests</div>
-        <div class="stat-value">@Model.Count()</div>
-        <div class="stat-subtext">All reschedule requests submitted using your account.</div>
+<div class="client-portal-stats">
+    <div class="client-portal-stat-card">
+        <span class="client-portal-stat-label">Total Requests</span>
+        <strong class="client-portal-stat-value">@Model.Count()</strong>
+        <span class="client-portal-stat-note">All reschedule requests under your account</span>
     </div>
-    <div class="stat-card">
-        <div class="stat-label">Approved</div>
-        <div class="stat-value">@Model.Count(x => x.Status == AriesMagicAppointmentSystem.Models.RescheduleRequestStatus.Approved)</div>
-        <div class="stat-subtext">Requests that were successfully approved.</div>
+
+    <div class="client-portal-stat-card">
+        <span class="client-portal-stat-label">Approved</span>
+        <strong class="client-portal-stat-value">
+            @Model.Count(x => x.Status == AriesMagicAppointmentSystem.Models.RescheduleRequestStatus.Approved)
+        </strong>
+        <span class="client-portal-stat-note">Requests that were successfully approved</span>
     </div>
-    <div class="stat-card">
-        <div class="stat-label">Pending</div>
-        <div class="stat-value">@Model.Count(x => x.Status == AriesMagicAppointmentSystem.Models.RescheduleRequestStatus.Pending)</div>
-        <div class="stat-subtext">Requests waiting for review and final decision.</div>
+
+    <div class="client-portal-stat-card">
+        <span class="client-portal-stat-label">Pending Review</span>
+        <strong class="client-portal-stat-value">
+            @Model.Count(x => x.Status == AriesMagicAppointmentSystem.Models.RescheduleRequestStatus.Pending)
+        </strong>
+        <span class="client-portal-stat-note">Requests still waiting for admin review</span>
     </div>
 </div>
 
-<div class="table-clean">
-    <table class="table align-middle">
-        @if (!Model.Any())
-        {
-            <div class="empty-state">
-                <h3>No records yet</h3>
-                <p>There is nothing to display here right now.</p>
-            </div>
-        }
-        else
-        {
-            <div class="table-clean">
-                <table class="table align-middle">
-                    ...
-                </table>
-            </div>
-        }
-        <thead>
-            <tr>
-                <th>Service</th>
-                <th>Requested Date</th>
-                <th>Requested Start</th>
-                <th>Status</th>
-                <th>Reason</th>
-                <th>Admin Remarks</th>
-            </tr>
-        </thead>
-        <tbody>
-@foreach (var item in Model)
+@if (!Model.Any())
 {
-    var statusClass = item.Status switch
-                {
-                    "Pending" => "status-pending",
-                    "AwaitingDownpayment" => "status-awaiting",
-                    "AwaitingVerification" => "status-awaiting",
-                    "Confirmed" => "status-confirmed",
-                    "Completed" => "status-completed",
-                    "Declined" => "status-declined",
-                    "Expired" => "status-expired",
-                    _ => "status-read"
-                };
-            <tr>
-                <td>@item.Booking?.Service?.Name</td>
-                <td>@item.RequestedDate.ToString("MMM dd, yyyy")</td>
-                <td>@item.RequestedStartTime.ToString("hh:mm tt")</td>
-                <td><span class="status-badge">@item.Status</span></td>
-                <td>@item.Reason</td>
-                <td>@item.AdminRemarks</td>
-            </tr>
+    <div class="empty-state client-empty-state">
+        <h3>No reschedule requests yet</h3>
+        <p>You have not submitted any reschedule request yet.</p>
+        <a asp-action="Create" class="btn btn-primary mt-2">Create Reschedule Request</a>
+    </div>
 }
-        </tbody>
-    </table>
-</div>
+else
+{
+    <div class="client-booking-grid">
+        @foreach (var item in Model.OrderByDescending(x => x.Id))
+        {
+            var statusClass = item.Status switch
+            {
+                "Pending" => "status-pending",
+                "Approved" => "status-approved",
+                "Rejected" => "status-rejected",
+                _ => "status-read"
+            };
+
+            <div class="client-booking-card">
+                <div class="client-booking-top">
+                    <div>
+                        <div class="client-booking-code">
+                            Reschedule Request
+                        </div>
+                        <h3 class="client-booking-package">
+                            @(item.Booking?.PackageName ?? item.Booking?.Service?.Name ?? "Package")
+                        </h3>
+                    </div>
+
+                    <span class="status-badge @statusClass">@item.Status</span>
+                </div>
+
+                <div class="client-booking-meta">
+                    <div class="client-booking-meta-box">
+                        <span class="client-booking-meta-label">Requested Date</span>
+                        <span class="client-booking-meta-value">@item.RequestedDate.ToString("MMMM dd, yyyy")</span>
+                    </div>
+
+                    <div class="client-booking-meta-box">
+                        <span class="client-booking-meta-label">Requested Time</span>
+                        <span class="client-booking-meta-value">
+                            @item.RequestedStartTime.ToString("hh:mm tt")
+                        </span>
+                    </div>
+                </div>
+
+                <div class="client-booking-details">
+                    <div class="client-booking-detail-row">
+                        <span>Original Booking Date</span>
+                        <strong>@(item.Booking?.EventDate.ToString("MMMM dd, yyyy") ?? "N/A")</strong>
+                    </div>
+                    <div class="client-booking-detail-row">
+                        <span>Reason</span>
+                        <strong>@item.Reason</strong>
+                    </div>
+                    <div class="client-booking-detail-row">
+                        <span>Admin Remarks</span>
+                        <strong>@(string.IsNullOrWhiteSpace(item.AdminRemarks) ? "No remarks yet" : item.AdminRemarks)</strong>
+                    </div>
+                </div>
+
+                <div class="client-booking-footer">
+                    @if (item.Status == AriesMagicAppointmentSystem.Models.RescheduleRequestStatus.Pending)
+                    {
+                        <button type="button" class="btn btn-outline-secondary" disabled>Waiting for Review</button>
+                    }
+                    else if (item.Status == AriesMagicAppointmentSystem.Models.RescheduleRequestStatus.Rejected)
+                    {
+                        <a asp-action="Create" class="btn btn-primary">Submit New Request</a>
+                    }
+                    else
+                    {
+                        <button type="button" class="btn btn-outline-secondary" disabled>No Action Needed</button>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+}

@@ -3,6 +3,7 @@ using AriesMagicAppointmentSystem.Models;
 using AriesMagicAppointmentSystem.Services;
 using AriesMagicAppointmentSystem.ViewModels;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -15,12 +16,18 @@ namespace AriesMagicAppointmentSystem.Controllers
         private readonly ApplicationDbContext _context;
         private readonly IWebHostEnvironment _environment;
         private readonly IEmailService _emailService;
+        private readonly UserManager<ApplicationUser> _userManager;
 
-        public PaymentsController(ApplicationDbContext context, IWebHostEnvironment environment, IEmailService emailService)
+        public PaymentsController(
+            ApplicationDbContext context,
+            IWebHostEnvironment environment,
+            IEmailService emailService,
+            UserManager<ApplicationUser> userManager)
         {
             _context = context;
             _environment = environment;
             _emailService = emailService;
+            _userManager = userManager;
         }
 
         [Authorize(Roles = "Client")]
@@ -112,11 +119,9 @@ namespace AriesMagicAppointmentSystem.Controllers
 
             await _context.SaveChangesAsync();
 
-            var adminUsers = await _context.LegacyUsers
-                .Where(u => u.Role == "Admin")
-                .ToListAsync();
+            var adminIdentityUsers = await _userManager.GetUsersInRoleAsync("Admin");
 
-            foreach (var admin in adminUsers)
+            foreach (var admin in adminIdentityUsers)
             {
                 await CreateNotificationAsync(
                     admin.Id,
@@ -125,10 +130,10 @@ namespace AriesMagicAppointmentSystem.Controllers
                     "/Payments/PendingVerification");
             }
 
-            var adminEmails = await _context.LegacyUsers
-                .Where(u => u.Role == "Admin")
-                .Select(u => u.Email)
-                .ToListAsync();
+            var adminEmails = adminIdentityUsers
+                .Where(u => !string.IsNullOrWhiteSpace(u.Email))
+                .Select(u => u.Email!)
+                .ToList();
 
             foreach (var email in adminEmails)
             {
@@ -230,10 +235,10 @@ namespace AriesMagicAppointmentSystem.Controllers
 
             await _context.SaveChangesAsync();
 
-            if (payment.Booking != null)
+            if (payment.Booking != null && !string.IsNullOrWhiteSpace(payment.Booking.ApplicationUserId))
             {
                 await CreateNotificationAsync(
-                    payment.Booking.ClientId,
+                    payment.Booking.ApplicationUserId,
                     "Payment Verified",
                     "Your payment has been verified and your booking is now confirmed.",
                     "/Bookings/MyBookings");
@@ -299,14 +304,15 @@ namespace AriesMagicAppointmentSystem.Controllers
 
             await _context.SaveChangesAsync();
 
-            if (payment.Booking != null)
+            if (payment.Booking != null && !string.IsNullOrWhiteSpace(payment.Booking.ApplicationUserId))
             {
                 await CreateNotificationAsync(
-                    payment.Booking.ClientId,
+                    payment.Booking.ApplicationUserId,
                     "Payment Rejected",
                     "Your payment proof was rejected. Please upload a new downpayment proof.",
                     "/Payments/MyUploads");
             }
+
             if (payment.Booking != null)
             {
                 var bookingWithClient = await _context.Bookings
@@ -343,7 +349,8 @@ namespace AriesMagicAppointmentSystem.Controllers
                 })
                 .ToListAsync();
         }
-        private async Task CreateNotificationAsync(int userId, string title, string message, string? link = null)
+
+        private async Task CreateNotificationAsync(string userId, string title, string message, string? link = null)
         {
             _context.Notifications.Add(new Notification
             {

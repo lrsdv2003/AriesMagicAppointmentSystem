@@ -4,46 +4,94 @@
     ViewData["Title"] = "Upload Payment";
 }
 
-<div class="page-header">
+<div class="client-portal-header">
     <div>
-        <h1>Upload Payment</h1>
-        <p class="page-subtitle">Submit downpayment proof for a booking awaiting payment.</p>
+        <div class="section-kicker">Client Portal</div>
+        <h1 class="client-portal-title">Upload Payment</h1>
+        <p class="client-portal-text">Submit your payment proof for admin verification and move your booking to the next step.</p>
     </div>
 </div>
 
-<div class="form-card">
-    <form asp-action="Upload" method="post" enctype="multipart/form-data">
-        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+<div class="upload-payment-layout">
+    <div class="dashboard-panel">
+        <div class="form-section-title mb-3">Payment Information</div>
 
-        <div class="mb-3">
-            <label asp-for="BookingId" class="form-label"></label>
-            <select asp-for="BookingId" asp-items="Model.Bookings" class="form-control">
-                <option value="">-- Select Booking --</option>
-            </select>
-            <span asp-validation-for="BookingId" class="text-danger"></span>
+        <form asp-action="Upload" method="post" enctype="multipart/form-data">
+            @Html.AntiForgeryToken()
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+            <div class="row g-3">
+                <div class="col-12">
+                    <label asp-for="BookingId" class="form-label">Select Booking</label>
+                    <select asp-for="BookingId" asp-items="Model.Bookings" class="form-select">
+                        <option value="">-- Select Booking --</option>
+                    </select>
+                    <span asp-validation-for="BookingId" class="text-danger"></span>
+                </div>
+
+                <div class="col-md-6">
+                    <label asp-for="Amount" class="form-label">Amount Paid</label>
+                    <input asp-for="Amount" class="form-control" placeholder="Enter payment amount" />
+                    <span asp-validation-for="Amount" class="text-danger"></span>
+                </div>
+
+                <div class="col-md-6">
+                    <label asp-for="ProofImage" class="form-label">Payment Proof</label>
+                    <input asp-for="ProofImage" type="file" class="form-control" accept="image/*" />
+                    <span asp-validation-for="ProofImage" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="upload-payment-actions">
+                <button type="submit" class="btn btn-primary btn-lg">Submit Payment</button>
+                <a asp-action="MyUploads" class="btn btn-outline-secondary btn-lg">Back to My Payments</a>
+            </div>
+        </form>
+    </div>
+
+    <div class="dashboard-panel payment-guide-panel">
+        <div class="form-section-title mb-3">Payment Guide</div>
+
+        <div class="payment-guide-list">
+            <div class="payment-guide-card">
+                <div class="payment-guide-icon">1</div>
+                <div>
+                    <strong>Select your booking</strong>
+                    <p>Choose the booking that is currently waiting for downpayment or verification.</p>
+                </div>
+            </div>
+
+            <div class="payment-guide-card">
+                <div class="payment-guide-icon">2</div>
+                <div>
+                    <strong>Enter the amount paid</strong>
+                    <p>Input the exact amount you paid based on the booking requirements.</p>
+                </div>
+            </div>
+
+            <div class="payment-guide-card">
+                <div class="payment-guide-icon">3</div>
+                <div>
+                    <strong>Upload clear proof</strong>
+                    <p>Make sure your screenshot or receipt is clear and readable for easier admin verification.</p>
+                </div>
+            </div>
+
+            <div class="payment-guide-card">
+                <div class="payment-guide-icon">4</div>
+                <div>
+                    <strong>Wait for verification</strong>
+                    <p>Admin will review your uploaded payment proof and update the payment status.</p>
+                </div>
+            </div>
         </div>
 
-        <div class="mb-3">
-            <label asp-for="Amount" class="form-label"></label>
-            <input asp-for="Amount" class="form-control" />
-            <span asp-validation-for="Amount" class="text-danger"></span>
+        <div class="payment-guide-note mt-4">
+            The required downpayment for package bookings is <strong>₱2,000.00</strong> unless a different amount is instructed by the system workflow.
         </div>
-
-        <div class="mb-4">
-            <label asp-for="ProofImage" class="form-label"></label>
-            <input asp-for="ProofImage" type="file" class="form-control" accept=".jpg,.jpeg,.png,.webp" />
-            <span asp-validation-for="ProofImage" class="text-danger"></span>
-        </div>
-
-        <div class="d-flex gap-2">
-            <button type="submit" class="btn btn-primary">Upload Payment</button>
-            <a asp-controller="Home" asp-action="Index" class="btn btn-secondary">Back</a>
-        </div>
-    </form>
+    </div>
 </div>
 
 @section Scripts {
-    @{
-        await Html.RenderPartialAsync("_ValidationScriptsPartial");
-    }
+    <partial name="_ValidationScriptsPartial" />
 }

@@ -1,45 +1,94 @@
-@{
-    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
-}
 @model AriesMagicAppointmentSystem.Models.Service
 
 @{
-    ViewData["Title"] = "Service Details";
+    Layout = "_DashboardLayout";
+    ViewData["Title"] = "Package Details";
 }
 
 <div class="page-header">
     <div>
-        <h1>Service Details</h1>
-        <p class="page-subtitle">View complete service information.</p>
+        <h1>Package Details</h1>
+        <p class="page-subtitle">View this package and all of its configured inclusions.</p>
     </div>
 </div>
 
-<div class="card-clean">
-    <dl class="row details-list mb-4">
-        <dt class="col-sm-3">Name</dt>
-        <dd class="col-sm-9">@Model.Name</dd>
+<div class="package-details-layout">
+    <div class="dashboard-panel">
+        <div class="details-header-block">
+            <div>
+                <h2 class="details-title">@Model.Name</h2>
+                <div class="package-card-badge @(Model.IsArchived ? "archived-badge" : "")">
+                    @(Model.IsArchived ? "Archived Package" : "Active Package")
+                </div>
+            </div>
+            <div class="package-details-price">
+                ₱@Model.Price.ToString("N2")
+            </div>
+        </div>
 
-        <dt class="col-sm-3">Price</dt>
-        <dd class="col-sm-9">₱@Model.Price.ToString("N2")</dd>
+        <div class="package-card-meta mt-3">
+            <div class="package-meta-box">
+                <span class="package-meta-label">Duration</span>
+                <span class="package-meta-value">@Model.DurationInHours hour(s)</span>
+            </div>
+            <div class="package-meta-box">
+                <span class="package-meta-label">Status</span>
+                <span class="package-meta-value">@(Model.IsArchived ? "Archived" : "Active")</span>
+            </div>
+        </div>
 
-        <dt class="col-sm-3">Duration</dt>
-        <dd class="col-sm-9">@Model.DurationInHours hour(s)</dd>
+        <div class="details-description-block mt-4">
+            <div class="form-section-title mb-2">Package Description</div>
+            <p class="package-card-description mb-0">
+                @(string.IsNullOrWhiteSpace(Model.Description) ? "No description available for this package yet." : Model.Description)
+            </p>
+        </div>
 
-        <dt class="col-sm-3">Archived</dt>
-        <dd class="col-sm-9">
-            @if (Model.IsArchived)
-            {
-                <span class="status-badge">Archived</span>
-            }
-            else
-            {
-                <span class="status-badge">Active</span>
-            }
-        </dd>
-    </dl>
+        <div class="d-flex gap-2 mt-4">
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">Edit</a>
+            <a asp-action="Index" class="btn btn-outline-secondary">Back</a>
+        </div>
+    </div>
 
-    <div class="d-flex gap-2">
-        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">Edit</a>
-        <a asp-action="Index" class="btn btn-secondary">Back</a>
+    <div class="dashboard-panel">
+        <div class="form-section-header mb-3">
+            <div>
+                <div class="form-section-title mb-1">Package Inclusions</div>
+                <p class="page-subtitle mb-0">Configured inclusions and deduction rules.</p>
+            </div>
+        </div>
+
+        @if (Model.Inclusions == null || !Model.Inclusions.Any())
+        {
+            <div class="empty-state">
+                <h3>No inclusions yet</h3>
+                <p>This package does not have any inclusions defined yet.</p>
+            </div>
+        }
+        else
+        {
+            <div class="inclusion-card-list">
+                @foreach (var inclusion in Model.Inclusions)
+                {
+                    <div class="inclusion-card">
+                        <div class="inclusion-card-top">
+                            <h4 class="inclusion-name">@inclusion.Name</h4>
+                            <div class="inclusion-price">₱@inclusion.DeductionAmount.ToString("N2")</div>
+                        </div>
+
+                        <div class="inclusion-meta">
+                            @if (inclusion.IsRemovable)
+                            {
+                                <span class="status-badge status-confirmed">Removable by Client</span>
+                            }
+                            else
+                            {
+                                <span class="status-badge status-read">Fixed Inclusion</span>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        }
     </div>
 </div>

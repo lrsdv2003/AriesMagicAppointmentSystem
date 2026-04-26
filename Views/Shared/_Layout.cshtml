@@ -1,103 +1,158 @@
-﻿@using Microsoft.AspNetCore.Identity
-@using AriesMagicAppointmentSystem.Models
-@inject UserManager<ApplicationUser> UserManager
+﻿@{
+    var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
+    var currentAction = ViewContext.RouteData.Values["action"]?.ToString();
+}
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - Aries Magic Appointment System</title>
-    <script type="importmap"></script>
+    <title>@ViewData["Title"] - Aries Magic</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/AriesMagicAppointmentSystem.styles.css" asp-append-version="true" />
 </head>
-<body>
-    <header>
-        <ul class="navbar-nav ms-auto d-flex flex-row align-items-center gap-3">
-            <li class="nav-item">
-                <a class="nav-link" asp-controller="Home" asp-action="Index">Home</a>
-            </li>
-            @{
-                var currentUser = await UserManager.GetUserAsync(User);
-            }
-            @if (User.Identity != null && User.Identity.IsAuthenticated)
-            {
-                @if (User.IsInRole("Client"))
-                {
-                    <li class="nav-item">
-                        <a class="nav-link" asp-controller="Bookings" asp-action="MyBookings">My Bookings</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" asp-controller="Bookings" asp-action="Create">Book Now</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" asp-controller="Payments" asp-action="Upload">Upload Payment</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" asp-controller="Payments" asp-action="MyUploads">My Payments</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" asp-controller="RescheduleRequests" asp-action="MyRequests">My Reschedules</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link nav-notification-link" asp-controller="Notifications" asp-action="Index">Notifications</a>
-                    </li>
-                }
-                <li class="nav-item">
-                    <span class="nav-link">Hello, @currentUser?.FullName</span>    
-                </li>
-                <li class="nav-item">
-                    <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
-                        @Html.AntiForgeryToken()
-                        <button type="submit" class="btn btn-secondary btn-sm">Logout</button>
-                    </form>
-                </li>
-            }
-            else
-            {
-                <li class="nav-item">
-                    <a class="nav-link" asp-controller="Account" asp-action="Login">Login</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" asp-controller="Account" asp-action="Register">Register</a>
-                </li>
-            }
-        </ul>
+<body class="client-body">
+    <header class="client-navbar-wrap">
+        <nav class="navbar navbar-expand-lg client-navbar">
+            <div class="container">
+                <a class="navbar-brand client-brand" asp-controller="Home" asp-action="Index">
+                    <span class="brand-mark">✨</span>
+                    <span>Aries Magic</span>
+                </a>
+
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#clientNavbar">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <div class="collapse navbar-collapse" id="clientNavbar">
+                    <ul class="navbar-nav mx-auto mb-2 mb-lg-0 client-nav-links">
+                        <li class="nav-item">
+                            <a class="nav-link @(currentController == "Home" ? "active" : "")"
+                               asp-controller="Home" asp-action="Index">Home</a>
+                        </li>
+
+                        <li class="nav-item">
+                            <a class="nav-link @(currentController == "Home" && currentAction == "Index" ? "active" : "")"
+                               asp-controller="Home" asp-action="Index" asp-fragment="packages">Packages</a>
+                        </li>
+
+                        <li class="nav-item">
+                            <a class="nav-link @(currentController == "Home" && currentAction == "Index" ? "active" : "")"
+                               asp-controller="Home" asp-action="Index" asp-fragment="how-it-works">How It Works</a>
+                        </li>
+
+                        @if (User.Identity != null && User.Identity.IsAuthenticated && User.IsInRole("Client"))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link @(currentController == "Bookings" && currentAction == "MyBookings" ? "active" : "")"
+                                   asp-controller="Bookings" asp-action="MyBookings">My Bookings</a>
+                            </li>
+
+                            <li class="nav-item">
+                                <a class="nav-link @(currentController == "Payments" && currentAction == "MyUploads" ? "active" : "")"
+                                   asp-controller="Payments" asp-action="MyUploads">My Payments</a>
+                            </li>
+
+                            <li class="nav-item">
+                                <a class="nav-link @(currentController == "RescheduleRequests" && currentAction == "MyRequests" ? "active" : "")"
+                                   asp-controller="RescheduleRequests" asp-action="MyRequests">My Reschedules</a>
+                            </li>
+
+                            <li class="nav-item">
+                                <a class="nav-link @(currentController == "Notifications" ? "active" : "")"
+                                   asp-controller="Notifications" asp-action="Index">Notifications</a>
+                            </li>
+                        }
+                    </ul>
+
+                    <div class="client-nav-actions d-flex align-items-center gap-2">
+                        @if (User.Identity != null && User.Identity.IsAuthenticated && User.IsInRole("Client"))
+                        {
+                            <a asp-controller="Bookings" asp-action="CreateStepOne" class="btn btn-primary">
+                                Book Now
+                            </a>
+
+                            <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-outline-secondary">Logout</button>
+                            </form>
+                        }
+                        else
+                        {
+                            <a asp-controller="Account" asp-action="Login" class="btn btn-outline-secondary">
+                                Login
+                            </a>
+                            <a asp-controller="Account" asp-action="Register" class="btn btn-primary">
+                                Create Account
+                            </a>
+                        }
+                    </div>
+                </div>
+            </div>
+        </nav>
     </header>
 
-    <main class="main-content">
-        <div class="container py-4">
+    <main class="client-main">
+        @if (currentController == "Home" && currentAction == "Index")
+        {
             @RenderBody()
-        </div>
+        }
+        else
+        {
+            <div class="container client-page-wrap">
+                @RenderBody()
+            </div>
+        }
     </main>
 
-    <footer class="custom-footer">
+    <footer class="client-footer">
         <div class="container">
             <div class="footer-grid">
                 <div>
-                    <h5>Aries Magic</h5>
+                    <div class="footer-brand">
+                        <span class="brand-mark">✨</span>
+                        <span>Aries Magic</span>
+                    </div>
                     <p class="footer-text">
-                        Making celebrations more memorable through engaging event entertainment and a smooth online booking experience.
+                        Bringing fun, wonder, and memorable entertainment experiences to birthdays,
+                        school events, company gatherings, and special celebrations.
                     </p>
                 </div>
+
                 <div>
                     <h5>Quick Links</h5>
                     <ul class="footer-links">
                         <li><a asp-controller="Home" asp-action="Index">Home</a></li>
-                        <li><a asp-controller="Bookings" asp-action="Create">Book Now</a></li>
-                        <li><a asp-controller="Account" asp-action="Register">Register</a></li>
+                        <li><a asp-controller="Home" asp-action="Index" asp-fragment="packages">Packages</a></li>
+                        <li><a asp-controller="Bookings" asp-action="CreateStepOne">Book Now</a></li>
+                        <li><a asp-controller="Account" asp-action="Register">Create Account</a></li>
                     </ul>
                 </div>
+
                 <div>
-                    <h5>Contact</h5>
+                    <h5>Booking Process</h5>
                     <p class="footer-text">
-                        For inquiries and booking support, clients may reach out through the platform and registered email updates.
+                        Create an account, fill out your event details, choose your package,
+                        upload your payment proof, and monitor your booking updates online.
                     </p>
                 </div>
+
+                <div>
+                    <h5>Events We Cater</h5>
+                    <ul class="footer-links">
+                        <li>Birthday</li>
+                        <li>Company Events</li>
+                        <li>School Events</li>
+                        <li>Christmas Parties</li>
+                    </ul>
+                </div>
             </div>
+
             <div class="footer-bottom">
-                &copy; 2026 - Aries Magic Appointment System
+                <span>&copy; 2026 Aries Magic Appointment System. All rights reserved.</span>
+                <span>Designed for a smooth and modern client booking experience.</span>
             </div>
         </div>
     </footer>

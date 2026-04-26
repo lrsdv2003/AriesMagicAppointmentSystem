@@ -5,7 +5,7 @@
 namespace AriesMagicAppointmentSystem.Migrations
 {
     /// <inheritdoc />
-    public partial class AddBookingTimelineTable : Migration
+    public partial class ChangeNotificationUserIdToString : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

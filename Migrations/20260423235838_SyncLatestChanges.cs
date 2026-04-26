@@ -5,7 +5,7 @@
 namespace AriesMagicAppointmentSystem.Migrations
 {
     /// <inheritdoc />
-    public partial class AddBookingApplicationUserId : Migration
+    public partial class SyncLatestChanges : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

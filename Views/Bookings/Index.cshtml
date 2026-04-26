@@ -122,6 +122,7 @@
                             {
                                 if (item.BookingStatus == "Pending")
                                 {
+                                    <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-light package-btn-light">Details</a>
                                     <a asp-action="Approve" asp-route-id="@item.Id" class="btn btn-sm btn-success">Approve</a>
                                     <a asp-action="Decline" asp-route-id="@item.Id" class="btn btn-sm btn-danger">Decline</a>
                                 }

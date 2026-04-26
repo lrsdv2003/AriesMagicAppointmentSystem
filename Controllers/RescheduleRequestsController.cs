@@ -3,6 +3,7 @@ using AriesMagicAppointmentSystem.Models;
 using AriesMagicAppointmentSystem.Services;
 using AriesMagicAppointmentSystem.ViewModels;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -15,14 +16,18 @@ namespace AriesMagicAppointmentSystem.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly IEmailService _emailService;
+        private readonly UserManager<ApplicationUser> _userManager;
 
-        public RescheduleRequestsController(ApplicationDbContext context, IEmailService emailService)
+        public RescheduleRequestsController(
+            ApplicationDbContext context,
+            IEmailService emailService,
+            UserManager<ApplicationUser> userManager)
         {
             _context = context;
             _emailService = emailService;
+            _userManager = userManager;
         }
 
-        // CLIENT: create request
         [Authorize(Roles = "Client")]
         public async Task<IActionResult> Create()
         {
@@ -43,19 +48,23 @@ namespace AriesMagicAppointmentSystem.Controllers
         public async Task<IActionResult> Create(RescheduleRequestCreateViewModel model)
         {
             var appUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
             if (model.RequestedDate.Date < DateTime.Today)
             {
                 ModelState.AddModelError("RequestedDate", "Past dates are not allowed.");
             }
+
             if (model.RequestedDate.Date == DateTime.Today && model.RequestedStartTime < DateTime.Now.TimeOfDay)
             {
                 ModelState.AddModelError("RequestedStartTime", "Past time is not allowed for today.");
             }
+
             if (!ModelState.IsValid)
             {
                 model.Bookings = await GetEligibleClientBookingsAsync(appUserId);
                 return View(model);
             }
+
             var booking = await _context.Bookings
                 .Include(b => b.Service)
                 .FirstOrDefaultAsync(b => b.Id == model.BookingId && b.ApplicationUserId == appUserId);
@@ -93,13 +102,8 @@ namespace AriesMagicAppointmentSystem.Controllers
 
             await _context.SaveChangesAsync();
 
-            var staffUsers = await _context.LegacyUsers
-                .Where(u => u.Role == "Staff")
-                .ToListAsync();
-
-            var adminUsers = await _context.LegacyUsers
-                .Where(u => u.Role == "Admin")
-                .ToListAsync();
+            var staffUsers = await _userManager.GetUsersInRoleAsync("Staff");
+            var adminUsers = await _userManager.GetUsersInRoleAsync("Admin");
 
             foreach (var staff in staffUsers)
             {
@@ -122,7 +126,6 @@ namespace AriesMagicAppointmentSystem.Controllers
             return RedirectToAction(nameof(MyRequests));
         }
 
-        // CLIENT: own requests
         [Authorize(Roles = "Client")]
         public async Task<IActionResult> MyRequests()
         {
@@ -138,7 +141,6 @@ namespace AriesMagicAppointmentSystem.Controllers
             return View(requests);
         }
 
-        // STAFF / ADMIN: list all
         [Authorize(Roles = "Staff,Admin")]
         public async Task<IActionResult> Index()
         {
@@ -153,7 +155,6 @@ namespace AriesMagicAppointmentSystem.Controllers
             return View(requests);
         }
 
-        // ADMIN: approve
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Approve(int? id)
         {
@@ -212,11 +213,14 @@ namespace AriesMagicAppointmentSystem.Controllers
 
             await _context.SaveChangesAsync();
 
-            await CreateNotificationAsync(
-                request.Booking.ClientId,
-                "Reschedule Approved",
-                "Your reschedule request was approved.",
-                "/RescheduleRequests/MyRequests");
+            if (!string.IsNullOrWhiteSpace(request.Booking.ApplicationUserId))
+            {
+                await CreateNotificationAsync(
+                    request.Booking.ApplicationUserId,
+                    "Reschedule Approved",
+                    "Your reschedule request was approved.",
+                    "/RescheduleRequests/MyRequests");
+            }
 
             var bookingWithClient = await _context.Bookings
                 .Include(b => b.Client)
@@ -236,7 +240,6 @@ namespace AriesMagicAppointmentSystem.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        // ADMIN: reject
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Reject(int? id)
         {
@@ -279,11 +282,14 @@ namespace AriesMagicAppointmentSystem.Controllers
 
             await _context.SaveChangesAsync();
 
-            await CreateNotificationAsync(
-                request.Booking.ClientId,
-                "Reschedule Rejected",
-                "Your reschedule request was rejected.",
-                "/RescheduleRequests/MyRequests");
+            if (!string.IsNullOrWhiteSpace(request.Booking.ApplicationUserId))
+            {
+                await CreateNotificationAsync(
+                    request.Booking.ApplicationUserId,
+                    "Reschedule Rejected",
+                    "Your reschedule request was rejected.",
+                    "/RescheduleRequests/MyRequests");
+            }
 
             var bookingWithClient = await _context.Bookings
                 .Include(b => b.Client)
@@ -308,7 +314,9 @@ namespace AriesMagicAppointmentSystem.Controllers
             return await _context.Bookings
                 .Include(b => b.Service)
                 .Where(b => b.ApplicationUserId == appUserId
-                         && (b.Status == BookingStatus.Confirmed || b.Status == BookingStatus.AwaitingDownpayment || b.Status == BookingStatus.AwaitingVerification))
+                         && (b.Status == BookingStatus.Confirmed
+                             || b.Status == BookingStatus.AwaitingDownpayment
+                             || b.Status == BookingStatus.AwaitingVerification))
                 .Select(b => new SelectListItem
                 {
                     Value = b.Id.ToString(),
@@ -339,7 +347,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             return false;
         }
 
-        private async Task CreateNotificationAsync(int userId, string title, string message, string? link = null)
+        private async Task CreateNotificationAsync(string userId, string title, string message, string? link = null)
         {
             _context.Notifications.Add(new Notification
             {

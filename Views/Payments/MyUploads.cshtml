@@ -1,85 +1,121 @@
-@model IEnumerable<AriesMagicAppointmentSystem.Models.Booking>
+@model IEnumerable<AriesMagicAppointmentSystem.Models.Payment>
 
 @{
-    ViewData["Title"] = "My Bookings";
+    ViewData["Title"] = "My Payments";
 }
 
-<div class="page-header">
+<div class="client-portal-header">
     <div>
-        <h1>My Bookings</h1>
-        <p class="page-subtitle">Track your submitted bookings and their current status.</p>
+        <div class="section-kicker">Client Portal</div>
+        <h1 class="client-portal-title">My Payments</h1>
+        <p class="client-portal-text">Review your uploaded payment proofs and monitor their verification status.</p>
     </div>
     <div>
-        <a asp-action="Create" class="btn btn-primary">Create Booking</a>
+        <a asp-action="Upload" class="btn btn-primary btn-lg">Upload Payment</a>
     </div>
 </div>
 
-<div class="dashboard-stats">
-    <div class="stat-card">
-        <div class="stat-label">Total Bookings</div>
-        <div class="stat-value">@Model.Count()</div>
-        <div class="stat-subtext">All bookings submitted using your account.</div>
+<div class="client-portal-stats">
+    <div class="client-portal-stat-card">
+        <span class="client-portal-stat-label">Total Uploads</span>
+        <strong class="client-portal-stat-value">@Model.Count()</strong>
+        <span class="client-portal-stat-note">All payment proofs uploaded under your account</span>
     </div>
-    <div class="stat-card">
-        <div class="stat-label">Confirmed</div>
-        <div class="stat-value">@Model.Count(x => x.Status == AriesMagicAppointmentSystem.Models.BookingStatus.Confirmed)</div>
-        <div class="stat-subtext">Bookings that are fully approved and confirmed.</div>
+
+    <div class="client-portal-stat-card">
+        <span class="client-portal-stat-label">Verified</span>
+        <strong class="client-portal-stat-value">
+            @Model.Count(x => x.Status == AriesMagicAppointmentSystem.Models.PaymentStatus.Verified)
+        </strong>
+        <span class="client-portal-stat-note">Payments already approved by admin</span>
     </div>
-    <div class="stat-card">
-        <div class="stat-label">Pending Updates</div>
-        <div class="stat-value">@Model.Count(x => x.Status != AriesMagicAppointmentSystem.Models.BookingStatus.Completed && x.Status != AriesMagicAppointmentSystem.Models.BookingStatus.Declined)</div>
-        <div class="stat-subtext">Bookings still active in the workflow.</div>
+
+    <div class="client-portal-stat-card">
+        <span class="client-portal-stat-label">Pending Review</span>
+        <strong class="client-portal-stat-value">
+            @Model.Count(x => x.Status == AriesMagicAppointmentSystem.Models.PaymentStatus.Pending)
+        </strong>
+        <span class="client-portal-stat-note">Uploads still waiting for verification</span>
     </div>
 </div>
 
-<div class="table-clean">
-    <table class="table align-middle">
-        @if (!Model.Any())
-        {
-            <div class="empty-state">
-                <h3>No records yet</h3>
-                <p>There is nothing to display here right now.</p>
-            </div>
-        }
-        else
-        {
-            <div class="table-clean">
-                <table class="table align-middle">
-                    ...
-                </table>
-            </div>
-        }
-        <thead>
-            <tr>
-                <th>Service</th>
-                <th>Event Date</th>
-                <th>Start</th>
-                <th>End</th>
-                <th>Status</th>
-            </tr>
-        </thead>
-        <tbody>
-@foreach (var item in Model)
+@if (!Model.Any())
 {
-    var statusClass = item.Status switch
-                {
-                    "Pending" => "status-pending",
-                    "AwaitingDownpayment" => "status-awaiting",
-                    "AwaitingVerification" => "status-awaiting",
-                    "Confirmed" => "status-confirmed",
-                    "Completed" => "status-completed",
-                    "Declined" => "status-declined",
-                    "Expired" => "status-expired",
-                    _ => "status-read"
-                };
-            <tr>
-                <td>@item.Service?.Name</td>
-                <td>@item.EventDate.ToString("MMM dd, yyyy")</td>
-                <td>@item.StartTime.ToString("hh:mm tt")</td>
-                <td>@item.EndTime.ToString("hh:mm tt")</td>
-                <td><span class="status-badge @statusClass">@item.Status</span></td>
-            </tr>
+    <div class="empty-state client-empty-state">
+        <h3>No payments uploaded yet</h3>
+        <p>You have not uploaded any payment proof yet.</p>
+        <a asp-action="Upload" class="btn btn-primary mt-2">Upload Payment</a>
+    </div>
 }
-        </tbody>
-    </table>
-</div>
+else
+{
+    <div class="client-booking-grid">
+        @foreach (var item in Model.OrderByDescending(x => x.UploadedAt))
+        {
+            var statusClass = item.Status switch
+            {
+                "Pending" => "status-pending",
+                "Verified" => "status-verified",
+                "Rejected" => "status-rejected",
+                _ => "status-read"
+            };
+
+            <div class="client-booking-card">
+                <div class="client-booking-top">
+                    <div>
+                        <div class="client-booking-code">
+                            Payment Upload
+                        </div>
+                        <h3 class="client-booking-package">
+                            @(item.Booking?.PackageName ?? item.Booking?.Service?.Name ?? "Package")
+                        </h3>
+                    </div>
+
+                    <span class="status-badge @statusClass">@item.Status</span>
+                </div>
+
+                <div class="client-booking-meta">
+                    <div class="client-booking-meta-box">
+                        <span class="client-booking-meta-label">Amount</span>
+                        <span class="client-booking-meta-value">₱@item.Amount.ToString("N2")</span>
+                    </div>
+
+                    <div class="client-booking-meta-box">
+                        <span class="client-booking-meta-label">Uploaded</span>
+                        <span class="client-booking-meta-value">@item.UploadedAt.ToString("MMM dd, yyyy")</span>
+                    </div>
+                </div>
+
+                <div class="payment-proof-preview">
+                    <img src="@item.ProofImagePath" alt="Payment Proof" class="payment-proof-image" />
+                </div>
+
+                <div class="client-booking-details">
+                    <div class="client-booking-detail-row">
+                        <span>Booking Date</span>
+                        <strong>@(item.Booking?.EventDate.ToString("MMMM dd, yyyy") ?? "N/A")</strong>
+                    </div>
+                    <div class="client-booking-detail-row">
+                        <span>Package</span>
+                        <strong>@(item.Booking?.PackageName ?? item.Booking?.Service?.Name ?? "N/A")</strong>
+                    </div>
+                    <div class="client-booking-detail-row">
+                        <span>Review Status</span>
+                        <strong>@item.Status</strong>
+                    </div>
+                </div>
+
+                <div class="client-booking-footer">
+                    @if (item.Status == AriesMagicAppointmentSystem.Models.PaymentStatus.Rejected)
+                    {
+                        <a asp-action="Upload" class="btn btn-primary">Upload Again</a>
+                    }
+                    else
+                    {
+                        <button type="button" class="btn btn-outline-secondary" disabled>No Action Needed</button>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+}

@@ -128,61 +128,79 @@ namespace AriesMagicAppointmentSystem.Controllers
         public async Task<IActionResult> Login(LoginViewModel model, string? returnUrl = null)
         {
             ViewData["ReturnUrl"] = returnUrl;
+
             if (!ModelState.IsValid)
             {
                 return View(model);
             }
+
             var user = await _userManager.FindByEmailAsync(model.Email);
             if (user == null)
             {
                 ModelState.AddModelError("", "Incorrect Email or Password.");
                 return View(model);
             }
+
             if (!user.IsActive)
             {
                 ModelState.AddModelError("", "Your account has been disabled. Please contact the administrator.");
                 return View(model);
             }
+
             if (!user.EmailConfirmed)
             {
                 var expiryDays = 3;
+
                 if (user.CreatedAt.AddDays(expiryDays) < DateTime.UtcNow)
-            {
-                await _userManager.DeleteAsync(user);
-                ModelState.AddModelError("", "Your unverified account has expired. Please register again.");
+                {
+                    await _userManager.DeleteAsync(user);
+                    ModelState.AddModelError("", "Your unverified account has expired. Please register again.");
+                    return View(model);
+                }
+
+                ModelState.AddModelError("", "Please confirm your email first before logging in.");
                 return View(model);
             }
-            ModelState.AddModelError("", "Please confirm your email first before logging in.");
-            return View(model);
-            }
+
             var result = await _signInManager.PasswordSignInAsync(
                 user.UserName!,
                 model.Password,
                 model.RememberMe,
                 lockoutOnFailure: false);
-                if (!result.Succeeded)
+
+            if (result.Succeeded)
             {
-                ModelState.AddModelError("", "Invalid login attempt.");
-                return View(model);
-                }
-                if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
+                if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
                 {
-                    return Redirect(returnUrl);
+                    var isClient = await _userManager.IsInRoleAsync(user, "Client");
+
+                    if (!isClient)
+                    {
+                        return LocalRedirect(returnUrl);
+                    }
                 }
+
                 if (await _userManager.IsInRoleAsync(user, "Admin"))
-                {
-                    return RedirectToAction("PendingVerification", "Payments");
-                }
+                    return RedirectToAction("Index", "Reports");
+
                 if (await _userManager.IsInRoleAsync(user, "Staff"))
-                {
-                    return RedirectToAction("Pending", "Bookings");
-                }
-                if (await _userManager.IsInRoleAsync(user, "Client"))
-                {
                     return RedirectToAction("Index", "Bookings");
-                }
+
+                if (await _userManager.IsInRoleAsync(user, "Client"))
+                    return RedirectToAction("MyBookings", "Bookings");
+
                 return RedirectToAction("Index", "Home");
-                }
+            }
+
+            if (result.IsLockedOut)
+            {
+                ModelState.AddModelError("", "Your account is locked.");
+                return View(model);
+            }
+
+            ModelState.AddModelError("", "Incorrect Email or Password.");
+            return View(model);
+        }
         [Authorize]
         [HttpPost]
         [ValidateAntiForgeryToken]

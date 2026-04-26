@@ -2,6 +2,7 @@ using AriesMagicAppointmentSystem.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace AriesMagicAppointmentSystem.Controllers
 {
@@ -17,14 +18,15 @@ namespace AriesMagicAppointmentSystem.Controllers
 
         public async Task<IActionResult> Index()
         {
-            int? legacyUserId = await GetLegacyUserIdAsync();
-            if (legacyUserId == null)
+            var appUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrWhiteSpace(appUserId))
             {
                 return View(new List<AriesMagicAppointmentSystem.Models.Notification>());
             }
 
             var notifications = await _context.Notifications
-                .Where(n => n.UserId == legacyUserId)
+                .Where(n => n.UserId == appUserId)
                 .OrderByDescending(n => n.CreatedAt)
                 .ToListAsync();
 
@@ -33,11 +35,13 @@ namespace AriesMagicAppointmentSystem.Controllers
 
         public async Task<IActionResult> Open(int id)
         {
-            int? legacyUserId = await GetLegacyUserIdAsync();
-            if (legacyUserId == null) return RedirectToAction("Index", "Home");
+            var appUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrWhiteSpace(appUserId))
+                return RedirectToAction("Index", "Home");
 
             var notification = await _context.Notifications
-                .FirstOrDefaultAsync(n => n.Id == id && n.UserId == legacyUserId);
+                .FirstOrDefaultAsync(n => n.Id == id && n.UserId == appUserId);
 
             if (notification == null) return NotFound();
 
@@ -51,19 +55,6 @@ namespace AriesMagicAppointmentSystem.Controllers
             }
 
             return RedirectToAction(nameof(Index));
-        }
-
-        private async Task<int?> GetLegacyUserIdAsync()
-        {
-            var email = User.Identity?.Name;
-
-            if (string.IsNullOrWhiteSpace(email))
-                return null;
-
-            var legacyUser = await _context.LegacyUsers
-                .FirstOrDefaultAsync(u => u.Email == email);
-
-            return legacyUser?.Id;
         }
     }
 }
