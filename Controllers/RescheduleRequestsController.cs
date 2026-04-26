@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using AriesMagicAppointmentSystem.Data;
 using AriesMagicAppointmentSystem.Models;
 using AriesMagicAppointmentSystem.Services;
@@ -7,7 +8,6 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using System.Security.Claims;
 
 namespace AriesMagicAppointmentSystem.Controllers
 {
@@ -39,6 +39,8 @@ namespace AriesMagicAppointmentSystem.Controllers
                 Bookings = await GetEligibleClientBookingsAsync(appUserId)
             };
 
+            ViewBag.UnavailableDates = await GetUnavailableRescheduleDatesAsync();
+
             return View(viewModel);
         }
 
@@ -48,10 +50,24 @@ namespace AriesMagicAppointmentSystem.Controllers
         public async Task<IActionResult> Create(RescheduleRequestCreateViewModel model)
         {
             var appUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            ViewBag.UnavailableDates = await GetUnavailableRescheduleDatesAsync();
 
             if (model.RequestedDate.Date < DateTime.Today)
             {
                 ModelState.AddModelError("RequestedDate", "Past dates are not allowed.");
+            }
+
+            var isBlocked = await _context.BlockedDates
+                .AnyAsync(x => x.Date.Date == model.RequestedDate.Date);
+
+            if (isBlocked)
+            {
+                ModelState.AddModelError("RequestedDate", "This date is unavailable for reschedule.");
+            }
+
+            if (await HasReachedDailyConfirmedLimitForReschedule(model.RequestedDate))
+            {
+                ModelState.AddModelError("RequestedDate", "This date has already reached the maximum number of bookings.");
             }
 
             if (model.RequestedDate.Date == DateTime.Today && model.RequestedStartTime < DateTime.Now.TimeOfDay)
@@ -78,6 +94,18 @@ namespace AriesMagicAppointmentSystem.Controllers
 
             var requestedStart = model.RequestedDate.Date.Add(model.RequestedStartTime);
             var requestedEnd = requestedStart.AddHours(booking.Service!.DurationInHours);
+
+            bool conflict = await HasBookingConflictExcludingCurrentBooking(
+                booking.Id,
+                requestedStart,
+                requestedEnd);
+
+            if (conflict)
+            {
+                ModelState.AddModelError("RequestedStartTime", "The selected time conflicts with an existing confirmed booking.");
+                model.Bookings = await GetEligibleClientBookingsAsync(appUserId);
+                return View(model);
+            }
 
             var request = new RescheduleRequest
             {
@@ -192,6 +220,14 @@ namespace AriesMagicAppointmentSystem.Controllers
             if (conflict)
             {
                 TempData["Error"] = "Requested schedule conflicts with an existing confirmed booking.";
+                return RedirectToAction(nameof(Index));
+            }
+            var isBlocked = await _context.BlockedDates
+                .AnyAsync(x => x.Date.Date == request.RequestedDate.Date);
+
+            if (isBlocked)
+            {
+                TempData["Error"] = "The requested date is blocked and unavailable.";
                 return RedirectToAction(nameof(Index));
             }
 
@@ -360,6 +396,113 @@ namespace AriesMagicAppointmentSystem.Controllers
             });
 
             await _context.SaveChangesAsync();
+        }
+
+        private async Task<List<string>> GetUnavailableRescheduleDatesAsync()
+        {
+            var blockedDates = await _context.BlockedDates
+                .Select(x => x.Date.Date)
+                .ToListAsync();
+
+            var settings = await _context.SystemSettings.FirstOrDefaultAsync();
+            var defaultMax = settings?.MaxBookingsPerDay ?? 3;
+
+            var customLimits = await _context.DateBookingLimits
+                .ToDictionaryAsync(x => x.Date.Date, x => x.MaxBookings);
+
+            var confirmedCounts = await _context.Bookings
+                .Where(b => b.Status == BookingStatus.Confirmed)
+                .GroupBy(b => b.EventDate.Date)
+                .Select(g => new
+                {
+                    Date = g.Key,
+                    Count = g.Count()
+                })
+                .ToListAsync();
+
+            var fullDates = confirmedCounts
+                .Where(x =>
+                {
+                    var limit = customLimits.ContainsKey(x.Date) ? customLimits[x.Date] : defaultMax;
+                    return x.Count >= limit;
+                })
+                .Select(x => x.Date)
+                .ToList();
+
+            return blockedDates
+                .Union(fullDates)
+                .Select(d => d.ToString("yyyy-MM-dd"))
+                .ToList();
+        }
+        private async Task<bool> HasReachedDailyConfirmedLimitForReschedule(DateTime eventDate)
+        {
+            var customLimit = await _context.DateBookingLimits
+                .Where(x => x.Date.Date == eventDate.Date)
+                .Select(x => (int?)x.MaxBookings)
+                .FirstOrDefaultAsync();
+
+            var defaultSetting = await _context.SystemSettings.FirstOrDefaultAsync();
+            var maxPerDay = customLimit ?? defaultSetting?.MaxBookingsPerDay ?? 3;
+
+            var confirmedCount = await _context.Bookings
+                .CountAsync(b => b.Status == BookingStatus.Confirmed
+                            && b.EventDate.Date == eventDate.Date);
+
+            return confirmedCount >= maxPerDay;
+        }
+
+        [Authorize(Roles = "Client")]
+        [HttpGet]
+        public async Task<IActionResult> CheckRescheduleDateAvailability(DateTime date)
+        {
+            var blockedEntry = await _context.BlockedDates
+                .FirstOrDefaultAsync(x => x.Date.Date == date.Date);
+
+            var isBlocked = blockedEntry != null;
+            var blockReason = blockedEntry?.Reason;
+
+            var customLimit = await _context.DateBookingLimits
+                .Where(x => x.Date.Date == date.Date)
+                .Select(x => (int?)x.MaxBookings)
+                .FirstOrDefaultAsync();
+
+            var settings = await _context.SystemSettings.FirstOrDefaultAsync();
+            var maxPerDay = customLimit ?? settings?.MaxBookingsPerDay ?? 3;
+
+            var confirmedCount = await _context.Bookings
+                .CountAsync(b => b.Status == BookingStatus.Confirmed && b.EventDate.Date == date.Date);
+
+            var remainingSlots = Math.Max(0, maxPerDay - confirmedCount);
+
+            return Json(new
+            {
+                isBlocked,
+                blockReason,
+                maxPerDay,
+                confirmedCount,
+                remainingSlots,
+                isFull = confirmedCount >= maxPerDay
+            });
+        }
+        [Authorize(Roles = "Client")]
+        [HttpGet]
+        public async Task<IActionResult> GetUnavailableTimeRanges(DateTime date, int? excludeBookingId = null)
+        {
+            var confirmedBookings = await _context.Bookings
+                .Where(b => b.Status == BookingStatus.Confirmed
+                        && b.EventDate.Date == date.Date
+                        && (!excludeBookingId.HasValue || b.Id != excludeBookingId.Value))
+                .OrderBy(b => b.StartTime)
+                .ToListAsync();
+
+            var ranges = confirmedBookings.Select(b => new
+            {
+                start = b.StartTime.ToString("HH:mm"),
+                end = b.EndTime.AddHours(1).ToString("HH:mm"),
+                display = $"{b.StartTime:hh:mm tt} - {b.EndTime.AddHours(1):hh:mm tt}"
+            }).ToList();
+
+            return Json(ranges);
         }
     }
 }

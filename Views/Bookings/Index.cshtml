@@ -17,7 +17,7 @@
             <div class="col-md-4">
                 <label class="form-label">Search</label>
                 <input type="text" name="search" value="@Model.Search" class="form-control"
-                       placeholder="Search by client, booking ID..." />
+                       placeholder="Search by booking ID, client, email, service..." />
             </div>
 
             <div class="col-md-3">
@@ -45,8 +45,9 @@
                 </select>
             </div>
 
-            <div class="col-md-2">
-                <button type="submit" class="btn btn-primary w-100">Apply Filters</button>
+            <div class="col-md-2 d-grid gap-2">
+                <button type="submit" class="btn btn-primary">Apply Filters</button>
+                <a asp-action="Index" class="btn btn-outline-secondary">Reset</a>
             </div>
         </div>
     </form>
@@ -118,11 +119,12 @@
                             <span class="status-badge @paymentClass">@item.PaymentStatus</span>
                         </td>
                         <td class="text-end">
+                            <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-light package-btn-light">Details</a>
+
                             @if (User.IsInRole("Staff"))
                             {
                                 if (item.BookingStatus == "Pending")
                                 {
-                                    <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-light package-btn-light">Details</a>
                                     <a asp-action="Approve" asp-route-id="@item.Id" class="btn btn-sm btn-success">Approve</a>
                                     <a asp-action="Decline" asp-route-id="@item.Id" class="btn btn-sm btn-danger">Decline</a>
                                 }

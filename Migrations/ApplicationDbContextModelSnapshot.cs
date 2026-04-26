@@ -97,6 +97,29 @@ namespace AriesMagicAppointmentSystem.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
+            modelBuilder.Entity("AriesMagicAppointmentSystem.Models.BlockedDate", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("BlockedDates");
+                });
+
             modelBuilder.Entity("AriesMagicAppointmentSystem.Models.Booking", b =>
                 {
                     b.Property<int>("Id")
@@ -224,6 +247,28 @@ namespace AriesMagicAppointmentSystem.Migrations
                     b.HasIndex("BookingId");
 
                     b.ToTable("BookingTimelines");
+                });
+
+            modelBuilder.Entity("AriesMagicAppointmentSystem.Models.DateBookingLimit", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("MaxBookings")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("DateBookingLimits");
                 });
 
             modelBuilder.Entity("AriesMagicAppointmentSystem.Models.Notification", b =>
@@ -405,6 +450,22 @@ namespace AriesMagicAppointmentSystem.Migrations
                     b.HasIndex("ServiceId");
 
                     b.ToTable("ServiceInclusions");
+                });
+
+            modelBuilder.Entity("AriesMagicAppointmentSystem.Models.SystemSetting", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("MaxBookingsPerDay")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("SystemSettings");
                 });
 
             modelBuilder.Entity("AriesMagicAppointmentSystem.Models.User", b =>
@@ -602,11 +663,9 @@ namespace AriesMagicAppointmentSystem.Migrations
 
             modelBuilder.Entity("AriesMagicAppointmentSystem.Models.Notification", b =>
                 {
-                    b.HasOne("AriesMagicAppointmentSystem.Models.User", "User")
+                    b.HasOne("AriesMagicAppointmentSystem.Models.User", null)
                         .WithMany("Notifications")
                         .HasForeignKey("UserId1");
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("AriesMagicAppointmentSystem.Models.Payment", b =>

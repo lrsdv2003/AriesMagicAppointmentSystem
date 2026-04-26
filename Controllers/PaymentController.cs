@@ -241,7 +241,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                     payment.Booking.ApplicationUserId,
                     "Payment Verified",
                     "Your payment has been verified and your booking is now confirmed.",
-                    "/Bookings/MyBookings");
+                    "/Payments/MyUploads");
             }
 
             if (payment.Booking != null)

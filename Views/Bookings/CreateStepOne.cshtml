@@ -3,7 +3,11 @@
 @{
     ViewData["Title"] = "Create Booking - Step 1";
     var eventTypes = ViewBag.EventTypes as List<string> ?? new List<string>();
+    var unavailableDates = ViewBag.UnavailableDates as List<string> ?? new List<string>();
+    var unavailableDatesJson = System.Text.Json.JsonSerializer.Serialize(unavailableDates);
 }
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+
 <div class="booking-steps mb-4">
     <div class="booking-step active">1. Event Details</div>
     <div class="booking-step">2. Package Selection</div>
@@ -16,11 +20,47 @@
     </div>
 </div>
 
+<div class="dashboard-panel mb-4">
+    <div class="form-section-title mb-2">Date Availability Guide</div>
+    <p class="availability-help">
+        Some dates may be unavailable because they are fully booked or blocked by the admin.
+    </p>
+
+    <div class="availability-legend">
+        <div class="availability-legend-item">
+            <span class="availability-dot available"></span>
+            <span>Available date</span>
+        </div>
+        <div class="availability-legend-item">
+            <span class="availability-dot unavailable"></span>
+            <span>Unavailable date</span>
+        </div>
+    </div>
+</div>
+
 <div class="dashboard-panel">
     <form asp-action="CreateStepOne" method="post">
         @Html.AntiForgeryToken()
 
         <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+        <div id="dateAvailabilityAlert" class="alert alert-warning d-none mb-3">
+            This selected date is unavailable for booking because it is either blocked or already reached the maximum allowed events.
+        </div>
+    
+        <div id="dateSlotsInfo" class="alert alert-info d-none mb-3"></div>
+        
+        <div id="timeConflictAlert" class="alert alert-danger d-none mb-3">
+            The selected start time conflicts with an existing booking schedule.
+        </div>
+
+        <div id="unavailableTimeRangesBox" class="dashboard-panel mt-3 d-none">
+            <div class="time-range-box-title">Unavailable Time Ranges</div>
+            <p class="availability-help mb-2">
+                These time ranges are unavailable because of confirmed bookings and the required 1-hour buffer.
+            </p>
+            <div id="unavailableTimeRangesList" class="time-range-chip-list"></div>
+        </div>
 
         <div class="row g-3">
             <div class="col-md-6">
@@ -43,13 +83,13 @@
 
             <div class="col-md-6">
                 <label asp-for="EventDate" class="form-label"></label>
-                <input asp-for="EventDate" type="date" class="form-control" min="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                <input asp-for="EventDate" type="date" class="form-control" min="@DateTime.Today.ToString("yyyy-MM-dd")" id="eventDateInput" />
                 <span asp-validation-for="EventDate" class="text-danger"></span>
             </div>
 
             <div class="col-md-6">
                 <label asp-for="StartTime" class="form-label"></label>
-                <input asp-for="StartTime" type="time" class="form-control" />
+                <input asp-for="StartTime" type="time" class="form-control" id="startTimeInput" />
                 <span asp-validation-for="StartTime" class="text-danger"></span>
             </div>
 
@@ -97,11 +137,168 @@
         </div>
 
         <div class="d-flex justify-content-end mt-4">
-            <button type="submit" class="btn btn-primary">Next Step</button>
+            <button type="submit" class="btn btn-primary" id="nextStepBtn">Next Step</button>
         </div>
     </form>
 </div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const unavailableDates = @Html.Raw(unavailableDatesJson);
+            const alertBox = document.getElementById("dateAvailabilityAlert");
+            const slotsInfo = document.getElementById("dateSlotsInfo");
+            const timeConflictAlert = document.getElementById("timeConflictAlert");
+            const nextBtn = document.getElementById("nextStepBtn");
+            const dateInput = document.getElementById("eventDateInput");
+            const startTimeInput = document.getElementById("startTimeInput");
+            const timeRangesBox = document.getElementById("unavailableTimeRangesBox");
+            const timeRangesList = document.getElementById("unavailableTimeRangesList");
+
+            let currentUnavailableRanges = [];
+
+            function timeToMinutes(timeStr) {
+                if (!timeStr) return -1;
+                const [hours, minutes] = timeStr.split(":").map(Number);
+                return (hours * 60) + minutes;
+            }
+
+            function checkTimeConflict() {
+                const selectedTime = startTimeInput.value;
+
+                if (!selectedTime || currentUnavailableRanges.length === 0) {
+                    timeConflictAlert.classList.add("d-none");
+                    nextBtn.disabled = false;
+                    return;
+                }
+
+                const selectedMinutes = timeToMinutes(selectedTime);
+
+                const hasConflict = currentUnavailableRanges.some(range => {
+                    const start = timeToMinutes(range.start);
+                    const end = timeToMinutes(range.end);
+                    return selectedMinutes >= start && selectedMinutes < end;
+                });
+
+                if (hasConflict) {
+                    timeConflictAlert.classList.remove("d-none");
+                    nextBtn.disabled = true;
+                } else {
+                    timeConflictAlert.classList.add("d-none");
+                    nextBtn.disabled = false;
+                }
+            }
+
+            async function loadUnavailableTimeRanges(selectedDate) {
+                timeRangesList.innerHTML = "";
+                currentUnavailableRanges = [];
+                timeRangesBox.classList.add("d-none");
+                timeConflictAlert.classList.add("d-none");
+
+                if (!selectedDate) return;
+
+                try {
+                    const response = await fetch(`/Bookings/GetUnavailableTimeRanges?date=${selectedDate}`);
+                    const data = await response.json();
+
+                    currentUnavailableRanges = data || [];
+
+                    if (currentUnavailableRanges.length > 0) {
+                        currentUnavailableRanges.forEach(range => {
+                        const chip = document.createElement("div");
+                        chip.className = "time-range-chip";
+                        chip.textContent = range.display;
+                        timeRangesList.appendChild(chip);
+                    });
+
+                        timeRangesBox.classList.remove("d-none");
+                    }
+
+                    checkTimeConflict();
+                } catch (error) {
+                    timeRangesBox.classList.add("d-none");
+                }
+            }
+
+            async function loadDateAvailability(selectedDate) {
+                if (!selectedDate) {
+                    alertBox.classList.add("d-none");
+                    slotsInfo.classList.add("d-none");
+                    timeRangesBox.classList.add("d-none");
+                    timeConflictAlert.classList.add("d-none");
+                    nextBtn.disabled = false;
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`/Bookings/CheckDateAvailability?date=${selectedDate}`);
+                    const data = await response.json();
+
+                    if (data.isBlocked) {
+                        const reasonText = data.blockReason ? ` Reason: ${data.blockReason}` : "";
+                        alertBox.textContent = `This selected date is blocked by the admin.${reasonText}`;
+                        alertBox.classList.remove("d-none");
+                        slotsInfo.classList.add("d-none");
+                        timeRangesBox.classList.add("d-none");
+                        timeConflictAlert.classList.add("d-none");
+                        nextBtn.disabled = true;
+                        return;
+                    }
+
+                    if (data.isFull) {
+                        alertBox.textContent = "This selected date is fully booked.";
+                        alertBox.classList.remove("d-none");
+                        slotsInfo.classList.add("d-none");
+                        timeRangesBox.classList.add("d-none");
+                        timeConflictAlert.classList.add("d-none");
+                        nextBtn.disabled = true;
+                        return;
+                    }
+
+                    alertBox.classList.add("d-none");
+
+                    slotsInfo.classList.remove("slots-alert-good", "slots-alert-warning", "slots-alert-danger");
+
+                    slotsInfo.textContent = `This date has ${data.remainingSlots} remaining slot(s) out of ${data.maxPerDay}.`;
+
+                    if (data.remainingSlots <= 0) {
+                        slotsInfo.textContent = `No slots left for this date.`;
+                        slotsInfo.classList.add("slots-alert-danger");
+                    } else if (data.remainingSlots === 1) {
+                        slotsInfo.textContent = `Only 1 slot remains for this date.`;
+                        slotsInfo.classList.add("slots-alert-warning");
+                    } else {
+                        slotsInfo.textContent = `${data.remainingSlots} slots are still available out of ${data.maxPerDay}.`;
+                        slotsInfo.classList.add("slots-alert-good");
+                    }
+
+                    slotsInfo.classList.remove("d-none");
+
+                    await loadUnavailableTimeRanges(selectedDate);
+                } catch (error) {
+                    slotsInfo.classList.add("d-none");
+                    timeRangesBox.classList.add("d-none");
+                }
+            }
+
+            flatpickr("#eventDateInput", {
+                dateFormat: "Y-m-d",
+                minDate: "today",
+                disable: unavailableDates,
+                defaultDate: dateInput.value || null,
+                onChange: async function (selectedDates, dateStr) {
+                    await loadDateAvailability(dateStr);
+                },
+                onReady: async function (selectedDates, dateStr) {
+                    await loadDateAvailability(dateStr);
+                }
+            });
+
+            startTimeInput.addEventListener("change", checkTimeConflict);
+        });
+    </script>
 }

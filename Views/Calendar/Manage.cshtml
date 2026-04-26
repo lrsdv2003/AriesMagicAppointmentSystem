@@ -1,0 +1,101 @@
+@model AriesMagicAppointmentSystem.ViewModels.CalendarManageViewModel
+
+@{
+    Layout = "_DashboardLayout";
+    ViewData["Title"] = "Calendar Settings";
+}
+
+<div class="page-header">
+    <div>
+        <h1>Calendar Settings</h1>
+        <p class="page-subtitle">Manage daily booking limits and block unavailable dates.</p>
+    </div>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success mb-3">@TempData["Success"]</div>
+}
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger mb-3">@TempData["Error"]</div>
+}
+
+<div class="row g-4">
+    <div class="col-lg-5">
+        <div class="dashboard-panel">
+            <h3 class="mb-3">Maximum Events Per Day</h3>
+            <form asp-action="UpdateMaxBookings" method="post">
+                @Html.AntiForgeryToken()
+                <div class="mb-3">
+                    <label asp-for="MaxBookingsPerDay" class="form-label"></label>
+                    <input asp-for="MaxBookingsPerDay" class="form-control" min="1" />
+                </div>
+                <button type="submit" class="btn btn-primary">Save Limit</button>
+            </form>
+        </div>
+
+        <div class="dashboard-panel mt-4">
+            <h3 class="mb-3">Block a Date</h3>
+            <form asp-action="BlockDate" method="post">
+                @Html.AntiForgeryToken()
+                <div class="mb-3">
+                    <label asp-for="BlockDate" class="form-label">Date</label>
+                    <input asp-for="BlockDate" type="date" class="form-control" min="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                </div>
+                <div class="mb-3">
+                    <label asp-for="BlockReason" class="form-label">Reason</label>
+                    <textarea asp-for="BlockReason" class="form-control" rows="3"></textarea>
+                </div>
+                <button type="submit" class="btn btn-danger">Block Date</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="col-lg-7">
+        <div class="dashboard-panel">
+            <h3 class="mb-3">Blocked Dates</h3>
+
+            @if (!Model.BlockedDates.Any())
+            {
+                <div class="empty-state">
+                    <h3>No blocked dates</h3>
+                    <p>There are currently no unavailable dates configured.</p>
+                </div>
+            }
+            else
+            {
+                <div class="table-clean">
+                    <table class="table align-middle">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Reason</th>
+                                <th>Created</th>
+                                <th class="text-end">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+@foreach (var item in Model.BlockedDates)
+{
+                            <tr>
+                                <td>@item.Date.ToString("MMMM dd, yyyy")</td>
+                                <td>@item.Reason</td>
+                                <td>@item.CreatedAt.ToString("MMM dd, yyyy")</td>
+                                <td class="text-end">
+                                    <form asp-action="UnblockDate" method="post" class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@item.Id" />
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">Unblock</button>
+                                    </form>
+                                </td>
+                            </tr>
+}
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</div>

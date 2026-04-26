@@ -71,6 +71,11 @@
                                class="sidebar-link @(currentController == "Calendar" ? "active" : "")">
                                 Calendar
                             </a>
+                        
+                            <a asp-controller="Calendar" asp-action="Manage"
+                            class="sidebar-link @(currentController == "Calendar" && currentAction == "Manage" ? "active" : "")">
+                                Calendar Settings
+                            </a>
 
                             <a asp-controller="RescheduleRequests" asp-action="Index"
                                class="sidebar-link @(currentController == "RescheduleRequests" ? "active" : "")">

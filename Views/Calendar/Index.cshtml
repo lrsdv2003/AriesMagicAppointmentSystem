@@ -1,9 +1,13 @@
-@model IEnumerable<AriesMagicAppointmentSystem.Models.Booking>
+@model AriesMagicAppointmentSystem.ViewModels.CalendarIndexViewModel
 @using AriesMagicAppointmentSystem.Models
 
 @{
     Layout = "_DashboardLayout";
     ViewData["Title"] = "Calendar";
+
+    var blockedDatesJson = System.Text.Json.JsonSerializer.Serialize(ViewBag.BlockedDates ?? new List<object>());
+    var dailyCountsJson = System.Text.Json.JsonSerializer.Serialize(ViewBag.DailyCounts ?? new Dictionary<string, int>());
+    var dateLimitsJson = System.Text.Json.JsonSerializer.Serialize(ViewBag.DateLimits ?? new Dictionary<string, int>());
 }
 
 <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css" rel="stylesheet" />
@@ -12,28 +16,57 @@
 <div class="dashboard-stats">
     <div class="stat-card">
         <div class="stat-label">Total Confirmed Events</div>
-        <div class="stat-value">@Model.Count()</div>
+        <div class="stat-value">@Model.Bookings.Count()</div>
         <div class="stat-subtext">All confirmed bookings currently shown in the calendar.</div>
     </div>
     <div class="stat-card">
         <div class="stat-label">This Month</div>
-        <div class="stat-value">@Model.Count(x => x.EventDate.Month == DateTime.Now.Month && x.EventDate.Year == DateTime.Now.Year)</div>
+        <div class="stat-value">@Model.Bookings.Count(x => x.EventDate.Month == DateTime.Now.Month && x.EventDate.Year == DateTime.Now.Year)</div>
         <div class="stat-subtext">Confirmed bookings scheduled this month.</div>
     </div>
     <div class="stat-card">
         <div class="stat-label">Upcoming Events</div>
-        <div class="stat-value">@Model.Count(x => x.EventDate.Date >= DateTime.Today)</div>
+        <div class="stat-value">@Model.Bookings.Count(x => x.EventDate.Date >= DateTime.Today)</div>
         <div class="stat-subtext">Confirmed bookings from today onward.</div>
     </div>
 </div>
 
-<div class="page-header">
+<div class="page-header d-flex justify-content-between align-items-center">
     <div>
-        <p class="page-subtitle">Visual schedule of confirmed bookings and event dates.</p>
+        <p class="page-subtitle mb-0">Visual schedule of confirmed bookings and event dates.</p>
+    </div>
+
+    @if (User.IsInRole("Admin"))
+    {
+        <button class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-2"
+                type="button"
+                data-bs-toggle="offcanvas"
+                data-bs-target="#calendarManagePanel"
+                aria-controls="calendarManagePanel">
+            <i class="bi bi-calendar2-gear"></i>
+            <span>Manage Calendar</span>
+        </button>
+    }
+</div>
+
+<div class="dashboard-panel mb-3">
+    <div class="availability-legend">
+        <div class="availability-legend-item">
+            <span class="calendar-day-badge blocked">Blocked</span>
+            <span>Blocked date</span>
+        </div>
+        <div class="availability-legend-item">
+            <span class="calendar-day-badge limit">Max: X</span>
+            <span>Custom daily limit</span>
+        </div>
+        <div class="availability-legend-item">
+            <span class="calendar-day-badge count">X event(s)</span>
+            <span>Scheduled events count</span>
+        </div>
     </div>
 </div>
 
-<div class="card-clean mb-4">
+<div class="table-clean mb-4">
     <div id="calendar"></div>
 </div>
 
@@ -52,7 +85,7 @@
             </tr>
         </thead>
         <tbody>
-@foreach (var item in Model.OrderBy(x => x.EventDate).ThenBy(x => x.StartTime))
+@foreach (var item in Model.Bookings.OrderBy(x => x.EventDate).ThenBy(x => x.StartTime))
 {
     var statusClass = item.Status switch
     {
@@ -84,6 +117,123 @@
         </tbody>
     </table>
 </div>
+
+@if (User.IsInRole("Admin"))
+{
+    <div class="offcanvas offcanvas-end" tabindex="-1" id="calendarManagePanel" aria-labelledby="calendarManagePanelLabel">
+        <div class="offcanvas-header">
+            <h5 id="calendarManagePanelLabel" class="mb-0">
+                <i class="bi bi-calendar2-gear me-2"></i>
+                Manage Calendar
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+
+        <div class="offcanvas-body">
+            @if (TempData["Success"] != null)
+            {
+                <div class="alert alert-success mb-3">@TempData["Success"]</div>
+            }
+
+            @if (TempData["Error"] != null)
+            {
+                <div class="alert alert-danger mb-3">@TempData["Error"]</div>
+            }
+
+            <div class="dashboard-panel mb-4">
+                <h6 class="mb-3">Default Daily Limit</h6>
+                <form asp-action="UpdateMaxBookings" method="post">
+                    @Html.AntiForgeryToken()
+                    <div class="mb-3">
+                        <label asp-for="Manage.MaxBookingsPerDay" class="form-label">Maximum Events Per Day</label>
+                        <input asp-for="Manage.MaxBookingsPerDay" class="form-control" min="1" />
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Save Limit</button>
+                </form>
+            </div>
+
+            <div class="dashboard-panel mb-4">
+                <h6 class="mb-3">Block a Date</h6>
+                <form asp-action="BlockDate" method="post">
+                    @Html.AntiForgeryToken()
+                    <div class="mb-3">
+                        <label asp-for="Manage.BlockDate" class="form-label">Date</label>
+                        <input asp-for="Manage.BlockDate" type="date" class="form-control" min="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="Manage.BlockReason" class="form-label">Reason</label>
+                        <textarea asp-for="Manage.BlockReason" class="form-control" rows="3"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-danger w-100">Block Date</button>
+                </form>
+            </div>
+
+            <div class="dashboard-panel mb-4">
+                <h6 class="mb-3">Date-Specific Limit</h6>
+                <form asp-action="SetDateLimit" method="post">
+                    @Html.AntiForgeryToken()
+                    <div class="mb-3">
+                        <label asp-for="Manage.LimitDate" class="form-label">Date</label>
+                        <input asp-for="Manage.LimitDate" type="date" class="form-control" min="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="Manage.LimitMaxBookings" class="form-label">Maximum Events</label>
+                        <input asp-for="Manage.LimitMaxBookings" type="number" min="0" class="form-control" />
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Save Custom Limit</button>
+                </form>
+            </div>
+
+            <div class="dashboard-panel mb-4">
+                <h6 class="mb-3">Blocked Dates</h6>
+
+                @if (!Model.Manage.BlockedDates.Any())
+                {
+                    <p class="text-muted mb-0">No blocked dates yet.</p>
+                }
+                else
+                {
+                    @foreach (var item in Model.Manage.BlockedDates)
+                    {
+                        <div class="border rounded-3 p-3 mb-2">
+                            <div class="fw-semibold">@item.Date.ToString("MMMM dd, yyyy")</div>
+                            <div class="text-muted small mb-2">@item.Reason</div>
+                            <form asp-action="UnblockDate" method="post">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@item.Id" />
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Unblock</button>
+                            </form>
+                        </div>
+                    }
+                }
+            </div>
+
+            <div class="dashboard-panel">
+                <h6 class="mb-3">Custom Date Limits</h6>
+
+                @if (!Model.Manage.DateBookingLimits.Any())
+                {
+                    <p class="text-muted mb-0">No custom limits yet.</p>
+                }
+                else
+                {
+                    @foreach (var item in Model.Manage.DateBookingLimits)
+                    {
+                        <div class="border rounded-3 p-3 mb-2">
+                            <div class="fw-semibold">@item.Date.ToString("MMMM dd, yyyy")</div>
+                            <div class="text-muted small mb-2">Max events: @item.MaxBookings</div>
+                            <form asp-action="RemoveDateLimit" method="post">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@item.Id" />
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Remove</button>
+                            </form>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+}
 
 <div class="modal fade" id="reservationModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered reservation-modal-dialog">
@@ -122,10 +272,13 @@
 @section Scripts {
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            var calendarEl = document.getElementById('calendar');
+            const calendarEl = document.getElementById('calendar');
+            const blockedDates = @Html.Raw(blockedDatesJson);
+            const dailyCounts = @Html.Raw(dailyCountsJson);
+            const dateLimits = @Html.Raw(dateLimitsJson);
 
-            var events = [
-                @foreach (var item in Model)
+            const events = [
+                @foreach (var item in Model.Bookings)
                 {
                     var title = (item.Service?.Name ?? "Booking").Replace("'", "\\'");
                     var start = item.EventDate.Date.Add(item.StartTime.TimeOfDay).ToString("yyyy-MM-ddTHH:mm:ss");
@@ -133,8 +286,11 @@
                     var clientName = (item.Client?.FullName ?? "N/A").Replace("'", "\\'");
                     var serviceName = (item.Service?.Name ?? "N/A").Replace("'", "\\'");
                     var bookingCode = $"BK-{item.CreatedAt.Year}-{item.Id:D3}";
-                    var durationHours = item.Service?.DurationInHours ?? 0;
                     var detailsUrl = Url.Action("Details", "Bookings", new { id = item.Id });
+                    var venue = (item.PartyVenue ?? "N/A").Replace("'", "\\'");
+                    var eventType = (item.EventType ?? "N/A").Replace("'", "\\'");
+                    var theme = (item.PartyTheme ?? "N/A").Replace("'", "\\'");
+                    var status = item.Status.ToString().Replace("'", "\\'");
 
                     <text>
                     {
@@ -147,8 +303,12 @@
                             bookingCode: '@bookingCode',
                             clientName: '@clientName',
                             serviceName: '@serviceName',
-                            status: '@item.Status',
-                            durationHours: @durationHours,
+                            eventDate: '@item.EventDate.ToString("MMMM dd, yyyy")',
+                            eventTime: '@item.StartTime.ToString("hh:mm tt") - @item.EndTime.ToString("hh:mm tt")',
+                            venue: '@venue',
+                            eventType: '@eventType',
+                            theme: '@theme',
+                            status: '@status',
                             detailsUrl: '@detailsUrl'
                         }
                     },
@@ -156,7 +316,7 @@
                 }
             ];
 
-            var calendar = new FullCalendar.Calendar(calendarEl, {
+            const calendar = new FullCalendar.Calendar(calendarEl, {
                 initialView: 'dayGridMonth',
                 height: 'auto',
                 headerToolbar: {
@@ -165,6 +325,72 @@
                     right: ''
                 },
                 events: events,
+                dayMaxEvents: true,
+                dayCellDidMount: function(info) {
+                    const dateKey = info.date.toISOString().split('T')[0];
+                    const top = info.el.querySelector('.fc-daygrid-day-top');
+
+                    const blockedEntry = blockedDates.find(x => x.date === dateKey);
+
+                    if (blockedEntry) {
+                        info.el.classList.add('calendar-blocked-day');
+                        info.el.setAttribute('title', blockedEntry.reason ? `Blocked: ${blockedEntry.reason}` : 'Blocked date');
+
+                        if (top) {
+                            const blockedBadge = document.createElement('div');
+                            blockedBadge.className = 'calendar-day-badge blocked';
+                            blockedBadge.innerText = 'Blocked';
+
+                            if (blockedEntry.reason) {
+                                blockedBadge.setAttribute('title', `Blocked: ${blockedEntry.reason}`);
+                            }
+
+                            top.appendChild(blockedBadge);
+                        }
+                    }
+
+                    if (dateLimits[dateKey] !== undefined) {
+                        if (top) {
+                            const limitBadge = document.createElement('div');
+                            limitBadge.className = 'calendar-day-badge limit';
+                            limitBadge.innerText = `Max: ${dateLimits[dateKey]}`;
+                            limitBadge.setAttribute('title', `Custom daily limit: ${dateLimits[dateKey]} event(s)`);
+                            top.appendChild(limitBadge);
+                        }
+                    }
+
+                    if (dailyCounts[dateKey]) {
+                        if (top) {
+                            const countBadge = document.createElement('div');
+                            countBadge.className = 'calendar-day-badge count';
+                            countBadge.innerText = `${dailyCounts[dateKey]} event(s)`;
+                            top.appendChild(countBadge);
+                        }
+                    }
+                },
+                dateClick: function(info) {
+                    const blockedEntry = blockedDates.find(x => x.date === info.dateStr);
+
+                    if (blockedEntry) {
+                        document.getElementById("reservationServiceTitle").textContent = "Blocked Date";
+                        document.getElementById("reservationBookingCode").textContent = info.dateStr;
+
+                        document.getElementById("reservationCarouselInner").innerHTML = `
+                            <div class="carousel-item active">
+                                <div class="calendar-reservation-card">
+                                    <h5>This date is blocked</h5>
+                                    <p><strong>Date:</strong> ${info.dateStr}</p>
+                                    <p><strong>Reason:</strong> ${blockedEntry.reason || "No reason provided"}</p>
+                                </div>
+                            </div>
+                        `;
+
+                        document.getElementById("reservationCounter").textContent = "1 of 1";
+
+                        const modal = new bootstrap.Modal(document.getElementById("reservationModal"));
+                        modal.show();
+                    }
+                },
                 eventClick: function (info) {
                     info.jsEvent.preventDefault();
 
@@ -172,8 +398,8 @@
                     const clickedBookingId = info.event.extendedProps.bookingId;
 
                     const sameDayEvents = events.filter(e => e.start.startsWith(clickedDate));
-
                     const clickedIndex = sameDayEvents.findIndex(x => x.extendedProps.bookingId == clickedBookingId);
+
                     if (clickedIndex > 0) {
                         const clickedItem = sameDayEvents.splice(clickedIndex, 1)[0];
                         sameDayEvents.unshift(clickedItem);
@@ -197,46 +423,24 @@
 
             data.forEach((item, index) => {
                 const props = item.extendedProps;
-                const statusClass = getStatusClass(props.status);
                 const activeClass = index === 0 ? "active" : "";
 
-                const formattedDateTime = `${formatDate(item.start)} at ${formatTime(item.start)}`;
-                const durationText = `Duration: ${props.durationHours} hour${props.durationHours > 1 ? "s" : ""}`;
-
-                container.innerHTML += `
+                const slideHtml = `
                     <div class="carousel-item ${activeClass}">
-                        <div class="reservation-slide">
-                            <div class="reservation-status-badge ${statusClass}">${props.status}</div>
-
-                            <div class="reservation-info-list">
-                                <div class="reservation-info-item">
-                                    <div class="info-icon info-client">
-                                        <i class="bi bi-person"></i>
-                                    </div>
-                                    <div>
-                                        <div class="info-label">Client</div>
-                                        <div class="info-value">${props.clientName ?? "N/A"}</div>
-                                    </div>
-                                </div>
-
-                                <div class="reservation-info-item">
-                                    <div class="info-icon info-time">
-                                        <i class="bi bi-clock"></i>
-                                    </div>
-                                    <div>
-                                        <div class="info-label">Date & Time</div>
-                                        <div class="info-value">${formattedDateTime}</div>
-                                        <div class="info-subvalue">${durationText}</div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="reservation-footer">
-                                <a href="${props.detailsUrl}" class="btn reservation-details-btn">View Full Details</a>
-                            </div>
+                        <div class="calendar-reservation-card">
+                            <h5>${props.serviceName}</h5>
+                            <p><strong>Client:</strong> ${props.clientName}</p>
+                            <p><strong>Date:</strong> ${props.eventDate}</p>
+                            <p><strong>Time:</strong> ${props.eventTime}</p>
+                            <p><strong>Place:</strong> ${props.venue}</p>
+                            <p><strong>Event Type:</strong> ${props.eventType}</p>
+                            <p><strong>Theme:</strong> ${props.theme}</p>
+                            <a href="${props.detailsUrl}" class="btn btn-sm btn-primary">View Details</a>
                         </div>
                     </div>
                 `;
+
+                container.insertAdjacentHTML("beforeend", slideHtml);
             });
 
             if (data.length > 0) {
@@ -250,55 +454,35 @@
 
             updateReservationCounter(1, data.length);
 
-            const newCarousel = bootstrap.Carousel.getOrCreateInstance(carouselElement);
+            const existingCarousel = bootstrap.Carousel.getInstance(carouselElement);
+            if (existingCarousel) {
+                existingCarousel.dispose();
+            }
+
+            const newCarousel = new bootstrap.Carousel(carouselElement, {
+                interval: false,
+                touch: true
+            });
+
             newCarousel.to(0);
 
-            const newElement = carouselElement.cloneNode(true);
-            carouselElement.parentNode.replaceChild(newElement, carouselElement);
+            const onSlide = function () {
+                const slides = [...document.getElementById("reservationCarouselInner").children];
+                const activeIndex = slides.findIndex(x => x.classList.contains("active"));
 
-            bootstrap.Carousel.getOrCreateInstance(newElement).to(0);
+                if (activeIndex >= 0) {
+                    const current = data[activeIndex].extendedProps;
+                    document.getElementById("reservationServiceTitle").textContent = current.serviceName ?? "Reservation Details";
+                    document.getElementById("reservationBookingCode").textContent = `Booking ID: ${current.bookingCode}`;
+                    updateReservationCounter(activeIndex + 1, data.length);
+                }
+            };
 
-            newElement.addEventListener("slid.bs.carousel", function () {
-                const activeIndex = [...document.getElementById("reservationCarouselInner").children]
-                    .findIndex(x => x.classList.contains("active"));
-
-                const current = data[activeIndex].extendedProps;
-
-                document.getElementById("reservationServiceTitle").textContent = current.serviceName ?? "Reservation Details";
-                document.getElementById("reservationBookingCode").textContent = `Booking ID: ${current.bookingCode}`;
-                updateReservationCounter(activeIndex + 1, data.length);
-            });
+            carouselElement.addEventListener("slid.bs.carousel", onSlide, { once: false });
         }
 
         function updateReservationCounter(current, total) {
             document.getElementById("reservationCounter").textContent = `${current} of ${total}`;
-        }
-
-        function formatDate(dateString) {
-            const date = new Date(dateString);
-            return date.toLocaleDateString("en-US", {
-                year: "numeric",
-                month: "long",
-                day: "numeric"
-            });
-        }
-
-        function formatTime(dateString) {
-            const date = new Date(dateString);
-            return date.toLocaleTimeString([], {
-                hour: "numeric",
-                minute: "2-digit"
-            });
-        }
-
-        function getStatusClass(status) {
-            const value = (status || "").toLowerCase();
-
-            if (value === "confirmed") return "confirmed";
-            if (value === "pending") return "pending";
-            if (value === "declined" || value === "rejected" || value === "cancelled") return "cancelled";
-
-            return "pending";
         }
     </script>
 }

@@ -36,17 +36,6 @@ namespace AriesMagicAppointmentSystem.Controllers
                 .Include(b => b.Payments)
                 .AsQueryable();
 
-            if (!string.IsNullOrWhiteSpace(search))
-            {
-                var lowered = search.ToLower();
-
-                bookingsQuery = bookingsQuery.Where(b =>
-                    ($"BK-{b.CreatedAt.Year}-{b.Id:D3}").ToLower().Contains(lowered) ||
-                    (b.Client != null && b.Client.FullName.ToLower().Contains(lowered)) ||
-                    (b.Client != null && b.Client.Email.ToLower().Contains(lowered)) ||
-                    (b.Service != null && b.Service.Name.ToLower().Contains(lowered)));
-            }
-
             if (!string.IsNullOrWhiteSpace(bookingStatus) && bookingStatus != "All")
             {
                 bookingsQuery = bookingsQuery.Where(b => b.Status == bookingStatus);
@@ -55,6 +44,18 @@ namespace AriesMagicAppointmentSystem.Controllers
             var bookings = await bookingsQuery
                 .OrderByDescending(b => b.CreatedAt)
                 .ToListAsync();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var lowered = search.ToLower();
+
+                bookings = bookings.Where(b =>
+                    $"BK-{b.CreatedAt.Year}-{b.Id:D3}".ToLower().Contains(lowered) ||
+                    (b.Client?.FullName?.ToLower().Contains(lowered) ?? false) ||
+                    (b.Client?.Email?.ToLower().Contains(lowered) ?? false) ||
+                    (b.Service?.Name?.ToLower().Contains(lowered) ?? false)
+                ).ToList();
+            }
 
             var rows = bookings.Select(b =>
             {
@@ -95,7 +96,7 @@ namespace AriesMagicAppointmentSystem.Controllers
 
         [Authorize(Roles = "Client")]
         [HttpGet]
-        public IActionResult CreateStepOne()
+        public async Task<IActionResult> CreateStepOne()
         {
             var model = new BookingStepOneViewModel
             {
@@ -114,13 +115,15 @@ namespace AriesMagicAppointmentSystem.Controllers
                 "Easter Events"
             };
 
+            ViewBag.UnavailableDates = await GetUnavailableBookingDatesAsync();
+
             return View(model);
         }
 
         [Authorize(Roles = "Client")]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult CreateStepOne(BookingStepOneViewModel model)
+        public async Task<IActionResult> CreateStepOne(BookingStepOneViewModel model)
         {
             ViewBag.EventTypes = new List<string>
             {
@@ -134,9 +137,31 @@ namespace AriesMagicAppointmentSystem.Controllers
                 "Easter Events"
             };
 
+            ViewBag.UnavailableDates = await GetUnavailableBookingDatesAsync();
+
             if (model.EventDate.Date < DateTime.Today)
             {
                 ModelState.AddModelError("EventDate", "You cannot select a past date.");
+            }
+            var requestedStart = model.EventDate.Date.Add(model.StartTime);
+            var requestedEnd = requestedStart.AddHours(3);
+
+            if (await HasBookingConflict(requestedStart, requestedEnd))
+            {
+                ModelState.AddModelError("StartTime", "The selected time conflicts with an existing confirmed booking.");
+            }
+
+            var isBlocked = await _context.BlockedDates
+                .AnyAsync(x => x.Date.Date == model.EventDate.Date);
+
+            if (isBlocked)
+            {
+                ModelState.AddModelError("EventDate", "This date is unavailable for booking.");
+            }
+
+            if (await HasReachedDailyConfirmedLimit(model.EventDate))
+            {
+                ModelState.AddModelError("EventDate", "This date has already reached the maximum number of bookings.");
             }
 
             if (model.EventDate.Date == DateTime.Today && model.StartTime < DateTime.Now.TimeOfDay)
@@ -150,6 +175,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             }
 
             TempData["StepOneData"] = JsonSerializer.Serialize(model);
+
             return RedirectToAction(nameof(CreateStepTwo));
         }
 
@@ -257,6 +283,13 @@ namespace AriesMagicAppointmentSystem.Controllers
             {
                 ModelState.AddModelError("ServiceId", "Invalid package selected.");
                 return View("CreateStepTwo", model);
+            }
+            var isBlocked = await _context.BlockedDates
+                .AnyAsync(x => x.Date.Date == model.EventDate.Date);
+
+            if (isBlocked)
+            {
+                ModelState.AddModelError("EventDate", "This date is unavailable for booking.");
             }
 
             if (model.EventDate.Date < DateTime.Today)
@@ -390,6 +423,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                     UserId = staff.Id,
                     Title = "New Booking Submitted",
                     Message = $"A new booking request was submitted by {appUser.FullName} for {booking.EventDate:MMMM dd, yyyy}.",
+                    Link = $"/Bookings/Details/{booking.Id}",
                     IsRead = false,
                     CreatedAt = DateTime.Now
                 });
@@ -402,6 +436,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                     UserId = admin.Id,
                     Title = "New Booking Submitted",
                     Message = $"A new booking request was submitted by {appUser.FullName} for {booking.EventDate:MMMM dd, yyyy}.",
+                    Link = $"/Bookings/Details/{booking.Id}",
                     IsRead = false,
                     CreatedAt = DateTime.Now
                 });
@@ -479,6 +514,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                     UserId = booking.ApplicationUserId,
                     Title = "Booking Approved",
                     Message = $"Your booking for {booking.EventDate:MMMM dd, yyyy} was approved and is now awaiting downpayment.",
+                    Link = "/Bookings/MyBookings",
                     IsRead = false,
                     CreatedAt = DateTime.Now
                 });
@@ -524,6 +560,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                     UserId = booking.ApplicationUserId,
                     Title = "Booking Declined",
                     Message = $"Your booking for {booking.EventDate:MMMM dd, yyyy} was declined.",
+                    Link = "/Bookings/MyBookings",
                     IsRead = false,
                     CreatedAt = DateTime.Now
                 });
@@ -564,11 +601,106 @@ namespace AriesMagicAppointmentSystem.Controllers
 
         private async Task<bool> HasReachedDailyConfirmedLimit(DateTime eventDate)
         {
+            var customLimit = await _context.DateBookingLimits
+                .Where(x => x.Date.Date == eventDate.Date)
+                .Select(x => (int?)x.MaxBookings)
+                .FirstOrDefaultAsync();
+
+            var defaultSetting = await _context.SystemSettings.FirstOrDefaultAsync();
+            var maxPerDay = customLimit ?? defaultSetting?.MaxBookingsPerDay ?? 3;
+
             var confirmedCount = await _context.Bookings
                 .CountAsync(b => b.Status == BookingStatus.Confirmed
-                              && b.EventDate.Date == eventDate.Date);
+                            && b.EventDate.Date == eventDate.Date);
 
-            return confirmedCount >= 3;
+            return confirmedCount >= maxPerDay;
+        }
+        private async Task<List<string>> GetUnavailableBookingDatesAsync()
+        {
+            var blockedDates = await _context.BlockedDates
+                .Select(x => x.Date.Date)
+                .ToListAsync();
+
+            var settings = await _context.SystemSettings.FirstOrDefaultAsync();
+            var defaultMax = settings?.MaxBookingsPerDay ?? 3;
+
+            var customLimits = await _context.DateBookingLimits
+                .ToDictionaryAsync(x => x.Date.Date, x => x.MaxBookings);
+
+            var confirmedCounts = await _context.Bookings
+                .Where(b => b.Status == BookingStatus.Confirmed)
+                .GroupBy(b => b.EventDate.Date)
+                .Select(g => new
+                {
+                    Date = g.Key,
+                    Count = g.Count()
+                })
+                .ToListAsync();
+
+            var fullDates = confirmedCounts
+                .Where(x =>
+                {
+                    var limit = customLimits.ContainsKey(x.Date) ? customLimits[x.Date] : defaultMax;
+                    return x.Count >= limit;
+                })
+                .Select(x => x.Date)
+                .ToList();
+
+            return blockedDates
+                .Union(fullDates)
+                .Select(d => d.ToString("yyyy-MM-dd"))
+                .ToList();
+        }
+
+        [Authorize(Roles = "Client")]
+        [HttpGet]
+        public async Task<IActionResult> CheckDateAvailability(DateTime date)
+        {
+            var blockedEntry = await _context.BlockedDates
+                .FirstOrDefaultAsync(x => x.Date.Date == date.Date);
+
+            var isBlocked = blockedEntry != null;
+            var blockReason = blockedEntry?.Reason;
+
+            var customLimit = await _context.DateBookingLimits
+                .Where(x => x.Date.Date == date.Date)
+                .Select(x => (int?)x.MaxBookings)
+                .FirstOrDefaultAsync();
+
+            var settings = await _context.SystemSettings.FirstOrDefaultAsync();
+            var maxPerDay = customLimit ?? settings?.MaxBookingsPerDay ?? 3;
+
+            var confirmedCount = await _context.Bookings
+                .CountAsync(b => b.Status == BookingStatus.Confirmed && b.EventDate.Date == date.Date);
+
+            var remainingSlots = Math.Max(0, maxPerDay - confirmedCount);
+
+            return Json(new
+            {
+                isBlocked,
+                blockReason,
+                maxPerDay,
+                confirmedCount,
+                remainingSlots,
+                isFull = confirmedCount >= maxPerDay
+            });
+        }
+
+        [Authorize(Roles = "Client")]
+        [HttpGet]
+        public async Task<IActionResult> GetUnavailableTimeRanges(DateTime date)
+        {
+            var confirmedBookings = await _context.Bookings
+                .Where(b => b.Status == BookingStatus.Confirmed && b.EventDate.Date == date.Date)
+                .OrderBy(b => b.StartTime)
+                .ToListAsync();
+            var ranges = confirmedBookings.Select(b => new
+            {
+                start = b.StartTime.ToString("HH:mm"),
+                end = b.EndTime.AddHours(1).ToString("HH:mm"),
+                display = $"{b.StartTime:hh:mm tt} - {b.EndTime.AddHours(1):hh:mm tt}"
+            }).ToList();
+            return Json(ranges);
         }
     }
 }
