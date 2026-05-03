@@ -150,7 +150,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                     "A reschedule request is awaiting final approval.",
                     "/RescheduleRequests/Index");
             }
-
+            TempData["Success"] = "Your reschedule request was submitted successfully. Please wait for admin review.";
             return RedirectToAction(nameof(MyRequests));
         }
 
@@ -341,8 +341,8 @@ namespace AriesMagicAppointmentSystem.Controllers
                     <p>Your reschedule request was not approved.</p>
                     <p>Remarks: {adminRemarks}</p>");
             }
-
-            return RedirectToAction(nameof(Index));
+            TempData["Error"] = "Your reschedule request was rejected. Please review the admin remarks and submit a new request if needed.";
+            return RedirectToAction(nameof(MyRequests));
         }
 
         private async Task<List<SelectListItem>> GetEligibleClientBookingsAsync(string? appUserId)

@@ -5,20 +5,22 @@
     var unavailableDates = ViewBag.UnavailableDates as List<string> ?? new List<string>();
     var unavailableDatesJson = System.Text.Json.JsonSerializer.Serialize(unavailableDates);
 }
+
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
 
 <div class="client-portal-header">
     <div>
         <div class="section-kicker">Client Portal</div>
         <h1 class="client-portal-title">Request Reschedule</h1>
-        <p class="client-portal-text">Submit a new preferred schedule for your existing booking.</p>
+        <p class="client-portal-text">Choose a new preferred schedule for your existing booking.</p>
     </div>
 </div>
 
 <div class="dashboard-panel mb-4">
-    <div class="form-section-title mb-2">Date Availability Guide</div>
-    <p class="availability-help">
-        Some dates may be unavailable because they are fully booked or blocked by the admin.
+    <div class="form-section-title mb-2">Availability Guide</div>
+    <p class="availability-help mb-3">
+        Some dates may be unavailable because they are already full or blocked by the admin.
+        All packages last <strong>3 hours</strong> and include a required <strong>1-hour buffer</strong> after the event.
     </p>
 
     <div class="availability-legend">
@@ -40,11 +42,11 @@
         <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
 
         <div id="dateAvailabilityAlert" class="alert alert-warning d-none mb-3">
-            This selected date is unavailable for reschedule.
+            This selected date is unavailable for reschedule because it is either blocked or already at full capacity.
         </div>
-    
+
         <div id="dateSlotsInfo" class="alert alert-info d-none mb-3"></div>
-        
+
         <div id="timeConflictAlert" class="alert alert-danger d-none mb-3">
             The selected start time conflicts with an existing booking schedule.
         </div>
@@ -57,7 +59,7 @@
             <div id="unavailableTimeRangesList" class="time-range-chip-list"></div>
         </div>
 
-        <div class="row g-3">
+        <div class="row g-3 mt-1">
             <div class="col-12">
                 <label asp-for="BookingId" class="form-label">Select Booking</label>
                 <select asp-for="BookingId" asp-items="Model.Bookings" class="form-select" id="bookingSelect">
@@ -69,10 +71,10 @@
             <div class="col-md-6">
                 <label asp-for="RequestedDate" class="form-label">Requested Date</label>
                 <input asp-for="RequestedDate"
-                    type="text"
-                    class="form-control"
-                    id="requestedDateInput"
-                    autocomplete="off" />
+                       type="text"
+                       class="form-control"
+                       id="requestedDateInput"
+                       autocomplete="off" />
                 <span asp-validation-for="RequestedDate" class="text-danger"></span>
             </div>
 
@@ -84,7 +86,7 @@
 
             <div class="col-12">
                 <label asp-for="Reason" class="form-label">Reason</label>
-                <textarea asp-for="Reason" class="form-control" rows="4"></textarea>
+                <textarea asp-for="Reason" class="form-control" rows="4" placeholder="Explain why you want to request a reschedule"></textarea>
                 <span asp-validation-for="Reason" class="text-danger"></span>
             </div>
         </div>
@@ -165,11 +167,11 @@
 
                     if (currentUnavailableRanges.length > 0) {
                         currentUnavailableRanges.forEach(range => {
-                        const chip = document.createElement("div");
-                        chip.className = "time-range-chip";
-                        chip.textContent = range.display;
-                        timeRangesList.appendChild(chip);
-                    });
+                            const chip = document.createElement("div");
+                            chip.className = "time-range-chip";
+                            chip.textContent = range.display;
+                            timeRangesList.appendChild(chip);
+                        });
 
                         timeRangesBox.classList.remove("d-none");
                     }
@@ -218,13 +220,11 @@
                     alertBox.classList.add("d-none");
                     slotsInfo.classList.remove("slots-alert-good", "slots-alert-warning", "slots-alert-danger");
 
-                    slotsInfo.textContent = `This date has ${data.remainingSlots} remaining slot(s) out of ${data.maxPerDay}.`;
-
                     if (data.remainingSlots <= 0) {
-                        slotsInfo.textContent = `No slots left for this date.`;
+                        slotsInfo.textContent = "No slots left for this date.";
                         slotsInfo.classList.add("slots-alert-danger");
                     } else if (data.remainingSlots === 1) {
-                        slotsInfo.textContent = `Only 1 slot remains for this date.`;
+                        slotsInfo.textContent = "Only 1 slot remains for this date.";
                         slotsInfo.classList.add("slots-alert-warning");
                     } else {
                         slotsInfo.textContent = `${data.remainingSlots} slots are still available out of ${data.maxPerDay}.`;
@@ -254,6 +254,7 @@
             });
 
             timeInput.addEventListener("change", checkTimeConflict);
+
             bookingSelect.addEventListener("change", async function () {
                 if (dateInput.value) {
                     await loadDateAvailability(dateInput.value);

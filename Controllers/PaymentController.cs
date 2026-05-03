@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using AriesMagicAppointmentSystem.Data;
 using AriesMagicAppointmentSystem.Models;
 using AriesMagicAppointmentSystem.Services;
@@ -7,7 +8,6 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using System.Security.Claims;
 
 namespace AriesMagicAppointmentSystem.Controllers
 {
@@ -145,7 +145,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                     <p>A client uploaded a payment proof that requires verification.</p>
                     <p>Please check the admin payment verification page.</p>");
             }
-
+            TempData["Success"] = "Your payment proof was uploaded successfully. Please wait for admin verification.";
             return RedirectToAction(nameof(MyUploads));
         }
 
@@ -331,8 +331,8 @@ namespace AriesMagicAppointmentSystem.Controllers
                         <p>Please upload a new proof of downpayment.</p>");
                 }
             }
-
-            return RedirectToAction(nameof(PendingVerification));
+            TempData["Error"] = "Your payment proof was rejected. Please review the remarks and upload a new payment proof.";
+            return RedirectToAction(nameof(MyUploads));
         }
 
         private async Task<List<SelectListItem>> GetAwaitingDownpaymentBookingsAsync(string? appUserId)

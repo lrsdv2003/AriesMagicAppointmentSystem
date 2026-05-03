@@ -443,7 +443,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             }
 
             await _context.SaveChangesAsync();
-
+            TempData["Success"] = "Your booking request was submitted successfully. Please wait for staff review before proceeding to the payment step.";
             return RedirectToAction(nameof(MyBookings));
         }
 
@@ -567,8 +567,8 @@ namespace AriesMagicAppointmentSystem.Controllers
             }
 
             await _context.SaveChangesAsync();
-
-            return RedirectToAction(nameof(Index));
+            TempData["Error"] = "Your booking request was declined. Please review the remarks below or contact the administrator for clarification.";
+            return RedirectToAction(nameof(MyBookings));
         }
 
         [Authorize(Roles = "Client")]

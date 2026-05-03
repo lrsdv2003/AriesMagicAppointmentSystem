@@ -18,7 +18,7 @@
 <div class="page-header">
     <div>
         <h1>Create Booking</h1>
-        <p class="page-subtitle">Step 2 of 2 — Select a package and customize its inclusions.</p>
+        <p class="page-subtitle">Step 2 of 2 — Choose your package, review the inclusions, and confirm your booking.</p>
     </div>
 </div>
 
@@ -40,19 +40,84 @@
 }
 
 <div class="dashboard-panel mb-4">
-    <h4 class="mb-3">Event Summary</h4>
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+        <div>
+            <div class="form-section-title mb-1">Event Summary</div>
+            <p class="page-subtitle mb-0">Review the details you entered in Step 1 before choosing a package.</p>
+        </div>
+        <a asp-action="CreateStepOne" class="btn btn-outline-secondary btn-sm">Edit Step 1</a>
+    </div>
+
     <div class="row g-3">
-        <div class="col-md-4"><strong>Event Type:</strong> @Model.EventType</div>
-        <div class="col-md-4"><strong>Motif:</strong> @Model.Motif</div>
-        <div class="col-md-4"><strong>Date:</strong> @Model.EventDate.ToString("MMMM dd, yyyy")</div>
-        <div class="col-md-4"><strong>Time:</strong> @DateTime.Today.Add(Model.StartTime).ToString("hh:mm tt")</div>
-        <div class="col-md-4"><strong>Theme:</strong> @Model.PartyTheme</div>
-        <div class="col-md-4"><strong>Venue:</strong> @Model.PartyVenue</div>
-        <div class="col-md-4"><strong>Celebrant:</strong> @Model.CelebrantName</div>
-        <div class="col-md-4"><strong>Age:</strong> @Model.Age</div>
-        <div class="col-md-4"><strong>Pax:</strong> @Model.PaxCount</div>
-        <div class="col-md-6"><strong>Contact Person:</strong> @Model.ContactPerson</div>
-        <div class="col-md-6"><strong>Contact Number:</strong> @Model.ContactNumber</div>
+        <div class="col-md-4">
+            <div class="package-meta-box h-100">
+                <span class="package-meta-label">Event Type</span>
+                <span class="package-meta-value">@Model.EventType</span>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="package-meta-box h-100">
+                <span class="package-meta-label">Motif</span>
+                <span class="package-meta-value">@Model.Motif</span>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="package-meta-box h-100">
+                <span class="package-meta-label">Event Date</span>
+                <span class="package-meta-value">@Model.EventDate.ToString("MMMM dd, yyyy")</span>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="package-meta-box h-100">
+                <span class="package-meta-label">Start Time</span>
+                <span class="package-meta-value">@DateTime.Today.Add(Model.StartTime).ToString("hh:mm tt")</span>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="package-meta-box h-100">
+                <span class="package-meta-label">Party Theme</span>
+                <span class="package-meta-value">@Model.PartyTheme</span>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="package-meta-box h-100">
+                <span class="package-meta-label">Venue</span>
+                <span class="package-meta-value">@Model.PartyVenue</span>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="package-meta-box h-100">
+                <span class="package-meta-label">Celebrant</span>
+                <span class="package-meta-value">@Model.CelebrantName</span>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="package-meta-box h-100">
+                <span class="package-meta-label">Age</span>
+                <span class="package-meta-value">@Model.Age</span>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="package-meta-box h-100">
+                <span class="package-meta-label">Number of Guests</span>
+                <span class="package-meta-value">@Model.PaxCount</span>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="package-meta-box h-100">
+                <span class="package-meta-label">Contact Person</span>
+                <span class="package-meta-value">@Model.ContactPerson</span>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="package-meta-box h-100">
+                <span class="package-meta-label">Contact Number</span>
+                <span class="package-meta-value">@Model.ContactNumber</span>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -80,20 +145,22 @@
         <div class="form-section-header mb-3">
             <div>
                 <div class="form-section-title mb-1">Select Package</div>
-                <p class="page-subtitle mb-0">Choose the package you want for your event.</p>
+                <p class="page-subtitle mb-0">Choose the package you want for your event. You can customize removable inclusions below.</p>
             </div>
         </div>
 
-        <select asp-for="ServiceId"
-                class="form-select package-selector-dropdown"
-                onchange="window.location.href='@Url.Action("CreateStepTwo", "Bookings")?serviceId=' + this.value">
-            @foreach (var packageItem in Model.AvailablePackages)
-            {
-                <option value="@packageItem.Id">
-                    @packageItem.Name - ₱@packageItem.Price.ToString("N2")
-                </option>
-            }
-        </select>
+        <div class="package-selector-wrap">
+            <select asp-for="ServiceId"
+                    class="form-select package-selector-dropdown"
+                    onchange="window.location.href='@Url.Action("CreateStepTwo", "Bookings")?serviceId=' + this.value">
+                @foreach (var packageItem in Model.AvailablePackages)
+                {
+                    <option value="@packageItem.Id">
+                        @packageItem.Name - ₱@packageItem.Price.ToString("N2")
+                    </option>
+                }
+            </select>
+        </div>
         <span asp-validation-for="ServiceId" class="text-danger"></span>
     </div>
 
@@ -101,13 +168,14 @@
         <div class="dashboard-panel">
             <div class="package-preview-header">
                 <div>
-                    <h3 class="package-preview-title">@Model.PackageName</h3>
                     <div class="package-card-badge">Selected Package</div>
+                    <h3 class="package-preview-title mt-2">@Model.PackageName</h3>
+                    <p class="page-subtitle mb-0">Review the inclusions below. Removable items can be unchecked to lower the total package cost.</p>
                 </div>
                 <div class="package-preview-price">₱@Model.BasePrice.ToString("N2")</div>
             </div>
 
-            <div class="package-preview-summary mt-3">
+            <div class="package-preview-summary mt-4">
                 <div class="package-meta-box">
                     <span class="package-meta-label">Base Price</span>
                     <span class="package-meta-value">₱@Model.BasePrice.ToString("N2")</span>
@@ -119,10 +187,16 @@
             </div>
 
             <div class="mt-4">
-                <div class="form-section-title mb-2">Package Inclusions</div>
-                <p class="page-subtitle mb-3">
-                    Uncheck removable inclusions to reduce the final package cost.
-                </p>
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+                    <div>
+                        <div class="form-section-title mb-1">Package Inclusions</div>
+                        <p class="page-subtitle mb-0">Uncheck removable inclusions to reduce the final package cost by their assigned deduction amount.</p>
+                    </div>
+                </div>
+
+                <div class="booking-summary-note mb-3">
+                    Fixed inclusions cannot be removed. The required downpayment stays at <strong>₱2,000.00</strong> even if you remove some inclusions.
+                </div>
 
                 <div id="removedInputsContainer"></div>
 
@@ -141,7 +215,7 @@
                                 <div class="booking-inclusion-action">
                                     @if (Model.Inclusions[i].IsRemovable)
                                     {
-                                        <div class="form-check">
+                                        <div class="form-check form-switch">
                                             @if (Model.Inclusions[i].IsSelected)
                                             {
                                                 <input class="form-check-input inclusion-checkbox"
@@ -157,7 +231,7 @@
                                                        value="@Model.Inclusions[i].Id"
                                                        onchange="syncRemovedInclusions()" />
                                             }
-                                            <label class="form-check-label">Include</label>
+                                            <label class="form-check-label">Included</label>
                                         </div>
                                     }
                                     else
@@ -180,6 +254,7 @@
 
         <div class="dashboard-panel booking-price-panel">
             <div class="form-section-title mb-3">Booking Summary</div>
+            <p class="page-subtitle mb-3">This summary updates automatically based on the inclusions you keep or remove.</p>
 
             <div class="booking-price-row">
                 <span>Base Price</span>
@@ -202,12 +277,12 @@
             </div>
 
             <div class="booking-summary-note mt-3">
-                The required downpayment is fixed at ₱2,000.00 even if inclusions are removed.
+                Please review the final amount carefully before submitting your booking request.
             </div>
 
             <div class="d-flex flex-column gap-2 mt-4">
-                <button type="submit" class="btn btn-primary">Submit Booking</button>
-                <a asp-action="CreateStepOne" class="btn btn-outline-secondary">Back</a>
+                <button type="submit" class="btn btn-primary btn-lg">Submit Booking</button>
+                <a asp-action="CreateStepOne" class="btn btn-outline-secondary">Back to Step 1</a>
             </div>
         </div>
     </div>

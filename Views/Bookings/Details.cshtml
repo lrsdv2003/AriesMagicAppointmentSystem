@@ -22,90 +22,184 @@
     var latestPayment = Model.Payments?
         .OrderByDescending(p => p.UploadedAt)
         .FirstOrDefault();
+
+    var bookingStatusClass = Model.Status switch
+    {
+        "Pending" => "status-pending",
+        "AwaitingDownpayment" => "status-awaiting",
+        "AwaitingVerification" => "status-awaiting",
+        "Confirmed" => "status-confirmed",
+        "Completed" => "status-completed",
+        "Declined" => "status-declined",
+        "Expired" => "status-expired",
+        _ => "status-read"
+    };
+
+    var paymentStatusClass = latestPayment?.Status switch
+    {
+        "Pending" => "status-pending",
+        "Verified" => "status-verified",
+        "Rejected" => "status-rejected",
+        _ => "status-read"
+    };
 }
 
 <div class="page-header">
     <div>
         <h1>Booking Details</h1>
-        <p class="page-subtitle">Review the complete booking information and package customization.</p>
+        <p class="page-subtitle">Review the full booking information, package summary, payment status, and internal notes.</p>
     </div>
     <div class="d-flex gap-2">
         <a asp-action="Index" class="btn btn-outline-secondary">Back to Bookings</a>
     </div>
 </div>
 
+<div class="dashboard-stats mb-4">
+    <div class="stat-card">
+        <div class="stat-label">Booking ID</div>
+        <div class="stat-value">BK-@Model.CreatedAt.Year-@Model.Id.ToString("D3")</div>
+        <div class="stat-subtext">Reference number for this booking.</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Booking Status</div>
+        <div class="stat-value">
+            <span class="status-badge @bookingStatusClass">@Model.Status</span>
+        </div>
+        <div class="stat-subtext">Current workflow status of this reservation.</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Latest Payment</div>
+        <div class="stat-value">
+            @if (latestPayment == null)
+            {
+                <span class="status-badge status-read">No Payment</span>
+            }
+            else
+            {
+                <span class="status-badge @paymentStatusClass">@latestPayment.Status</span>
+            }
+        </div>
+        <div class="stat-subtext">Most recent payment verification result.</div>
+    </div>
+</div>
+
 <div class="booking-details-layout">
     <div class="dashboard-panel">
-        <div class="form-section-title mb-3">Client & Event Information</div>
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+            <div>
+                <div class="form-section-title mb-1">Client & Event Information</div>
+                <p class="page-subtitle mb-0">Complete details submitted by the client during booking.</p>
+            </div>
+        </div>
 
-        <dl class="row details-list mb-0">
-            <dt class="col-sm-4">Booking ID</dt>
-            <dd class="col-sm-8">BK-@Model.CreatedAt.Year-@Model.Id.ToString("D3")</dd>
+        <div class="row g-3">
+            <div class="col-md-6">
+                <div class="package-meta-box h-100">
+                    <span class="package-meta-label">Client Name</span>
+                    <span class="package-meta-value">@Model.Client?.FullName</span>
+                </div>
+            </div>
 
-            <dt class="col-sm-4">Client Name</dt>
-            <dd class="col-sm-8">@Model.Client?.FullName</dd>
+            <div class="col-md-6">
+                <div class="package-meta-box h-100">
+                    <span class="package-meta-label">Client Email</span>
+                    <span class="package-meta-value">@Model.Client?.Email</span>
+                </div>
+            </div>
 
-            <dt class="col-sm-4">Client Email</dt>
-            <dd class="col-sm-8">@Model.Client?.Email</dd>
+            <div class="col-md-4">
+                <div class="package-meta-box h-100">
+                    <span class="package-meta-label">Event Type</span>
+                    <span class="package-meta-value">@Model.EventType</span>
+                </div>
+            </div>
 
-            <dt class="col-sm-4">Event Type</dt>
-            <dd class="col-sm-8">@Model.EventType</dd>
+            <div class="col-md-4">
+                <div class="package-meta-box h-100">
+                    <span class="package-meta-label">Motif</span>
+                    <span class="package-meta-value">@Model.Motif</span>
+                </div>
+            </div>
 
-            <dt class="col-sm-4">Motif</dt>
-            <dd class="col-sm-8">@Model.Motif</dd>
+            <div class="col-md-4">
+                <div class="package-meta-box h-100">
+                    <span class="package-meta-label">Party Theme</span>
+                    <span class="package-meta-value">@Model.PartyTheme</span>
+                </div>
+            </div>
 
-            <dt class="col-sm-4">Party Theme</dt>
-            <dd class="col-sm-8">@Model.PartyTheme</dd>
+            <div class="col-md-6">
+                <div class="package-meta-box h-100">
+                    <span class="package-meta-label">Party Venue</span>
+                    <span class="package-meta-value">@Model.PartyVenue</span>
+                </div>
+            </div>
 
-            <dt class="col-sm-4">Party Venue</dt>
-            <dd class="col-sm-8">@Model.PartyVenue</dd>
+            <div class="col-md-3">
+                <div class="package-meta-box h-100">
+                    <span class="package-meta-label">Celebrant Name</span>
+                    <span class="package-meta-value">@Model.CelebrantName</span>
+                </div>
+            </div>
 
-            <dt class="col-sm-4">Celebrant Name</dt>
-            <dd class="col-sm-8">@Model.CelebrantName</dd>
+            <div class="col-md-3">
+                <div class="package-meta-box h-100">
+                    <span class="package-meta-label">Age</span>
+                    <span class="package-meta-value">@Model.Age</span>
+                </div>
+            </div>
 
-            <dt class="col-sm-4">Age</dt>
-            <dd class="col-sm-8">@Model.Age</dd>
+            <div class="col-md-4">
+                <div class="package-meta-box h-100">
+                    <span class="package-meta-label">Guests / Pax</span>
+                    <span class="package-meta-value">@Model.PaxCount</span>
+                </div>
+            </div>
 
-            <dt class="col-sm-4"># of Pax</dt>
-            <dd class="col-sm-8">@Model.PaxCount</dd>
+            <div class="col-md-4">
+                <div class="package-meta-box h-100">
+                    <span class="package-meta-label">Contact Person</span>
+                    <span class="package-meta-value">@Model.ContactPerson</span>
+                </div>
+            </div>
 
-            <dt class="col-sm-4">Contact Person</dt>
-            <dd class="col-sm-8">@Model.ContactPerson</dd>
+            <div class="col-md-4">
+                <div class="package-meta-box h-100">
+                    <span class="package-meta-label">Contact Number</span>
+                    <span class="package-meta-value">@Model.ContactNumber</span>
+                </div>
+            </div>
 
-            <dt class="col-sm-4">Contact Number</dt>
-            <dd class="col-sm-8">@Model.ContactNumber</dd>
+            <div class="col-md-4">
+                <div class="package-meta-box h-100">
+                    <span class="package-meta-label">Event Date</span>
+                    <span class="package-meta-value">@Model.EventDate.ToString("MMMM dd, yyyy")</span>
+                </div>
+            </div>
 
-            <dt class="col-sm-4">Event Date</dt>
-            <dd class="col-sm-8">@Model.EventDate.ToString("MMMM dd, yyyy")</dd>
+            <div class="col-md-4">
+                <div class="package-meta-box h-100">
+                    <span class="package-meta-label">Start Time</span>
+                    <span class="package-meta-value">@Model.StartTime.ToString("hh:mm tt")</span>
+                </div>
+            </div>
 
-            <dt class="col-sm-4">Start Time</dt>
-            <dd class="col-sm-8">@Model.StartTime.ToString("hh:mm tt")</dd>
-
-            <dt class="col-sm-4">End Time</dt>
-            <dd class="col-sm-8">@Model.EndTime.ToString("hh:mm tt")</dd>
-
-            <dt class="col-sm-4">Booking Status</dt>
-            <dd class="col-sm-8">
-                @{
-                    var statusClass = Model.Status switch
-                    {
-                        "Pending" => "status-pending",
-                        "AwaitingDownpayment" => "status-awaiting",
-                        "AwaitingVerification" => "status-awaiting",
-                        "Confirmed" => "status-confirmed",
-                        "Completed" => "status-completed",
-                        "Declined" => "status-declined",
-                        "Expired" => "status-expired",
-                        _ => "status-read"
-                    };
-                }
-                <span class="status-badge @statusClass">@Model.Status</span>
-            </dd>
-        </dl>
+            <div class="col-md-4">
+                <div class="package-meta-box h-100">
+                    <span class="package-meta-label">End Time</span>
+                    <span class="package-meta-value">@Model.EndTime.ToString("hh:mm tt")</span>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div class="dashboard-panel">
-        <div class="form-section-title mb-3">Package & Payment Summary</div>
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+            <div>
+                <div class="form-section-title mb-1">Package & Payment Summary</div>
+                <p class="page-subtitle mb-0">Pricing, payment status, and package customization details.</p>
+            </div>
+        </div>
 
         <div class="booking-price-row">
             <span>Selected Package</span>
@@ -117,7 +211,7 @@
             <strong>₱@Model.BasePrice.ToString("N2")</strong>
         </div>
 
-        <div class="booking-price-row">
+        <div class="booking-price-row booking-total-row">
             <span>Final Price</span>
             <strong>₱@Model.FinalPrice.ToString("N2")</strong>
         </div>
@@ -141,15 +235,7 @@
                 }
                 else
                 {
-                    var paymentClass = latestPayment.Status switch
-                    {
-                        "Pending" => "status-pending",
-                        "Verified" => "status-verified",
-                        "Rejected" => "status-rejected",
-                        _ => "status-read"
-                    };
-
-                    <span class="status-badge @paymentClass">@latestPayment.Status</span>
+                    <span class="status-badge @paymentStatusClass">@latestPayment.Status</span>
                 }
             </strong>
         </div>
@@ -175,20 +261,33 @@
             }
         </div>
 
-        @if (!string.IsNullOrWhiteSpace(Model.InternalNotes))
-        {
-            <div class="mt-4">
-                <div class="form-section-title mb-2">Internal Notes</div>
+        <div class="mt-4">
+            <div class="form-section-title mb-2">Internal Notes</div>
+
+            @if (string.IsNullOrWhiteSpace(Model.InternalNotes))
+            {
+                <div class="empty-state small-empty-state">
+                    <h3>No internal notes</h3>
+                    <p>No internal notes have been added for this booking yet.</p>
+                </div>
+            }
+            else
+            {
                 <div class="details-description-block">
                     @Model.InternalNotes
                 </div>
-            </div>
-        }
+            }
+        </div>
     </div>
 </div>
 
 <div class="dashboard-panel mt-4">
-    <div class="form-section-title mb-3">Actions</div>
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+        <div>
+            <div class="form-section-title mb-1">Available Actions</div>
+            <p class="page-subtitle mb-0">Perform actions based on the current booking status.</p>
+        </div>
+    </div>
 
     <div class="d-flex gap-2 flex-wrap">
         @if (User.IsInRole("Staff"))
@@ -206,6 +305,5 @@
                 <a asp-action="Complete" asp-route-id="@Model.Id" class="btn btn-primary">Complete</a>
             }
         }
-
     </div>
 </div>

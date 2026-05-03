@@ -2,6 +2,7 @@
 
 @{
     ViewData["Title"] = "My Payments";
+    var payments = Model.OrderByDescending(x => x.UploadedAt).ToList();
 }
 
 <div class="client-portal-header">
@@ -18,14 +19,14 @@
 <div class="client-portal-stats">
     <div class="client-portal-stat-card">
         <span class="client-portal-stat-label">Total Uploads</span>
-        <strong class="client-portal-stat-value">@Model.Count()</strong>
+        <strong class="client-portal-stat-value">@payments.Count</strong>
         <span class="client-portal-stat-note">All payment proofs uploaded under your account</span>
     </div>
 
     <div class="client-portal-stat-card">
         <span class="client-portal-stat-label">Verified</span>
         <strong class="client-portal-stat-value">
-            @Model.Count(x => x.Status == AriesMagicAppointmentSystem.Models.PaymentStatus.Verified)
+            @payments.Count(x => x.Status == AriesMagicAppointmentSystem.Models.PaymentStatus.Verified)
         </strong>
         <span class="client-portal-stat-note">Payments already approved by admin</span>
     </div>
@@ -33,13 +34,34 @@
     <div class="client-portal-stat-card">
         <span class="client-portal-stat-label">Pending Review</span>
         <strong class="client-portal-stat-value">
-            @Model.Count(x => x.Status == AriesMagicAppointmentSystem.Models.PaymentStatus.Pending)
+            @payments.Count(x => x.Status == AriesMagicAppointmentSystem.Models.PaymentStatus.Pending)
         </strong>
         <span class="client-portal-stat-note">Uploads still waiting for verification</span>
     </div>
 </div>
 
-@if (!Model.Any())
+@if (TempData["Success"] != null)
+{
+    <div class="client-success-banner mb-4">
+        <div class="client-success-icon">✓</div>
+        <div>
+            <div class="client-success-title">Payment Uploaded</div>
+            <div class="client-success-text">@TempData["Success"]</div>
+        </div>
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="client-error-banner mb-4">
+        <div class="client-error-icon">!</div>
+        <div>
+            <div class="client-error-title">Payment Update</div>
+            <div class="client-error-text">@TempData["Error"]</div>
+        </div>
+    </div>
+}
+
+@if (!payments.Any())
 {
     <div class="empty-state client-empty-state">
         <h3>No payments uploaded yet</h3>
@@ -50,7 +72,7 @@
 else
 {
     <div class="client-booking-grid">
-        @foreach (var item in Model.OrderByDescending(x => x.UploadedAt))
+        @foreach (var item in payments)
         {
             var statusClass = item.Status switch
             {
@@ -60,15 +82,16 @@ else
                 _ => "status-read"
             };
 
+            var packageName = item.Booking?.PackageName ?? item.Booking?.Service?.Name ?? "Package";
+
             <div class="client-booking-card">
                 <div class="client-booking-top">
                     <div>
-                        <div class="client-booking-code">
-                            Payment Upload
+                        <div class="client-booking-code">Payment Upload</div>
+                        <h3 class="client-booking-package">@packageName</h3>
+                        <div class="client-booking-created text-muted small">
+                            Uploaded on @item.UploadedAt.ToString("MMM dd, yyyy hh:mm tt")
                         </div>
-                        <h3 class="client-booking-package">
-                            @(item.Booking?.PackageName ?? item.Booking?.Service?.Name ?? "Package")
-                        </h3>
                     </div>
 
                     <span class="status-badge @statusClass">@item.Status</span>
@@ -76,44 +99,76 @@ else
 
                 <div class="client-booking-meta">
                     <div class="client-booking-meta-box">
-                        <span class="client-booking-meta-label">Amount</span>
+                        <span class="client-booking-meta-label">Amount Paid</span>
                         <span class="client-booking-meta-value">₱@item.Amount.ToString("N2")</span>
                     </div>
 
                     <div class="client-booking-meta-box">
-                        <span class="client-booking-meta-label">Uploaded</span>
-                        <span class="client-booking-meta-value">@item.UploadedAt.ToString("MMM dd, yyyy")</span>
+                        <span class="client-booking-meta-label">Booking Date</span>
+                        <span class="client-booking-meta-value">
+                            @(item.Booking?.EventDate.ToString("MMMM dd, yyyy") ?? "N/A")
+                        </span>
                     </div>
                 </div>
 
-                <div class="payment-proof-preview">
+                <div class="payment-proof-preview mt-2">
                     <img src="@item.ProofImagePath" alt="Payment Proof" class="payment-proof-image" />
                 </div>
 
                 <div class="client-booking-details">
                     <div class="client-booking-detail-row">
-                        <span>Booking Date</span>
-                        <strong>@(item.Booking?.EventDate.ToString("MMMM dd, yyyy") ?? "N/A")</strong>
-                    </div>
-                    <div class="client-booking-detail-row">
                         <span>Package</span>
-                        <strong>@(item.Booking?.PackageName ?? item.Booking?.Service?.Name ?? "N/A")</strong>
+                        <strong>@packageName</strong>
                     </div>
                     <div class="client-booking-detail-row">
                         <span>Review Status</span>
                         <strong>@item.Status</strong>
                     </div>
+                    <div class="client-booking-detail-row">
+                        <span>Booking Reference</span>
+                        <strong>
+                            @if (item.Booking != null)
+                            {
+                                @:BK-@item.Booking.CreatedAt.Year-@item.Booking.Id.ToString("D3")
+                            }
+                            else
+                            {
+                                @:N/A
+                            }
+                        </strong>
+                    </div>
                 </div>
 
-                <div class="client-booking-footer">
-                    @if (item.Status == AriesMagicAppointmentSystem.Models.PaymentStatus.Rejected)
+                <div class="client-booking-note">
+                    @if (item.Status == AriesMagicAppointmentSystem.Models.PaymentStatus.Pending)
                     {
-                        <a asp-action="Upload" class="btn btn-primary">Upload Again</a>
+                        <span>Your payment proof is currently under admin review.</span>
+                    }
+                    else if (item.Status == AriesMagicAppointmentSystem.Models.PaymentStatus.Verified)
+                    {
+                        <span>Your payment proof was verified successfully.</span>
+                    }
+                    else if (item.Status == AriesMagicAppointmentSystem.Models.PaymentStatus.Rejected)
+                    {
+                        <span>Your payment proof was rejected. Please upload a new payment proof with a clear and readable image.</span>
                     }
                     else
                     {
-                        <button type="button" class="btn btn-outline-secondary" disabled>No Action Needed</button>
+                        <span>Check this payment record regularly for status updates.</span>
                     }
+                </div>
+
+                <div class="client-booking-footer">
+                    <div class="client-booking-footer-actions">
+                        @if (item.Status == AriesMagicAppointmentSystem.Models.PaymentStatus.Rejected)
+                        {
+                            <a asp-action="Upload" class="btn btn-primary">Upload Again</a>
+                        }
+                        else
+                        {
+                            <button type="button" class="btn btn-outline-secondary" disabled>No Action Needed</button>
+                        }
+                    </div>
                 </div>
             </div>
         }

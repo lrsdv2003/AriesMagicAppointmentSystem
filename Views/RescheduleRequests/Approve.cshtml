@@ -1,48 +1,97 @@
-@{
-    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
-}
 @model AriesMagicAppointmentSystem.Models.RescheduleRequest
 
 @{
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
     ViewData["Title"] = "Approve Reschedule";
 }
 
 <div class="page-header">
     <div>
         <h1>Approve Reschedule</h1>
-        <p class="page-subtitle">Approve this reschedule request and update the booking schedule.</p>
+        <p class="page-subtitle">Review the request details and approve the new booking schedule if everything is valid.</p>
     </div>
 </div>
 
-<div class="form-card">
-    <dl class="row details-list mb-4">
-        <dt class="col-sm-3">Client</dt>
-        <dd class="col-sm-9">@Model.Booking?.Client?.FullName</dd>
+<div class="booking-details-layout">
+    <div class="dashboard-panel">
+        <div class="form-section-title mb-3">Request Information</div>
 
-        <dt class="col-sm-3">Service</dt>
-        <dd class="col-sm-9">@Model.Booking?.Service?.Name</dd>
+        <div class="row g-3">
+            <div class="col-md-6">
+                <div class="package-meta-box h-100">
+                    <span class="package-meta-label">Client</span>
+                    <span class="package-meta-value">@Model.Booking?.Client?.FullName</span>
+                </div>
+            </div>
 
-        <dt class="col-sm-3">Requested Date</dt>
-        <dd class="col-sm-9">@Model.RequestedDate.ToString("MMM dd, yyyy")</dd>
+            <div class="col-md-6">
+                <div class="package-meta-box h-100">
+                    <span class="package-meta-label">Service</span>
+                    <span class="package-meta-value">@Model.Booking?.Service?.Name</span>
+                </div>
+            </div>
 
-        <dt class="col-sm-3">Requested Start</dt>
-        <dd class="col-sm-9">@Model.RequestedStartTime.ToString("hh:mm tt")</dd>
+            <div class="col-md-6">
+                <div class="package-meta-box h-100">
+                    <span class="package-meta-label">Original Date</span>
+                    <span class="package-meta-value">@Model.Booking?.EventDate.ToString("MMMM dd, yyyy")</span>
+                </div>
+            </div>
 
-        <dt class="col-sm-3">Reason</dt>
-        <dd class="col-sm-9">@Model.Reason</dd>
-    </dl>
+            <div class="col-md-6">
+                <div class="package-meta-box h-100">
+                    <span class="package-meta-label">Original Start Time</span>
+                    <span class="package-meta-value">@Model.Booking?.StartTime.ToString("hh:mm tt")</span>
+                </div>
+            </div>
 
-    <form asp-action="Approve">
-        <input type="hidden" asp-for="Id" />
+            <div class="col-md-6">
+                <div class="package-meta-box h-100">
+                    <span class="package-meta-label">Requested Date</span>
+                    <span class="package-meta-value">@Model.RequestedDate.ToString("MMMM dd, yyyy")</span>
+                </div>
+            </div>
 
-        <div class="mb-4">
-            <label class="form-label">Admin Remarks</label>
-            <textarea name="adminRemarks" class="form-control" rows="4"></textarea>
+            <div class="col-md-6">
+                <div class="package-meta-box h-100">
+                    <span class="package-meta-label">Requested Start Time</span>
+                    <span class="package-meta-value">@Model.RequestedStartTime.ToString("hh:mm tt")</span>
+                </div>
+            </div>
         </div>
 
-        <div class="d-flex gap-2">
-            <button type="submit" class="btn btn-success">Approve</button>
-            <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+        <div class="mt-4">
+            <div class="form-section-title mb-2">Client Reason</div>
+            <div class="details-description-block">
+                @Model.Reason
+            </div>
         </div>
-    </form>
+    </div>
+
+    <div class="dashboard-panel">
+        <div class="form-section-title mb-3">Approval Decision</div>
+        <p class="page-subtitle mb-3">Add optional remarks before approving this reschedule request.</p>
+
+        <form asp-action="Approve" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="Id" />
+
+            <div class="mb-4">
+                <label class="form-label">Admin Remarks</label>
+                <textarea name="adminRemarks"
+                          class="form-control"
+                          rows="5"
+                          placeholder="Add remarks for this approval decision (optional)"></textarea>
+            </div>
+
+            <div class="booking-summary-note mb-4">
+                Make sure the requested date and time do not conflict with existing confirmed bookings before approving.
+            </div>
+
+            <div class="d-flex gap-2 flex-wrap">
+                <button type="submit" class="btn btn-success">Approve Request</button>
+                <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
 </div>

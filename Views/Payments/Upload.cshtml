@@ -14,7 +14,8 @@
 
 <div class="upload-payment-layout">
     <div class="dashboard-panel">
-        <div class="form-section-title mb-3">Payment Information</div>
+        <div class="form-section-title mb-1">Payment Information</div>
+        <p class="page-subtitle mb-4">Complete the fields below and upload a clear proof of payment.</p>
 
         <form asp-action="Upload" method="post" enctype="multipart/form-data">
             @Html.AntiForgeryToken()
@@ -39,7 +40,12 @@
                     <label asp-for="ProofImage" class="form-label">Payment Proof</label>
                     <input asp-for="ProofImage" type="file" class="form-control" accept="image/*" />
                     <span asp-validation-for="ProofImage" class="text-danger"></span>
+                    <div class="form-text mt-2">Accepted formats: JPG, JPEG, PNG, and WEBP.</div>
                 </div>
+            </div>
+
+            <div class="payment-form-note mt-4">
+                Make sure the uploaded screenshot or receipt is clear, complete, and readable to avoid rejection or delays in verification.
             </div>
 
             <div class="upload-payment-actions">
@@ -50,44 +56,45 @@
     </div>
 
     <div class="dashboard-panel payment-guide-panel">
-        <div class="form-section-title mb-3">Payment Guide</div>
+        <div class="form-section-title mb-1">Payment Guide</div>
+        <p class="page-subtitle mb-4">Follow these steps to make sure your payment submission is accepted smoothly.</p>
 
         <div class="payment-guide-list">
             <div class="payment-guide-card">
                 <div class="payment-guide-icon">1</div>
                 <div>
                     <strong>Select your booking</strong>
-                    <p>Choose the booking that is currently waiting for downpayment or verification.</p>
+                    <p>Choose the booking that is currently waiting for downpayment or payment verification.</p>
                 </div>
             </div>
 
             <div class="payment-guide-card">
                 <div class="payment-guide-icon">2</div>
                 <div>
-                    <strong>Enter the amount paid</strong>
-                    <p>Input the exact amount you paid based on the booking requirements.</p>
+                    <strong>Enter the exact amount paid</strong>
+                    <p>Make sure the amount matches what is required for your booking process.</p>
                 </div>
             </div>
 
             <div class="payment-guide-card">
                 <div class="payment-guide-icon">3</div>
                 <div>
-                    <strong>Upload clear proof</strong>
-                    <p>Make sure your screenshot or receipt is clear and readable for easier admin verification.</p>
+                    <strong>Upload a clear proof image</strong>
+                    <p>Your receipt or screenshot should be readable, complete, and not cropped improperly.</p>
                 </div>
             </div>
 
             <div class="payment-guide-card">
                 <div class="payment-guide-icon">4</div>
                 <div>
-                    <strong>Wait for verification</strong>
-                    <p>Admin will review your uploaded payment proof and update the payment status.</p>
+                    <strong>Wait for admin review</strong>
+                    <p>Admin will verify the submitted proof and update your payment and booking status accordingly.</p>
                 </div>
             </div>
         </div>
 
         <div class="payment-guide-note mt-4">
-            The required downpayment for package bookings is <strong>₱2,000.00</strong> unless a different amount is instructed by the system workflow.
+            The usual required downpayment for package bookings is <strong>₱2,000.00</strong>, unless a different amount is required by the workflow or booking setup.
         </div>
     </div>
 </div>

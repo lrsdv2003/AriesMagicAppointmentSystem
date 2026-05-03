@@ -3,29 +3,41 @@
 @{
     Layout = "_DashboardLayout";
     ViewData["Title"] = "Reschedule Requests";
-}
 
-<div class="dashboard-stats">
-    <div class="stat-card">
-        <div class="stat-label">Total Requests</div>
-        <div class="stat-value">@Model.Count()</div>
-        <div class="stat-subtext">All client reschedule requests currently recorded.</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-label">Pending Review</div>
-        <div class="stat-value">@Model.Count(x => x.Status == AriesMagicAppointmentSystem.Models.RescheduleRequestStatus.Pending)</div>
-        <div class="stat-subtext">Requests still waiting for final admin action.</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-label">Decision Stage</div>
-        <div class="stat-value">Admin</div>
-        <div class="stat-subtext">Approve or reject requests while checking schedule conflicts.</div>
-    </div>
-</div>
+    var requests = Model.OrderByDescending(x => x.CreatedAt).ToList();
+    var totalRequests = requests.Count;
+    var pendingCount = requests.Count(x => x.Status == AriesMagicAppointmentSystem.Models.RescheduleRequestStatus.Pending);
+    var approvedCount = requests.Count(x => x.Status == AriesMagicAppointmentSystem.Models.RescheduleRequestStatus.Approved);
+    var rejectedCount = requests.Count(x => x.Status == AriesMagicAppointmentSystem.Models.RescheduleRequestStatus.Rejected);
+}
 
 <div class="page-header">
     <div>
-        <p class="page-subtitle">Review client requests to change their booking schedule.</p>
+        <h1>Reschedule Requests</h1>
+        <p class="page-subtitle">Review client requests to change their booking schedule and take the appropriate action.</p>
+    </div>
+</div>
+
+<div class="dashboard-stats mb-4">
+    <div class="stat-card">
+        <div class="stat-label">Total Requests</div>
+        <div class="stat-value">@totalRequests</div>
+        <div class="stat-subtext">All reschedule requests currently recorded in the system.</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Pending Review</div>
+        <div class="stat-value">@pendingCount</div>
+        <div class="stat-subtext">Requests still waiting for final admin action.</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Approved</div>
+        <div class="stat-value">@approvedCount</div>
+        <div class="stat-subtext">Requests that were successfully approved.</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Rejected</div>
+        <div class="stat-value">@rejectedCount</div>
+        <div class="stat-subtext">Requests that were declined after review.</div>
     </div>
 </div>
 
@@ -34,36 +46,76 @@
     <div class="alert alert-danger mb-3">@TempData["Error"]</div>
 }
 
-<div class="table-clean">
-    <table class="table align-middle">
-        <thead>
-            <tr>
-                <th>Client</th>
-                <th>Service</th>
-                <th>Requested Date</th>
-                <th>Requested Start</th>
-                <th>Status</th>
-                <th class="text-end">Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-@foreach (var item in Model)
+<div class="dashboard-panel">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+        <div>
+            <h3 class="mb-1">Reschedule Request Records</h3>
+            <p class="page-subtitle mb-0">Showing @requests.Count request(s) in the current queue.</p>
+        </div>
+    </div>
+
+    @if (!requests.Any())
+    {
+        <div class="empty-state">
+            <h3>No reschedule requests found</h3>
+            <p>There are currently no reschedule requests to review.</p>
+        </div>
+    }
+    else
+    {
+        <div class="table-clean reschedule-table-wrap">
+            <table class="table align-middle reschedule-management-table">
+                <thead>
+                    <tr>
+                        <th>Client</th>
+                        <th>Service</th>
+                        <th>Original Date</th>
+                        <th>Requested Date</th>
+                        <th>Requested Start</th>
+                        <th>Status</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+@foreach (var item in requests)
 {
-            <tr>
-                <td>@item.Booking?.Client?.FullName</td>
-                <td>@item.Booking?.Service?.Name</td>
-                <td>@item.RequestedDate.ToString("MMM dd, yyyy")</td>
-                <td>@item.RequestedStartTime.ToString("hh:mm tt")</td>
-                <td><span class="status-badge">@item.Status</span></td>
-                <td class="text-end">
-                    @if (item.Status == AriesMagicAppointmentSystem.Models.RescheduleRequestStatus.Pending)
-                    {
-                        <a asp-action="Approve" asp-route-id="@item.Id" class="btn btn-sm btn-success">Approve</a>
-                        <a asp-action="Reject" asp-route-id="@item.Id" class="btn btn-sm btn-danger">Reject</a>
-                    }
-                </td>
-            </tr>
+    var statusClass = item.Status switch
+    {
+        "Pending" => "status-pending",
+        "Approved" => "status-approved",
+        "Rejected" => "status-rejected",
+        _ => "status-read"
+    };
+
+                    <tr>
+                        <td>
+                            <div class="fw-semibold">@item.Booking?.Client?.FullName</div>
+                            <div class="text-muted small">@item.Booking?.Client?.Email</div>
+                        </td>
+                        <td>@item.Booking?.Service?.Name</td>
+                        <td>@(item.Booking?.EventDate.ToString("MMM dd, yyyy") ?? "N/A")</td>
+                        <td>@item.RequestedDate.ToString("MMM dd, yyyy")</td>
+                        <td>@item.RequestedStartTime.ToString("hh:mm tt")</td>
+                        <td>
+                            <span class="status-badge @statusClass">@item.Status</span>
+                        </td>
+                        <td class="text-end">
+                            <div class="reschedule-action-group">
+                                @if (item.Status == AriesMagicAppointmentSystem.Models.RescheduleRequestStatus.Pending)
+                                {
+                                    <a asp-action="Approve" asp-route-id="@item.Id" class="btn btn-sm btn-success">Approve</a>
+                                    <a asp-action="Reject" asp-route-id="@item.Id" class="btn btn-sm btn-danger">Reject</a>
+                                }
+                                else
+                                {
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" disabled>No Action Needed</button>
+                                }
+                            </div>
+                        </td>
+                    </tr>
 }
-        </tbody>
-    </table>
+                </tbody>
+            </table>
+        </div>
+    }
 </div>

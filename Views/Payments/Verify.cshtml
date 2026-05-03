@@ -1,39 +1,60 @@
-@{
-    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
-}
 @model AriesMagicAppointmentSystem.Models.Payment
 
 @{
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
     ViewData["Title"] = "Verify Payment";
 }
 
 <div class="page-header">
     <div>
         <h1>Verify Payment</h1>
-        <p class="page-subtitle">Confirm this payment and mark the booking as confirmed.</p>
+        <p class="page-subtitle">Review the payment proof and confirm the booking payment.</p>
     </div>
 </div>
 
-<div class="card-clean">
-    <dl class="row details-list mb-4">
-        <dt class="col-sm-3">Client</dt>
-        <dd class="col-sm-9">@Model.Booking?.Client?.FullName</dd>
+<div class="dashboard-panel">
+    <div class="row g-4">
+        <div class="col-lg-7">
+            <div class="form-section-title mb-3">Payment Information</div>
 
-        <dt class="col-sm-3">Service</dt>
-        <dd class="col-sm-9">@Model.Booking?.Service?.Name</dd>
+            <dl class="row details-list mb-0">
+                <dt class="col-sm-4">Client</dt>
+                <dd class="col-sm-8">@Model.Booking?.Client?.FullName</dd>
 
-        <dt class="col-sm-3">Amount</dt>
-        <dd class="col-sm-9">₱@Model.Amount.ToString("N2")</dd>
+                <dt class="col-sm-4">Service</dt>
+                <dd class="col-sm-8">@Model.Booking?.Service?.Name</dd>
 
-        <dt class="col-sm-3">Proof</dt>
-        <dd class="col-sm-9">
-            <img src="@Model.ProofImagePath" alt="Payment Proof" style="max-width: 300px; border-radius: 12px;" />
-        </dd>
-    </dl>
+                <dt class="col-sm-4">Amount</dt>
+                <dd class="col-sm-8">₱@Model.Amount.ToString("N2")</dd>
 
-    <form asp-action="Verify" class="d-flex gap-2">
-        <input type="hidden" asp-for="Id" />
-        <button type="submit" class="btn btn-success">Verify Payment</button>
-        <a asp-action="PendingVerification" class="btn btn-secondary">Cancel</a>
-    </form>
+                <dt class="col-sm-4">Uploaded At</dt>
+                <dd class="col-sm-8">@Model.UploadedAt.ToString("MMMM dd, yyyy hh:mm tt")</dd>
+
+                <dt class="col-sm-4">Booking Date</dt>
+                <dd class="col-sm-8">@Model.Booking?.EventDate.ToString("MMMM dd, yyyy")</dd>
+
+                <dt class="col-sm-4">Current Status</dt>
+                <dd class="col-sm-8">
+                    <span class="status-badge status-pending">@Model.Status</span>
+                </dd>
+            </dl>
+        </div>
+
+        <div class="col-lg-5">
+            <div class="form-section-title mb-3">Proof of Payment</div>
+            <div class="payment-proof-preview">
+                <img src="@Model.ProofImagePath" alt="Payment Proof" class="img-fluid rounded-4 border" />
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-4 pt-3 border-top">
+        <form asp-action="Verify" method="post" class="d-flex gap-2 flex-wrap">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="Id" />
+
+            <button type="submit" class="btn btn-success">Verify Payment</button>
+            <a asp-action="PendingVerification" class="btn btn-outline-secondary">Cancel</a>
+        </form>
+    </div>
 </div>

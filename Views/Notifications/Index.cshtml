@@ -1,41 +1,78 @@
 @model IEnumerable<AriesMagicAppointmentSystem.Models.Notification>
 
 @{
-    Layout = User.IsInRole("Client") ? "_Layout" : "_DashboardLayout";
+    var notifications = Model.OrderByDescending(x => x.CreatedAt).ToList();
+    var isClient = User.IsInRole("Client");
+
+    Layout = isClient ? "_Layout" : "_DashboardLayout";
     ViewData["Title"] = "Notifications";
+
+    var totalCount = notifications.Count;
+    var unreadCount = notifications.Count(x => !x.IsRead);
+    var readCount = notifications.Count(x => x.IsRead);
 }
 
-<div class="client-portal-header">
-    <div>
-        <div class="section-kicker">Client Portal</div>
-        <h1 class="client-portal-title">Notifications</h1>
-        <p class="client-portal-text">Stay updated with your latest booking, payment, and reschedule alerts.</p>
-    </div>
-</div>
-
-<div class="client-portal-stats">
-    <div class="client-portal-stat-card">
-        <span class="client-portal-stat-label">Total Notifications</span>
-        <strong class="client-portal-stat-value">@Model.Count()</strong>
-        <span class="client-portal-stat-note">All alerts connected to your account activity</span>
-    </div>
-
-    <div class="client-portal-stat-card">
-        <span class="client-portal-stat-label">Unread</span>
-        <strong class="client-portal-stat-value">@Model.Count(x => !x.IsRead)</strong>
-        <span class="client-portal-stat-note">Notifications that still need your attention</span>
-    </div>
-
-    <div class="client-portal-stat-card">
-        <span class="client-portal-stat-label">Read</span>
-        <strong class="client-portal-stat-value">@Model.Count(x => x.IsRead)</strong>
-        <span class="client-portal-stat-note">Updates you have already viewed</span>
-    </div>
-</div>
-
-@if (!Model.Any())
+@if (isClient)
 {
-    <div class="empty-state client-empty-state">
+    <div class="client-portal-header">
+        <div>
+            <div class="section-kicker">Client Portal</div>
+            <h1 class="client-portal-title">Notifications</h1>
+            <p class="client-portal-text">Stay updated with your latest booking, payment, and reschedule alerts.</p>
+        </div>
+    </div>
+
+    <div class="client-portal-stats">
+        <div class="client-portal-stat-card">
+            <span class="client-portal-stat-label">Total Notifications</span>
+            <strong class="client-portal-stat-value">@totalCount</strong>
+            <span class="client-portal-stat-note">All alerts connected to your account activity</span>
+        </div>
+
+        <div class="client-portal-stat-card">
+            <span class="client-portal-stat-label">Unread</span>
+            <strong class="client-portal-stat-value">@unreadCount</strong>
+            <span class="client-portal-stat-note">Notifications that still need your attention</span>
+        </div>
+
+        <div class="client-portal-stat-card">
+            <span class="client-portal-stat-label">Read</span>
+            <strong class="client-portal-stat-value">@readCount</strong>
+            <span class="client-portal-stat-note">Updates you have already viewed</span>
+        </div>
+    </div>
+}
+else
+{
+    <div class="page-header">
+        <div>
+            <h1>Notifications</h1>
+            <p class="page-subtitle">Monitor booking, payment, and reschedule alerts across the system.</p>
+        </div>
+    </div>
+
+    <div class="dashboard-stats mb-4">
+        <div class="stat-card">
+            <div class="stat-label">Total Notifications</div>
+            <div class="stat-value">@totalCount</div>
+            <div class="stat-subtext">All alerts currently linked to your account.</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Unread</div>
+            <div class="stat-value">@unreadCount</div>
+            <div class="stat-subtext">Notifications that still need your attention.</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Read</div>
+            <div class="stat-value">@readCount</div>
+            <div class="stat-subtext">Notifications you already opened.</div>
+        </div>
+    </div>
+}
+
+@if (!notifications.Any())
+{
+    <div class="empty-state @(isClient ? "client-empty-state" : "")">
         <h3>No notifications yet</h3>
         <p>You do not have any notifications at the moment.</p>
     </div>
@@ -43,7 +80,7 @@
 else
 {
     <div class="notification-card-list">
-        @foreach (var item in Model.OrderByDescending(x => x.CreatedAt))
+        @foreach (var item in notifications)
         {
             var notifClass = item.IsRead ? "status-read" : "status-unread";
 
@@ -64,7 +101,7 @@ else
                 </div>
 
                 <div class="notification-card-footer">
-                    <a asp-action="Open" asp-route-id="@item.Id" class="btn btn-primary">Open</a>
+                    <a asp-action="Open" asp-route-id="@item.Id" class="btn btn-primary btn-sm">Open</a>
                 </div>
             </div>
         }

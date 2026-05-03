@@ -1,40 +1,118 @@
-@{
-    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
-}
 @model AriesMagicAppointmentSystem.Models.Booking
 
 @{
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
     ViewData["Title"] = "Decline Booking";
 }
 
 <div class="page-header">
     <div>
         <h1>Decline Booking</h1>
-        <p class="page-subtitle">Reject this booking request.</p>
+        <p class="page-subtitle">Review the booking details and reject this request if it cannot be accommodated.</p>
     </div>
 </div>
 
-<div class="card-clean">
-    <dl class="row details-list mb-4">
-        <dt class="col-sm-3">Client</dt>
-        <dd class="col-sm-9">@Model.Client?.FullName</dd>
+<div class="booking-details-layout">
+    <div class="dashboard-panel">
+        <div class="form-section-title mb-3">Booking Information</div>
 
-        <dt class="col-sm-3">Service</dt>
-        <dd class="col-sm-9">@Model.Service?.Name</dd>
+        <div class="row g-3">
+            <div class="col-md-6">
+                <div class="package-meta-box h-100">
+                    <span class="package-meta-label">Client</span>
+                    <span class="package-meta-value">@Model.Client?.FullName</span>
+                </div>
+            </div>
 
-        <dt class="col-sm-3">Date</dt>
-        <dd class="col-sm-9">@Model.EventDate.ToString("MMM dd, yyyy")</dd>
+            <div class="col-md-6">
+                <div class="package-meta-box h-100">
+                    <span class="package-meta-label">Client Email</span>
+                    <span class="package-meta-value">@Model.Client?.Email</span>
+                </div>
+            </div>
 
-        <dt class="col-sm-3">Start</dt>
-        <dd class="col-sm-9">@Model.StartTime.ToString("hh:mm tt")</dd>
+            <div class="col-md-6">
+                <div class="package-meta-box h-100">
+                    <span class="package-meta-label">Service / Package</span>
+                    <span class="package-meta-value">@(string.IsNullOrWhiteSpace(Model.PackageName) ? Model.Service?.Name : Model.PackageName)</span>
+                </div>
+            </div>
 
-        <dt class="col-sm-3">End</dt>
-        <dd class="col-sm-9">@Model.EndTime.ToString("hh:mm tt")</dd>
-    </dl>
+            <div class="col-md-6">
+                <div class="package-meta-box h-100">
+                    <span class="package-meta-label">Event Type</span>
+                    <span class="package-meta-value">@Model.EventType</span>
+                </div>
+            </div>
 
-    <form asp-action="Decline" class="d-flex gap-2">
-        <input type="hidden" asp-for="Id" />
-        <button type="submit" class="btn btn-danger">Decline Booking</button>
-        <a asp-action="Index" class="btn btn-secondary">Cancel</a>
-    </form>
+            <div class="col-md-4">
+                <div class="package-meta-box h-100">
+                    <span class="package-meta-label">Event Date</span>
+                    <span class="package-meta-value">@Model.EventDate.ToString("MMMM dd, yyyy")</span>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="package-meta-box h-100">
+                    <span class="package-meta-label">Start Time</span>
+                    <span class="package-meta-value">@Model.StartTime.ToString("hh:mm tt")</span>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="package-meta-box h-100">
+                    <span class="package-meta-label">End Time</span>
+                    <span class="package-meta-value">@Model.EndTime.ToString("hh:mm tt")</span>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="package-meta-box h-100">
+                    <span class="package-meta-label">Venue</span>
+                    <span class="package-meta-value">@Model.PartyVenue</span>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="package-meta-box h-100">
+                    <span class="package-meta-label">Contact Person</span>
+                    <span class="package-meta-value">@Model.ContactPerson</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="dashboard-panel">
+        <div class="form-section-title mb-3">Decline Decision</div>
+        <p class="page-subtitle mb-3">Declining this booking will mark the request as rejected in the workflow.</p>
+
+        <div class="booking-price-row">
+            <span>Final Price</span>
+            <strong>₱@Model.FinalPrice.ToString("N2")</strong>
+        </div>
+
+        <div class="booking-price-row">
+            <span>Required Downpayment</span>
+            <strong>₱@Model.RequiredDownpayment.ToString("N2")</strong>
+        </div>
+
+        <div class="booking-price-row">
+            <span>Package Duration</span>
+            <strong>@Model.Service?.DurationInHours hour(s)</strong>
+        </div>
+
+        <div class="booking-summary-note mt-4 mb-4">
+            Only decline the booking if the requested date, time, or setup cannot be accommodated.
+        </div>
+
+        <form asp-action="Decline" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="Id" />
+
+            <div class="d-flex gap-2 flex-wrap">
+                <button type="submit" class="btn btn-danger">Decline Booking</button>
+                <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
 </div>

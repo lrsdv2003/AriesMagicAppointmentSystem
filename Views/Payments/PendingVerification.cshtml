@@ -3,90 +3,104 @@
 @{
     Layout = "_DashboardLayout";
     ViewData["Title"] = "Pending Payment Verification";
-}
 
-<div class="dashboard-stats">
-    <div class="stat-card">
-        <div class="stat-label">Pending Payments</div>
-        <div class="stat-value">@Model.Count()</div>
-        <div class="stat-subtext">Payment proofs currently awaiting admin review.</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-label">Review Queue</div>
-        <div class="stat-value">Active</div>
-        <div class="stat-subtext">Verify or reject uploaded payment proof from clients.</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-label">Workflow Stage</div>
-        <div class="stat-value">Admin</div>
-        <div class="stat-subtext">Final confirmation happens after payment verification.</div>
-    </div>
-</div>
+    var payments = Model.ToList();
+    var totalPending = payments.Count;
+    var todayCount = payments.Count(x => x.UploadedAt.Date == DateTime.Today);
+}
 
 <div class="page-header">
     <div>
+        <h1>Pending Payment Verification</h1>
         <p class="page-subtitle">Review payment proofs uploaded by clients and confirm valid downpayments.</p>
     </div>
 </div>
 
-<div class="table-clean">
-    <table class="table align-middle">
-        @if (!Model.Any())
-        {
-            <div class="empty-state">
-                <h3>No records yet</h3>
-                <p>There is nothing to display here right now.</p>
-            </div>
-        }
-        else
-        {
-            <div class="table-clean">
-                <table class="table align-middle">
-                    ...
-                </table>
-            </div>
-        }
-        <thead>
-            <tr>
-                <th>Client</th>
-                <th>Service</th>
-                <th>Amount</th>
-                <th>Proof</th>
-                <th>Uploaded</th>
-                <th class="text-end">Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-@foreach (var item in Model)
+<div class="dashboard-stats mb-4">
+    <div class="stat-card">
+        <div class="stat-label">Pending Payments</div>
+        <div class="stat-value">@totalPending</div>
+        <div class="stat-subtext">Payment proofs currently awaiting admin review.</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Uploaded Today</div>
+        <div class="stat-value">@todayCount</div>
+        <div class="stat-subtext">New payment proofs submitted today.</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Review Queue</div>
+        <div class="stat-value">Active</div>
+        <div class="stat-subtext">Verify or reject uploaded payment proofs from clients.</div>
+    </div>
+</div>
+
+<div class="dashboard-panel">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+        <div>
+            <h3 class="mb-1">Payment Verification Queue</h3>
+            <p class="page-subtitle mb-0">Showing @payments.Count payment record(s) awaiting verification.</p>
+        </div>
+    </div>
+
+    @if (!payments.Any())
+    {
+        <div class="empty-state">
+            <h3>No pending payments</h3>
+            <p>There are currently no payment proofs waiting for verification.</p>
+        </div>
+    }
+    else
+    {
+        <div class="table-clean payment-verification-table-wrap">
+            <table class="table align-middle payment-verification-table">
+                <thead>
+                    <tr>
+                        <th>Client</th>
+                        <th>Service</th>
+                        <th>Amount</th>
+                        <th>Proof</th>
+                        <th>Uploaded</th>
+                        <th>Status</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+@foreach (var item in payments)
 {
-    var statusClass = item.Status switch
-                {
-                    "Pending" => "status-pending",
-                    "AwaitingDownpayment" => "status-awaiting",
-                    "AwaitingVerification" => "status-awaiting",
-                    "Confirmed" => "status-confirmed",
-                    "Completed" => "status-completed",
-                    "Declined" => "status-declined",
-                    "Expired" => "status-expired",
-                    _ => "status-read"
-                };
-            <tr>
-                <td>@item.Booking?.Client?.FullName</td>
-                <td>@item.Booking?.Service?.Name</td>
-                <td>₱@item.Amount.ToString("N2")</td>
-                <td>
-                    <img src="@item.ProofImagePath" alt="Payment Proof" style="max-width: 120px; border-radius: 10px;" />
-                </td>
-                <td>@item.UploadedAt.ToString("MMM dd, yyyy hh:mm tt")</td>
-                <td>
-                    <span class="status-badge @statusClass">@item.Status</span>
-                </td>
-                <td class="text-end">
-                    <a asp-action="Verify" asp-route-id="@item.Id" class="btn btn-sm btn-success">Verify</a>
-                    <a asp-action="Reject" asp-route-id="@item.Id" class="btn btn-sm btn-danger">Reject</a>
-                </td>
-            </tr>
+    var paymentClass = item.Status switch
+    {
+        "Pending" => "status-pending",
+        "Verified" => "status-verified",
+        "Rejected" => "status-rejected",
+        _ => "status-read"
+    };
+
+                    <tr>
+                        <td>
+                            <div class="fw-semibold">@item.Booking?.Client?.FullName</div>
+                            <div class="text-muted small">@item.Booking?.Client?.Email</div>
+                        </td>
+                        <td>@item.Booking?.Service?.Name</td>
+                        <td class="fw-semibold">₱@item.Amount.ToString("N2")</td>
+                        <td>
+                            <img src="@item.ProofImagePath"
+                                 alt="Payment Proof"
+                                 class="payment-proof-thumb" />
+                        </td>
+                        <td>@item.UploadedAt.ToString("MMM dd, yyyy hh:mm tt")</td>
+                        <td>
+                            <span class="status-badge @paymentClass">@item.Status</span>
+                        </td>
+                        <td class="text-end">
+                            <div class="payment-action-group">
+                                <a asp-action="Verify" asp-route-id="@item.Id" class="btn btn-sm btn-success">Verify</a>
+                                <a asp-action="Reject" asp-route-id="@item.Id" class="btn btn-sm btn-danger">Reject</a>
+                            </div>
+                        </td>
+                    </tr>
 }
-        </tbody>
-    </table>
+                </tbody>
+            </table>
+        </div>
+    }
 </div>

@@ -2,30 +2,32 @@
 
 @{
     ViewData["Title"] = "My Bookings";
+    var bookings = Model.OrderByDescending(x => x.CreatedAt).ToList();
 }
 
 <div class="client-portal-header">
     <div>
         <div class="section-kicker">Client Portal</div>
         <h1 class="client-portal-title">My Bookings</h1>
-        <p class="client-portal-text">Track your submitted bookings and monitor their latest status.</p>
+        <p class="client-portal-text">Track your submitted bookings, review event details, and monitor their latest status.</p>
     </div>
     <div>
         <a asp-action="CreateStepOne" class="btn btn-primary btn-lg">Create Booking</a>
     </div>
 </div>
 
+
 <div class="client-portal-stats">
     <div class="client-portal-stat-card">
         <span class="client-portal-stat-label">Total Bookings</span>
-        <strong class="client-portal-stat-value">@Model.Count()</strong>
+        <strong class="client-portal-stat-value">@bookings.Count</strong>
         <span class="client-portal-stat-note">All booking requests under your account</span>
     </div>
 
     <div class="client-portal-stat-card">
         <span class="client-portal-stat-label">Confirmed</span>
         <strong class="client-portal-stat-value">
-            @Model.Count(x => x.Status == AriesMagicAppointmentSystem.Models.BookingStatus.Confirmed)
+            @bookings.Count(x => x.Status == AriesMagicAppointmentSystem.Models.BookingStatus.Confirmed)
         </strong>
         <span class="client-portal-stat-note">Bookings already approved and confirmed</span>
     </div>
@@ -33,7 +35,7 @@
     <div class="client-portal-stat-card">
         <span class="client-portal-stat-label">Active Requests</span>
         <strong class="client-portal-stat-value">
-            @Model.Count(x =>
+            @bookings.Count(x =>
                 x.Status != AriesMagicAppointmentSystem.Models.BookingStatus.Completed &&
                 x.Status != AriesMagicAppointmentSystem.Models.BookingStatus.Declined)
         </strong>
@@ -41,7 +43,28 @@
     </div>
 </div>
 
-@if (!Model.Any())
+@if (TempData["Success"] != null)
+{
+    <div class="client-success-banner mb-4">
+        <div class="client-success-icon">✓</div>
+        <div>
+            <div class="client-success-title">Booking Submitted</div>
+            <div class="client-success-text">@TempData["Success"]</div>
+        </div>
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="client-error-banner mb-4">
+        <div class="client-error-icon">!</div>
+        <div>
+            <div class="client-error-title">Booking Update</div>
+            <div class="client-error-text">@TempData["Error"]</div>
+        </div>
+    </div>
+}
+
+@if (!bookings.Any())
 {
     <div class="empty-state client-empty-state">
         <h3>No bookings yet</h3>
@@ -52,7 +75,7 @@
 else
 {
     <div class="client-booking-grid">
-        @foreach (var item in Model.OrderByDescending(x => x.CreatedAt))
+        @foreach (var item in bookings)
         {
             var statusClass = item.Status switch
             {
@@ -66,15 +89,20 @@ else
                 _ => "status-read"
             };
 
+            var packageName = string.IsNullOrWhiteSpace(item.PackageName)
+                ? item.Service?.Name
+                : item.PackageName;
+
             <div class="client-booking-card">
                 <div class="client-booking-top">
                     <div>
                         <div class="client-booking-code">
                             BK-@item.CreatedAt.Year-@item.Id.ToString("D3")
                         </div>
-                        <h3 class="client-booking-package">
-                            @(string.IsNullOrWhiteSpace(item.PackageName) ? item.Service?.Name : item.PackageName)
-                        </h3>
+                        <h3 class="client-booking-package">@packageName</h3>
+                        <div class="client-booking-created text-muted small">
+                            Submitted on @item.CreatedAt.ToString("MMM dd, yyyy hh:mm tt")
+                        </div>
                     </div>
 
                     <span class="status-badge @statusClass">@item.Status</span>
@@ -108,20 +136,53 @@ else
                         <strong>₱@item.FinalPrice.ToString("N2")</strong>
                     </div>
                     <div class="client-booking-detail-row">
-                        <span>Downpayment</span>
+                        <span>Required Downpayment</span>
                         <strong>₱@item.RequiredDownpayment.ToString("N2")</strong>
                     </div>
                 </div>
 
-                <div class="client-booking-footer">
-                    @if (item.Status == AriesMagicAppointmentSystem.Models.BookingStatus.AwaitingDownpayment)
+                <div class="client-booking-note">
+                    @if (item.Status == AriesMagicAppointmentSystem.Models.BookingStatus.Pending)
                     {
-                        <a asp-controller="Payments" asp-action="Upload" class="btn btn-primary">Upload Payment</a>
+                        <span>Your booking is waiting for staff review.</span>
+                    }
+                    else if (item.Status == AriesMagicAppointmentSystem.Models.BookingStatus.AwaitingDownpayment)
+                    {
+                        <span>Your booking was approved. Please upload your payment proof to continue.</span>
+                    }
+                    else if (item.Status == AriesMagicAppointmentSystem.Models.BookingStatus.AwaitingVerification)
+                    {
+                        <span>Your payment proof was submitted and is now waiting for admin verification.</span>
+                    }
+                    else if (item.Status == AriesMagicAppointmentSystem.Models.BookingStatus.Confirmed)
+                    {
+                        <span>Your booking is confirmed and scheduled.</span>
+                    }
+                    else if (item.Status == AriesMagicAppointmentSystem.Models.BookingStatus.Completed)
+                    {
+                        <span>This booking has already been completed.</span>
+                    }
+                    else if (item.Status == AriesMagicAppointmentSystem.Models.BookingStatus.Declined)
+                    {
+                        <span>This booking was declined. Please review the booking details or contact support for more information.</span>
                     }
                     else
                     {
-                        <button type="button" class="btn btn-outline-secondary" disabled>No Action Needed</button>
+                        <span>Check this booking regularly for status updates.</span>
                     }
+                </div>
+
+                <div class="client-booking-footer">
+                    <div class="client-booking-footer-actions">
+                        @if (item.Status == AriesMagicAppointmentSystem.Models.BookingStatus.AwaitingDownpayment)
+                        {
+                            <a asp-controller="Payments" asp-action="Upload" class="btn btn-primary">Upload Payment</a>
+                        }
+                        else
+                        {
+                            <button type="button" class="btn btn-outline-secondary" disabled>No Action Needed</button>
+                        }
+                    </div>
                 </div>
             </div>
         }

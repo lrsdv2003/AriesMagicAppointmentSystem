@@ -28,22 +28,21 @@ namespace AriesMagicAppointmentSystem.Controllers
                 .ToListAsync();
 
             var blockedDates = await _context.BlockedDates
-            .Select(x => new
-            {
-                date = x.Date.ToString("yyyy-MM-dd"),
-                reason = x.Reason
-            })
-            .ToListAsync();
+                .Select(x => new
+                {
+                    date = x.Date.ToString("yyyy-MM-dd"),
+                    reason = x.Reason
+                })
+                .ToListAsync();
 
             var dateLimits = await _context.DateBookingLimits
                 .OrderByDescending(x => x.Date)
                 .ToListAsync();
 
-            var dateLimitsForCalendar = dateLimits
-                .ToDictionary(
-                    x => x.Date.ToString("yyyy-MM-dd"),
-                    x => x.MaxBookings
-                );
+            var dateLimitsForCalendar = dateLimits.ToDictionary(
+                x => x.Date.ToString("yyyy-MM-dd"),
+                x => x.MaxBookings
+            );
 
             var dailyCounts = bookings
                 .GroupBy(b => b.EventDate.Date)
@@ -69,15 +68,13 @@ namespace AriesMagicAppointmentSystem.Controllers
                     BlockedDates = await _context.BlockedDates
                         .OrderByDescending(x => x.Date)
                         .ToListAsync(),
-                    DateBookingLimits = await _context.DateBookingLimits
-                        .OrderByDescending(x => x.Date)
-                        .ToListAsync()
+                    DateBookingLimits = dateLimits
                 }
             };
-            ViewBag.DateLimits = dateLimitsForCalendar;
+
             ViewBag.BlockedDates = blockedDates;
             ViewBag.DailyCounts = dailyCounts;
-            ViewBag.MaxBookingsPerDay = settings.MaxBookingsPerDay;
+            ViewBag.DateLimits = dateLimitsForCalendar;
 
             return View(model);
         }
@@ -112,40 +109,13 @@ namespace AriesMagicAppointmentSystem.Controllers
         }
 
         [Authorize(Roles = "Admin")]
-        [HttpGet]
-        public async Task<IActionResult> Manage()
-        {
-            var settings = await _context.SystemSettings.FirstOrDefaultAsync();
-
-            if (settings == null)
-            {
-                settings = new SystemSetting { MaxBookingsPerDay = 3 };
-                _context.SystemSettings.Add(settings);
-                await _context.SaveChangesAsync();
-            }
-
-            var blockedDates = await _context.BlockedDates
-                .OrderByDescending(x => x.Date)
-                .ToListAsync();
-
-            var model = new CalendarManageViewModel
-            {
-                MaxBookingsPerDay = settings.MaxBookingsPerDay,
-                BlockedDates = blockedDates
-            };
-
-            return View(model);
-        }
-
-        [Authorize(Roles = "Admin")]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> UpdateMaxBookings(CalendarManageViewModel model)
+        public async Task<IActionResult> UpdateMaxBookingsAjax([FromForm] CalendarManageViewModel model)
         {
             if (model.MaxBookingsPerDay < 1)
             {
-                TempData["Error"] = "Maximum bookings per day must be at least 1.";
-                return RedirectToAction(nameof(Manage));
+                return Json(new { success = false, message = "Maximum bookings per day must be at least 1." });
             }
 
             var settings = await _context.SystemSettings.FirstOrDefaultAsync();
@@ -159,25 +129,22 @@ namespace AriesMagicAppointmentSystem.Controllers
             settings.MaxBookingsPerDay = model.MaxBookingsPerDay;
             await _context.SaveChangesAsync();
 
-            TempData["Success"] = "Maximum daily bookings updated successfully.";
-            return RedirectToAction(nameof(Manage));
+            return Json(new { success = true, message = "Maximum daily bookings updated successfully." });
         }
 
         [Authorize(Roles = "Admin")]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> BlockDate(CalendarManageViewModel model)
+        public async Task<IActionResult> BlockDateAjax([FromForm] CalendarManageViewModel model)
         {
             if (model.BlockDate == null)
             {
-                TempData["Error"] = "Please select a valid date to block.";
-                return RedirectToAction(nameof(Manage));
+                return Json(new { success = false, message = "Please select a valid date to block." });
             }
 
             if (model.BlockDate.Value.Date < DateTime.Today)
             {
-                TempData["Error"] = "You cannot block a past date.";
-                return RedirectToAction(nameof(Manage));
+                return Json(new { success = false, message = "You cannot block a past date." });
             }
 
             var exists = await _context.BlockedDates
@@ -185,8 +152,7 @@ namespace AriesMagicAppointmentSystem.Controllers
 
             if (exists)
             {
-                TempData["Error"] = "That date is already blocked.";
-                return RedirectToAction(nameof(Manage));
+                return Json(new { success = false, message = "That date is already blocked." });
             }
 
             _context.BlockedDates.Add(new BlockedDate
@@ -197,46 +163,27 @@ namespace AriesMagicAppointmentSystem.Controllers
 
             await _context.SaveChangesAsync();
 
-            TempData["Success"] = "Date blocked successfully.";
-            return RedirectToAction(nameof(Manage));
+            return Json(new { success = true, message = "Date blocked successfully." });
         }
 
         [Authorize(Roles = "Admin")]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> UnblockDate(int id)
-        {
-            var blocked = await _context.BlockedDates.FindAsync(id);
-            if (blocked == null) return NotFound();
-
-            _context.BlockedDates.Remove(blocked);
-            await _context.SaveChangesAsync();
-
-            TempData["Success"] = "Blocked date removed successfully.";
-            return RedirectToAction(nameof(Manage));
-        }
-
-        [Authorize(Roles = "Admin")]
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> SetDateLimit(CalendarManageViewModel model)
+        public async Task<IActionResult> SetDateLimitAjax([FromForm] CalendarManageViewModel model)
         {
             if (model.LimitDate == null || model.LimitMaxBookings == null)
             {
-                TempData["Error"] = "Please select a valid date and maximum booking limit.";
-                return RedirectToAction(nameof(Index));
+                return Json(new { success = false, message = "Please select a valid date and maximum booking limit." });
             }
 
             if (model.LimitDate.Value.Date < DateTime.Today)
             {
-                TempData["Error"] = "You cannot set a limit for a past date.";
-                return RedirectToAction(nameof(Index));
+                return Json(new { success = false, message = "You cannot set a limit for a past date." });
             }
 
             if (model.LimitMaxBookings.Value < 0)
             {
-                TempData["Error"] = "Maximum bookings cannot be negative.";
-                return RedirectToAction(nameof(Index));
+                return Json(new { success = false, message = "Maximum bookings cannot be negative." });
             }
 
             var existing = await _context.DateBookingLimits
@@ -257,23 +204,41 @@ namespace AriesMagicAppointmentSystem.Controllers
 
             await _context.SaveChangesAsync();
 
-            TempData["Success"] = "Date-specific booking limit saved successfully.";
-            return RedirectToAction(nameof(Index));
+            return Json(new { success = true, message = "Date-specific booking limit saved successfully." });
         }
 
         [Authorize(Roles = "Admin")]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> RemoveDateLimit(int id)
+        public async Task<IActionResult> UnblockDateAjax(int id)
+        {
+            var blocked = await _context.BlockedDates.FindAsync(id);
+            if (blocked == null)
+            {
+                return Json(new { success = false, message = "Blocked date not found." });
+            }
+
+            _context.BlockedDates.Remove(blocked);
+            await _context.SaveChangesAsync();
+
+            return Json(new { success = true, message = "Blocked date removed successfully." });
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RemoveDateLimitAjax(int id)
         {
             var item = await _context.DateBookingLimits.FindAsync(id);
-            if (item == null) return NotFound();
+            if (item == null)
+            {
+                return Json(new { success = false, message = "Date-specific booking limit not found." });
+            }
 
             _context.DateBookingLimits.Remove(item);
             await _context.SaveChangesAsync();
 
-            TempData["Success"] = "Date-specific booking limit removed successfully.";
-            return RedirectToAction(nameof(Index));
+            return Json(new { success = true, message = "Date-specific booking limit removed successfully." });
         }
     }
 }

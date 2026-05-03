@@ -13,11 +13,30 @@
 <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css" rel="stylesheet" />
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
 
-<div class="dashboard-stats">
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h1>Calendar</h1>
+        <p class="page-subtitle mb-0">Monitor confirmed bookings, blocked dates, and custom capacity limits in one place.</p>
+    </div>
+
+    @if (User.IsInRole("Admin"))
+    {
+        <button class="btn btn-primary d-flex align-items-center gap-2"
+                type="button"
+                data-bs-toggle="offcanvas"
+                data-bs-target="#calendarManagePanel"
+                aria-controls="calendarManagePanel">
+            <i class="bi bi-calendar2-gear"></i>
+            <span>Manage Calendar</span>
+        </button>
+    }
+</div>
+
+<div class="dashboard-stats mb-4">
     <div class="stat-card">
         <div class="stat-label">Total Confirmed Events</div>
         <div class="stat-value">@Model.Bookings.Count()</div>
-        <div class="stat-subtext">All confirmed bookings currently shown in the calendar.</div>
+        <div class="stat-subtext">All confirmed bookings shown in the calendar.</div>
     </div>
     <div class="stat-card">
         <div class="stat-label">This Month</div>
@@ -29,24 +48,6 @@
         <div class="stat-value">@Model.Bookings.Count(x => x.EventDate.Date >= DateTime.Today)</div>
         <div class="stat-subtext">Confirmed bookings from today onward.</div>
     </div>
-</div>
-
-<div class="page-header d-flex justify-content-between align-items-center">
-    <div>
-        <p class="page-subtitle mb-0">Visual schedule of confirmed bookings and event dates.</p>
-    </div>
-
-    @if (User.IsInRole("Admin"))
-    {
-        <button class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-2"
-                type="button"
-                data-bs-toggle="offcanvas"
-                data-bs-target="#calendarManagePanel"
-                aria-controls="calendarManagePanel">
-            <i class="bi bi-calendar2-gear"></i>
-            <span>Manage Calendar</span>
-        </button>
-    }
 </div>
 
 <div class="dashboard-panel mb-3">
@@ -66,25 +67,33 @@
     </div>
 </div>
 
-<div class="table-clean mb-4">
+<div class="dashboard-panel mb-4">
     <div id="calendar"></div>
 </div>
 
-<div class="table-clean">
-    <table class="table align-middle">
-        <thead>
-            <tr>
-                <th>Client</th>
-                <th>Service</th>
-                <th>Event Date</th>
-                <th>Start</th>
-                <th>End</th>
-                <th>Status</th>
-                <th>Note</th>
-                <th class="text-end">Actions</th>
-            </tr>
-        </thead>
-        <tbody>
+<div class="dashboard-panel">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+        <div>
+            <h3 class="mb-1">Confirmed Booking List</h3>
+            <p class="page-subtitle mb-0">Detailed list of confirmed reservations currently plotted on the calendar.</p>
+        </div>
+    </div>
+
+    <div class="table-clean">
+        <table class="table align-middle">
+            <thead>
+                <tr>
+                    <th>Client</th>
+                    <th>Service</th>
+                    <th>Event Date</th>
+                    <th>Start</th>
+                    <th>End</th>
+                    <th>Status</th>
+                    <th>Note</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
 @foreach (var item in Model.Bookings.OrderBy(x => x.EventDate).ThenBy(x => x.StartTime))
 {
     var statusClass = item.Status switch
@@ -99,23 +108,22 @@
         _ => "status-read"
     };
 
-            <tr>
-                <td>@item.Client?.FullName</td>
-                <td>@item.Service?.Name</td>
-                <td>@item.EventDate.ToString("MMM dd, yyyy")</td>
-                <td>@item.StartTime.ToString("hh:mm tt")</td>
-                <td>@item.EndTime.ToString("hh:mm tt")</td>
-                <td><span class="status-badge @statusClass">@item.Status</span></td>
-                <td>@item.InternalNotes</td>
-                <td class="text-end">
-                    <a asp-controller="Bookings" asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-secondary">
-                        View
-                    </a>
-                </td>
-            </tr>
+                <tr>
+                    <td>@item.Client?.FullName</td>
+                    <td>@item.Service?.Name</td>
+                    <td>@item.EventDate.ToString("MMM dd, yyyy")</td>
+                    <td>@item.StartTime.ToString("hh:mm tt")</td>
+                    <td>@item.EndTime.ToString("hh:mm tt")</td>
+                    <td><span class="status-badge @statusClass">@item.Status</span></td>
+                    <td>@item.InternalNotes</td>
+                    <td class="text-end">
+                        <a asp-controller="Bookings" asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-secondary">View</a>
+                    </td>
+                </tr>
 }
-        </tbody>
-    </table>
+            </tbody>
+        </table>
+    </div>
 </div>
 
 @if (User.IsInRole("Admin"))
@@ -130,19 +138,11 @@
         </div>
 
         <div class="offcanvas-body">
-            @if (TempData["Success"] != null)
-            {
-                <div class="alert alert-success mb-3">@TempData["Success"]</div>
-            }
-
-            @if (TempData["Error"] != null)
-            {
-                <div class="alert alert-danger mb-3">@TempData["Error"]</div>
-            }
+            <div id="calendarManageMessage" class="d-none mb-3"></div>
 
             <div class="dashboard-panel mb-4">
                 <h6 class="mb-3">Default Daily Limit</h6>
-                <form asp-action="UpdateMaxBookings" method="post">
+                <form asp-action="UpdateMaxBookingsAjax" asp-controller="Calendar" method="post" id="updateMaxBookingsForm">
                     @Html.AntiForgeryToken()
                     <div class="mb-3">
                         <label asp-for="Manage.MaxBookingsPerDay" class="form-label">Maximum Events Per Day</label>
@@ -154,7 +154,7 @@
 
             <div class="dashboard-panel mb-4">
                 <h6 class="mb-3">Block a Date</h6>
-                <form asp-action="BlockDate" method="post">
+                <form asp-action="BlockDateAjax" asp-controller="Calendar" method="post" id="blockDateForm">
                     @Html.AntiForgeryToken()
                     <div class="mb-3">
                         <label asp-for="Manage.BlockDate" class="form-label">Date</label>
@@ -170,7 +170,7 @@
 
             <div class="dashboard-panel mb-4">
                 <h6 class="mb-3">Date-Specific Limit</h6>
-                <form asp-action="SetDateLimit" method="post">
+                <form asp-action="SetDateLimitAjax" asp-controller="Calendar" method="post" id="setDateLimitForm">
                     @Html.AntiForgeryToken()
                     <div class="mb-3">
                         <label asp-for="Manage.LimitDate" class="form-label">Date</label>
@@ -198,7 +198,7 @@
                         <div class="border rounded-3 p-3 mb-2">
                             <div class="fw-semibold">@item.Date.ToString("MMMM dd, yyyy")</div>
                             <div class="text-muted small mb-2">@item.Reason</div>
-                            <form asp-action="UnblockDate" method="post">
+                            <form asp-action="UnblockDateAjax" asp-controller="Calendar" method="post" class="ajax-inline-form unblock-date-form">
                                 @Html.AntiForgeryToken()
                                 <input type="hidden" name="id" value="@item.Id" />
                                 <button type="submit" class="btn btn-sm btn-outline-danger">Unblock</button>
@@ -222,7 +222,7 @@
                         <div class="border rounded-3 p-3 mb-2">
                             <div class="fw-semibold">@item.Date.ToString("MMMM dd, yyyy")</div>
                             <div class="text-muted small mb-2">Max events: @item.MaxBookings</div>
-                            <form asp-action="RemoveDateLimit" method="post">
+                            <form asp-action="RemoveDateLimitAjax" asp-controller="Calendar" method="post" class="ajax-inline-form remove-limit-form">
                                 @Html.AntiForgeryToken()
                                 <input type="hidden" name="id" value="@item.Id" />
                                 <button type="submit" class="btn btn-sm btn-outline-danger">Remove</button>
@@ -277,6 +277,14 @@
             const dailyCounts = @Html.Raw(dailyCountsJson);
             const dateLimits = @Html.Raw(dateLimitsJson);
 
+            const managePanel = document.getElementById('calendarManagePanel');
+            const manageOffcanvas = managePanel ? bootstrap.Offcanvas.getOrCreateInstance(managePanel) : null;
+
+            if (sessionStorage.getItem("reopenCalendarManage") === "true" && manageOffcanvas) {
+                manageOffcanvas.show();
+                sessionStorage.removeItem("reopenCalendarManage");
+            }
+
             const events = [
                 @foreach (var item in Model.Bookings)
                 {
@@ -329,7 +337,6 @@
                 dayCellDidMount: function(info) {
                     const dateKey = info.date.toISOString().split('T')[0];
                     const top = info.el.querySelector('.fc-daygrid-day-top');
-
                     const blockedEntry = blockedDates.find(x => x.date === dateKey);
 
                     if (blockedEntry) {
@@ -349,23 +356,19 @@
                         }
                     }
 
-                    if (dateLimits[dateKey] !== undefined) {
-                        if (top) {
-                            const limitBadge = document.createElement('div');
-                            limitBadge.className = 'calendar-day-badge limit';
-                            limitBadge.innerText = `Max: ${dateLimits[dateKey]}`;
-                            limitBadge.setAttribute('title', `Custom daily limit: ${dateLimits[dateKey]} event(s)`);
-                            top.appendChild(limitBadge);
-                        }
+                    if (dateLimits[dateKey] !== undefined && top) {
+                        const limitBadge = document.createElement('div');
+                        limitBadge.className = 'calendar-day-badge limit';
+                        limitBadge.innerText = `Max: ${dateLimits[dateKey]}`;
+                        limitBadge.setAttribute('title', `Custom daily limit: ${dateLimits[dateKey]} event(s)`);
+                        top.appendChild(limitBadge);
                     }
 
-                    if (dailyCounts[dateKey]) {
-                        if (top) {
-                            const countBadge = document.createElement('div');
-                            countBadge.className = 'calendar-day-badge count';
-                            countBadge.innerText = `${dailyCounts[dateKey]} event(s)`;
-                            top.appendChild(countBadge);
-                        }
+                    if (dailyCounts[dateKey] && top) {
+                        const countBadge = document.createElement('div');
+                        countBadge.className = 'calendar-day-badge count';
+                        countBadge.innerText = `${dailyCounts[dateKey]} event(s)`;
+                        top.appendChild(countBadge);
                     }
                 },
                 dateClick: function(info) {
@@ -391,7 +394,7 @@
                         modal.show();
                     }
                 },
-                eventClick: function (info) {
+                eventClick: function(info) {
                     info.jsEvent.preventDefault();
 
                     const clickedDate = info.event.startStr.split("T")[0];
@@ -413,6 +416,87 @@
             });
 
             calendar.render();
+
+            function showManageMessage(success, message) {
+                const box = document.getElementById("calendarManageMessage");
+                box.className = success ? "alert alert-success mb-3" : "alert alert-danger mb-3";
+                box.textContent = message;
+                box.classList.remove("d-none");
+            }
+
+            function reloadKeepingManageOpen() {
+                sessionStorage.setItem("reopenCalendarManage", "true");
+                window.location.reload();
+            }
+
+            function submitManageForm(formId) {
+                const form = document.getElementById(formId);
+                if (!form) return;
+
+                form.addEventListener("submit", async function(e) {
+                    e.preventDefault();
+
+                    const formData = new FormData(form);
+
+                    try {
+                        const response = await fetch(form.action, {
+                            method: "POST",
+                            body: formData
+                        });
+
+                        if (!response.ok) {
+                            showManageMessage(false, "Request failed. Please check the controller action.");
+                            return;
+                        }
+
+                        const data = await response.json();
+                        showManageMessage(data.success, data.message);
+
+                        if (data.success) {
+                            setTimeout(reloadKeepingManageOpen, 700);
+                        }
+                    } catch {
+                        showManageMessage(false, "Something went wrong while saving changes.");
+                    }
+                });
+            }
+
+            function submitInlineForms(selector) {
+                document.querySelectorAll(selector).forEach(form => {
+                    form.addEventListener("submit", async function(e) {
+                        e.preventDefault();
+
+                        const formData = new FormData(form);
+
+                        try {
+                            const response = await fetch(form.action, {
+                                method: "POST",
+                                body: formData
+                            });
+
+                            if (!response.ok) {
+                                showManageMessage(false, "Request failed. Please check the controller action.");
+                                return;
+                            }
+
+                            const data = await response.json();
+                            showManageMessage(data.success, data.message);
+
+                            if (data.success) {
+                                setTimeout(reloadKeepingManageOpen, 700);
+                            }
+                        } catch {
+                            showManageMessage(false, "Something went wrong while saving changes.");
+                        }
+                    });
+                });
+            }
+
+            submitManageForm("updateMaxBookingsForm");
+            submitManageForm("blockDateForm");
+            submitManageForm("setDateLimitForm");
+            submitInlineForms(".unblock-date-form");
+            submitInlineForms(".remove-limit-form");
         });
 
         function renderReservationSlides(data) {
@@ -466,7 +550,7 @@
 
             newCarousel.to(0);
 
-            const onSlide = function () {
+            const onSlide = function() {
                 const slides = [...document.getElementById("reservationCarouselInner").children];
                 const activeIndex = slides.findIndex(x => x.classList.contains("active"));
 
