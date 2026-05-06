@@ -67,7 +67,7 @@
         <div class="row g-3 mt-1">
             <div class="col-md-6">
                 <label asp-for="EventType" class="form-label"></label>
-                <select asp-for="EventType" class="form-select">
+                <select asp-for="EventType" class="form-select" id="EventType">
                     <option value="">-- Select Event Type --</option>
                     @foreach (var eventType in eventTypes)
                     {
@@ -95,7 +95,7 @@
                 <span asp-validation-for="StartTime" class="text-danger"></span>
             </div>
 
-            <div class="col-md-6">
+            <div class="col-md-6" id="partyThemeField">
                 <label asp-for="PartyTheme" class="form-label"></label>
                 <input asp-for="PartyTheme" class="form-control" placeholder="Enter party theme" />
                 <span asp-validation-for="PartyTheme" class="text-danger"></span>
@@ -107,13 +107,13 @@
                 <span asp-validation-for="PartyVenue" class="text-danger"></span>
             </div>
 
-            <div class="col-md-6">
+            <div class="col-md-6" id="celebrantNameField">
                 <label asp-for="CelebrantName" class="form-label"></label>
                 <input asp-for="CelebrantName" class="form-control" placeholder="Enter celebrant name" />
                 <span asp-validation-for="CelebrantName" class="text-danger"></span>
             </div>
 
-            <div class="col-md-3">
+            <div class="col-md-3" id="ageField">
                 <label asp-for="Age" class="form-label"></label>
                 <input asp-for="Age" class="form-control" placeholder="Age" />
                 <span asp-validation-for="Age" class="text-danger"></span>
@@ -151,6 +151,7 @@
     <script>
         document.addEventListener("DOMContentLoaded", function () {
             const unavailableDates = @Html.Raw(unavailableDatesJson);
+
             const alertBox = document.getElementById("dateAvailabilityAlert");
             const slotsInfo = document.getElementById("dateSlotsInfo");
             const timeConflictAlert = document.getElementById("timeConflictAlert");
@@ -160,7 +161,65 @@
             const timeRangesBox = document.getElementById("unavailableTimeRangesBox");
             const timeRangesList = document.getElementById("unavailableTimeRangesList");
 
+            const eventTypeInput = document.getElementById("EventType");
+            const partyThemeField = document.getElementById("partyThemeField");
+            const celebrantNameField = document.getElementById("celebrantNameField");
+            const ageField = document.getElementById("ageField");
+
             let currentUnavailableRanges = [];
+
+            function showField(field) {
+                field.classList.remove("d-none");
+
+                const input = field.querySelector("input, select, textarea");
+                if (input) {
+                    input.disabled = false;
+                }
+            }
+
+            function hideField(field) {
+                field.classList.add("d-none");
+
+                const input = field.querySelector("input, select, textarea");
+                if (input) {
+                    input.disabled = true;
+                    input.value = "";
+                }
+            }
+
+            function updateEventSpecificFields() {
+                const selectedEvent = eventTypeInput.value;
+
+                showField(partyThemeField);
+                showField(celebrantNameField);
+                showField(ageField);
+
+                if (selectedEvent === "Birthday") {
+                    showField(partyThemeField);
+                    showField(celebrantNameField);
+                    showField(ageField);
+                }
+                else if (selectedEvent === "Bridal Shower") {
+                    showField(partyThemeField);
+                    showField(celebrantNameField);
+                    hideField(ageField);
+                }
+                else if (selectedEvent === "Company Events" || selectedEvent === "School Events") {
+                    hideField(partyThemeField);
+                    hideField(celebrantNameField);
+                    hideField(ageField);
+                }
+                else if (
+                    selectedEvent === "Gender Reveal" ||
+                    selectedEvent === "Halloween" ||
+                    selectedEvent === "Christmas Parties" ||
+                    selectedEvent === "Easter Events"
+                ) {
+                    showField(partyThemeField);
+                    hideField(celebrantNameField);
+                    hideField(ageField);
+                }
+            }
 
             function timeToMinutes(timeStr) {
                 if (!timeStr) return -1;
@@ -285,7 +344,7 @@
 
             flatpickr("#eventDateInput", {
                 dateFormat: "Y-m-d",
-                minDate: "today",
+                minDate: new Date().fp_incr(3),
                 disable: unavailableDates,
                 defaultDate: dateInput.value || null,
                 onChange: async function (selectedDates, dateStr) {
@@ -296,7 +355,10 @@
                 }
             });
 
+            eventTypeInput.addEventListener("change", updateEventSpecificFields);
             startTimeInput.addEventListener("change", checkTimeConflict);
+
+            updateEventSpecificFields();
         });
     </script>
 }

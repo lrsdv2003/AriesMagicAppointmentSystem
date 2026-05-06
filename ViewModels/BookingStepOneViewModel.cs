@@ -21,20 +21,18 @@ namespace AriesMagicAppointmentSystem.ViewModels
         [Display(Name = "Time of Event")]
         public TimeSpan StartTime { get; set; }
 
-        [Required]
         [Display(Name = "Theme of the Party")]
-        public string PartyTheme { get; set; } = string.Empty;
+        public string? PartyTheme { get; set; }
 
         [Required]
         [Display(Name = "Party Venue")]
         public string PartyVenue { get; set; } = string.Empty;
 
-        [Required]
         [Display(Name = "Celebrant Name")]
-        public string CelebrantName { get; set; } = string.Empty;
+        public string? CelebrantName { get; set; }
 
         [Range(1, 120)]
-        public int Age { get; set; }
+        public int? Age { get; set; }
 
         [Range(1, 10000)]
         [Display(Name = "# of Pax")]

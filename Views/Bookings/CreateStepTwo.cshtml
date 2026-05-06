@@ -2,12 +2,6 @@
 
 @{
     ViewData["Title"] = "Create Booking - Step 2";
-
-    var allErrors = ViewData.ModelState.Values
-        .SelectMany(v => v.Errors)
-        .Select(e => e.ErrorMessage)
-        .Where(e => !string.IsNullOrWhiteSpace(e))
-        .ToList();
 }
 
 <div class="booking-steps mb-4">
@@ -21,18 +15,6 @@
         <p class="page-subtitle">Step 2 of 2 — Choose your package, review the inclusions, and confirm your booking.</p>
     </div>
 </div>
-
-@if (allErrors.Any())
-{
-    <div class="alert alert-danger mb-3">
-        <ul class="mb-0">
-            @foreach (var error in allErrors)
-            {
-                <li>@error</li>
-            }
-        </ul>
-    </div>
-}
 
 @if (TempData["Error"] != null)
 {
@@ -55,12 +37,14 @@
                 <span class="package-meta-value">@Model.EventType</span>
             </div>
         </div>
+
         <div class="col-md-4">
             <div class="package-meta-box h-100">
                 <span class="package-meta-label">Motif</span>
                 <span class="package-meta-value">@Model.Motif</span>
             </div>
         </div>
+
         <div class="col-md-4">
             <div class="package-meta-box h-100">
                 <span class="package-meta-label">Event Date</span>
@@ -74,12 +58,14 @@
                 <span class="package-meta-value">@DateTime.Today.Add(Model.StartTime).ToString("hh:mm tt")</span>
             </div>
         </div>
+
         <div class="col-md-4">
             <div class="package-meta-box h-100">
                 <span class="package-meta-label">Party Theme</span>
                 <span class="package-meta-value">@Model.PartyTheme</span>
             </div>
         </div>
+
         <div class="col-md-4">
             <div class="package-meta-box h-100">
                 <span class="package-meta-label">Venue</span>
@@ -93,12 +79,14 @@
                 <span class="package-meta-value">@Model.CelebrantName</span>
             </div>
         </div>
+
         <div class="col-md-4">
             <div class="package-meta-box h-100">
                 <span class="package-meta-label">Age</span>
                 <span class="package-meta-value">@Model.Age</span>
             </div>
         </div>
+
         <div class="col-md-4">
             <div class="package-meta-box h-100">
                 <span class="package-meta-label">Number of Guests</span>
@@ -112,6 +100,7 @@
                 <span class="package-meta-value">@Model.ContactPerson</span>
             </div>
         </div>
+
         <div class="col-md-6">
             <div class="package-meta-box h-100">
                 <span class="package-meta-label">Contact Number</span>
@@ -161,6 +150,7 @@
                 }
             </select>
         </div>
+
         <span asp-validation-for="ServiceId" class="text-danger"></span>
     </div>
 
@@ -172,6 +162,7 @@
                     <h3 class="package-preview-title mt-2">@Model.PackageName</h3>
                     <p class="page-subtitle mb-0">Review the inclusions below. Removable items can be unchecked to lower the total package cost.</p>
                 </div>
+
                 <div class="package-preview-price">₱@Model.BasePrice.ToString("N2")</div>
             </div>
 
@@ -180,6 +171,7 @@
                     <span class="package-meta-label">Base Price</span>
                     <span class="package-meta-value">₱@Model.BasePrice.ToString("N2")</span>
                 </div>
+
                 <div class="package-meta-box">
                     <span class="package-meta-label">Required Downpayment</span>
                     <span class="package-meta-value">₱2,000.00</span>
@@ -231,6 +223,7 @@
                                                        value="@Model.Inclusions[i].Id"
                                                        onchange="syncRemovedInclusions()" />
                                             }
+
                                             <label class="form-check-label">Included</label>
                                         </div>
                                     }
@@ -281,8 +274,92 @@
             </div>
 
             <div class="d-flex flex-column gap-2 mt-4">
-                <button type="submit" class="btn btn-primary btn-lg">Submit Booking</button>
+                <button type="button"
+                        class="btn btn-primary"
+                        data-bs-toggle="modal"
+                        data-bs-target="#termsAgreementModal">
+                    Submit Booking
+                </button>
+
                 <a asp-action="CreateStepOne" class="btn btn-outline-secondary">Back to Step 1</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="termsAgreementModal" tabindex="-1" aria-labelledby="termsAgreementModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content agreement-modal">
+                <div class="modal-header agreement-modal-header">
+                    <div>
+                        <h5 class="modal-title" id="termsAgreementModalLabel">Terms & Agreement</h5>
+                        <p>Please review and accept before submitting your booking.</p>
+                    </div>
+
+                    <button type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                            aria-label="Close">
+                    </button>
+                </div>
+
+                <div class="modal-body agreement-modal-body">
+                    <div class="agreement-modal-list">
+                        <div class="agreement-modal-item">
+                            <strong>Downpayment</strong>
+                            <p>A ₱2,000 downpayment is required for reservation. The remaining balance will be paid after the event.</p>
+                        </div>
+
+                        <div class="agreement-modal-item">
+                            <strong>Cancellation Policy</strong>
+                            <p>The client must notify the service provider at least two weeks before the event. Late cancellation may forfeit reimbursement.</p>
+                        </div>
+
+                        <div class="agreement-modal-item">
+                            <strong>Rescheduling</strong>
+                            <p>Rescheduling due to emergencies, restrictions, or Acts of God is subject to availability.</p>
+                        </div>
+
+                        <div class="agreement-modal-item">
+                            <strong>Service Guarantee</strong>
+                            <p>The service provider shall render the agreed service on the confirmed event date and time.</p>
+                        </div>
+
+                        <div class="agreement-modal-item">
+                            <strong>Media Permission</strong>
+                            <p>Photos and videos from the event will only be published after receiving approval from the client.</p>
+                        </div>
+                    </div>
+
+                    <div class="form-check agreement-checkbox mt-4">
+                        <input asp-for="AcceptTerms"
+                               class="form-check-input"
+                               type="checkbox"
+                               id="AcceptTerms" />
+
+                        <label class="form-check-label" for="AcceptTerms">
+                            I have read and agree to the Terms & Agreement.
+                        </label>
+                    </div>
+
+                    <span asp-validation-for="AcceptTerms"
+                          class="text-danger"
+                          id="acceptTermsError"></span>
+                </div>
+
+                <div class="modal-footer agreement-modal-footer">
+                    <button type="button"
+                            class="btn btn-light"
+                            data-bs-dismiss="modal">
+                        Cancel
+                    </button>
+
+                    <button type="submit"
+                            class="btn btn-primary"
+                            id="confirmSubmitBookingBtn"
+                            disabled>
+                        Confirm & Submit Booking
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -294,6 +371,11 @@
     <script>
         function syncRemovedInclusions() {
             const removedInputsContainer = document.getElementById("removedInputsContainer");
+
+            if (!removedInputsContainer) {
+                return;
+            }
+
             removedInputsContainer.innerHTML = "";
 
             const checkboxes = document.querySelectorAll(".inclusion-checkbox");
@@ -308,28 +390,99 @@
                     removedInputsContainer.appendChild(hidden);
 
                     const card = cb.closest(".booking-inclusion-card");
-                    const deductionText = card.querySelector(".booking-inclusion-deduction").innerText
-                        .replace("Deduction if removed: ₱", "")
-                        .replace(/,/g, "");
 
-                    totalDeduction += parseFloat(deductionText) || 0;
+                    if (card) {
+                        const deductionElement = card.querySelector(".booking-inclusion-deduction");
+
+                        if (deductionElement) {
+                            const deductionText = deductionElement.innerText
+                                .replace("Deduction if removed: ₱", "")
+                                .replace(/,/g, "");
+
+                            totalDeduction += parseFloat(deductionText) || 0;
+                        }
+                    }
                 }
             });
 
-            const basePrice = parseFloat(document.getElementById("basePriceInput").value || "0");
+            const basePriceInput = document.getElementById("basePriceInput");
+            const finalPriceInput = document.getElementById("finalPriceInput");
+            const deductionText = document.getElementById("deductionText");
+            const finalPriceText = document.getElementById("finalPriceText");
+
+            const basePrice = parseFloat(basePriceInput?.value || "0");
             const finalPrice = basePrice - totalDeduction;
 
-            document.getElementById("deductionText").textContent =
-                totalDeduction.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            if (deductionText) {
+                deductionText.textContent = totalDeduction.toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                });
+            }
 
-            document.getElementById("finalPriceText").textContent =
-                finalPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            if (finalPriceText) {
+                finalPriceText.textContent = finalPrice.toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                });
+            }
 
-            document.getElementById("finalPriceInput").value = finalPrice;
+            if (finalPriceInput) {
+                finalPriceInput.value = finalPrice;
+            }
+        }
+
+        function updateTermsState() {
+            const acceptTerms = document.getElementById("AcceptTerms");
+            const confirmBtn = document.getElementById("confirmSubmitBookingBtn");
+            const errorSpan = document.getElementById("acceptTermsError");
+
+            if (!acceptTerms || !confirmBtn) {
+                return;
+            }
+
+            confirmBtn.disabled = !acceptTerms.checked;
+
+            if (acceptTerms.checked && errorSpan) {
+                errorSpan.textContent = "";
+                errorSpan.style.display = "none";
+                errorSpan.classList.remove("field-validation-error");
+                errorSpan.classList.add("field-validation-valid");
+            }
+
+            if (!acceptTerms.checked && errorSpan) {
+                errorSpan.style.display = "block";
+            }
         }
 
         document.addEventListener("DOMContentLoaded", function () {
             syncRemovedInclusions();
+
+            const acceptTerms = document.getElementById("AcceptTerms");
+            const form = document.getElementById("bookingStepTwoForm");
+
+            updateTermsState();
+
+            if (acceptTerms) {
+                acceptTerms.addEventListener("change", updateTermsState);
+            }
+
+            if (form) {
+                form.addEventListener("submit", function (e) {
+                    if (acceptTerms && !acceptTerms.checked) {
+                        e.preventDefault();
+
+                        const errorSpan = document.getElementById("acceptTermsError");
+
+                        if (errorSpan) {
+                            errorSpan.textContent = "You must agree to the Terms and Agreement before submitting your booking.";
+                            errorSpan.style.display = "block";
+                            errorSpan.classList.remove("field-validation-valid");
+                            errorSpan.classList.add("field-validation-error");
+                        }
+                    }
+                });
+            }
         });
     </script>
 }

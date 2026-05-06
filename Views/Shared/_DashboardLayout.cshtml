@@ -99,14 +99,31 @@
                 </div>
 
                 <div class="topbar-right">
-                    <a asp-controller="Notifications" asp-action="Index" class="topbar-icon topbar-bell" title="Notifications">
-                        <i class="bi bi-bell-fill"></i>
-                        @if (ViewBag.HasUnreadNotifications == true)
+                    @inject AriesMagicAppointmentSystem.Data.ApplicationDbContext _context
+                    @using System.Security.Claims
+                    @{
+                        var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                        var unreadNotificationCount = 0;
+                        if (!string.IsNullOrEmpty(currentUserId))
                         {
-                            <span class="notification-dot"></span>
+                            unreadNotificationCount = _context.Notifications 
+                            .Count(n => n.UserId == currentUserId && !n.IsRead);
                         }
-                    </a>
+                    }
+                   <a asp-controller="Notifications"
+                        asp-action="Index"
+                        class="topbar-icon topbar-bell"
+                        title="Notifications">
 
+                            <i class="bi bi-bell-fill"></i>
+
+                            @if (unreadNotificationCount > 0)
+                            {
+                                <span class="notification-badge">
+                                    @unreadNotificationCount
+                                </span>
+                            }
+                    </a>
                     <button type="button" class="topbar-icon" title="Settings">
                     <i class="bi bi-gear-fill"></i>
                     </button>

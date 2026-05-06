@@ -9,10 +9,15 @@ namespace AriesMagicAppointmentSystem.ViewModels
         public string Motif { get; set; } = string.Empty;
         public DateTime EventDate { get; set; }
         public TimeSpan StartTime { get; set; }
-        public string PartyTheme { get; set; } = string.Empty;
+
+        public string? PartyTheme { get; set; }
+
         public string PartyVenue { get; set; } = string.Empty;
-        public string CelebrantName { get; set; } = string.Empty;
-        public int Age { get; set; }
+
+        public string? CelebrantName { get; set; }
+
+        public int? Age { get; set; }
+
         public int PaxCount { get; set; }
         public string ContactPerson { get; set; } = string.Empty;
         public string ContactNumber { get; set; } = string.Empty;
@@ -26,6 +31,7 @@ namespace AriesMagicAppointmentSystem.ViewModels
         public decimal BasePrice { get; set; }
         public decimal FinalPrice { get; set; }
         public decimal RequiredDownpayment { get; set; } = 2000;
+        public bool AcceptTerms { get; set; }
 
         public List<ServiceOptionViewModel> AvailablePackages { get; set; } = new();
         public List<PackageInclusionSelectionViewModel> Inclusions { get; set; } = new();

@@ -135,7 +135,7 @@ namespace AriesMagicAppointmentSystem.Controllers
         [Authorize(Roles = "Admin")]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> BlockDateAjax([FromForm] CalendarManageViewModel model)
+        public async Task<IActionResult> BlockDateAjax([FromForm(Name="Manage")] CalendarManageViewModel model)
         {
             if (model.BlockDate == null)
             {

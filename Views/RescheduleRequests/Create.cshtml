@@ -242,7 +242,7 @@
 
             flatpickr("#requestedDateInput", {
                 dateFormat: "Y-m-d",
-                minDate: "today",
+                minDate: new Date().fp_incr(3),
                 disable: unavailableDates,
                 defaultDate: dateInput.value || null,
                 onChange: async function (selectedDates, dateStr) {

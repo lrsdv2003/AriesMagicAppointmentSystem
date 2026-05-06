@@ -52,11 +52,10 @@ namespace AriesMagicAppointmentSystem.Controllers
             var appUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             ViewBag.UnavailableDates = await GetUnavailableRescheduleDatesAsync();
 
-            if (model.RequestedDate.Date < DateTime.Today)
+            if (model.RequestedDate.Date < DateTime.Today.AddDays(3))
             {
-                ModelState.AddModelError("RequestedDate", "Past dates are not allowed.");
+                ModelState.AddModelError("RequestedDate", "Reschedule requests must be made at least 3 days in advance.");
             }
-
             var isBlocked = await _context.BlockedDates
                 .AnyAsync(x => x.Date.Date == model.RequestedDate.Date);
 

@@ -103,17 +103,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                 EventDate = DateTime.Today
             };
 
-            ViewBag.EventTypes = new List<string>
-            {
-                "Birthday",
-                "Company Events",
-                "Bridal Shower",
-                "Gender Reveal",
-                "School Events",
-                "Halloween",
-                "Christmas Parties",
-                "Easter Events"
-            };
+            SetCreateStepOneViewBags();
 
             ViewBag.UnavailableDates = await GetUnavailableBookingDatesAsync();
 
@@ -125,23 +115,12 @@ namespace AriesMagicAppointmentSystem.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateStepOne(BookingStepOneViewModel model)
         {
-            ViewBag.EventTypes = new List<string>
-            {
-                "Birthday",
-                "Company Events",
-                "Bridal Shower",
-                "Gender Reveal",
-                "School Events",
-                "Halloween",
-                "Christmas Parties",
-                "Easter Events"
-            };
+            SetCreateStepOneViewBags();
 
             ViewBag.UnavailableDates = await GetUnavailableBookingDatesAsync();
-
-            if (model.EventDate.Date < DateTime.Today)
+            if (model.EventDate.Date < DateTime.Today.AddDays(3))
             {
-                ModelState.AddModelError("EventDate", "You cannot select a past date.");
+            ModelState.AddModelError("EventDate", "Bookings must be made at least 3 days in advance.");
             }
             var requestedStart = model.EventDate.Date.Add(model.StartTime);
             var requestedEnd = requestedStart.AddHours(3);
@@ -169,6 +148,8 @@ namespace AriesMagicAppointmentSystem.Controllers
                 ModelState.AddModelError("StartTime", "You cannot select a past time for today.");
             }
 
+            ValidateEventSpecificFields(model);
+
             if (!ModelState.IsValid)
             {
                 return View(model);
@@ -189,12 +170,14 @@ namespace AriesMagicAppointmentSystem.Controllers
             }
 
             var stepOneJson = TempData["StepOneData"]?.ToString();
+
             if (string.IsNullOrWhiteSpace(stepOneJson))
             {
                 return RedirectToAction(nameof(CreateStepOne));
             }
 
             var stepOneModel = JsonSerializer.Deserialize<BookingStepOneViewModel>(stepOneJson);
+
             if (stepOneModel == null)
             {
                 return RedirectToAction(nameof(CreateStepOne));
@@ -284,6 +267,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                 ModelState.AddModelError("ServiceId", "Invalid package selected.");
                 return View("CreateStepTwo", model);
             }
+
             var isBlocked = await _context.BlockedDates
                 .AnyAsync(x => x.Date.Date == model.EventDate.Date);
 
@@ -292,15 +276,17 @@ namespace AriesMagicAppointmentSystem.Controllers
                 ModelState.AddModelError("EventDate", "This date is unavailable for booking.");
             }
 
-            if (model.EventDate.Date < DateTime.Today)
+            if (model.EventDate.Date < DateTime.Today.AddDays(3))
             {
-                ModelState.AddModelError("EventDate", "You cannot select a past date.");
+                ModelState.AddModelError("EventDate", "Bookings must be made at least 3 days in advance.");
             }
 
             if (model.EventDate.Date == DateTime.Today && model.StartTime < DateTime.Now.TimeOfDay)
             {
                 ModelState.AddModelError("StartTime", "You cannot select a past time for today.");
             }
+
+            ValidateEventSpecificFields(model);
 
             var removedIds = model.RemovedInclusionIds ?? new List<int>();
             var allInclusions = selectedPackage.Inclusions.ToList();
@@ -323,11 +309,26 @@ namespace AriesMagicAppointmentSystem.Controllers
                 IsSelected = !removedIds.Contains(i.Id)
             }).ToList();
 
+            ModelState.Remove(nameof(model.PackageName));
+            ModelState.Remove(nameof(model.AvailablePackages));
+            ModelState.Remove(nameof(model.Inclusions));
+            ModelState.Remove(nameof(model.RemovedInclusionIds));
+            ModelState.Remove(nameof(model.BasePrice));
+            ModelState.Remove(nameof(model.FinalPrice));
+            ModelState.Remove(nameof(model.RequiredDownpayment));
+            if (!model.AcceptTerms)
+            {
+                ModelState.AddModelError("AcceptTerms", "You must agree to the Terms and Agreement before submitting your booking.");
+            }
             if (!ModelState.IsValid)
             {
-                return View("CreateStepTwo", model);
-            }
+                TempData["Error"] = string.Join(" | ",
+                    ModelState.Values
+                        .SelectMany(v => v.Errors)
+                        .Select(e => e.ErrorMessage));
 
+                return View("CreateStepTwo", model);
+            }            
             var appUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var appUser = await _userManager.GetUserAsync(User);
 
@@ -443,7 +444,9 @@ namespace AriesMagicAppointmentSystem.Controllers
             }
 
             await _context.SaveChangesAsync();
+
             TempData["Success"] = "Your booking request was submitted successfully. Please wait for staff review before proceeding to the payment step.";
+
             return RedirectToAction(nameof(MyBookings));
         }
 
@@ -567,7 +570,9 @@ namespace AriesMagicAppointmentSystem.Controllers
             }
 
             await _context.SaveChangesAsync();
+
             TempData["Error"] = "Your booking request was declined. Please review the remarks below or contact the administrator for clarification.";
+
             return RedirectToAction(nameof(MyBookings));
         }
 
@@ -575,6 +580,125 @@ namespace AriesMagicAppointmentSystem.Controllers
         public IActionResult Create()
         {
             return RedirectToAction(nameof(CreateStepOne));
+        }
+
+        private void SetCreateStepOneViewBags()
+        {
+            ViewBag.EventTypes = new List<string>
+            {
+                "Birthday",
+                "Company Events",
+                "Bridal Shower",
+                "Gender Reveal",
+                "School Events",
+                "Halloween",
+                "Christmas Parties",
+                "Easter Events"
+            };
+        }
+
+        private void ValidateEventSpecificFields(BookingStepOneViewModel model)
+        {
+            if (string.IsNullOrWhiteSpace(model.EventType))
+            {
+                return;
+            }
+
+            if (model.EventType == "Birthday")
+            {
+                if (string.IsNullOrWhiteSpace(model.PartyTheme))
+                    ModelState.AddModelError("PartyTheme", "Party theme is required for birthday events.");
+
+                if (string.IsNullOrWhiteSpace(model.CelebrantName))
+                    ModelState.AddModelError("CelebrantName", "Celebrant name is required for birthday events.");
+
+                if (model.Age == null || model.Age <= 0)
+                    ModelState.AddModelError("Age", "Age is required for birthday events.");
+            }
+            else if (model.EventType == "Bridal Shower")
+            {
+                if (string.IsNullOrWhiteSpace(model.PartyTheme))
+                    ModelState.AddModelError("PartyTheme", "Party theme is required for bridal shower events.");
+
+                if (string.IsNullOrWhiteSpace(model.CelebrantName))
+                    ModelState.AddModelError("CelebrantName", "Celebrant name is required for bridal shower events.");
+
+                model.Age = null;
+            }
+            else if (
+                model.EventType == "Gender Reveal" ||
+                model.EventType == "Halloween" ||
+                model.EventType == "Christmas Parties" ||
+                model.EventType == "Easter Events"
+            )
+            {
+                if (string.IsNullOrWhiteSpace(model.PartyTheme))
+                    ModelState.AddModelError("PartyTheme", "Party theme is required for this event type.");
+
+                model.CelebrantName = null;
+                model.Age = null;
+            }
+            else if (
+                model.EventType == "Company Events" ||
+                model.EventType == "School Events"
+            )
+            {
+                model.PartyTheme = null;
+                model.CelebrantName = null;
+                model.Age = null;
+            }
+        }
+
+        private void ValidateEventSpecificFields(BookingStepTwoViewModel model)
+        {
+            if (string.IsNullOrWhiteSpace(model.EventType))
+            {
+                return;
+            }
+
+            if (model.EventType == "Birthday")
+            {
+                if (string.IsNullOrWhiteSpace(model.PartyTheme))
+                    ModelState.AddModelError("PartyTheme", "Party theme is required for birthday events.");
+
+                if (string.IsNullOrWhiteSpace(model.CelebrantName))
+                    ModelState.AddModelError("CelebrantName", "Celebrant name is required for birthday events.");
+
+                if (model.Age == null || model.Age <= 0)
+                    ModelState.AddModelError("Age", "Age is required for birthday events.");
+            }
+            else if (model.EventType == "Bridal Shower")
+            {
+                if (string.IsNullOrWhiteSpace(model.PartyTheme))
+                    ModelState.AddModelError("PartyTheme", "Party theme is required for bridal shower events.");
+
+                if (string.IsNullOrWhiteSpace(model.CelebrantName))
+                    ModelState.AddModelError("CelebrantName", "Celebrant name is required for bridal shower events.");
+
+                model.Age = null;
+            }
+            else if (
+                model.EventType == "Gender Reveal" ||
+                model.EventType == "Halloween" ||
+                model.EventType == "Christmas Parties" ||
+                model.EventType == "Easter Events"
+            )
+            {
+                if (string.IsNullOrWhiteSpace(model.PartyTheme))
+                    ModelState.AddModelError("PartyTheme", "Party theme is required for this event type.");
+
+                model.CelebrantName = null;
+                model.Age = null;
+            }
+            else if (
+                model.EventType == "Company Events" ||
+                model.EventType == "School Events"
+            )
+            {
+                model.PartyTheme = null;
+                model.CelebrantName = null;
+                model.Age = null;
+            }
         }
 
         private async Task<bool> HasBookingConflict(DateTime requestedStart, DateTime requestedEnd)
@@ -615,6 +739,7 @@ namespace AriesMagicAppointmentSystem.Controllers
 
             return confirmedCount >= maxPerDay;
         }
+
         private async Task<List<string>> GetUnavailableBookingDatesAsync()
         {
             var blockedDates = await _context.BlockedDates
@@ -694,12 +819,14 @@ namespace AriesMagicAppointmentSystem.Controllers
                 .Where(b => b.Status == BookingStatus.Confirmed && b.EventDate.Date == date.Date)
                 .OrderBy(b => b.StartTime)
                 .ToListAsync();
+
             var ranges = confirmedBookings.Select(b => new
             {
                 start = b.StartTime.ToString("HH:mm"),
                 end = b.EndTime.AddHours(1).ToString("HH:mm"),
                 display = $"{b.StartTime:hh:mm tt} - {b.EndTime.AddHours(1):hh:mm tt}"
             }).ToList();
+
             return Json(ranges);
         }
     }

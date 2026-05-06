@@ -42,17 +42,15 @@ namespace AriesMagicAppointmentSystem.Models
         [Required]
         public string Motif { get; set; } = string.Empty;
 
-        [Required]
-        public string PartyTheme { get; set; } = string.Empty;
+        public string? PartyTheme { get; set; }
 
         [Required]
         public string PartyVenue { get; set; } = string.Empty;
 
-        [Required]
-        public string CelebrantName { get; set; } = string.Empty;
+        public string? CelebrantName { get; set; }
 
         [Range(1, 120)]
-        public int Age { get; set; }
+        public int? Age { get; set; }
 
         [Range(1, 10000)]
         public int PaxCount { get; set; }
@@ -76,7 +74,9 @@ namespace AriesMagicAppointmentSystem.Models
         public string? RemovedInclusionsJson { get; set; }
 
         public ICollection<Payment> Payments { get; set; } = new List<Payment>();
+
         public ICollection<BookingTimeline> TimelineEvents { get; set; } = new List<BookingTimeline>();
+
         public ICollection<RescheduleRequest> RescheduleRequests { get; set; } = new List<RescheduleRequest>();
     }
 }
