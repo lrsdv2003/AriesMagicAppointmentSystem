@@ -462,9 +462,42 @@ namespace AriesMagicAppointmentSystem.Controllers
                 .OrderByDescending(b => b.CreatedAt)
                 .ToListAsync();
 
+            var lockingPaymentStatuses = new[]
+            {
+                PaymentStatus.Pending,
+                PaymentStatus.Verified
+            };
+
+            var lockedBookings = await _context.Payments
+                .Include(p => p.Booking)
+                .Where(p => lockingPaymentStatuses.Contains(p.Status))
+                .Where(p => p.Booking != null)
+                .Select(p => p.Booking!)
+                .ToListAsync();
+
+            var unavailableBookingIds = new List<int>();
+
+            foreach (var booking in bookings)
+            {
+                if (booking.Status != BookingStatus.AwaitingDownpayment)
+                    continue;
+
+                var hasConflict = lockedBookings.Any(locked =>
+                    locked.Id != booking.Id &&
+                    booking.StartTime < locked.EndTime.AddHours(1) &&
+                    booking.EndTime > locked.StartTime
+                );
+
+                if (hasConflict)
+                {
+                    unavailableBookingIds.Add(booking.Id);
+                }
+            }
+
+            ViewBag.UnavailableBookingIds = unavailableBookingIds;
+
             return View(bookings);
         }
-
         [Authorize(Roles = "Staff,Admin")]
         public async Task<IActionResult> Details(int? id)
         {

@@ -21,6 +21,12 @@ namespace AriesMagicAppointmentSystem.Data
             }
             await EnsureUserAsync(
                 userManager,
+                email: "client2@ariesmagic.com",
+                password: "client123",
+                fullName: "Default Client",
+                role: "Client");
+            await EnsureUserAsync(
+                userManager,
                 email: "client@ariesmagic.com",
                 password: "client123",
                 fullName: "Default Client",

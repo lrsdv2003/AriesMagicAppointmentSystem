@@ -128,7 +128,7 @@ namespace AriesMagicAppointmentSystem.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("Age")
+                    b.Property<int?>("Age")
                         .HasColumnType("int");
 
                     b.Property<string>("ApplicationUserId")
@@ -138,7 +138,6 @@ namespace AriesMagicAppointmentSystem.Migrations
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("CelebrantName")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("ClientId")
@@ -183,7 +182,6 @@ namespace AriesMagicAppointmentSystem.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("PartyTheme")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("PartyVenue")

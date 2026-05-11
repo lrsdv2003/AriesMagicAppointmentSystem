@@ -31,82 +31,119 @@
     </div>
 
     <div class="row g-3">
-        <div class="col-md-4">
-            <div class="package-meta-box h-100">
-                <span class="package-meta-label">Event Type</span>
-                <span class="package-meta-value">@Model.EventType</span>
+        @if (!string.IsNullOrWhiteSpace(Model.EventType))
+        {
+            <div class="col-md-4">
+                <div class="package-meta-box h-100">
+                    <span class="package-meta-label">Event Type</span>
+                    <span class="package-meta-value">@Model.EventType</span>
+                </div>
             </div>
-        </div>
+        }
 
-        <div class="col-md-4">
-            <div class="package-meta-box h-100">
-                <span class="package-meta-label">Motif</span>
-                <span class="package-meta-value">@Model.Motif</span>
+        @if (!string.IsNullOrWhiteSpace(Model.Motif))
+        {
+            <div class="col-md-4">
+                <div class="package-meta-box h-100">
+                    <span class="package-meta-label">Motif</span>
+                    <span class="package-meta-value">@Model.Motif</span>
+                </div>
             </div>
-        </div>
+        }
 
-        <div class="col-md-4">
-            <div class="package-meta-box h-100">
-                <span class="package-meta-label">Event Date</span>
-                <span class="package-meta-value">@Model.EventDate.ToString("MMMM dd, yyyy")</span>
+        @if (Model.EventDate != default)
+        {
+            <div class="col-md-4">
+                <div class="package-meta-box h-100">
+                    <span class="package-meta-label">Event Date</span>
+                    <span class="package-meta-value">
+                        @Model.EventDate.ToString("MMMM dd, yyyy")
+                    </span>
+                </div>
             </div>
-        </div>
+        }
 
-        <div class="col-md-4">
-            <div class="package-meta-box h-100">
-                <span class="package-meta-label">Start Time</span>
-                <span class="package-meta-value">@DateTime.Today.Add(Model.StartTime).ToString("hh:mm tt")</span>
+        @if (Model.StartTime != default)
+        {
+            <div class="col-md-4">
+                <div class="package-meta-box h-100">
+                    <span class="package-meta-label">Start Time</span>
+                    <span class="package-meta-value">
+                        @DateTime.Today.Add(Model.StartTime).ToString("hh:mm tt")
+                    </span>
+                </div>
             </div>
-        </div>
+        }
 
-        <div class="col-md-4">
-            <div class="package-meta-box h-100">
-                <span class="package-meta-label">Party Theme</span>
-                <span class="package-meta-value">@Model.PartyTheme</span>
+        @if (!string.IsNullOrWhiteSpace(Model.PartyTheme))
+        {
+            <div class="col-md-4">
+                <div class="package-meta-box h-100">
+                    <span class="package-meta-label">Party Theme</span>
+                    <span class="package-meta-value">@Model.PartyTheme</span>
+                </div>
             </div>
-        </div>
+        }
 
-        <div class="col-md-4">
-            <div class="package-meta-box h-100">
-                <span class="package-meta-label">Venue</span>
-                <span class="package-meta-value">@Model.PartyVenue</span>
+        @if (!string.IsNullOrWhiteSpace(Model.PartyVenue))
+        {
+            <div class="col-md-4">
+                <div class="package-meta-box h-100">
+                    <span class="package-meta-label">Venue</span>
+                    <span class="package-meta-value">@Model.PartyVenue</span>
+                </div>
             </div>
-        </div>
+        }
 
-        <div class="col-md-4">
-            <div class="package-meta-box h-100">
-                <span class="package-meta-label">Celebrant</span>
-                <span class="package-meta-value">@Model.CelebrantName</span>
+        @if (!string.IsNullOrWhiteSpace(Model.CelebrantName))
+        {
+            <div class="col-md-4">
+                <div class="package-meta-box h-100">
+                    <span class="package-meta-label">Celebrant</span>
+                    <span class="package-meta-value">@Model.CelebrantName</span>
+                </div>
             </div>
-        </div>
+        }
 
-        <div class="col-md-4">
-            <div class="package-meta-box h-100">
-                <span class="package-meta-label">Age</span>
-                <span class="package-meta-value">@Model.Age</span>
+        @if (Model.Age.HasValue && Model.Age.Value > 0)
+        {
+            <div class="col-md-4">
+                <div class="package-meta-box h-100">
+                    <span class="package-meta-label">Age</span>
+                    <span class="package-meta-value">@Model.Age</span>
+                </div>
             </div>
-        </div>
+        }
 
-        <div class="col-md-4">
-            <div class="package-meta-box h-100">
-                <span class="package-meta-label">Number of Guests</span>
-                <span class="package-meta-value">@Model.PaxCount</span>
+        @if (Model.PaxCount > 0)
+        {
+            <div class="col-md-4">
+                <div class="package-meta-box h-100">
+                    <span class="package-meta-label">Number of Guests</span>
+                    <span class="package-meta-value">@Model.PaxCount</span>
+                </div>
             </div>
-        </div>
+        }
 
-        <div class="col-md-6">
-            <div class="package-meta-box h-100">
-                <span class="package-meta-label">Contact Person</span>
-                <span class="package-meta-value">@Model.ContactPerson</span>
+        @if (!string.IsNullOrWhiteSpace(Model.ContactPerson))
+        {
+            <div class="col-md-6">
+                <div class="package-meta-box h-100">
+                    <span class="package-meta-label">Contact Person</span>
+                    <span class="package-meta-value">@Model.ContactPerson</span>
+                </div>
             </div>
-        </div>
+        }
 
-        <div class="col-md-6">
-            <div class="package-meta-box h-100">
-                <span class="package-meta-label">Contact Number</span>
-                <span class="package-meta-value">@Model.ContactNumber</span>
+        @if (!string.IsNullOrWhiteSpace(Model.ContactNumber))
+        {
+            <div class="col-md-6">
+                <div class="package-meta-box h-100">
+                    <span class="package-meta-label">Contact Number</span>
+                    <span class="package-meta-value">@Model.ContactNumber</span>
+                </div>
             </div>
-        </div>
+        }
     </div>
 </div>
 
@@ -287,82 +324,142 @@
     </div>
 
     <div class="modal fade" id="termsAgreementModal" tabindex="-1" aria-labelledby="termsAgreementModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content agreement-modal">
-                <div class="modal-header agreement-modal-header">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+        <div class="modal-content agreement-modal formal-agreement-modal">
+
+            <div class="agreement-formal-header">
+                <div class="agreement-document-icon">
+                    <i class="bi bi-file-earmark-check"></i>
+                </div>
+
+                <div>
+                    <h5 id="termsAgreementModalLabel">Terms & Agreement</h5>
+                    <p>
+                        Please read the following terms carefully. By submitting your booking,
+                        you agree to abide by these terms and conditions.
+                    </p>
+                </div>
+
+                <button type="button" class="btn-close agreement-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="agreement-formal-body">
+
+                <div class="agreement-term-row">
+                    <div class="agreement-term-icon">
+                        <i class="bi bi-cash-coin"></i>
+                    </div>
+                    <div class="agreement-term-content">
+                        <h6>1. Downpayment</h6>
+                        <p>
+                            A ₱2,000 downpayment is required to secure your reservation.
+                            The remaining balance will be paid after the event.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="agreement-term-row">
+                    <div class="agreement-term-icon">
+                        <i class="bi bi-calendar-x"></i>
+                    </div>
+                    <div class="agreement-term-content">
+                        <h6>2. Cancellation Policy</h6>
+                        <p>
+                            The client must notify the service provider at least two (2) weeks
+                            before the event. Late cancellation may forfeit reimbursement.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="agreement-term-row">
+                    <div class="agreement-term-icon">
+                        <i class="bi bi-calendar2-week"></i>
+                    </div>
+                    <div class="agreement-term-content">
+                        <h6>3. Rescheduling</h6>
+                        <p>
+                            Rescheduling due to emergencies, restrictions, or Acts of God
+                            is subject to availability.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="agreement-term-row">
+                    <div class="agreement-term-icon">
+                        <i class="bi bi-shield-check"></i>
+                    </div>
+                    <div class="agreement-term-content">
+                        <h6>4. Service Guarantee</h6>
+                        <p>
+                            The service provider shall render the agreed service on the confirmed
+                            event date and time.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="agreement-term-row">
+                    <div class="agreement-term-icon">
+                        <i class="bi bi-camera"></i>
+                    </div>
+                    <div class="agreement-term-content">
+                        <h6>5. Media Permission</h6>
+                        <p>
+                            Photos and videos from the event will only be published after receiving
+                            approval from the client.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="agreement-policy-highlight">
+                    <div class="agreement-policy-icon">
+                        <i class="bi bi-award"></i>
+                    </div>
+
                     <div>
-                        <h5 class="modal-title" id="termsAgreementModalLabel">Terms & Agreement</h5>
-                        <p>Please review and accept before submitting your booking.</p>
+                        <h6>Implementation of First Payment, First Get</h6>
+                        <p>
+                            Schedules are not reserved until the downpayment is successfully submitted.
+                            If multiple clients choose the same schedule, the earliest client to submit
+                            a valid payment proof will secure the schedule.
+                        </p>
+                        <strong>
+                            First payment first get — the earliest submitted payment secures the schedule.
+                        </strong>
                     </div>
-
-                    <button type="button"
-                            class="btn-close"
-                            data-bs-dismiss="modal"
-                            aria-label="Close">
-                    </button>
                 </div>
 
-                <div class="modal-body agreement-modal-body">
-                    <div class="agreement-modal-list">
-                        <div class="agreement-modal-item">
-                            <strong>Downpayment</strong>
-                            <p>A ₱2,000 downpayment is required for reservation. The remaining balance will be paid after the event.</p>
-                        </div>
+                <div class="agreement-formal-confirm">
+                    <input asp-for="AcceptTerms"
+                           class="form-check-input"
+                           type="checkbox"
+                           id="AcceptTerms"
+                           form="bookingStepTwoForm" />
 
-                        <div class="agreement-modal-item">
-                            <strong>Cancellation Policy</strong>
-                            <p>The client must notify the service provider at least two weeks before the event. Late cancellation may forfeit reimbursement.</p>
-                        </div>
-
-                        <div class="agreement-modal-item">
-                            <strong>Rescheduling</strong>
-                            <p>Rescheduling due to emergencies, restrictions, or Acts of God is subject to availability.</p>
-                        </div>
-
-                        <div class="agreement-modal-item">
-                            <strong>Service Guarantee</strong>
-                            <p>The service provider shall render the agreed service on the confirmed event date and time.</p>
-                        </div>
-
-                        <div class="agreement-modal-item">
-                            <strong>Media Permission</strong>
-                            <p>Photos and videos from the event will only be published after receiving approval from the client.</p>
-                        </div>
-                    </div>
-
-                    <div class="form-check agreement-checkbox mt-4">
-                        <input asp-for="AcceptTerms"
-                               class="form-check-input"
-                               type="checkbox"
-                               id="AcceptTerms" />
-
-                        <label class="form-check-label" for="AcceptTerms">
-                            I have read and agree to the Terms & Agreement.
-                        </label>
-                    </div>
-
-                    <span asp-validation-for="AcceptTerms"
-                          class="text-danger"
-                          id="acceptTermsError"></span>
+                    <label for="AcceptTerms">
+                        I have read, understood, and agree to the
+                        <strong>Terms & Agreement</strong> stated above.
+                    </label>
                 </div>
 
-                <div class="modal-footer agreement-modal-footer">
-                    <button type="button"
-                            class="btn btn-light"
-                            data-bs-dismiss="modal">
-                        Cancel
-                    </button>
+                <span asp-validation-for="AcceptTerms" class="text-danger"></span>
+            </div>
 
-                    <button type="submit"
-                            class="btn btn-primary"
-                            id="confirmSubmitBookingBtn"
-                            disabled>
-                        Confirm & Submit Booking
-                    </button>
-                </div>
+            <div class="agreement-formal-footer">
+                <button type="button" class="btn btn-light agreement-cancel-btn" data-bs-dismiss="modal">
+                    Cancel
+                </button>
+
+                <button type="submit"
+                        class="btn agreement-submit-btn"
+                        id="confirmSubmitBookingBtn"
+                        form="bookingStepTwoForm"
+                        disabled>
+                    I Agree & Submit Booking
+                </button>
             </div>
         </div>
     </div>
+</div>
 </form>
 
 @section Scripts {

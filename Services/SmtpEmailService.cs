@@ -41,5 +41,41 @@ namespace AriesMagicAppointmentSystem.Services
             await client.SendAsync(message);
             await client.DisconnectAsync(true);
         }
+
+        public async Task SendEmailWithAttachmentAsync(
+            string toEmail,
+            string subject,
+            string htmlMessage,
+            byte[] attachmentBytes,
+            string attachmentFileName)
+        {
+            var message = new MimeMessage();
+
+            message.From.Add(new MailboxAddress(_settings.SenderName, _settings.SenderEmail));
+            message.To.Add(MailboxAddress.Parse(toEmail));
+            message.Subject = subject;
+
+            var bodyBuilder = new BodyBuilder
+            {
+                HtmlBody = htmlMessage
+            };
+
+            bodyBuilder.Attachments.Add(
+                attachmentFileName,
+                attachmentBytes);
+            
+            message.Body = bodyBuilder.ToMessageBody();
+
+            using var client = new SmtpClient();
+
+            var socketOption = _settings.EnableSsl
+                ? SecureSocketOptions.StartTls
+                : SecureSocketOptions.Auto;
+
+            await client.ConnectAsync(_settings.Host, _settings.Port, socketOption);
+            await client.AuthenticateAsync(_settings.Username, _settings.Password);
+            await client.SendAsync(message);
+            await client.DisconnectAsync(true);
+        }
     }
 }
