@@ -17,22 +17,20 @@ namespace AriesMagicAppointmentSystem.Controllers
         private readonly IWebHostEnvironment _environment;
         private readonly IEmailService _emailService;
         private readonly UserManager<ApplicationUser> _userManager;
-        private const decimal FixedDownpaymentAmount = 2000;
-        private const long MaxProofImageSize = 5 * 1024 * 1024; // 5MB
-
-        private static readonly string[] AllowedExtensions = { ".jpg", ".jpeg", ".png", ".webp" };
-        private static readonly string[] AllowedContentTypes = { "image/jpeg", "image/png", "image/webp" };
+        private readonly ContractPdfService _contractPdfService;
 
         public PaymentsController(
             ApplicationDbContext context,
             IWebHostEnvironment environment,
             IEmailService emailService,
-            UserManager<ApplicationUser> userManager)
+            UserManager<ApplicationUser> userManager,
+            ContractPdfService contractPdfService)
         {
             _context = context;
             _environment = environment;
             _emailService = emailService;
             _userManager = userManager;
+            _contractPdfService = contractPdfService;
         }
 
         [Authorize(Roles = "Client")]
@@ -76,10 +74,23 @@ namespace AriesMagicAppointmentSystem.Controllers
                 model.Bookings = await GetAwaitingDownpaymentBookingsAsync(appUserId);
                 return View(model);
             }
+            var requestedStart = booking.StartTime;
+            var requestedEnd = booking.EndTime;
 
-            var slotTaken = await IsSlotTakenByAnotherConfirmedBookingAsync(booking);
+            if (await HasPaidScheduleConflict(
+                booking.Id,
+                requestedStart,
+                requestedEnd))
+            {
+                ModelState.AddModelError(
+                    "",
+                    "This schedule is no longer available because another client has already submitted payment for the same date and time.");
 
-            if (slotTaken)
+                model.Bookings = await GetAwaitingDownpaymentBookingsAsync(appUserId);
+
+                return View(model);
+            }
+            if (model.ProofImage == null || model.ProofImage.Length == 0)
             {
                 ModelState.AddModelError("", "This slot has already been secured by another confirmed booking. If you already sent your downpayment, please submit a refund request.");
                 model.Bookings = await GetAwaitingDownpaymentBookingsAsync(appUserId);
@@ -133,6 +144,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             });
 
             await _context.SaveChangesAsync();
+            await NotifyAffectedClientsAboutLockedScheduleAsync(booking);
 
             var adminIdentityUsers = await _userManager.GetUsersInRoleAsync("Admin");
 
@@ -259,17 +271,33 @@ namespace AriesMagicAppointmentSystem.Controllers
             {
                 var bookingWithClient = await _context.Bookings
                     .Include(b => b.Client)
+                    .Include(b => b.Service)
                     .FirstOrDefaultAsync(b => b.Id == payment.Booking.Id);
 
-                if (bookingWithClient != null && bookingWithClient.Client != null)
+                if (bookingWithClient != null &&
+                    bookingWithClient.Client != null &&
+                    !string.IsNullOrWhiteSpace(bookingWithClient.Client.Email))
                 {
-                    await _emailService.SendEmailAsync(
+                    var contractPdf =
+                        _contractPdfService.GenerateContractPdf(bookingWithClient);
+                        var testPath = Path.Combine(
+                        Directory.GetCurrentDirectory(),
+                        "wwwroot",
+                        $"test-contract-BK-{bookingWithClient.CreatedAt.Year}-{bookingWithClient.Id:D3}.pdf");
+
+                    await System.IO.File.WriteAllBytesAsync(testPath, contractPdf);
+
+                    await _emailService.SendEmailWithAttachmentAsync(
                         bookingWithClient.Client.Email,
-                        "Payment Verified and Booking Confirmed",
-                        @"
-                        <h2>Your Payment Was Verified</h2>
-                        <p>Your payment has been verified and your booking is now confirmed.</p>
-                        <p>Thank you for your downpayment.</p>");
+                        "Aries Magic - Booking Confirmation and Contract Agreement",
+                        $@"
+                        <h2>Booking Confirmed</h2>
+                        <p>Your payment has been verified successfully.</p>
+                        <p>Your booking is now confirmed.</p>
+                        <p>Attached is your official Contract Agreement and Booking Receipt.</p>
+                        <p>Thank you for choosing Aries Magic.</p>",
+                        contractPdf,
+                        $"ContractAgreement-BK-{bookingWithClient.CreatedAt.Year}-{bookingWithClient.Id:D3}.pdf");
                 }
             }
 
@@ -687,6 +715,82 @@ namespace AriesMagicAppointmentSystem.Controllers
                 IsRead = false,
                 CreatedAt = DateTime.Now
             });
+
+            await _context.SaveChangesAsync();
+        }
+        private async Task<bool> HasPaidScheduleConflict(int currentBookingId, DateTime requestedStart, DateTime requestedEnd)
+        {
+            var lockingPaymentStatuses = new[]
+            {
+                PaymentStatus.Pending,
+                PaymentStatus.Verified
+            };
+
+            var lockedBookings = await _context.Payments
+                .Include(p => p.Booking)
+                .Where(p => p.BookingId != currentBookingId)
+                .Where(p => lockingPaymentStatuses.Contains(p.Status))
+                .Where(p => p.Booking != null)
+                .Select(p => p.Booking!)
+                .ToListAsync();
+
+            foreach (var lockedBooking in lockedBookings)
+            {
+                var existingStart = lockedBooking.StartTime;
+                var existingEndWithBuffer = lockedBooking.EndTime.AddHours(1);
+
+                bool overlaps =
+                    requestedStart < existingEndWithBuffer &&
+                    requestedEnd > existingStart;
+
+                if (overlaps)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+        private async Task NotifyAffectedClientsAboutLockedScheduleAsync(Booking paidBooking)
+        {
+            var affectedBookings = await _context.Bookings
+                .Include(b => b.Client)
+                .Where(b => b.Id != paidBooking.Id)
+                .Where(b => b.Status == BookingStatus.AwaitingDownpayment)
+                .Where(b =>
+                    paidBooking.StartTime < b.EndTime.AddHours(1) &&
+                    paidBooking.EndTime > b.StartTime)
+                .ToListAsync();
+
+            foreach (var affectedBooking in affectedBookings)
+            {
+                if (!string.IsNullOrWhiteSpace(affectedBooking.ApplicationUserId))
+                {
+                    _context.Notifications.Add(new Notification
+                    {
+                        UserId = affectedBooking.ApplicationUserId,
+                        Title = "Schedule No Longer Available",
+                        Message = $"Another client has already submitted payment for your selected schedule on {affectedBooking.EventDate:MMMM dd, yyyy}. Please choose another date and time.",
+                        Link = "/Bookings/MyBookings",
+                        IsRead = false,
+                        CreatedAt = DateTime.Now
+                    });
+                }
+
+                if (affectedBooking.Client != null &&
+                    !string.IsNullOrWhiteSpace(affectedBooking.Client.Email))
+                {
+                    await _emailService.SendEmailAsync(
+                        affectedBooking.Client.Email,
+                        "Schedule No Longer Available",
+                        $@"
+                        <h2>Schedule No Longer Available</h2>
+                        <p>Another client has already submitted payment for your selected schedule.</p>
+                        <p><strong>Event Date:</strong> {affectedBooking.EventDate:MMMM dd, yyyy}</p>
+                        <p><strong>Time:</strong> {affectedBooking.StartTime:hh:mm tt} - {affectedBooking.EndTime:hh:mm tt}</p>
+                        <p>Please choose another available date and time or contact support for assistance.</p>");
+                }
+            }
 
             await _context.SaveChangesAsync();
         }

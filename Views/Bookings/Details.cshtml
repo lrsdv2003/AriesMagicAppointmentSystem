@@ -87,111 +87,189 @@
     <div class="dashboard-panel">
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
             <div>
-                <div class="form-section-title mb-1">Client & Event Information</div>
-                <p class="page-subtitle mb-0">Complete details submitted by the client during booking.</p>
+                <div class="form-section-title mb-1">
+                    Client & Event Information
+                </div>
+
+                <p class="page-subtitle mb-0">
+                    Complete details submitted by the client during booking.
+                </p>
             </div>
         </div>
 
         <div class="row g-3">
-            <div class="col-md-6">
-                <div class="package-meta-box h-100">
-                    <span class="package-meta-label">Client Name</span>
-                    <span class="package-meta-value">@Model.Client?.FullName</span>
-                </div>
-            </div>
 
-            <div class="col-md-6">
-                <div class="package-meta-box h-100">
-                    <span class="package-meta-label">Client Email</span>
-                    <span class="package-meta-value">@Model.Client?.Email</span>
+            @if (!string.IsNullOrWhiteSpace(Model.Client?.FullName))
+            {
+                <div class="col-md-6">
+                    <div class="package-meta-box h-100">
+                        <span class="package-meta-label">Client Name</span>
+                        <span class="package-meta-value">
+                            @Model.Client.FullName
+                        </span>
+                    </div>
                 </div>
-            </div>
+            }
 
-            <div class="col-md-4">
-                <div class="package-meta-box h-100">
-                    <span class="package-meta-label">Event Type</span>
-                    <span class="package-meta-value">@Model.EventType</span>
+            @if (!string.IsNullOrWhiteSpace(Model.Client?.Email))
+            {
+                <div class="col-md-6">
+                    <div class="package-meta-box h-100">
+                        <span class="package-meta-label">Client Email</span>
+                        <span class="package-meta-value">
+                            @Model.Client.Email
+                        </span>
+                    </div>
                 </div>
-            </div>
+            }
 
-            <div class="col-md-4">
-                <div class="package-meta-box h-100">
-                    <span class="package-meta-label">Motif</span>
-                    <span class="package-meta-value">@Model.Motif</span>
+            @if (!string.IsNullOrWhiteSpace(Model.EventType))
+            {
+                <div class="col-md-4">
+                    <div class="package-meta-box h-100">
+                        <span class="package-meta-label">Event Type</span>
+                        <span class="package-meta-value">
+                            @Model.EventType
+                        </span>
+                    </div>
                 </div>
-            </div>
+            }
 
-            <div class="col-md-4">
-                <div class="package-meta-box h-100">
-                    <span class="package-meta-label">Party Theme</span>
-                    <span class="package-meta-value">@Model.PartyTheme</span>
+            @if (!string.IsNullOrWhiteSpace(Model.Motif))
+            {
+                <div class="col-md-4">
+                    <div class="package-meta-box h-100">
+                        <span class="package-meta-label">Motif</span>
+                        <span class="package-meta-value">
+                            @Model.Motif
+                        </span>
+                    </div>
                 </div>
-            </div>
+            }
 
-            <div class="col-md-6">
-                <div class="package-meta-box h-100">
-                    <span class="package-meta-label">Party Venue</span>
-                    <span class="package-meta-value">@Model.PartyVenue</span>
+            @if (!string.IsNullOrWhiteSpace(Model.PartyTheme))
+            {
+                <div class="col-md-4">
+                    <div class="package-meta-box h-100">
+                        <span class="package-meta-label">Party Theme</span>
+                        <span class="package-meta-value">
+                            @Model.PartyTheme
+                        </span>
+                    </div>
                 </div>
-            </div>
+            }
 
-            <div class="col-md-3">
-                <div class="package-meta-box h-100">
-                    <span class="package-meta-label">Celebrant Name</span>
-                    <span class="package-meta-value">@Model.CelebrantName</span>
+            @if (!string.IsNullOrWhiteSpace(Model.PartyVenue))
+            {
+                <div class="col-md-6">
+                    <div class="package-meta-box h-100">
+                        <span class="package-meta-label">Party Venue</span>
+                        <span class="package-meta-value">
+                            @Model.PartyVenue
+                        </span>
+                    </div>
                 </div>
-            </div>
+            }
 
-            <div class="col-md-3">
-                <div class="package-meta-box h-100">
-                    <span class="package-meta-label">Age</span>
-                    <span class="package-meta-value">@Model.Age</span>
+            @if (!string.IsNullOrWhiteSpace(Model.CelebrantName))
+            {
+                <div class="col-md-3">
+                    <div class="package-meta-box h-100">
+                        <span class="package-meta-label">Celebrant Name</span>
+                        <span class="package-meta-value">
+                            @Model.CelebrantName
+                        </span>
+                    </div>
                 </div>
-            </div>
+            }
 
-            <div class="col-md-4">
-                <div class="package-meta-box h-100">
-                    <span class="package-meta-label">Guests / Pax</span>
-                    <span class="package-meta-value">@Model.PaxCount</span>
+            @if (Model.Age.HasValue && Model.Age.Value > 0)
+            {
+                <div class="col-md-3">
+                    <div class="package-meta-box h-100">
+                        <span class="package-meta-label">Age</span>
+                        <span class="package-meta-value">
+                            @Model.Age
+                        </span>
+                    </div>
                 </div>
-            </div>
+            }
 
-            <div class="col-md-4">
-                <div class="package-meta-box h-100">
-                    <span class="package-meta-label">Contact Person</span>
-                    <span class="package-meta-value">@Model.ContactPerson</span>
+            @if (Model.PaxCount > 0)
+            {
+                <div class="col-md-4">
+                    <div class="package-meta-box h-100">
+                        <span class="package-meta-label">Guests / Pax</span>
+                        <span class="package-meta-value">
+                            @Model.PaxCount
+                        </span>
+                    </div>
                 </div>
-            </div>
+            }
 
-            <div class="col-md-4">
-                <div class="package-meta-box h-100">
-                    <span class="package-meta-label">Contact Number</span>
-                    <span class="package-meta-value">@Model.ContactNumber</span>
+            @if (!string.IsNullOrWhiteSpace(Model.ContactPerson))
+            {
+                <div class="col-md-4">
+                    <div class="package-meta-box h-100">
+                        <span class="package-meta-label">Contact Person</span>
+                        <span class="package-meta-value">
+                            @Model.ContactPerson
+                        </span>
+                    </div>
                 </div>
-            </div>
+            }
 
-            <div class="col-md-4">
-                <div class="package-meta-box h-100">
-                    <span class="package-meta-label">Event Date</span>
-                    <span class="package-meta-value">@Model.EventDate.ToString("MMMM dd, yyyy")</span>
+            @if (!string.IsNullOrWhiteSpace(Model.ContactNumber))
+            {
+                <div class="col-md-4">
+                    <div class="package-meta-box h-100">
+                        <span class="package-meta-label">Contact Number</span>
+                        <span class="package-meta-value">
+                            @Model.ContactNumber
+                        </span>
+                    </div>
                 </div>
-            </div>
+            }
 
-            <div class="col-md-4">
-                <div class="package-meta-box h-100">
-                    <span class="package-meta-label">Start Time</span>
-                    <span class="package-meta-value">@Model.StartTime.ToString("hh:mm tt")</span>
+            @if (Model.EventDate != default)
+            {
+                <div class="col-md-4">
+                    <div class="package-meta-box h-100">
+                        <span class="package-meta-label">Event Date</span>
+                        <span class="package-meta-value">
+                            @Model.EventDate.ToString("MMMM dd, yyyy")
+                        </span>
+                    </div>
                 </div>
-            </div>
+            }
 
-            <div class="col-md-4">
-                <div class="package-meta-box h-100">
-                    <span class="package-meta-label">End Time</span>
-                    <span class="package-meta-value">@Model.EndTime.ToString("hh:mm tt")</span>
+            @if (Model.StartTime != default)
+            {
+                <div class="col-md-4">
+                    <div class="package-meta-box h-100">
+                        <span class="package-meta-label">Start Time</span>
+                        <span class="package-meta-value">
+                            @Model.StartTime.ToString("hh:mm tt")
+                        </span>
+                    </div>
                 </div>
-            </div>
+            }
+
+            @if (Model.EndTime != default)
+            {
+                <div class="col-md-4">
+                    <div class="package-meta-box h-100">
+                        <span class="package-meta-label">End Time</span>
+                        <span class="package-meta-value">
+                            @Model.EndTime.ToString("hh:mm tt")
+                        </span>
+                    </div>
+                </div>
+            }
+
         </div>
     </div>
+</div>
 
     <div class="dashboard-panel">
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">

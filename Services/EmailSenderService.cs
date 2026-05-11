@@ -41,5 +41,14 @@ namespace AriesMagicAppointmentSystem.Services
             await smtp.SendAsync(email);
             await smtp.DisconnectAsync(true);
         }
+        public Task SendEmailWithAttachmentAsync(
+            string toEmail,
+            string subject,
+            string htmlMessage,
+            byte[] attachmentBytes,
+            string attachmentFileName)
+        {
+            return SendEmailAsync(toEmail, subject, htmlMessage);
+        }
     }
 }

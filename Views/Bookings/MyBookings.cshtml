@@ -2,20 +2,26 @@
 
 @{
     ViewData["Title"] = "My Bookings";
+
     var bookings = Model.OrderByDescending(x => x.CreatedAt).ToList();
+
+    var unavailableBookingIds =
+        ViewBag.UnavailableBookingIds as List<int> ?? new List<int>();
 }
 
 <div class="client-portal-header">
     <div>
         <div class="section-kicker">Client Portal</div>
         <h1 class="client-portal-title">My Bookings</h1>
-        <p class="client-portal-text">Track your submitted bookings, review event details, and monitor their latest status.</p>
+        <p class="client-portal-text">
+            Track your submitted bookings, review event details, and monitor their latest status.
+        </p>
     </div>
+
     <div>
         <a asp-action="CreateStepOne" class="btn btn-primary btn-lg">Create Booking</a>
     </div>
 </div>
-
 
 <div class="client-portal-stats">
     <div class="client-portal-stat-card">
@@ -53,6 +59,7 @@
         </div>
     </div>
 }
+
 @if (TempData["Error"] != null)
 {
     <div class="client-error-banner mb-4">
@@ -69,7 +76,10 @@
     <div class="empty-state client-empty-state">
         <h3>No bookings yet</h3>
         <p>You have not submitted any booking requests yet.</p>
-        <a asp-action="CreateStepOne" class="btn btn-primary mt-2">Start Your First Booking</a>
+
+        <a asp-action="CreateStepOne" class="btn btn-primary mt-2">
+            Start Your First Booking
+        </a>
     </div>
 }
 else
@@ -77,6 +87,8 @@ else
     <div class="client-booking-grid">
         @foreach (var item in bookings)
         {
+            var isUnavailable = unavailableBookingIds.Contains(item.Id);
+
             var statusClass = item.Status switch
             {
                 "Pending" => "status-pending",
@@ -99,19 +111,42 @@ else
                         <div class="client-booking-code">
                             BK-@item.CreatedAt.Year-@item.Id.ToString("D3")
                         </div>
-                        <h3 class="client-booking-package">@packageName</h3>
+
+                        <h3 class="client-booking-package">
+                            @packageName
+                        </h3>
+
                         <div class="client-booking-created text-muted small">
                             Submitted on @item.CreatedAt.ToString("MMM dd, yyyy hh:mm tt")
                         </div>
                     </div>
 
-                    <span class="status-badge @statusClass">@item.Status</span>
+                    <span class="status-badge @statusClass">
+                        @if (isUnavailable)
+                        {
+                            <text>Schedule Unavailable</text>
+                        }
+                        else if (item.Status == AriesMagicAppointmentSystem.Models.BookingStatus.AwaitingDownpayment)
+                        {
+                            <text>Awaiting Downpayment</text>
+                        }
+                        else if (item.Status == AriesMagicAppointmentSystem.Models.BookingStatus.AwaitingVerification)
+                        {
+                            <text>Awaiting Verification</text>
+                        }
+                        else
+                        {
+                            @item.Status
+                        }
+                    </span>
                 </div>
 
                 <div class="client-booking-meta">
                     <div class="client-booking-meta-box">
                         <span class="client-booking-meta-label">Event Date</span>
-                        <span class="client-booking-meta-value">@item.EventDate.ToString("MMMM dd, yyyy")</span>
+                        <span class="client-booking-meta-value">
+                            @item.EventDate.ToString("MMMM dd, yyyy")
+                        </span>
                     </div>
 
                     <div class="client-booking-meta-box">
@@ -127,14 +162,17 @@ else
                         <span>Event Type</span>
                         <strong>@item.EventType</strong>
                     </div>
+
                     <div class="client-booking-detail-row">
                         <span>Venue</span>
                         <strong>@item.PartyVenue</strong>
                     </div>
+
                     <div class="client-booking-detail-row">
                         <span>Final Price</span>
                         <strong>₱@item.FinalPrice.ToString("N2")</strong>
                     </div>
+
                     <div class="client-booking-detail-row">
                         <span>Required Downpayment</span>
                         <strong>₱@item.RequiredDownpayment.ToString("N2")</strong>
@@ -142,7 +180,13 @@ else
                 </div>
 
                 <div class="client-booking-note">
-                    @if (item.Status == AriesMagicAppointmentSystem.Models.BookingStatus.Pending)
+                    @if (isUnavailable)
+                    {
+                        <span>
+                            This booking schedule has already been secured by another paid booking.
+                        </span>
+                    }
+                    else if (item.Status == AriesMagicAppointmentSystem.Models.BookingStatus.Pending)
                     {
                         <span>Your booking is waiting for staff review.</span>
                     }
@@ -173,14 +217,44 @@ else
                 </div>
 
                 <div class="client-booking-footer">
+                    @if (isUnavailable)
+                    {
+                        <div class="schedule-unavailable-alert mb-3">
+                            <div class="schedule-unavailable-icon">!</div>
+
+                            <div>
+                                <strong>This schedule is no longer available.</strong>
+                                <p>
+                                    Another client has already submitted payment for this schedule.
+                                    Please choose another available date and time or contact support for assistance.
+                                </p>
+                            </div>
+                        </div>
+                    }
+
                     <div class="client-booking-footer-actions">
                         @if (item.Status == AriesMagicAppointmentSystem.Models.BookingStatus.AwaitingDownpayment)
                         {
-                            <a asp-controller="Payments" asp-action="Upload" class="btn btn-primary">Upload Payment</a>
+                            if (isUnavailable)
+                            {
+                                <button type="button" class="btn btn-outline-danger" disabled>
+                                    Schedule Unavailable
+                                </button>
+                            }
+                            else
+                            {
+                                <a asp-controller="Payments"
+                                   asp-action="Upload"
+                                   class="btn btn-primary">
+                                    Upload Payment
+                                </a>
+                            }
                         }
                         else
                         {
-                            <button type="button" class="btn btn-outline-secondary" disabled>No Action Needed</button>
+                            <button type="button" class="btn btn-outline-secondary" disabled>
+                                No Action Needed
+                            </button>
                         }
                     </div>
                 </div>
