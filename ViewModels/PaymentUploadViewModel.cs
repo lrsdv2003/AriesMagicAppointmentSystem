@@ -10,9 +10,9 @@ namespace AriesMagicAppointmentSystem.ViewModels
         [Display(Name = "Booking")]
         public int BookingId { get; set; }
 
-        [Required]
-        [Range(0.01, 999999)]
-        public decimal Amount { get; set; }
+        public decimal FixedDownpaymentAmount { get; set; } = 2000;
+
+        public string GCashQrPath { get; set; } = "wwwroot/images/payments/gcash-qr.jpeg";
 
         [Required]
         [Display(Name = "Proof Image")]

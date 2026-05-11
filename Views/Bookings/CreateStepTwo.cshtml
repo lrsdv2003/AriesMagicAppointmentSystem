@@ -134,7 +134,9 @@
         <div class="form-section-header mb-3">
             <div>
                 <div class="form-section-title mb-1">Select Package</div>
-                <p class="page-subtitle mb-0">Choose the package you want for your event. You can customize removable inclusions below.</p>
+                <p class="page-subtitle mb-0">
+                    Choose the package you want for your event. You can customize removable inclusions below.
+                </p>
             </div>
         </div>
 
@@ -160,7 +162,9 @@
                 <div>
                     <div class="package-card-badge">Selected Package</div>
                     <h3 class="package-preview-title mt-2">@Model.PackageName</h3>
-                    <p class="page-subtitle mb-0">Review the inclusions below. Removable items can be unchecked to lower the total package cost.</p>
+                    <p class="page-subtitle mb-0">
+                        Review the inclusions below. You can remove up to 2 removable inclusions only.
+                    </p>
                 </div>
 
                 <div class="package-preview-price">₱@Model.BasePrice.ToString("N2")</div>
@@ -182,12 +186,21 @@
                 <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
                     <div>
                         <div class="form-section-title mb-1">Package Inclusions</div>
-                        <p class="page-subtitle mb-0">Uncheck removable inclusions to reduce the final package cost by their assigned deduction amount.</p>
+                        <p class="page-subtitle mb-0">
+                            Uncheck removable inclusions to reduce the final package cost.
+                            Removing one or two inclusions gives a fixed total deduction of ₱2,000.00.
+                        </p>
                     </div>
                 </div>
 
                 <div class="booking-summary-note mb-3">
-                    Fixed inclusions cannot be removed. The required downpayment stays at <strong>₱2,000.00</strong> even if you remove some inclusions.
+                    Fixed inclusions cannot be removed. You can remove up to <strong>2 inclusions only</strong>.
+                    Removing one or two inclusions gives a fixed total deduction of <strong>₱2,000.00</strong>.
+                    The required downpayment stays at <strong>₱2,000.00</strong>.
+                </div>
+
+                <div id="removedInclusionLimitWarning" class="alert alert-warning d-none mb-3">
+                    You can only remove up to 2 inclusions.
                 </div>
 
                 <div id="removedInputsContainer"></div>
@@ -199,8 +212,16 @@
                             <div class="booking-inclusion-main">
                                 <div>
                                     <div class="booking-inclusion-name">@Model.Inclusions[i].Name</div>
+
                                     <div class="booking-inclusion-deduction">
-                                        Deduction if removed: ₱@Model.Inclusions[i].DeductionAmount.ToString("N2")
+                                        @if (Model.Inclusions[i].IsRemovable)
+                                        {
+                                            <span>Eligible for fixed ₱2,000.00 total deduction</span>
+                                        }
+                                        else
+                                        {
+                                            <span>No deduction available</span>
+                                        }
                                     </div>
                                 </div>
 
@@ -213,15 +234,13 @@
                                                 <input class="form-check-input inclusion-checkbox"
                                                        type="checkbox"
                                                        value="@Model.Inclusions[i].Id"
-                                                       checked
-                                                       onchange="syncRemovedInclusions()" />
+                                                       checked />
                                             }
                                             else
                                             {
                                                 <input class="form-check-input inclusion-checkbox"
                                                        type="checkbox"
-                                                       value="@Model.Inclusions[i].Id"
-                                                       onchange="syncRemovedInclusions()" />
+                                                       value="@Model.Inclusions[i].Id" />
                                             }
 
                                             <label class="form-check-label">Included</label>
@@ -237,7 +256,7 @@
 
                         <input type="hidden" name="Inclusions[@i].Id" value="@Model.Inclusions[i].Id" />
                         <input type="hidden" name="Inclusions[@i].Name" value="@Model.Inclusions[i].Name" />
-                        <input type="hidden" name="Inclusions[@i].DeductionAmount" value="@Model.Inclusions[i].DeductionAmount.ToString(System.Globalization.CultureInfo.InvariantCulture)" />
+                        <input type="hidden" name="Inclusions[@i].DeductionAmount" value="@(Model.Inclusions[i].IsRemovable ? "2000" : "0")" />
                         <input type="hidden" name="Inclusions[@i].IsRemovable" value="@(Model.Inclusions[i].IsRemovable ? "true" : "false")" />
                         <input type="hidden" name="Inclusions[@i].IsSelected" value="@(Model.Inclusions[i].IsSelected ? "true" : "false")" />
                     }
@@ -247,7 +266,9 @@
 
         <div class="dashboard-panel booking-price-panel">
             <div class="form-section-title mb-3">Booking Summary</div>
-            <p class="page-subtitle mb-3">This summary updates automatically based on the inclusions you keep or remove.</p>
+            <p class="page-subtitle mb-3">
+                This summary updates automatically based on the inclusions you keep or remove.
+            </p>
 
             <div class="booking-price-row">
                 <span>Base Price</span>
@@ -369,41 +390,58 @@
     <partial name="_ValidationScriptsPartial" />
 
     <script>
-        function syncRemovedInclusions() {
+        const maxRemovedInclusions = 2;
+        const fixedDeductionPerInclusion = 2000;
+
+        function syncRemovedInclusions(changedCheckbox = null) {
             const removedInputsContainer = document.getElementById("removedInputsContainer");
+            const warningBox = document.getElementById("removedInclusionLimitWarning");
 
             if (!removedInputsContainer) {
                 return;
             }
 
+            const checkboxes = document.querySelectorAll(".inclusion-checkbox");
+            const removedCheckboxes = Array.from(checkboxes).filter(cb => !cb.checked);
+
+            if (removedCheckboxes.length > maxRemovedInclusions) {
+                if (changedCheckbox) {
+                    changedCheckbox.checked = true;
+                }
+
+                if (warningBox) {
+                    warningBox.classList.remove("d-none");
+                    warningBox.textContent = "You can only remove up to 2 inclusions.";
+                }
+
+                return syncRemovedInclusions();
+            }
+
+            if (warningBox) {
+                if (removedCheckboxes.length >= maxRemovedInclusions) {
+                    warningBox.classList.remove("d-none");
+                    warningBox.textContent = "Maximum removed inclusions reached. You can only remove up to 2 inclusions.";
+                } else {
+                    warningBox.classList.add("d-none");
+                    warningBox.textContent = "";
+                }
+            }
+
             removedInputsContainer.innerHTML = "";
 
-            const checkboxes = document.querySelectorAll(".inclusion-checkbox");
-            let totalDeduction = 0;
+            const validRemovedCheckboxes = Array.from(checkboxes).filter(cb => !cb.checked);
 
-            checkboxes.forEach(cb => {
-                if (!cb.checked) {
-                    const hidden = document.createElement("input");
-                    hidden.type = "hidden";
-                    hidden.name = "RemovedInclusionIds";
-                    hidden.value = cb.value;
-                    removedInputsContainer.appendChild(hidden);
-
-                    const card = cb.closest(".booking-inclusion-card");
-
-                    if (card) {
-                        const deductionElement = card.querySelector(".booking-inclusion-deduction");
-
-                        if (deductionElement) {
-                            const deductionText = deductionElement.innerText
-                                .replace("Deduction if removed: ₱", "")
-                                .replace(/,/g, "");
-
-                            totalDeduction += parseFloat(deductionText) || 0;
-                        }
-                    }
-                }
+            validRemovedCheckboxes.forEach(cb => {
+                const hidden = document.createElement("input");
+                hidden.type = "hidden";
+                hidden.name = "RemovedInclusionIds";
+                hidden.value = cb.value;
+                removedInputsContainer.appendChild(hidden);
             });
+
+            const totalDeduction = validRemovedCheckboxes.length > 0
+                ? fixedDeductionPerInclusion
+                : 0;
 
             const basePriceInput = document.getElementById("basePriceInput");
             const finalPriceInput = document.getElementById("finalPriceInput");
@@ -411,7 +449,7 @@
             const finalPriceText = document.getElementById("finalPriceText");
 
             const basePrice = parseFloat(basePriceInput?.value || "0");
-            const finalPrice = basePrice - totalDeduction;
+            const finalPrice = Math.max(basePrice - totalDeduction, 0);
 
             if (deductionText) {
                 deductionText.textContent = totalDeduction.toLocaleString(undefined, {
@@ -428,7 +466,7 @@
             }
 
             if (finalPriceInput) {
-                finalPriceInput.value = finalPrice;
+                finalPriceInput.value = finalPrice.toFixed(2);
             }
         }
 
@@ -456,6 +494,14 @@
         }
 
         document.addEventListener("DOMContentLoaded", function () {
+            const checkboxes = document.querySelectorAll(".inclusion-checkbox");
+
+            checkboxes.forEach(cb => {
+                cb.addEventListener("change", function () {
+                    syncRemovedInclusions(this);
+                });
+            });
+
             syncRemovedInclusions();
 
             const acceptTerms = document.getElementById("AcceptTerms");
@@ -469,6 +515,21 @@
 
             if (form) {
                 form.addEventListener("submit", function (e) {
+                    const removedCount = document.querySelectorAll(".inclusion-checkbox:not(:checked)").length;
+
+                    if (removedCount > maxRemovedInclusions) {
+                        e.preventDefault();
+
+                        const warningBox = document.getElementById("removedInclusionLimitWarning");
+
+                        if (warningBox) {
+                            warningBox.classList.remove("d-none");
+                            warningBox.textContent = "You can only remove up to 2 inclusions.";
+                        }
+
+                        return;
+                    }
+
                     if (acceptTerms && !acceptTerms.checked) {
                         e.preventDefault();
 

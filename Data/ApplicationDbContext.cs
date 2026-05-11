@@ -22,12 +22,21 @@ namespace AriesMagicAppointmentSystem.Data
         public DbSet<BlockedDate> BlockedDates { get; set; }
         public DbSet<DateBookingLimit> DateBookingLimits { get; set; }
         public DbSet<ServiceInclusion> ServiceInclusions { get; set; }
+        public DbSet<RefundRequest> RefundRequests { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
 
             builder.Entity<User>().ToTable("Users");
+
+            builder.Entity<Payment>()
+                .Property(p => p.Amount)
+                .HasPrecision(18, 2);
+
+            builder.Entity<RefundRequest>()
+                .Property(r => r.Amount)
+                .HasPrecision(18, 2);
         }
     }
 }

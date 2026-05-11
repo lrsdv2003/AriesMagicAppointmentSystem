@@ -8,14 +8,16 @@
     <div>
         <div class="section-kicker">Client Portal</div>
         <h1 class="client-portal-title">Upload Payment</h1>
-        <p class="client-portal-text">Submit your payment proof for admin verification and move your booking to the next step.</p>
+        <p class="client-portal-text">
+            Pay the fixed downpayment, scan the GCash QR code, then upload your payment proof for admin verification.
+        </p>
     </div>
 </div>
 
 <div class="upload-payment-layout">
     <div class="dashboard-panel">
         <div class="form-section-title mb-1">Payment Information</div>
-        <p class="page-subtitle mb-4">Complete the fields below and upload a clear proof of payment.</p>
+        <p class="page-subtitle mb-4">The required downpayment is fixed at ₱2,000.00.</p>
 
         <form asp-action="Upload" method="post" enctype="multipart/form-data">
             @Html.AntiForgeryToken()
@@ -31,16 +33,16 @@
                 </div>
 
                 <div class="col-md-6">
-                    <label asp-for="Amount" class="form-label">Amount Paid</label>
-                    <input asp-for="Amount" class="form-control" placeholder="Enter payment amount" />
-                    <span asp-validation-for="Amount" class="text-danger"></span>
+                    <label class="form-label">Required Downpayment</label>
+                    <input value="₱@Model.FixedDownpaymentAmount.ToString("N2")" class="form-control" readonly />
+                    <div class="form-text">This amount is fixed and cannot be changed by the client.</div>
                 </div>
 
                 <div class="col-md-6">
                     <label asp-for="ProofImage" class="form-label">Payment Proof</label>
-                    <input asp-for="ProofImage" type="file" class="form-control" accept="image/*" />
+                    <input asp-for="ProofImage" type="file" class="form-control" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" />
                     <span asp-validation-for="ProofImage" class="text-danger"></span>
-                    <div class="form-text mt-2">Accepted formats: JPG, JPEG, PNG, and WEBP.</div>
+                    <div class="form-text mt-2">Accepted formats: JPG, JPEG, PNG, WEBP. Max size: 5MB.</div>
                 </div>
             </div>
 
@@ -49,52 +51,59 @@
             </div>
 
             <div class="upload-payment-actions">
-                <button type="submit" class="btn btn-primary btn-lg">Submit Payment</button>
+                <button type="submit" class="btn btn-primary btn-lg">Submit Payment Proof</button>
+                <a asp-action="RequestRefund" class="btn btn-outline-danger btn-lg">Request Refund</a>
                 <a asp-action="MyUploads" class="btn btn-outline-secondary btn-lg">Back to My Payments</a>
             </div>
         </form>
     </div>
 
     <div class="dashboard-panel payment-guide-panel">
-        <div class="form-section-title mb-1">Payment Guide</div>
-        <p class="page-subtitle mb-4">Follow these steps to make sure your payment submission is accepted smoothly.</p>
+        <div class="form-section-title mb-1">GCash Payment QR</div>
+        <p class="page-subtitle mb-4">Scan this QR code to send the fixed downpayment.</p>
 
-        <div class="payment-guide-list">
+        <div class="text-center mb-4">
+            <img src="@Model.GCashQrPath"
+                 alt="GCash QR Code"
+                 style="max-width: 320px; width: 100%; border-radius: 18px; border: 1px solid #e5e7eb;" />
+        </div>
+
+        <div class="payment-guide-note mt-4">
+            Required downpayment: <strong>₱@Model.FixedDownpaymentAmount.ToString("N2")</strong>
+        </div>
+
+        <div class="payment-guide-list mt-4">
             <div class="payment-guide-card">
                 <div class="payment-guide-icon">1</div>
                 <div>
-                    <strong>Select your booking</strong>
-                    <p>Choose the booking that is currently waiting for downpayment or payment verification.</p>
+                    <strong>Scan the GCash QR</strong>
+                    <p>Use GCash to send the fixed downpayment amount.</p>
                 </div>
             </div>
 
             <div class="payment-guide-card">
                 <div class="payment-guide-icon">2</div>
                 <div>
-                    <strong>Enter the exact amount paid</strong>
-                    <p>Make sure the amount matches what is required for your booking process.</p>
+                    <strong>Take a screenshot</strong>
+                    <p>Save a clear proof of payment after sending the money.</p>
                 </div>
             </div>
 
             <div class="payment-guide-card">
                 <div class="payment-guide-icon">3</div>
                 <div>
-                    <strong>Upload a clear proof image</strong>
-                    <p>Your receipt or screenshot should be readable, complete, and not cropped improperly.</p>
+                    <strong>Upload proof</strong>
+                    <p>Submit your screenshot and wait for admin verification.</p>
                 </div>
             </div>
 
             <div class="payment-guide-card">
                 <div class="payment-guide-icon">4</div>
                 <div>
-                    <strong>Wait for admin review</strong>
-                    <p>Admin will verify the submitted proof and update your payment and booking status accordingly.</p>
+                    <strong>Refund option</strong>
+                    <p>If you sent money but your slot was already taken, submit a refund request.</p>
                 </div>
             </div>
-        </div>
-
-        <div class="payment-guide-note mt-4">
-            The usual required downpayment for package bookings is <strong>₱2,000.00</strong>, unless a different amount is required by the workflow or booking setup.
         </div>
     </div>
 </div>

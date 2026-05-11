@@ -14,6 +14,9 @@ namespace AriesMagicAppointmentSystem.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
+        private const int MaxRemovedInclusions = 2;
+        private const decimal FixedInclusionDeduction = 2000m;
+        private const decimal FixedRequiredDownpayment = 2000m;
 
         public BookingsController(ApplicationDbContext context, UserManager<ApplicationUser> userManager)
         {
@@ -291,20 +294,41 @@ namespace AriesMagicAppointmentSystem.Controllers
             var removedIds = model.RemovedInclusionIds ?? new List<int>();
             var allInclusions = selectedPackage.Inclusions.ToList();
 
-            var totalDeduction = allInclusions
+            var validRemovedInclusions = allInclusions
                 .Where(i => removedIds.Contains(i.Id) && i.IsRemovable)
-                .Sum(i => i.DeductionAmount);
+                .ToList();
+
+            if (validRemovedInclusions.Count > MaxRemovedInclusions)
+            {
+                ModelState.AddModelError(
+                    "RemovedInclusionIds",
+                    $"You can only remove up to {MaxRemovedInclusions} package inclusions.");
+            }
+
+            var totalDeduction = validRemovedInclusions.Any()
+                ? FixedInclusionDeduction
+                : 0m;
+
+            var finalPrice = selectedPackage.Price - totalDeduction;
+
+            if (finalPrice < 0)
+            {
+                finalPrice = 0;
+            }
 
             model.PackageName = selectedPackage.Name;
             model.BasePrice = selectedPackage.Price;
-            model.FinalPrice = selectedPackage.Price - totalDeduction;
-            model.RequiredDownpayment = 2000;
+            model.FinalPrice = finalPrice;
+            model.RequiredDownpayment = FixedRequiredDownpayment;
 
             model.Inclusions = allInclusions.Select(i => new PackageInclusionSelectionViewModel
             {
                 Id = i.Id,
                 Name = i.Name,
-                DeductionAmount = i.DeductionAmount,
+
+                // Display fixed ₱2,000 deduction for removable inclusions.
+                DeductionAmount = i.IsRemovable ? FixedInclusionDeduction : 0,
+
                 IsRemovable = i.IsRemovable,
                 IsSelected = !removedIds.Contains(i.Id)
             }).ToList();
@@ -316,10 +340,12 @@ namespace AriesMagicAppointmentSystem.Controllers
             ModelState.Remove(nameof(model.BasePrice));
             ModelState.Remove(nameof(model.FinalPrice));
             ModelState.Remove(nameof(model.RequiredDownpayment));
+
             if (!model.AcceptTerms)
             {
                 ModelState.AddModelError("AcceptTerms", "You must agree to the Terms and Agreement before submitting your booking.");
             }
+
             if (!ModelState.IsValid)
             {
                 TempData["Error"] = string.Join(" | ",
@@ -328,7 +354,8 @@ namespace AriesMagicAppointmentSystem.Controllers
                         .Select(e => e.ErrorMessage));
 
                 return View("CreateStepTwo", model);
-            }            
+            }
+
             var appUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var appUser = await _userManager.GetUserAsync(User);
 
@@ -369,8 +396,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                 return View("CreateStepTwo", model);
             }
 
-            var removedInclusionNames = allInclusions
-                .Where(i => removedIds.Contains(i.Id))
+            var removedInclusionNames = validRemovedInclusions
                 .Select(i => i.Name)
                 .ToList();
 
@@ -398,8 +424,8 @@ namespace AriesMagicAppointmentSystem.Controllers
 
                 PackageName = selectedPackage.Name,
                 BasePrice = selectedPackage.Price,
-                FinalPrice = model.FinalPrice,
-                RequiredDownpayment = 2000,
+                FinalPrice = finalPrice,
+                RequiredDownpayment = FixedRequiredDownpayment,
                 RemovedInclusionsJson = JsonSerializer.Serialize(removedInclusionNames)
             };
 
@@ -410,8 +436,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             {
                 BookingId = booking.Id,
                 EventType = TimelineEventType.BookingCreated,
-                Notes = "Booking was created by client using the new 2-step booking flow.",
-                CreatedAt = DateTime.Now
+                Notes = $"Booking was created by client using the new 2-step booking flow. Removed inclusions: {removedInclusionNames.Count}. Fixed total deduction: ₱{totalDeduction:N2}.",                CreatedAt = DateTime.Now
             });
 
             var staffUsers = await _userManager.GetUsersInRoleAsync("Staff");

@@ -1,0 +1,126 @@
+@model IEnumerable<AriesMagicAppointmentSystem.Models.RefundRequest>
+
+@{
+    Layout = "_DashboardLayout";
+    ViewData["Title"] = "Refund Requests";
+    var requests = Model.ToList();
+}
+
+<div class="page-header">
+    <div>
+        <h1>Refund Requests</h1>
+        <p class="page-subtitle">Review and manage client refund requests.</p>
+    </div>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+
+<div class="dashboard-panel">
+    @if (!requests.Any())
+    {
+        <div class="empty-state">
+            <h3>No refund requests</h3>
+            <p>There are currently no refund requests submitted by clients.</p>
+        </div>
+    }
+    else
+    {
+        <div class="table-clean payment-verification-table-wrap">
+            <table class="table align-middle payment-verification-table">
+                <thead>
+                    <tr>
+                        <th>Client</th>
+                        <th>Booking</th>
+                        <th>Refund Amount</th>
+                        <th>GCash Details</th>
+                        <th>Proof</th>
+                        <th>Status</th>
+                        <th>Remarks</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in requests)
+                    {
+                        var statusClass = item.Status switch
+                        {
+                            "Pending" => "status-pending",
+                            "Approved" => "status-verified",
+                            "Refunded" => "status-verified",
+                            "Rejected" => "status-rejected",
+                            _ => "status-read"
+                        };
+
+                        <tr>
+                            <td>
+                                <div class="fw-semibold">@item.Booking?.Client?.FullName</div>
+                                <div class="text-muted small">@item.Booking?.Client?.Email</div>
+                            </td>
+
+                            <td>
+                                <div class="fw-semibold">
+                                    @(item.Booking?.PackageName ?? item.Booking?.Service?.Name ?? "Booking")
+                                </div>
+                                <div class="text-muted small">
+                                    @(item.Booking?.EventDate.ToString("MMM dd, yyyy") ?? "N/A")
+                                </div>
+                            </td>
+
+                            <td class="fw-semibold">₱@item.Amount.ToString("N2")</td>
+
+                            <td>
+                                <div>@item.GCashAccountName</div>
+                                <div class="text-muted small">@item.GCashNumber</div>
+                            </td>
+
+                            <td>
+                                <img src="@item.PaymentProofImagePath"
+                                     alt="Refund Proof"
+                                     class="payment-proof-thumb" />
+                            </td>
+
+                            <td>
+                                <span class="status-badge @statusClass">@item.Status</span>
+                            </td>
+
+                            <td>
+                                <form method="post" class="d-flex flex-column gap-2">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@item.Id" />
+                                    <textarea name="adminRemarks" class="form-control form-control-sm" rows="2" placeholder="Admin remarks">@item.AdminRemarks</textarea>
+
+                                    @if (item.Status == AriesMagicAppointmentSystem.Models.RefundStatus.Pending)
+                                    {
+                                        <button formaction="@Url.Action("ApproveRefund", "Payments")" class="btn btn-sm btn-success">
+                                            Approve
+                                        </button>
+
+                                        <button formaction="@Url.Action("RejectRefund", "Payments")" class="btn btn-sm btn-danger">
+                                            Reject
+                                        </button>
+                                    }
+
+                                    @if (item.Status == AriesMagicAppointmentSystem.Models.RefundStatus.Approved)
+                                    {
+                                        <button formaction="@Url.Action("MarkAsRefunded", "Payments")" class="btn btn-sm btn-primary">
+                                            Mark as Refunded
+                                        </button>
+                                    }
+                                </form>
+                            </td>
+
+                            <td class="text-end">
+                                <span class="text-muted small">
+                                    @item.RequestedAt.ToString("MMM dd, yyyy hh:mm tt")
+                                </span>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

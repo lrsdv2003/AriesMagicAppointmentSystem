@@ -1,0 +1,73 @@
+@model AriesMagicAppointmentSystem.ViewModels.RefundRequestViewModel
+
+@{
+    ViewData["Title"] = "Request Refund";
+}
+
+<div class="client-portal-header">
+    <div>
+        <div class="section-kicker">Client Portal</div>
+        <h1 class="client-portal-title">Request Refund</h1>
+        <p class="client-portal-text">
+            Use this form if you already sent the downpayment but your selected slot is no longer available.
+        </p>
+    </div>
+</div>
+
+<div class="dashboard-panel">
+    <form asp-action="RequestRefund" method="post" enctype="multipart/form-data">
+        @Html.AntiForgeryToken()
+
+        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+        <div class="row g-3">
+            <div class="col-12">
+                <label asp-for="BookingId" class="form-label">Select Booking</label>
+                <select asp-for="BookingId" asp-items="Model.Bookings" class="form-select">
+                    <option value="">-- Select Booking --</option>
+                </select>
+                <span asp-validation-for="BookingId" class="text-danger"></span>
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label">Refund Amount</label>
+                <input value="₱@Model.FixedRefundAmount.ToString("N2")" class="form-control" readonly />
+            </div>
+
+            <div class="col-md-6">
+                <label asp-for="GCashNumber" class="form-label"></label>
+                <input asp-for="GCashNumber" class="form-control" placeholder="Enter your GCash number" />
+                <span asp-validation-for="GCashNumber" class="text-danger"></span>
+            </div>
+
+            <div class="col-md-6">
+                <label asp-for="GCashAccountName" class="form-label"></label>
+                <input asp-for="GCashAccountName" class="form-control" placeholder="Enter your GCash account name" />
+                <span asp-validation-for="GCashAccountName" class="text-danger"></span>
+            </div>
+
+            <div class="col-md-6">
+                <label asp-for="PaymentProofImage" class="form-label"></label>
+                <input asp-for="PaymentProofImage" type="file" class="form-control" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" />
+                <span asp-validation-for="PaymentProofImage" class="text-danger"></span>
+                <div class="form-text">Upload proof that you already sent the downpayment.</div>
+            </div>
+
+            <div class="col-12">
+                <label asp-for="ClientReason" class="form-label"></label>
+                <textarea asp-for="ClientReason" class="form-control" rows="4" placeholder="Explain why you are requesting a refund"></textarea>
+                <span asp-validation-for="ClientReason" class="text-danger"></span>
+            </div>
+        </div>
+
+        <div class="upload-payment-actions mt-4">
+            <button type="submit" class="btn btn-danger btn-lg">Submit Refund Request</button>
+            <a asp-action="MyRefundRequests" class="btn btn-outline-secondary btn-lg">My Refund Requests</a>
+            <a asp-action="Upload" class="btn btn-outline-secondary btn-lg">Back to Payment Upload</a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

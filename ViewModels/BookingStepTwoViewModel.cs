@@ -43,6 +43,15 @@ namespace AriesMagicAppointmentSystem.ViewModels
         public int Id { get; set; }
         public string Name { get; set; } = string.Empty;
         public decimal Price { get; set; }
+        public List<string> RemovedInclusions { get; set; } = new();
+
+        public int MaxRemovedInclusions { get; set; } = 2;
+
+        public decimal InclusionDiscountAmount { get; set; } = 2000m;
+
+        public decimal OriginalPackagePrice { get; set; }
+
+        public decimal FinalPackagePrice { get; set; }
     }
 
     public class PackageInclusionSelectionViewModel

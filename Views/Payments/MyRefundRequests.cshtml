@@ -1,0 +1,102 @@
+@model IEnumerable<AriesMagicAppointmentSystem.Models.RefundRequest>
+
+@{
+    ViewData["Title"] = "My Refund Requests";
+    var requests = Model.ToList();
+}
+
+<div class="client-portal-header">
+    <div>
+        <div class="section-kicker">Client Portal</div>
+        <h1 class="client-portal-title">My Refund Requests</h1>
+        <p class="client-portal-text">Track the status of your submitted refund requests.</p>
+    </div>
+    <div>
+        <a asp-action="RequestRefund" class="btn btn-danger btn-lg">Request Refund</a>
+    </div>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="client-success-banner mb-4">
+        <div class="client-success-icon">✓</div>
+        <div>
+            <div class="client-success-title">Refund Update</div>
+            <div class="client-success-text">@TempData["Success"]</div>
+        </div>
+    </div>
+}
+
+@if (!requests.Any())
+{
+    <div class="empty-state client-empty-state">
+        <h3>No refund requests yet</h3>
+        <p>You have not submitted any refund request.</p>
+        <a asp-action="RequestRefund" class="btn btn-danger mt-2">Request Refund</a>
+    </div>
+}
+else
+{
+    <div class="client-booking-grid">
+        @foreach (var item in requests)
+        {
+            var statusClass = item.Status switch
+            {
+                "Pending" => "status-pending",
+                "Approved" => "status-verified",
+                "Refunded" => "status-verified",
+                "Rejected" => "status-rejected",
+                _ => "status-read"
+            };
+
+            <div class="client-booking-card">
+                <div class="client-booking-top">
+                    <div>
+                        <div class="client-booking-code">Refund Request</div>
+                        <h3 class="client-booking-package">
+                            @(item.Booking?.PackageName ?? item.Booking?.Service?.Name ?? "Booking")
+                        </h3>
+                        <div class="client-booking-created text-muted small">
+                            Requested on @item.RequestedAt.ToString("MMM dd, yyyy hh:mm tt")
+                        </div>
+                    </div>
+
+                    <span class="status-badge @statusClass">@item.Status</span>
+                </div>
+
+                <div class="client-booking-meta">
+                    <div class="client-booking-meta-box">
+                        <span class="client-booking-meta-label">Refund Amount</span>
+                        <span class="client-booking-meta-value">₱@item.Amount.ToString("N2")</span>
+                    </div>
+
+                    <div class="client-booking-meta-box">
+                        <span class="client-booking-meta-label">GCash Number</span>
+                        <span class="client-booking-meta-value">@item.GCashNumber</span>
+                    </div>
+                </div>
+
+                <div class="payment-proof-preview mt-2">
+                    <img src="@item.PaymentProofImagePath" alt="Payment Proof" class="payment-proof-image" />
+                </div>
+
+                <div class="client-booking-details">
+                    <div class="client-booking-detail-row">
+                        <span>GCash Account Name</span>
+                        <strong>@item.GCashAccountName</strong>
+                    </div>
+
+                    <div class="client-booking-detail-row">
+                        <span>Reason</span>
+                        <strong>@(item.ClientReason ?? "No reason provided")</strong>
+                    </div>
+
+                    <div class="client-booking-detail-row">
+                        <span>Admin Remarks</span>
+                        <strong>@(item.AdminRemarks ?? "No remarks yet")</strong>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}

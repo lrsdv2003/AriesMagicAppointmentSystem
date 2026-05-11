@@ -61,6 +61,11 @@
                                class="sidebar-link @(currentController == "Payments" && currentAction == "PendingVerification" ? "active" : "")">
                                 Verify Payments
                             </a>
+                            
+                            <a asp-controller="Payments" asp-action="RefundRequests"
+                            class="sidebar-link @(currentController == "Payments" && currentAction == "RefundRequests" ? "active" : "")">
+                                Refund Requests
+                            </a>
 
                             <a asp-controller="UserManagement" asp-action="Index"
                                class="sidebar-link @(currentController == "UserManagement" ? "active" : "")">
