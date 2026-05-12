@@ -14,9 +14,6 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
 
 <div class="page-header d-flex justify-content-between align-items-center">
-    <div>
-        <p class="page-subtitle mb-0">Monitor confirmed bookings, blocked dates, and custom capacity limits in one place.</p>
-    </div>
 
     @if (User.IsInRole("Admin"))
     {
@@ -49,22 +46,6 @@
     </div>
 </div>
 
-<div class="dashboard-panel mb-3">
-    <div class="availability-legend">
-        <div class="availability-legend-item">
-            <span class="calendar-day-badge blocked">Blocked</span>
-            <span>Blocked date</span>
-        </div>
-        <div class="availability-legend-item">
-            <span class="calendar-day-badge limit">Max: X</span>
-            <span>Custom daily limit</span>
-        </div>
-        <div class="availability-legend-item">
-            <span class="calendar-day-badge count">X event(s)</span>
-            <span>Scheduled events count</span>
-        </div>
-    </div>
-</div>
 
 <div class="dashboard-panel mb-4">
     <div id="calendar"></div>
@@ -74,7 +55,6 @@
     <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
         <div>
             <h3 class="mb-1">Confirmed Booking List</h3>
-            <p class="page-subtitle mb-0">Detailed list of confirmed reservations currently plotted on the calendar.</p>
         </div>
     </div>
 

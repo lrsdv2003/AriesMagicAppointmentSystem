@@ -386,19 +386,20 @@ namespace AriesMagicAppointmentSystem.Controllers
             TempData["Error"] = "Your payment proof was rejected. Please review the remarks and upload a new payment proof.";
             return RedirectToAction(nameof(MyUploads));
         }
+
         [Authorize(Roles = "Client")]
         public async Task<IActionResult> RequestRefund(int? bookingId)
         {
             var appUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            var viewModel = new RefundRequestViewModel
+            var model = new RefundRequestViewModel
             {
                 BookingId = bookingId ?? 0,
                 FixedRefundAmount = FixedDownpaymentAmount,
                 Bookings = await GetRefundableBookingsAsync(appUserId)
             };
 
-            return View(viewModel);
+            return View(model);
         }
 
         [HttpPost]
@@ -409,38 +410,39 @@ namespace AriesMagicAppointmentSystem.Controllers
             var appUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
             model.FixedRefundAmount = FixedDownpaymentAmount;
+            model.Bookings = await GetRefundableBookingsAsync(appUserId);
 
             if (!ModelState.IsValid)
             {
-                model.Bookings = await GetRefundableBookingsAsync(appUserId);
                 return View(model);
             }
 
             var booking = await _context.Bookings
                 .Include(b => b.Service)
-                .FirstOrDefaultAsync(b => b.Id == model.BookingId && b.ApplicationUserId == appUserId);
+                .FirstOrDefaultAsync(b =>
+                    b.Id == model.BookingId &&
+                    b.ApplicationUserId == appUserId);
 
             if (booking == null)
             {
                 ModelState.AddModelError("", "Selected booking was not found.");
-                model.Bookings = await GetRefundableBookingsAsync(appUserId);
                 return View(model);
             }
 
-            if (booking.Status == BookingStatus.Confirmed || booking.Status == BookingStatus.Completed)
+            if (booking.Status != BookingStatus.AwaitingVerification)
             {
-                ModelState.AddModelError("", "Refund request is not allowed for confirmed or completed bookings.");
-                model.Bookings = await GetRefundableBookingsAsync(appUserId);
+                ModelState.AddModelError("", "Refund request is only allowed for bookings that are awaiting payment verification.");
                 return View(model);
             }
 
-            var hasPendingRefund = await _context.RefundRequests
-                .AnyAsync(r => r.BookingId == booking.Id && r.Status == RefundStatus.Pending);
+            var existingActiveRefund = await _context.RefundRequests
+                .AnyAsync(r =>
+                    r.BookingId == booking.Id &&
+                    (r.Status == RefundStatus.Pending || r.Status == RefundStatus.Approved));
 
-            if (hasPendingRefund)
+            if (existingActiveRefund)
             {
-                ModelState.AddModelError("", "You already have a pending refund request for this booking.");
-                model.Bookings = await GetRefundableBookingsAsync(appUserId);
+                ModelState.AddModelError("", "You already have an active refund request for this booking.");
                 return View(model);
             }
 
@@ -448,12 +450,11 @@ namespace AriesMagicAppointmentSystem.Controllers
 
             if (!string.IsNullOrWhiteSpace(fileValidationError))
             {
-                ModelState.AddModelError("", fileValidationError);
-                model.Bookings = await GetRefundableBookingsAsync(appUserId);
+                ModelState.AddModelError("PaymentProofImage", fileValidationError);
                 return View(model);
             }
 
-            var extension = Path.GetExtension(model.PaymentProofImage.FileName).ToLowerInvariant();
+            var extension = Path.GetExtension(model.PaymentProofImage!.FileName).ToLowerInvariant();
 
             var uploadsFolder = Path.Combine(_environment.WebRootPath, "uploads", "refunds");
             Directory.CreateDirectory(uploadsFolder);
@@ -475,7 +476,9 @@ namespace AriesMagicAppointmentSystem.Controllers
                 GCashAccountName = model.GCashAccountName.Trim(),
                 GCashNumber = model.GCashNumber.Trim(),
                 PaymentProofImagePath = relativePath,
-                ClientReason = model.ClientReason,
+                ClientReason = string.IsNullOrWhiteSpace(model.ClientReason)
+                    ? "Client requested a refund for a sent downpayment."
+                    : model.ClientReason.Trim(),
                 Status = RefundStatus.Pending,
                 RequestedAt = DateTime.Now
             };
@@ -490,18 +493,22 @@ namespace AriesMagicAppointmentSystem.Controllers
                 CreatedAt = DateTime.Now
             });
 
-            await _context.SaveChangesAsync();
-
             var admins = await _userManager.GetUsersInRoleAsync("Admin");
 
             foreach (var admin in admins)
             {
-                await CreateNotificationAsync(
-                    admin.Id,
-                    "New Refund Request",
-                    "A client submitted a refund request for review.",
-                    "/Payments/RefundRequests");
+                _context.Notifications.Add(new Notification
+                {
+                    UserId = admin.Id,
+                    Title = "New Refund Request",
+                    Message = "A client submitted a refund request for review.",
+                    Link = "/Payments/RefundRequests",
+                    IsRead = false,
+                    CreatedAt = DateTime.Now
+                });
             }
+
+            await _context.SaveChangesAsync();
 
             TempData["Success"] = "Your refund request has been submitted. Please wait for admin review.";
             return RedirectToAction(nameof(MyRefundRequests));
@@ -686,18 +693,24 @@ namespace AriesMagicAppointmentSystem.Controllers
 
         private async Task<List<SelectListItem>> GetRefundableBookingsAsync(string? appUserId)
         {
+            if (string.IsNullOrWhiteSpace(appUserId))
+            {
+                return new List<SelectListItem>();
+            }
+
             return await _context.Bookings
                 .Include(b => b.Service)
-                .Where(b => b.ApplicationUserId == appUserId &&
-                            b.Status != BookingStatus.Confirmed &&
-                            b.Status != BookingStatus.Completed)
+                .Where(b =>
+                    b.ApplicationUserId == appUserId &&
+                    b.Status == BookingStatus.AwaitingVerification)
                 .OrderByDescending(b => b.CreatedAt)
                 .Select(b => new SelectListItem
                 {
                     Value = b.Id.ToString(),
                     Text = "BK-" + b.CreatedAt.Year + "-" + b.Id.ToString("D3") + " - " +
-                        b.Service!.Name + " - " +
-                        b.EventDate.ToString("MMM dd, yyyy")
+                        (b.PackageName ?? b.Service!.Name) + " - " +
+                        b.EventDate.ToString("MMM dd, yyyy") + " - " +
+                        b.Status
                 })
                 .ToListAsync();
         }

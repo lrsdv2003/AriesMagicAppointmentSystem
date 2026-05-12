@@ -56,6 +56,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             {
                 ModelState.AddModelError("RequestedDate", "Reschedule requests must be made at least 3 days in advance.");
             }
+
             var isBlocked = await _context.BlockedDates
                 .AnyAsync(x => x.Date.Date == model.RequestedDate.Date);
 
@@ -149,6 +150,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                     "A reschedule request is awaiting final approval.",
                     "/RescheduleRequests/Index");
             }
+
             TempData["Success"] = "Your reschedule request was submitted successfully. Please wait for admin review.";
             return RedirectToAction(nameof(MyRequests));
         }
@@ -185,7 +187,10 @@ namespace AriesMagicAppointmentSystem.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Approve(int? id)
         {
-            if (id == null) return NotFound();
+            if (id == null)
+            {
+                return NotFound();
+            }
 
             var request = await _context.RescheduleRequests
                 .Include(r => r.Booking)
@@ -194,7 +199,10 @@ namespace AriesMagicAppointmentSystem.Controllers
                     .ThenInclude(b => b!.Service)
                 .FirstOrDefaultAsync(r => r.Id == id);
 
-            if (request == null) return NotFound();
+            if (request == null)
+            {
+                return NotFound();
+            }
 
             return View(request);
         }
@@ -209,7 +217,10 @@ namespace AriesMagicAppointmentSystem.Controllers
                     .ThenInclude(b => b!.Service)
                 .FirstOrDefaultAsync(r => r.Id == id);
 
-            if (request == null || request.Booking == null) return NotFound();
+            if (request == null || request.Booking == null)
+            {
+                return NotFound();
+            }
 
             bool conflict = await HasBookingConflictExcludingCurrentBooking(
                 request.Booking.Id,
@@ -221,6 +232,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                 TempData["Error"] = "Requested schedule conflicts with an existing confirmed booking.";
                 return RedirectToAction(nameof(Index));
             }
+
             var isBlocked = await _context.BlockedDates
                 .AnyAsync(x => x.Date.Date == request.RequestedDate.Date);
 
@@ -261,7 +273,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                 .Include(b => b.Client)
                 .FirstOrDefaultAsync(b => b.Id == request.Booking.Id);
 
-            if (bookingWithClient != null && bookingWithClient.Client != null)
+            if (bookingWithClient?.Client != null && !string.IsNullOrWhiteSpace(bookingWithClient.Client.Email))
             {
                 await _emailService.SendEmailAsync(
                     bookingWithClient.Client.Email,
@@ -272,13 +284,17 @@ namespace AriesMagicAppointmentSystem.Controllers
                     <p>Please log in to view the updated booking details.</p>");
             }
 
+            TempData["Success"] = "Reschedule request approved successfully.";
             return RedirectToAction(nameof(Index));
         }
 
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Reject(int? id)
         {
-            if (id == null) return NotFound();
+            if (id == null)
+            {
+                return NotFound();
+            }
 
             var request = await _context.RescheduleRequests
                 .Include(r => r.Booking)
@@ -287,7 +303,10 @@ namespace AriesMagicAppointmentSystem.Controllers
                     .ThenInclude(b => b!.Service)
                 .FirstOrDefaultAsync(r => r.Id == id);
 
-            if (request == null) return NotFound();
+            if (request == null)
+            {
+                return NotFound();
+            }
 
             return View(request);
         }
@@ -301,7 +320,10 @@ namespace AriesMagicAppointmentSystem.Controllers
                 .Include(r => r.Booking)
                 .FirstOrDefaultAsync(r => r.Id == id);
 
-            if (request == null || request.Booking == null) return NotFound();
+            if (request == null || request.Booking == null)
+            {
+                return NotFound();
+            }
 
             request.Status = RescheduleRequestStatus.Rejected;
             request.ReviewedAt = DateTime.Now;
@@ -330,7 +352,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                 .Include(b => b.Client)
                 .FirstOrDefaultAsync(b => b.Id == request.Booking.Id);
 
-            if (bookingWithClient != null && bookingWithClient.Client != null)
+            if (bookingWithClient?.Client != null && !string.IsNullOrWhiteSpace(bookingWithClient.Client.Email))
             {
                 await _emailService.SendEmailAsync(
                     bookingWithClient.Client.Email,
@@ -340,27 +362,40 @@ namespace AriesMagicAppointmentSystem.Controllers
                     <p>Your reschedule request was not approved.</p>
                     <p>Remarks: {adminRemarks}</p>");
             }
-            TempData["Error"] = "Your reschedule request was rejected. Please review the admin remarks and submit a new request if needed.";
-            return RedirectToAction(nameof(MyRequests));
+
+            TempData["Error"] = "Reschedule request rejected.";
+            return RedirectToAction(nameof(Index));
         }
 
         private async Task<List<SelectListItem>> GetEligibleClientBookingsAsync(string? appUserId)
         {
-            return await _context.Bookings
+            if (string.IsNullOrWhiteSpace(appUserId))
+            {
+                return new List<SelectListItem>();
+            }
+
+            var bookings = await _context.Bookings
                 .Include(b => b.Service)
-                .Where(b => b.ApplicationUserId == appUserId
-                         && (b.Status == BookingStatus.Confirmed
-                             || b.Status == BookingStatus.AwaitingDownpayment
-                             || b.Status == BookingStatus.AwaitingVerification))
-                .Select(b => new SelectListItem
-                {
-                    Value = b.Id.ToString(),
-                    Text = b.Service!.Name + " - " + b.EventDate.ToString("MMM dd, yyyy")
-                })
+                .Include(b => b.RescheduleRequests)
+                .Where(b =>
+                    b.ApplicationUserId == appUserId &&
+                    b.Status == BookingStatus.Confirmed &&
+                    !b.RescheduleRequests.Any(r => r.Status == RescheduleRequestStatus.Pending))
+                .OrderByDescending(b => b.EventDate)
+                .ThenBy(b => b.StartTime)
                 .ToListAsync();
+
+            return bookings.Select(b => new SelectListItem
+            {
+                Value = b.Id.ToString(),
+                Text = $"Booking #{b.Id} - {b.Service!.Name} - {b.EventDate:MMM dd, yyyy} ({b.StartTime:hh:mm tt})"
+            }).ToList();
         }
 
-        private async Task<bool> HasBookingConflictExcludingCurrentBooking(int currentBookingId, DateTime requestedStart, DateTime requestedEnd)
+        private async Task<bool> HasBookingConflictExcludingCurrentBooking(
+            int currentBookingId,
+            DateTime requestedStart,
+            DateTime requestedEnd)
         {
             var confirmedBookings = await _context.Bookings
                 .Where(b => b.Status == BookingStatus.Confirmed && b.Id != currentBookingId)
@@ -382,7 +417,11 @@ namespace AriesMagicAppointmentSystem.Controllers
             return false;
         }
 
-        private async Task CreateNotificationAsync(string userId, string title, string message, string? link = null)
+        private async Task CreateNotificationAsync(
+            string userId,
+            string title,
+            string message,
+            string? link = null)
         {
             _context.Notifications.Add(new Notification
             {
@@ -422,7 +461,10 @@ namespace AriesMagicAppointmentSystem.Controllers
             var fullDates = confirmedCounts
                 .Where(x =>
                 {
-                    var limit = customLimits.ContainsKey(x.Date) ? customLimits[x.Date] : defaultMax;
+                    var limit = customLimits.ContainsKey(x.Date)
+                        ? customLimits[x.Date]
+                        : defaultMax;
+
                     return x.Count >= limit;
                 })
                 .Select(x => x.Date)
@@ -433,6 +475,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                 .Select(d => d.ToString("yyyy-MM-dd"))
                 .ToList();
         }
+
         private async Task<bool> HasReachedDailyConfirmedLimitForReschedule(DateTime eventDate)
         {
             var customLimit = await _context.DateBookingLimits
@@ -444,8 +487,9 @@ namespace AriesMagicAppointmentSystem.Controllers
             var maxPerDay = customLimit ?? defaultSetting?.MaxBookingsPerDay ?? 3;
 
             var confirmedCount = await _context.Bookings
-                .CountAsync(b => b.Status == BookingStatus.Confirmed
-                            && b.EventDate.Date == eventDate.Date);
+                .CountAsync(b =>
+                    b.Status == BookingStatus.Confirmed &&
+                    b.EventDate.Date == eventDate.Date);
 
             return confirmedCount >= maxPerDay;
         }
@@ -469,7 +513,9 @@ namespace AriesMagicAppointmentSystem.Controllers
             var maxPerDay = customLimit ?? settings?.MaxBookingsPerDay ?? 3;
 
             var confirmedCount = await _context.Bookings
-                .CountAsync(b => b.Status == BookingStatus.Confirmed && b.EventDate.Date == date.Date);
+                .CountAsync(b =>
+                    b.Status == BookingStatus.Confirmed &&
+                    b.EventDate.Date == date.Date);
 
             var remainingSlots = Math.Max(0, maxPerDay - confirmedCount);
 
@@ -483,14 +529,16 @@ namespace AriesMagicAppointmentSystem.Controllers
                 isFull = confirmedCount >= maxPerDay
             });
         }
+
         [Authorize(Roles = "Client")]
         [HttpGet]
         public async Task<IActionResult> GetUnavailableTimeRanges(DateTime date, int? excludeBookingId = null)
         {
             var confirmedBookings = await _context.Bookings
-                .Where(b => b.Status == BookingStatus.Confirmed
-                        && b.EventDate.Date == date.Date
-                        && (!excludeBookingId.HasValue || b.Id != excludeBookingId.Value))
+                .Where(b =>
+                    b.Status == BookingStatus.Confirmed &&
+                    b.EventDate.Date == date.Date &&
+                    (!excludeBookingId.HasValue || b.Id != excludeBookingId.Value))
                 .OrderBy(b => b.StartTime)
                 .ToListAsync();
 
