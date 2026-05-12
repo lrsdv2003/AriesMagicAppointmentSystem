@@ -12,7 +12,7 @@ namespace AriesMagicAppointmentSystem.ViewModels
 
         public decimal FixedDownpaymentAmount { get; set; } = 2000;
 
-        public string GCashQrPath { get; set; } = "wwwroot/images/payments/gcash-qr.jpeg";
+        public string GCashQrPath { get; set; } = "/images/gcash-qr.jpeg";
 
         [Required]
         [Display(Name = "Proof Image")]

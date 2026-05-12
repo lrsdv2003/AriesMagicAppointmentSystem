@@ -18,6 +18,19 @@ namespace AriesMagicAppointmentSystem.Controllers
         private readonly IEmailService _emailService;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly ContractPdfService _contractPdfService;
+        private const decimal FixedDownpaymentAmount = 2000m;
+
+        private const long MaxProofImageSize = 5 * 1024 * 1024; // 5MB
+
+        private static readonly string[] AllowedExtensions =
+        {
+            ".jpg", ".jpeg", ".png"
+        };
+        private static readonly string[] AllowedContentTypes =
+        {
+            "image/jpeg",
+            "image/png"
+        };
 
         public PaymentsController(
             ApplicationDbContext context,
@@ -41,7 +54,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             var viewModel = new PaymentUploadViewModel
             {
                 FixedDownpaymentAmount = FixedDownpaymentAmount,
-                GCashQrPath = "wwwroot/images/payments/gcash-qr.jpeg",
+                GCashQrPath = "/images/gcash-qr.jpeg",
                 Bookings = await GetAwaitingDownpaymentBookingsAsync(appUserId)
             };
 
@@ -56,7 +69,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             var appUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
             model.FixedDownpaymentAmount = FixedDownpaymentAmount;
-            model.GCashQrPath = "wwwroot/images/payments/gcash-qr.jpeg";
+            model.GCashQrPath = "/images/gcash-qr.jpeg";
 
             if (!ModelState.IsValid)
             {
