@@ -1,0 +1,29 @@
+@{
+    // ViewData["WizardPhysicalStep"]: 1 = CreateStepOne page, 2 = CreateStepTwo page
+    // ViewData["WizardSubStep"]: which of the 2 internal panels is active by default on load
+    var physicalStep = ViewData["WizardPhysicalStep"] as int? ?? 1;
+    var subStep = ViewData["WizardSubStep"] as int? ?? 1;
+    var overallActive = physicalStep == 1 ? subStep : subStep + 2;
+
+    var nodeLabels = new[] { "Event Details", "Schedule & Contact", "Package & Customize", "Review & Confirm" };
+}
+
+<div class="am-wizard-tracker" id="ariesWizardTracker" data-active="@overallActive">
+    @for (int i = 1; i <= 4; i++)
+    {
+        var state = i < overallActive ? "is-done" : (i == overallActive ? "is-active" : "is-upcoming");
+        <div class="am-wizard-node @state" data-node="@i">
+            <span class="am-wizard-node-dot">
+                @if (i < overallActive)
+                {
+                    <i class="bi bi-check-lg"></i>
+                }
+                else
+                {
+                    @i
+                }
+            </span>
+            <span class="am-wizard-node-label">@nodeLabels[i - 1]</span>
+        </div>
+    }
+</div>

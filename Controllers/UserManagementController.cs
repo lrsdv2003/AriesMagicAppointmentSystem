@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace AriesMagicAppointmentSystem.Controllers
 {
-    [Authorize(Roles = "Admin,Owner")]
+    [Authorize(Roles = "Admin")]
     public class UserManagementController : Controller
     {
         private readonly UserManager<ApplicationUser> _userManager;

@@ -5,141 +5,155 @@
     var eventTypes = ViewBag.EventTypes as List<string> ?? new List<string>();
     var unavailableDates = ViewBag.UnavailableDates as List<string> ?? new List<string>();
     var unavailableDatesJson = System.Text.Json.JsonSerializer.Serialize(unavailableDates);
+
+    ViewData["WizardPhysicalStep"] = 1;
+    ViewData["WizardSubStep"] = 1;
 }
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
 
-<div class="booking-steps mb-4">
-    <div class="booking-step active">1. Event Details</div>
-    <div class="booking-step">2. Package Selection</div>
-</div>
+<partial name="_BookingWizardTracker" />
 
 <div class="page-header">
     <div>
         <h1>Create Booking</h1>
-        <p class="page-subtitle">Step 1 of 2 — Enter your event details before selecting a package.</p>
-    </div>
-</div>
-
-<div class="dashboard-panel mb-4">
-    <div class="form-section-title mb-2">Availability Guide</div>
-    <p class="availability-help mb-3">
-        Some dates may be unavailable because they are already full or blocked by the admin.
-        All packages last <strong>3 hours</strong> and include a required <strong>1-hour buffer</strong> after the event.
-    </p>
-
-    <div class="availability-legend">
-        <div class="availability-legend-item">
-            <span class="availability-dot available"></span>
-            <span>Available date</span>
-        </div>
-        <div class="availability-legend-item">
-            <span class="availability-dot unavailable"></span>
-            <span>Unavailable date</span>
-        </div>
+        <p class="page-subtitle">Tell us about your event, then choose a schedule and package.</p>
     </div>
 </div>
 
 <div class="dashboard-panel">
-    <form asp-action="CreateStepOne" method="post">
+    <form asp-action="CreateStepOne" method="post" id="stepOneForm">
         @Html.AntiForgeryToken()
 
         <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
 
-        <div id="dateAvailabilityAlert" class="alert alert-warning d-none mb-3">
-            This selected date is unavailable for booking because it is either blocked or already at full capacity.
+        <!-- PANEL A: EVENT DETAILS -->
+        <div class="am-panel" id="panelEventDetails" data-panel-index="1">
+            <div class="form-section-title mb-3">Event Details</div>
+
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label asp-for="EventType" class="form-label"></label>
+                    <select asp-for="EventType" class="form-select" id="EventType" required>
+                        <option value="">-- Select Event Type --</option>
+                        @foreach (var eventType in eventTypes)
+                        {
+                            <option value="@eventType">@eventType</option>
+                        }
+                    </select>
+                    <span asp-validation-for="EventType" class="text-danger"></span>
+                </div>
+
+                <div class="col-md-6">
+                    <label asp-for="Motif" class="form-label"></label>
+                    <input asp-for="Motif" class="form-control" placeholder="Enter event motif" required />
+                    <span asp-validation-for="Motif" class="text-danger"></span>
+                </div>
+
+                <div class="col-md-6" id="partyThemeField">
+                    <label asp-for="PartyTheme" class="form-label"></label>
+                    <input asp-for="PartyTheme" class="form-control" placeholder="Enter party theme" />
+                    <span asp-validation-for="PartyTheme" class="text-danger"></span>
+                </div>
+
+                <div class="col-md-6">
+                    <label asp-for="PartyVenue" class="form-label"></label>
+                    <input asp-for="PartyVenue" class="form-control" placeholder="Enter party venue" required />
+                    <span asp-validation-for="PartyVenue" class="text-danger"></span>
+                </div>
+
+                <div class="col-md-6" id="celebrantNameField">
+                    <label asp-for="CelebrantName" class="form-label"></label>
+                    <input asp-for="CelebrantName" class="form-control" placeholder="Enter celebrant name" />
+                    <span asp-validation-for="CelebrantName" class="text-danger"></span>
+                </div>
+
+                <div class="col-md-3" id="ageField">
+                    <label asp-for="Age" class="form-label"></label>
+                    <input asp-for="Age" class="form-control" placeholder="Age" />
+                    <span asp-validation-for="Age" class="text-danger"></span>
+                </div>
+
+                <div class="col-md-3">
+                    <label asp-for="PaxCount" class="form-label"></label>
+                    <input asp-for="PaxCount" class="form-control" placeholder="Number of guests" required />
+                    <span asp-validation-for="PaxCount" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="am-panel-nav">
+                <span></span>
+                <button type="button" class="btn btn-primary" id="goToScheduleBtn">Continue to Schedule</button>
+            </div>
         </div>
 
-        <div id="dateSlotsInfo" class="alert alert-info d-none mb-3"></div>
-
-        <div id="timeConflictAlert" class="alert alert-danger d-none mb-3">
-            The selected start time conflicts with an existing booking schedule.
-        </div>
-
-        <div id="unavailableTimeRangesBox" class="dashboard-panel mt-3 d-none">
-            <div class="time-range-box-title">Unavailable Time Ranges</div>
-            <p class="availability-help mb-2">
-                These time ranges are unavailable because of confirmed bookings and the required 1-hour buffer.
+        <!-- PANEL B: SCHEDULE & CONTACT -->
+        <div class="am-panel" id="panelSchedule" data-panel-index="2" hidden>
+            <div class="form-section-title mb-2">Availability Guide</div>
+            <p class="availability-help mb-3">
+                Some dates may be unavailable because they are already full or blocked by the admin.
+                All packages last <strong>3 hours</strong> and include a required <strong>1-hour buffer</strong> after the event.
             </p>
-            <div id="unavailableTimeRangesList" class="time-range-chip-list"></div>
-        </div>
 
-        <div class="row g-3 mt-1">
-            <div class="col-md-6">
-                <label asp-for="EventType" class="form-label"></label>
-                <select asp-for="EventType" class="form-select" id="EventType">
-                    <option value="">-- Select Event Type --</option>
-                    @foreach (var eventType in eventTypes)
-                    {
-                        <option value="@eventType">@eventType</option>
-                    }
-                </select>
-                <span asp-validation-for="EventType" class="text-danger"></span>
+            <div class="availability-legend mb-4">
+                <div class="availability-legend-item">
+                    <span class="availability-dot available"></span>
+                    <span>Available date</span>
+                </div>
+                <div class="availability-legend-item">
+                    <span class="availability-dot unavailable"></span>
+                    <span>Unavailable date</span>
+                </div>
             </div>
 
-            <div class="col-md-6">
-                <label asp-for="Motif" class="form-label"></label>
-                <input asp-for="Motif" class="form-control" placeholder="Enter event motif" />
-                <span asp-validation-for="Motif" class="text-danger"></span>
+            <div id="dateAvailabilityAlert" class="alert alert-warning d-none mb-3">
+                This selected date is unavailable for booking because it is either blocked or already at full capacity.
             </div>
 
-            <div class="col-md-6">
-                <label asp-for="EventDate" class="form-label"></label>
-                <input asp-for="EventDate" type="text" class="form-control" id="eventDateInput" autocomplete="off" />
-                <span asp-validation-for="EventDate" class="text-danger"></span>
+            <div id="dateSlotsInfo" class="alert alert-info d-none mb-3"></div>
+
+            <div id="timeConflictAlert" class="alert alert-danger d-none mb-3">
+                The selected start time conflicts with an existing booking schedule.
             </div>
 
-            <div class="col-md-6">
-                <label asp-for="StartTime" class="form-label"></label>
-                <input asp-for="StartTime" type="time" class="form-control" id="startTimeInput" />
-                <span asp-validation-for="StartTime" class="text-danger"></span>
+            <div id="unavailableTimeRangesBox" class="dashboard-panel mt-3 d-none">
+                <div class="time-range-box-title">Unavailable Time Ranges</div>
+                <p class="availability-help mb-2">
+                    These time ranges are unavailable because of confirmed bookings and the required 1-hour buffer.
+                </p>
+                <div id="unavailableTimeRangesList" class="time-range-chip-list"></div>
             </div>
 
-            <div class="col-md-6" id="partyThemeField">
-                <label asp-for="PartyTheme" class="form-label"></label>
-                <input asp-for="PartyTheme" class="form-control" placeholder="Enter party theme" />
-                <span asp-validation-for="PartyTheme" class="text-danger"></span>
+            <div class="row g-3 mt-1">
+                <div class="col-md-6">
+                    <label asp-for="EventDate" class="form-label"></label>
+                    <input asp-for="EventDate" type="text" class="form-control" id="eventDateInput" autocomplete="off" required />
+                    <span asp-validation-for="EventDate" class="text-danger"></span>
+                </div>
+
+                <div class="col-md-6">
+                    <label asp-for="StartTime" class="form-label"></label>
+                    <input asp-for="StartTime" type="time" class="form-control" id="startTimeInput" required />
+                    <span asp-validation-for="StartTime" class="text-danger"></span>
+                </div>
+
+                <div class="col-md-6">
+                    <label asp-for="ContactPerson" class="form-label"></label>
+                    <input asp-for="ContactPerson" class="form-control" placeholder="Enter contact person" required />
+                    <span asp-validation-for="ContactPerson" class="text-danger"></span>
+                </div>
+
+                <div class="col-md-6">
+                    <label asp-for="ContactNumber" class="form-label"></label>
+                    <input asp-for="ContactNumber" class="form-control" placeholder="Enter contact number" required />
+                    <span asp-validation-for="ContactNumber" class="text-danger"></span>
+                </div>
             </div>
 
-            <div class="col-md-6">
-                <label asp-for="PartyVenue" class="form-label"></label>
-                <input asp-for="PartyVenue" class="form-control" placeholder="Enter party venue" />
-                <span asp-validation-for="PartyVenue" class="text-danger"></span>
+            <div class="am-panel-nav">
+                <button type="button" class="btn btn-outline-secondary" id="backToEventDetailsBtn">Back</button>
+                <button type="submit" class="btn btn-primary" id="nextStepBtn">Next Step</button>
             </div>
-
-            <div class="col-md-6" id="celebrantNameField">
-                <label asp-for="CelebrantName" class="form-label"></label>
-                <input asp-for="CelebrantName" class="form-control" placeholder="Enter celebrant name" />
-                <span asp-validation-for="CelebrantName" class="text-danger"></span>
-            </div>
-
-            <div class="col-md-3" id="ageField">
-                <label asp-for="Age" class="form-label"></label>
-                <input asp-for="Age" class="form-control" placeholder="Age" />
-                <span asp-validation-for="Age" class="text-danger"></span>
-            </div>
-
-            <div class="col-md-3">
-                <label asp-for="PaxCount" class="form-label"></label>
-                <input asp-for="PaxCount" class="form-control" placeholder="Number of guests" />
-                <span asp-validation-for="PaxCount" class="text-danger"></span>
-            </div>
-
-            <div class="col-md-6">
-                <label asp-for="ContactPerson" class="form-label"></label>
-                <input asp-for="ContactPerson" class="form-control" placeholder="Enter contact person" />
-                <span asp-validation-for="ContactPerson" class="text-danger"></span>
-            </div>
-
-            <div class="col-md-6">
-                <label asp-for="ContactNumber" class="form-label"></label>
-                <input asp-for="ContactNumber" class="form-control" placeholder="Enter contact number" />
-                <span asp-validation-for="ContactNumber" class="text-danger"></span>
-            </div>
-        </div>
-
-        <div class="d-flex justify-content-end mt-4">
-            <button type="submit" class="btn btn-primary" id="nextStepBtn">Next Step</button>
         </div>
     </form>
 </div>
@@ -359,6 +373,57 @@
             startTimeInput.addEventListener("change", checkTimeConflict);
 
             updateEventSpecificFields();
+
+            // ---- internal 2-panel mini-wizard for this physical step ----
+            const panelEventDetails = document.getElementById("panelEventDetails");
+            const panelSchedule = document.getElementById("panelSchedule");
+            const goToScheduleBtn = document.getElementById("goToScheduleBtn");
+            const backToEventDetailsBtn = document.getElementById("backToEventDetailsBtn");
+            const tracker = document.getElementById("ariesWizardTracker");
+
+            function setTrackerActive(nodeIndex) {
+                if (!tracker) return;
+                tracker.querySelectorAll(".am-wizard-node").forEach(function (node) {
+                    const idx = parseInt(node.getAttribute("data-node"), 10);
+                    node.classList.remove("is-active", "is-done", "is-upcoming");
+                    if (idx < nodeIndex) node.classList.add("is-done");
+                    else if (idx === nodeIndex) node.classList.add("is-active");
+                    else node.classList.add("is-upcoming");
+
+                    const dot = node.querySelector(".am-wizard-node-dot");
+                    if (dot) dot.innerHTML = idx < nodeIndex ? '<i class="bi bi-check-lg"></i>' : idx;
+                });
+            }
+
+            function panelFieldsValid(panel) {
+                const fields = panel.querySelectorAll("input:not([disabled]), select:not([disabled]), textarea:not([disabled])");
+                for (const field of fields) {
+                    if (!field.checkValidity()) {
+                        field.reportValidity();
+                        return false;
+                    }
+                }
+                return true;
+            }
+
+            if (goToScheduleBtn) {
+                goToScheduleBtn.addEventListener("click", function () {
+                    if (!panelFieldsValid(panelEventDetails)) return;
+                    panelEventDetails.hidden = true;
+                    panelSchedule.hidden = false;
+                    setTrackerActive(2);
+                    panelSchedule.scrollIntoView({ behavior: "smooth", block: "start" });
+                });
+            }
+
+            if (backToEventDetailsBtn) {
+                backToEventDetailsBtn.addEventListener("click", function () {
+                    panelSchedule.hidden = true;
+                    panelEventDetails.hidden = false;
+                    setTrackerActive(1);
+                    panelEventDetails.scrollIntoView({ behavior: "smooth", block: "start" });
+                });
+            }
         });
     </script>
 }

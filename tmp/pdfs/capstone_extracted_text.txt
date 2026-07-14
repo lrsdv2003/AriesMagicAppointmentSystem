@@ -1,0 +1,2778 @@
+
+
+===== PAGE 1 =====
+Online Booking and Scheduling Management System for Professional Event Entertainers
+Service
+A Capstone Project Proposal Presented to the Faculty of the Information and
+Communications Technology Program STI College Ortigas
+In Partial Fulfilment of the Requirements for the Degree Bachelor of Science Information
+Technology
+Benedicto, Gabriel Nicole C.
+Lerios, Ej Ridge L.
+Soguilon, John Michael P.
+Tuprio, Daniel B.
+May 13, 2026
+Sti College Ortigas-Cainta
+
+===== PAGE 2 =====
+ENDORSEMENT FORM FOR PROPOSAL DEFENSE
+TITLE OF RESEARCH: Online Booking and Scheduling Management System for
+Professional Event Entertainers Service
+NAME OF PROPONENTS: Gabriel Nicole C. Benedicto
+EJ Ridge L. Lerios
+John Michael P. Soguilon
+Daniel B. Tuprio
+In Partial Fulfilment of the Requirements
+for the degree Bachelor of Science in Information Technology
+has been examined and is recommended for Proposal Defense.
+ENDORSED BY:
+Mr. Richard A. Santos
+Capstone Project Adviser
+APPROVED FOR PROPOSAL DEFENSE:
+Mr. Ron Allan N. Salem MIT, HENA
+Capstone Project Coordinator
+NOTED BY:
+Mr. Richard A. Santos
+Program Head
+II
+
+===== PAGE 3 =====
+APPROVAL SHEET
+This capstone project titled Online Booking and Scheduling Management System for
+Professional Event Entertainers Service prepared and submitted by Gabriel Nicole C.
+Benedicto, EJ Ridge L. Lerios, John Michael P. Soguilon, and Daniel B. Tuprio in partial
+fulfillment of the requirements for the degree of Bachelor of Science in Information Technology,
+has been examined and is recommended for acceptance and approval.
+Mr. Richard A. Santos
+Capstone Project Adviser
+Accepted and approved by the Capstone Project Review Panel
+in partial fulfillment of the requirements for the degree of
+Bachelor of Science in Information Technology
+Mr. Sulapas, Christian Mr. San Juan, Blonala Faiz
+Panel Member Panel Member
+Mr. Salem, Ron Allan
+Lead Panelist
+Noted:
+Mr. Ron Allan N. Salem Mr. Richard A. Santos
+Capstone Project Coordinator Program Head
+May 13, 2
+III
+
+===== PAGE 4 =====
+TABLE OF CONTENTS
+Title Page I
+Endorsement Form for Oral Defense II
+Approval Sheet III
+Table of Contents IV
+INTRODUCTION 1
+Project Context 1
+Purpose and Description 2
+Objectives 3
+Scope and Limitations 6
+Scope 6
+Review of Related Literature/Studies/Systems 12
+METHODOLOGY 21
+Technical Background 22
+RESOURCES 27
+SOFTWARE RESOURCES 28
+Requirements Analysis 30
+Requirements Documentation 32
+Design of Software, System, Product, and/or Processes 33
+REFERENCES 40
+APPENDICES 43
+APPENDIX A. RESOURCE PERSONS 43
+IV
+
+===== PAGE 5 =====
+INTRODUCTION
+Project Context
+In the Philippines, event-based services such as magic shows, puppet shows, bubble shows, and
+party hosting are often managed through manual methods, including phone calls, social media
+messages, handwritten schedules, and personal messaging applications. While these practices are
+commonly used, they often result in operational issues such as double booking, schedule conflicts,
+delayed confirmations, missed appointments, inaccurate event details, and poor record
+management. These problems become more significant as the number of clients and bookings
+increases, particularly during peak seasons such as holidays, school activities, fiestas, and
+corporate events.
+These challenges are evident in the case of Aries the Magic Artist, a professional event entertainer
+who offers services such as hosting, magic performances, illusions, bubble shows, and puppet
+shows for various occasions. Based on the face-to-face interview conducted by the proponents, it
+was found that the business still relies on a manual booking and scheduling process. As a result,
+managing appointment details, confirming bookings, and organizing client records becomes
+difficult and time-consuming. This manual approach increases the risk of scheduling conflicts,
+delayed responses, and inefficient handling of booking information, which may affect both
+business operations and client satisfaction.
+For independent performers and small-scale event service providers, the absence of a centralized
+and computerized system makes it difficult to efficiently manage client information, service
+packages, schedules, and booking records. Manual processes are more vulnerable to human error
+and often lack the accuracy, accessibility, and organization needed for daily operations. In service-
+oriented businesses, these limitations may reduce work efficiency and negatively affect the quality
+and reliability of service provided to clients.
+STI College Ortigas-Cainta 1
+
+===== PAGE 6 =====
+In response to these concerns, there is a clear need for a computerized booking and scheduling
+management system that can provide a more organized, accurate, and efficient way of handling
+event service operations. These conditions highlight the need for a reliable booking and scheduling
+management system that can help professional entertainers and event service providers manage
+appointments, prevent double bookings, maintain organized records, and improve overall service
+efficiency.
+Purpose and Description
+The purpose of this project is to design and develop an organized online booking and scheduling
+management system for professional event entertainers that automates key processes such as client
+booking, service selection, scheduling, payment handling, and event management. The system
+serves as a centralized digital platform where clients can submit booking requests, select event
+details, choose service packages, upload proof of downpayment, request rescheduling, and monitor
+the status of their transactions.
+The system also provides separate role-based modules for the Owner, Admin, and Staff. The
+Owner is responsible for final business-related decisions such as payment verification, refund
+verification, calendar control, reschedule approval, and reports. The admin manages system
+operations such as booking records, service packages, user accounts, calendar settings, and system
+monitoring. The Staff supports daily operations by monitoring bookings, schedules, reschedule
+requests, completed events, and service-related tasks.
+This purpose is aligned with the first objective of the study, which focuses on designing an online
+booking module that allows clients to select services, event details, date, time, location, and
+packages through a digital platform. To support this objective, the system provides a structured
+booking process that includes account registration, secure login, booking request submission,
+package selection, payment submission, booking status monitoring, notifications, and reschedule
+request functionality. By integrating these features into one centralized platform, the system
+STI College Ortigas-Cainta 2
+
+===== PAGE 7 =====
+improves accessibility, organization, and efficiency compared to traditional manual booking
+methods.
+The project is also connected to the second objective, which focuses on designing a reporting and
+analytics module that generates and displays overall sales and booking data, including daily,
+weekly, monthly, and yearly sales reports, while supporting the identification of package trends.
+Since all booking requests, payment submissions, package selections, and transaction records are
+processed and stored within the system, the reports module can provide organized data for
+monitoring, review, and decision-making. Through this module, the Owner can monitor income,
+booking performance, frequently selected packages, and business activity summaries.
+In addition, the project supports the third objective, which aims to develop an organized system
+that helps avoid double booking and improves the efficiency of reservation management for
+clients, owners, administrators, and staff. To support this objective, the system includes scheduling
+validation, calendar management, booking monitoring, and role-based access control. Once a
+booking request is approved and the payment is verified, the selected schedule can be marked as
+confirmed, helping reduce overlapping reservations and scheduling conflicts.
+Overall, the integration of centralized booking management, payment verification, refund
+handling, scheduling validation, reporting and analytics, notifications, and role-based system
+organization supports a more structured, efficient, and reliable reservation management process
+for professional event entertainers and their clients.
+Objectives
+GENERAL OBJECTIVE
+STI College Ortigas-Cainta 3
+
+===== PAGE 8 =====
+To design and develop an online booking and scheduling management system for professional
+entertainer services that automates client booking, service selection, scheduling, payment handling,
+refund processing, and event management to improve the efficiency, accuracy, organization, and service
+quality of the business.
+SPECIFIC OBJECTIVES
+The project specifically aims to:
+• To design an online booking module that allows clients to select services, event details,
+date, time, location, and packages through a digital platform.
+The proponents addressed this objective by developing a structured booking
+module that digitizes the reservation process and ensures that booking transactions
+are organized, accessible, and efficient. Through account registration and secure
+login, clients can access a dedicated interface where they can submit formal
+booking requests. This module allows clients to select a service package and
+provide important event details such as event date, event time, event type, venue,
+contact information, and other necessary booking details.
+To support the complete booking process, the system includes features for booking
+status monitoring, payment proof submission, notifications, and reschedule request
+submission. Once the client submits a booking request, the admin reviews the
+booking information before the client proceeds to payment submission. By
+centralizing these booking-related functions, the system reduces the inconsistencies
+of manual booking and provides a more organized booking experience for clients
+and the business.
+• To design a reporting and analytics module that generates and displays overall sales
+and booking data, including daily, weekly, monthly, and yearly sales reports, while
+identifying package trends.
+STI College Ortigas-Cainta 4
+
+===== PAGE 9 =====
+The proponents addressed this objective by designing a dedicated reports module
+that centralizes booking, payment, and transaction records for business monitoring
+and review. Since all booking requests, confirmed reservations, payment
+submissions, and package selections are processed and stored within the system,
+these records can serve as the basis for generating sales and booking reports.
+The reports module allows the Owner to view daily, weekly, monthly, and yearly
+sales summaries, monitor booking performance, review income-related records,
+and identify frequently selected service packages. Through this module, the system
+provides organized analytical information that may support business monitoring,
+operational review, and decision-making.
+• To develop an organized application that helps prevent double booking and improves
+the efficiency of reservation management for clients, owners, administrators, and
+staff.
+The proponents addressed this objective by structuring the application according to
+four user roles: Client, Owner, Admin, and Staff. Each role is assigned specific
+access based on its responsibility in the booking and scheduling process. Clients
+can submit booking requests, upload proof of payment, request rescheduling,
+request refunds, and monitor transaction status. The Owner handles final business
+decisions such as payment verification, refund verification, calendar control,
+reschedule approval, and reports. The admin manages booking records, service
+packages, user accounts, calendar settings, and system operations. The Staff
+supports daily monitoring of bookings, schedules, reschedule requests, completed
+events, and service-related tasks.
+The system also includes scheduling validation and calendar monitoring to help
+reduce double booking and scheduling conflicts. Once the booking request is
+reviewed and the payment is verified, the selected date and time can be confirmed
+STI College Ortigas-Cainta 5
+
+===== PAGE 10 =====
+and monitored through the calendar. Through this role-based structure and
+scheduling process, the system supports more organized reservation management
+and helps minimize overlapping bookings.
+Scope and Limitations
+Scope
+The proposed Online Booking and Scheduling Management System for Professional Event
+Entertainers Service covers the major operations needed to manage client bookings, service
+packages, schedules, payments, refund requests, reschedule requests, reports, notifications, and
+system records. The system is divided into four main user roles: Client, Owner, Admin, and Staff.
+Each role has specific access and responsibilities based on its function in the booking and
+scheduling process.
+The role classification of the system is designed to maintain an organized workflow and proper
+access control. The Client submits and monitors booking-related transactions. The Owner handles
+final business decisions such as payment verification, refund verification, calendar control,
+reschedule approval, and reports. The admin manages system operations, booking records, service
+packages, user accounts, and calendar settings. The Staff supports daily monitoring of booking
+records, schedules, reschedule requests, completed events, and service-related tasks.
+Client Module
+The Client Module is designed for customers who want to view, book, and monitor
+entertainment services online. This module allows clients to access service information, submit
+booking requests, upload proof of payment, track booking status, request refunds when
+applicable, request rescheduling, and receive system notifications. It provides clients with a
+convenient and organized platform for completing booking-related transactions without relying
+only on manual messages, calls, or social media communication.
+STI College Ortigas-Cainta 6
+
+===== PAGE 11 =====
+• Homepage module – The Homepage Module presents the public landing page of Aries
+Magic. It displays the business information, available entertainment services, highlighted
+packages, and call-to-action buttons for booking or viewing packages. This module helps
+visitors understand the services offered before creating an account or submitting a
+booking request.
+• Booking Module - The Booking Module allows clients to submit a formal booking request
+through the system. In this module, clients can select their preferred service package and
+provide the required event information such as event date, event time, event type, venue,
+contact details, and other necessary booking details. Once the booking request is
+submitted, it will be recorded in the system and forwarded for review. This module helps
+ensure that booking details are complete, organized, and easier to monitor compared to
+manual booking through calls or messages.
+• Packages module – The Packages Module allows clients to view and compare available
+entertainment packages, including package names, prices, features, and inclusions.
+Clients can select a package such as Premium, Deluxe, or All-In before proceeding to the
+booking process.
+• My Bookings Module – The My Bookings Module allows clients to view and monitor
+their submitted bookings. It displays important booking details such as event date, time,
+selected package, venue, payment status, and booking status. This module helps clients
+track whether their booking is pending, confirmed, rejected, completed, or waiting for
+payment verification.
+• Payment Module – The Payment Module allows clients to submit proof of
+downpayment for an approved booking request. Clients can upload a payment receipt or
+screenshot and monitor the verification status of their payment. This module supports the
+confirmation process because bookings are only finalized after the payment proof is
+reviewed and approved by the Owner.
+• Request Refund Module - The Request Refund Module allows clients to submit a refund
+request for eligible bookings. This module is used when a client needs to request the
+return of a payment due to valid reasons such as rejected booking, cancelled booking, or
+other conditions allowed by the business. The client can select the booking related to the
+refund, provide the reason for the request, and
+STI College Ortigas-Cainta 7
+
+===== PAGE 12 =====
+submit it for Owner review. The Owner will then approve or reject the refund request
+based on booking and payment records.
+• Reschedule Module – The Reschedule Request Module allows clients to request changes
+to their event schedule. Clients can select an existing booking, propose a new date and
+time, and submit the request for review. The request will be reviewed by the Owner based
+on schedule availability.
+• Notifications Module – The Notifications Module keeps clients updated about important
+booking activities. Clients receive notifications regarding booking status, payment
+verification results, reschedule request updates, refund updates, and other important
+system actions.
+Owner Module
+The Owner Module provides the highest level of business decision-making access in the system.
+The Owner is responsible for handling financial verification, refund decisions, calendar control,
+reschedule approval, reports, and overall business monitoring. This role ensures that critical
+business actions are reviewed and approved by the actual business owner before they affect
+booking confirmation, schedule availability, or financial records.
+• Owner Dashboard module – The Owner Dashboard Module serves as the main
+overview page for the Owner. It displays summarized business information such as
+confirmed bookings, pending payment verifications, refund requests, upcoming events,
+income summaries, and report highlights. This module helps the Owner monitor the
+overall performance and status of the business.
+• Payment Verification Module - The Payment Verification Module allows the Owner to
+review and validate proof of downpayment uploaded by clients. The Owner checks the
+payment amount, uploaded receipt, booking reference, and transaction details before
+approving or rejecting the payment. Once the payment is verified, the booking can be
+confirmed and the selected schedule can be blocked to help prevent double booking.
+• Refund Verification Module - The Refund Verification Module allows the Owner to
+review and process refund requests submitted by clients. The Owner can check
+STI College Ortigas-Cainta 8
+
+===== PAGE 13 =====
+the booking information, payment history, reason for refund, and refund eligibility before
+approving or rejecting the request.
+• Calendar Management Module - The Calendar Management Module allows the Owner
+to monitor and control confirmed bookings, blocked dates, booking limits, and event
+schedules. This module helps prevent overbooking and schedule conflicts by providing a
+centralized view of event availability and confirmed reservations.
+• History Module - The History Module allows the Owner to view completed events,
+archived bookings, transaction history, and important activity records. This module helps
+maintain long-term documentation of past business operations.
+• Reschedule Request Management Module - The Reschedule Request Management
+Module allows the Owner to review client reschedule requests. The Owner can check the
+original schedule, requested new schedule, booking details, and availability before
+approving or rejecting the request.
+• Internal Messaging Module - The Internal Messaging Module allows the Owner to
+communicate with Admin and Staff for operational coordination. It supports
+announcements, task reminders, and internal updates related to booking and business
+operations.
+• Reports Module - This module provides the owner with analytical reports and
+summarized business insights related to bookings, payments, revenues, and operational
+performance. It converts raw transactional data into organized visual summaries to
+support business evaluation and planning.
+• Notification Module - The Notifications Module alerts the Owner about important system
+actions that require review or decision-making.
+Admin Module
+The Admin Module focuses on system management and operational control. The admin is
+responsible for managing booking records, service packages, user accounts, calendar settings,
+system records, and operational monitoring. Compared to the Owner, the Admin manages the
+system workflow and records, while the Owner handles final business decisions such as payment
+verification, refund approval, reschedule approval, and reports.
+STI College Ortigas-Cainta 9
+
+===== PAGE 14 =====
+• Admin Dashboard Module - The Admin Dashboard Module provides an overview of
+system activities and operational records. It allows the admin to monitor booking counts,
+pending requests, service records, user accounts, and important system activities.
+• Booking Management Module – The Booking Management Module allows the admin to
+monitor and manage booking records submitted by clients. The admin can view booking
+details, search bookings, filter records, check important event information, and approve
+or reject initial booking requests before clients proceed to payment submission. This
+module helps keep booking records organized and accessible.
+• User management module – The User Management Module allows the admin to
+manage internal user accounts, especially Staff accounts. The admin can create, update,
+activate, or disable staff accounts to maintain proper access control and system security.
+• Calendar Settings Module – The Calendar Settings Module allows the admin to support
+the calendar setup by managing unavailable dates and booking limits. This helps maintain
+schedule organization and supports the Owner in preventing overbooking.
+• Reschedules Monitoring Module – The Reschedule Monitoring Module allows the
+admin to view and monitor client reschedule requests. The admin can check request
+details and assist in reviewing schedule information, while final approval may be handled
+by the Owner.
+• Service and Package Management Module – The Service and Package Management
+Module allow the admin to manage the services and packages offered by the business. The
+admin can create new packages, update prices, edit inclusions, archive unavailable
+packages, and restore archived packages.
+• Notification Module - provides updates regarding system activities, booking records,
+user account changes, service updates, and other operational actions.
+STI College Ortigas-Cainta 10
+
+===== PAGE 15 =====
+Staff Module
+The Staff Module supports the Owner and Admin in daily booking and scheduling operations.
+Staff members have limited access compared to the Owner and Admin. Their main responsibility
+is to monitor records, check schedules, assist in service-related tasks, review completed events,
+and support operational coordination.
+• Staff Dashboard Module - The Staff Dashboard Module provides staff with a quick
+overview of operational tasks and booking activities. It helps staff monitor pending
+bookings, upcoming events, completed events, and important notifications.
+• Booking Monitoring Module – The Booking Monitoring Module allows staff to view
+booking records and booking details. Staff can check client information, event details,
+package selected, venue, schedule, and booking status. This helps staff assist with daily
+operations and prepare for upcoming events.
+• Calendar Monitoring Module - The Calendar Monitoring Module allows staff to view
+confirmed bookings, blocked dates, daily capacity limits, and upcoming event schedules.
+This module helps staff monitor confirmed events and prepare for upcoming activities.
+• Package Viewing and Service Module – The Package Viewing and Service Support
+Module allows staff to view package details, prices, and inclusions. Staff may assist in
+checking service information and supporting package-related tasks, depending on the
+access given by the Admin.
+• Reschedules Monitoring Module – The Reschedule Monitoring Module allows staff to
+monitor client-initiated reschedule requests. Staff can view request details, proposed
+dates, original schedules, and request status to support schedule coordination.
+• History Module: The History Module allows staff to view completed event records.
+Bookings marked as completed are separated from active booking requests to keep records
+organized. This module helps staff check past event details and support record
+monitoring.
+• Notification Module - The Notifications Module alerts staff about important booking
+and schedule-related activities.
+STI College Ortigas-Cainta 11
+
+===== PAGE 16 =====
+Limitations
+• Limited payment mode – The system does not support direct integration with online
+payment APIs; processing is limited to manual verification of uploads.
+• Internet dependency – The system requires an internet or local server connection to
+function.
+• Exclusively Designed – The system is exclusively designed for the business operations of
+Aries the Magic Artist, focusing on the specific booking and management requirements of
+the owner and is not intended for use by other entertainment entities.
+Review of Related Literature/Studies/Systems
+In this chapter the review of related literature will be presented which is relevant to the study
+Local and Foreign Studies
+“Effectiveness of Online Booking Systems in Hotels”
+The study conducted by Cabiles et al. (2025) examined the effectiveness of online booking systems
+in hotels and found that these platforms improve operational efficiency and customer satisfaction
+through convenient and fast reservation processes. The researchers emphasized that usability and
+system reliability are essential factors in ensuring a positive user experience. This study is related
+to the proposed system because both systems focus on improving the booking process through
+digital technology. Similar to hotel reservation platforms, the proposed booking and scheduling
+management system for entertainers also aims to provide a convenient and reliable booking
+experience for clients. The idea from this study is implemented by designing a user-friendly
+interface that allows clients to easily select services, enter event details, and submit booking
+requests online. Additionally, the system will prioritize reliability and continuous system
+maintenance to ensure smooth booking transactions and minimize technical issues
+“Implementation of Online Reservation Systems in Restaurants”
+STI College Ortigas-Cainta 12
+
+===== PAGE 17 =====
+Fontanilla et al. (2025) explored the use of online reservation systems in restaurants and found that
+digital reservation platforms improve service efficiency by organizing customer bookings and
+reducing waiting time. However, the researchers also noted that improper management of
+reservation systems may still lead to scheduling errors such as double bookings. This study is
+relevant to the proposed system because scheduling conflicts and double bookings are also
+common problems experienced by event entertainers who rely on manual booking methods. The
+findings of this research support the need for an organized reservation management system. In the
+proposed system, this concept will be implemented through automatic schedule management, real-
+time calendar updates, and anti-double-booking mechanisms. These features ensure that
+entertainers cannot be booked for multiple events at the same time, thereby improving scheduling
+accuracy and service reliability.
+“Customer Satisfaction in Travel and Tour Services: The Role of Digital Booking Platforms”
+The study of Alcantara-Zamudio (2025) highlighted that customer satisfaction in travel and tour
+services is strongly influenced by convenience, accessibility, trust, and system reliability. The
+research showed that customers prefer digital platforms over manual transactions because online
+systems provide faster and more accessible service processes. This study is related to the proposed
+system because it emphasizes the importance of convenience and accessibility in digital service
+platforms. Similar to travel booking systems, the proposed system aims to provide an accessible
+platform where clients can easily book entertainment services without relying on manual
+communication methods. The idea from this research is implemented by allowing clients to book
+services anytime and anywhere through an online platform, improving the speed and convenience
+of the booking process.
+“Implementation of a Digital Booking System for Tourism Services in the Hundred Islands,
+Pangasinan”
+Rabanillo et al. (2025) studied the implementation of a digital booking system for tourism services
+in the Hundred Islands in Pangasinan and found that organized tourism activities and entertainment
+services help improve visitor experiences and tourism management. This study is relevant to the
+STI College Ortigas-Cainta 13
+
+===== PAGE 18 =====
+proposed system because it highlights the importance of organized entertainment services within
+digital platforms. Similar to tourism services, event entertainment also requires proper
+organization of service offerings. In the proposed system, this concept is implemented by
+organizing entertainer services into structured service packages such as magic shows, puppet
+shows, bubble shows, and party hosting. This allows clients to easily browse and select the most
+appropriate entertainment service for their event.
+“User Experience and Interface Design in Mobile Travel Applications”
+Kim et al. (2021) examined mobile travel applications and found that features such as intuitive
+navigation, simplified booking forms, and real-time availability significantly improve user
+engagement and satisfaction. This study is related to the proposed system because user interface
+design and usability are essential for successful digital platforms. The findings support the
+development of a simple and intuitive interface for the booking system. In the proposed system,
+this idea will be implemented by designing a clear navigation structure, simplified booking forms,
+and easy service browsing features to ensure that clients can complete bookings quickly and
+efficiently
+“Impact of Online Reservation Systems on Operational Efficiency in the Hospitality
+Industry”
+Wang and Zhang (2022) discussed how online reservation systems improve operational efficiency
+in the hospitality industry by automating routine processes and enabling better tracking of
+customer data. Their study showed that digital systems reduce errors and enhance staff
+productivity. This study supports the proposed system by highlighting the importance of digital
+client data management. In the developed system, client information, booking schedules, and
+service selections will be stored in a centralized database. This allows entertainers to manage client
+records efficiently, reduce communication errors, and maintain organized event histories.
+“Technology Integration and User Interface Design in Hospitality and Entertainment
+Services”
+STI College Ortigas-Cainta 14
+
+===== PAGE 19 =====
+Lopez et al. (2023) emphasized that technology integration and user-friendly interfaces
+significantly influence customer satisfaction in hospitality and entertainment services. The study
+found that transparent information and smooth navigation improve user trust and service
+experience. This research is relevant to the proposed system because it highlights the importance
+of clear system design and service information. The idea will be implemented by presenting service
+descriptions, packages, and booking details in a clear and organized interface, allowing clients to
+understand available entertainment services before making a booking.
+“Ticketing and Reservation Patterns in Entertainment Events”
+Johnson and Lee (2022) studied ticketing and reservation patterns in entertainment events and
+concluded that digital booking systems provide valuable insights for predicting attendance and
+managing peak demand. This study is related to the proposed system because entertainers often
+experience high booking demand during holidays, school events, and fiestas. The proposed system
+will implement this concept through a reporting and analytics module that tracks booking trends,
+peak seasons, and service demand. These insights can help entertainers prepare resources and
+manage schedules more efficiently.
+“Benefits of Web-Based Event Management Systems”
+Silva and Ferreira (2022) discussed the benefits of web-based event management systems, noting
+that centralized digital platforms improve accessibility, automate bookings, and reduce
+administrative workload. This research strongly supports the concept of the proposed system. The
+system will apply this idea by centralizing booking management, service packages, client records,
+and payment tracking within a single web-based platform. This approach simplifies event
+coordination and allows entertainers to manage their operations more efficiently.
+Local and Foreign Literature
+“Automation in Digital Event Management Systems”
+STI College Ortigas-Cainta 15
+
+===== PAGE 20 =====
+Gaspay et al. (2025) explained that digital event management systems automate planning processes
+such as booking coordination, itinerary generation, and event scheduling. Automation reduces
+manual tasks and improves efficiency in event-related operations. This literature is directly related
+to the proposed system because the system also aims to automate event booking and scheduling
+processes. In the proposed platform, automation will be implemented through automatic booking
+confirmations, event schedule generation, and centralized client data storage, reducing the need
+for manual coordination.
+“Integrated Reservation Systems in Tourism Applications”
+Gosela and Encarnacion (2024) discussed the importance of integrated reservation systems in
+tourism applications, highlighting that centralized platforms improve efficiency and accessibility
+in service booking. This concept is applied in the proposed system by integrating booking
+management, scheduling, service selection, and client records into a single system. This
+centralized approach allows entertainers to efficiently manage all event-related transactions in one
+platform.
+“Service Quality and Customer Satisfaction in Tourism Services”
+Verzosa et al. (2024) found that service quality is a major factor influencing customer satisfaction
+and loyalty in tourism services. This literature supports the importance of delivering reliable and
+accurate services through the proposed system. By ensuring accurate booking records, organized
+scheduling, and clear service information, the system aims to improve overall service quality and
+enhance client satisfaction
+“Quality and Client Satisfaction in the Events Management Companies A Basis for Strategic
+Improvement”
+Agulan (2025) found that service quality significantly influences customer satisfaction in tourism
+services, especially in terms of reliability, assurance, tangibles, empathy, and responsiveness. The
+study emphasized that accurate, timely, and professional service delivery helps build trust and
+improve client relationships. It also highlighted the importance of clear communication and well-
+coordinated service processes in reducing service failures. This supports the proposed system’s
+STI College Ortigas-Cainta 16
+
+===== PAGE 21 =====
+goal of improving booking accuracy, scheduling organization, and service clarity to enhance
+customer satisfaction.
+“Evolution of Modern Reservation Systems as Strategic Tools for Customer Experience and
+Operational Efficiency”
+Ivanov and Webster (2021) explained that modern reservation systems have evolved into strategic
+tools that improve customer experience and operational efficiency through automation and
+analytics. The proposed system adopts this concept by implementing
+automated scheduling and real-time calendar updates to prevent conflicts and improve booking
+management.
+“Artificial Intelligence in Enhancing Entertainment Experiences Through Event
+Optimization and Personalization”
+Cunningham et al. (2021) discussed how artificial intelligence technologies improve entertainment
+experiences by optimizing event logistics and personalizing content delivery. This concept inspires
+the intelligent features of the proposed system, such as automated event flow suggestions and smart
+service recommendations that assist entertainers in planning performances more efficiently.
+“Web-Based Event Booking and Management Platforms for Improved Service Coordination
+and User Convenience”
+According to JosephNg et al. (2022), web-based event booking and management platforms enable
+users to search, compare, and reserve event services through a centralized digital system. The study
+explains that these platforms provide integrated tools for scheduling, booking, and managing event
+services, which improves operational efficiency and enhances user convenience. The researchers
+also highlighted that digital platforms support real-time access to event information and simplify
+service coordination between organizers and clients. This literature is relevant to the proposed
+STI College Ortigas-Cainta 17
+
+===== PAGE 22 =====
+system because it supports the concept of integrating multiple services within a single online
+platform. Similar to the system discussed in the study, the proposed platform will allow users to
+browse entertainment services, view available packages, and book events through an online
+interface. By centralizing these features, the system can enhance accessibility and improve service
+coordination for both entertainers and clients.
+“Web-Based Event Organizer Systems for Improved Business Process Integration and Event
+Management Efficiency”
+According to Lalo et al. (2025), web-based event organizer systems help improve business
+processes by integrating booking services, event scheduling, and digital transaction management
+into a single system. The study explains that traditional event management processes often involve
+unstructured records and manual documentation, which can cause delays and data inaccuracies.
+By implementing a digital platform, organizations can automate booking processes, manage event
+packages, and generate reports more efficiently. This literature supports the proposed system
+because it highlights the importance of digitalizing event booking and scheduling processes.
+Similar to the system discussed in the study, the proposed platform will allow clients to book
+entertainment services such as magic shows, puppet shows, and party hosting through a centralized
+online system. By automating booking and scheduling tasks, the system can reduce errors, improve
+data management, and enhance the overall event planning experience.
+“Integration of Online Booking, Collaboration, and Automation in Modern Event
+Management Systems”
+According to Rithanya and Santhi (2025), modern event management systems integrate online
+booking, collaboration tools, and automated coordination features to simplify event planning. The
+studcy explains that digital platforms allow event organizers to manage invitations, service
+providers, logistics, and scheduling through a single web-based system. These systems reduce
+time-consuming manual tasks while improving communication between organizers, vendors, and
+clients. This literature supports the development of the proposed entertainment booking system
+because it demonstrates how online platforms can streamline event planning processes. Similar to
+STI College Ortigas-Cainta 18
+
+===== PAGE 23 =====
+the concepts discussed in the study, the proposed system will integrate booking management,
+service packages, and scheduling tools in a single platform. By implementing these features, the
+system can improve coordination between entertainers and clients while providing a more efficient
+and organized event booking process.
+“Web-Based Event Reservation Information Systems for Improved Booking and Scheduling
+Efficiency”
+According to Wahyuni et al. (2025), web-based event reservation information systems
+significantly improve the efficiency of managing event bookings and scheduling processes. The
+study explains that traditional reservation systems often rely on manual documentation and
+communication methods, which may lead to delays, recording errors, and inefficient data
+management. By implementing a web-based event reservation system, organizations can manage
+event data, schedules, reservations, and reports through an online platform that is accessible to
+both administrators and clients.
+This literature supports the development of the proposed entertainment booking and scheduling
+system. Similar to the concepts presented in the study, the proposed system will provide an online
+platform where clients can view available services, check schedules, and make reservations for
+entertainment services such as magic shows, puppet shows, and party hosting. By centralizing
+these functions within a web-based system, the platform can improve service accessibility, reduce
+manual errors, and enhance overall booking management efficiency.
+Synthesis
+The reviewed literature and studies highlight the significant role of digital technologies in
+improving booking management, event coordination, and service accessibility across industries
+such entertainment. Several studies emphasized that online booking and reservation systems
+provide a more efficient and convenient method for managing service transactions compared to
+traditional manual processes. These systems allow users to easily access services, make
+STI College Ortigas-Cainta 19
+
+===== PAGE 24 =====
+reservations, and obtain relevant information through digital platforms, which ultimately improves
+customer satisfaction and operational efficiency.
+Many researchers also pointed out that digital reservation systems help reduce common
+operational issues such as scheduling conflicts, manual documentation errors, and inefficient
+communication between service providers and clients. Features such as automated scheduling,
+centralized data management, and real-time availability updates enable organizations to manage
+bookings more accurately and effectively. These technologies also allow service providers to
+monitor demand patterns, manage event schedules, and organize service offerings in a structured
+and systematic manner.
+Furthermore, studies on event management systems highlight the importance of centralized digital
+platforms that integrate multiple functions such as booking coordination, scheduling, client data
+management, and service package organization. By consolidating these features into a single
+system, organizations can simplify administrative processes, improve service coordination, and
+reduce operational workload. Automation features and intelligent system tools also contribute to
+more efficient event planning and better service delivery.
+In addition, several studies emphasized that user-friendly interfaces, clear service information, and
+reliable system performance play an important role in ensuring a positive user experience.
+Customers are more likely to trust and use digital platforms that offer intuitive navigation,
+transparent service details, and efficient booking procedures. These factors contribute to improved
+customer satisfaction and stronger engagement with digital service platforms.
+Overall, the reviewed literature supports the development of the proposed Online Booking and
+Scheduling Management System. The studies collectively demonstrate that implementing a
+centralized web-based platform for booking and event management can improve accessibility,
+reduce manual errors, streamline scheduling processes, and enhance service coordination. These
+concepts guide the design and functionality of the proposed system, which aims to provide clients
+STI College Ortigas-Cainta 20
+
+===== PAGE 25 =====
+with a convenient way to browse entertainment services, select service packages, and schedule
+events while allowing entertainers to manage bookings and client information more efficient.
+METHODOLOGY
+Figure 1: Agile Methodology
+The proponents used the Agile Development Methodology in developing the proposed Online Booking
+and Scheduling Management System for Professional Event Entertainers Service. Agile was selected
+because it is flexible, iterative, and suitable for a system with several modules such as client booking,
+user management, payment verification, refund management, calendar scheduling, reschedule requests,
+notifications, and reports. Instead of developing the whole system in one process, Agile allowed the
+proponents to divide the development into smaller phases called sprints. Each sprint focused on specific
+features, testing, feedback, and improvement.
+This methodology was appropriate for the project because the system required continuous checking and
+refinement. Since the proposed system deals with booking records, schedule availability, payment
+submissions, refunds, and role-based access for Client, Owner, Admin, and Staff, the proponents needed
+a development approach that allowed them to test features regularly and correct errors early. Through
+STI College Ortigas-Cainta 21
+
+===== PAGE 26 =====
+Agile, the proponents were able to monitor progress, adjust features based on system requirements, and
+improve the overall functionality of the system.
+The Agile methodology used in this project followed the steps of Planning, Designing, Development,
+Testing, Review, and Deployment.
+Planning Phase
+The Planning Phase served as the foundation of the project. In this phase, the proponents identified the
+main problems experienced by Aries the Magic Artist, especially the manual booking process, difficulty
+in monitoring schedules, possible double booking, delayed updates, unorganized records, and manual
+payment tracking. The proponents also gathered information about the current process through
+interviews and analysis of the business workflow.
+During this phase, the proponents identified the users of the system, which are the Client, Owner,
+Admin, and Staff. Each role was assigned specific responsibilities based on the needs of the business.
+The Client is responsible for submitting and monitoring booking transactions. The Owner handles final
+business decisions such as payment verification, refund approval, calendar control, reschedule approval,
+and reports. The admin manages system records, user accounts, service packages, and operational
+settings. The Staff supports daily monitoring of bookings, schedules, completed events, and reschedule
+requests.
+The proponents also identified the system requirements, including booking management, package
+viewing, payment proof upload, refund request, calendar management, reporting and analytics,
+notification system, and role-based access control. These requirements were used as the basis for the
+product backlog and sprint planning.
+Design Phase
+The Design Phase focused on planning how the system would look, function, and store information. In
+this phase, the proponents prepared the system structure, database design, user roles, process flow, and
+interface layout. The system was designed using a layered architecture to separate the user interface,
+system logic, database access, and data storage.
+STI College Ortigas-Cainta 22
+
+===== PAGE 27 =====
+The proponents designed the user interface based on the role of each user. The Client interface was
+designed for booking requests, package viewing, payment submission, refund requests, reschedule
+requests, and notifications. The Owner interface was designed for payment verification, refund
+verification, calendar control, reports, and business monitoring. The admin interface was designed for
+booking records, user management, service and package management, calendar settings, and system
+monitoring. The Staff interface was designed for monitoring bookings, schedules, reschedule requests,
+completed events, and service-related tasks.
+The database design was also planned during this phase. Important records such as users, roles,
+bookings, payments, refund requests, reschedule requests, packages, notifications, blocked dates,
+booking limits, and reports were considered in the system structure. This helped ensure that the system
+could properly store and manage booking-related data.
+Development Phase
+The Development Phase focused on building the actual system features based on the planned
+requirements and design. The proponents developed the system using ASP.NET Core MVC, Entity
+Framework Core, SQL Server, ASP.NET Core Identity, Razor Views, Bootstrap, JavaScript, Chart.js,
+FullCalendar, and other supporting tools.
+During this phase, the proponents developed the main modules of the system. These included account
+registration and login, role-based access control, package management, booking request submission,
+payment proof upload, refund request handling, calendar monitoring, reschedule request management,
+notifications, reports, and user management.
+The development process was divided into sprints. Each sprint focused on a specific group of features so
+that the proponents could build the system gradually. For example, the first sprint focused on planning
+and system setup, the second sprint focused on core modules such as login and role-based access, the
+third sprint focused on smart booking and scheduling, the fourth sprint focused on payment, refund, and
+reporting modules, and the fifth sprint focused on testing and deployment.
+STI College Ortigas-Cainta 23
+
+===== PAGE 28 =====
+Testing Phase
+The Testing Phase was conducted to check whether the system features worked correctly and met the
+intended requirements. The proponents tested the system by checking each module individually and then
+testing how the modules worked together.
+The proponents performed testing on the booking process, payment upload, Owner payment
+verification, refund request handling, reschedule request approval, calendar monitoring, notifications,
+reports, user login, and role-based access control. The system was also tested to check if users could
+only access the modules assigned to their role.
+This phase helped the proponents identify errors, missing functions, layout issues, and possible problems
+in the booking workflow. For example, testing helped check whether booking requests could be
+submitted properly, whether payment proof could be uploaded, whether the Owner could verify
+payments, and whether confirmed schedules could be monitored through the calendar. The goal of this
+phase was to improve system reliability before deployment.
+Review and Evaluation Phase
+The Review and Evaluation Phase focused on checking the completed features after each sprint. In this
+phase, the proponents reviewed whether the developed modules matched the project objectives and
+system requirements. The proponents evaluated the functionality, usability, and accuracy of the system
+features.
+Through this phase, the proponents were able to identify areas that needed improvement. If errors or
+missing requirements were found, the proponents made adjustments before proceeding to the next sprint.
+This helped ensure that the system was continuously improved instead of waiting until the end of
+development to fix all issues.
+The review process was important because the system involved several connected modules. For
+example, the booking module is connected to payment submission, payment verification, calendar
+scheduling, notifications, and reports. Because of this, each feature had to be reviewed carefully to make
+sure it worked properly with the other modules.
+STI College Ortigas-Cainta 24
+
+===== PAGE 29 =====
+Deployment Phase
+The Deployment Phase involved preparing the system for actual use. After the main features were
+developed and tested, the proponents prepared the system for deployment. This included checking the
+database connection, application settings, file upload functionality, user roles, and final system behavior.
+The system was prepared as a web-based application that can be accessed through internet browsers.
+Since the system is intended to support online booking and scheduling, deployment allows users such as
+Clients, Owners, Admins, and Staff to access the system based on their assigned roles.
+In this phase, the proponents also checked whether the system could properly support the main business
+process, including booking request submission, Admin booking review, Client payment upload, Owner
+payment verification, calendar monitoring, refund requests, reschedule requests, and reports.
+Maintenance and Improvement Phase
+The Maintenance and Improvement Phase focus on future updates and possible improvements after
+deployment. Since Agile supports continuous improvement, the system can still be enhanced based on
+user feedback, business needs, and technical issues that may appear during actual use.
+Possible future improvements may include direct online payment gateway integration, SMS notification,
+improved reporting tools, mobile responsiveness enhancements, and additional automation features.
+This phase ensures that the system can continue to improve even after the initial development.
+STI College Ortigas-Cainta 25
+
+===== PAGE 30 =====
+Technical Background
+The following technologies are utilized in the development of the system:
+BACKEND DEVELOPMENT
+• ASP.NET Core MVC (.NET 9) - is utilized as the main backend framework of the system.
+It provides a structured approach in developing web applications by dividing the system
+into three major components, namely the Model, View, and Controller. This framework is
+used to manage the business logic of the application, process user requests, handle routing,
+and connect the user interface with the database efficiently. It also supports the role-based
+modules implemented in the system such as booking management, payment processing,
+calendar management, and notification handling.
+• Entity Framework Core (EF Core) - is utilized as the Object-Relational Mapping (ORM)
+tool of the system. It allows the proponents to interact with database records using C#
+classes and objects instead of manually writing complex SQL queries. Through EF Core,
+the system can perform data insertion, updating, deletion, and retrieval in a more organized
+and maintainable manner. It is used in managing records such as bookings, services, service
+inclusions, payments, blocked dates, notifications, reschedule requests, and booking limits.
+• SQL Server - is utilized as the primary relational database management system of the
+project. It stores and manages the system’s data such as user accounts, booking details,
+package records, payment transactions, notifications, calendar settings, and reschedule
+requests. This technology is used because it provides reliable, secure, and consistent data
+storage, which is essential in maintaining the integrity of the booking and scheduling
+system.
+ASP.NET Core Identity - is utilized for authentication and role-based authorization. It is
+used to manage account registration, login, password reset, email confirmation, and access
+control based on assigned user roles such as Client, Owner, Admin, and Staff. This
+technology ensures that only authorized users can access modules and functions assigned
+to their role within the system.
+STI College Ortigas-Cainta 26
+
+===== PAGE 31 =====
+FRONTEND DEVELOPMENT
+• Razor Views (.cshtml) - are utilized to create the dynamic user interface of the system.
+They allow the combination of HTML and C# code in a single file, making it possible to
+display data from the backend directly on web pages. This technology is used in rendering
+the system pages such as booking forms, dashboard interfaces, calendar views, payment
+modules, notification pages, and service management pages.
+• HTML5 - is utilized as the standard markup language for structuring the web pages of the
+system. It defines the layout and content of each page, including forms, tables, navigation
+menus, buttons, text elements, and data containers used throughout the platform.
+• CSS3 - is utilized to improve the visual presentation of the system. It is used to control
+colors, spacing, font styles, layout arrangement, and responsive display of the pages.
+Through CSS3, the system interface becomes cleaner, more organized, and easier to use
+for its intended users
+• Bootstrap 5 - is utilized as the frontend CSS framework for building responsive and
+consistent user interfaces. It provides ready-made design components such as cards, tables,
+buttons, forms, alerts, offcanvas panels, and modal windows. This technology is used to
+speed up interface development and maintain consistency across client, staff, and admin
+modules.
+• JavaScript - is utilized to add interactivity and dynamic behavior to the system. It is used
+for client-side validation, form interaction, calendar behavior, status updates, user
+feedback, and asynchronous actions within the interface. This improves overall
+responsiveness and usability of the platform.
+• Chart.js - is utilized in the reporting and dashboard module of the system. It is used to
+present booking-related summaries, trends, and operational data in graphical form such as
+charts and visual reports. This helps the administrator understand booking activities and
+system records more clearly.
+• Full Calendar - is utilized in the calendar module of the system. It is used to present
+confirmed reservations in a visual calendar format. This component supports schedule
+STI College Ortigas-Cainta 27
+
+===== PAGE 32 =====
+monitoring by displaying event dates, reservation counts, blocked dates, and booking
+details in an organized and interactive interface.
+ADDITIONAL FUNCTIONAL COMPONENTS
+• File Upload using IFormFile - is utilized in the payment module of the system. It allows
+clients to upload proof of downpayment images, which are then reviewed by the Owner
+during payment verification. This supports the booking confirmation process by ensuring
+that payment proof is recorded and checked before a booking is finalized.
+• Email Sending Service is utilized through SMTP configuration and MailKit
+integration - It is used for account-related email functions such as confirmation and
+password recovery, as well as other email-based communication processes supported by
+the system.
+• Notification System - is utilized to provide system-generated updates regarding booking
+submissions, booking approval, payment verification, refund decisions, reschedule request
+decisions, and other important system actions. This helps keep Clients, Owners, Admins,
+and Staff informed of important activities related to their responsibilities and transactions.
+• Smart Booking and Scheduling Logic - are utilized to validate availability and maintain
+organized reservations. This includes blocked date checking, daily booking limit
+validation, date-specific booking limits, schedule conflict detection, and anti-double-
+booking mechanisms to ensure that confirmed reservations are properly controlled.
+• Package Customization Logic - is utilized in the booking module to allow clients to
+remove selected removable inclusions from a package. This automatically updates the final
+package price while preserving the required booking workflow of the system.
+• Reschedule Request Processing - is utilized to support schedule adjustment requests from
+clients. This feature allows clients to submit reschedule requests, while the Owner reviews
+the proposed new schedule based on availability. Once approved, the system updates the
+booking and calendar records. If rejected, the client receives a notification regarding the
+decision.
+STI College Ortigas-Cainta 28
+
+===== PAGE 33 =====
+CALENDAR OF ACTIVITIES
+Figure 2. Gantt Chart
+This section presents the detailed sequence of activities that the proponents will undergo in
+completing the project. The development follows Agile methodology through structured sprints.
+The project development was carried out using the Agile methodology through a series of
+structured sprints. This approach enabled the proponents to divide the development process into
+manageable phases, allowing continuous monitoring, evaluation, and improvement of the system.
+Each sprint consisted of Sprint Planning, Development, Sprint Review, and Sprint Retrospective
+to ensure that the progress of the project remained aligned with its objectives and intended
+outcomes.
+• Sprint 1 (Weeks 1–2): Planning and System Setup
+During Sprint 1, which covered Weeks 1 to 2, the proponents focused on project
+planning and system setup. At this stage, the necessary requirements were gathered and
+analyzed to establish a clear understanding of the system to be developed. The
+proponents identified the primary users of the system, namely the Client, Owner,
+STI College Ortigas-Cainta 29
+
+===== PAGE 34 =====
+Admin, and Staff, in order to define their specific roles and functions. In addition, the
+database was designed using SQL Server, the overall system architecture was planned,
+and the initial setup of the ASP.NET Core MVC project was completed to establish the
+foundation for the succeeding development phases.
+• Sprint 2 (Weeks 3–4): Core Module Development
+In Sprint 2, conducted during Weeks 3 to 4, the proponents developed the core modules
+of the system. The login and authentication features were implemented using ASP.NET
+Core Identity to provide secure access to authorized users. Role-based access control
+was also established to ensure that each user type, including Client, Owner, Admin,
+and Staff, could only access the functionalities assigned to their role. Furthermore, the
+Service Catalog and Package Management Module were developed as part of the
+essential features of the system.
+• SPRINT 3 (WEEKS 5–6): SMART BOOKING AND SCHEDULING SYSTEM
+During Sprint 3, which spanned Weeks 5 to 6, the proponents worked on the Smart
+Booking and Scheduling System. Intelligent booking logic was developed to support
+efficient reservation processing. Time-slot validation and conflict detection were also
+implemented to prevent overlapping bookings and ensure scheduling accuracy. To
+further enhance the system, a notification feature was integrated, and staff schedule
+management was added to improve coordination and operational efficiency.
+• SPRINT 4 (WEEKS 7–8): PAYMENT AND REPORTING MODULE
+In Sprint 4, which covered Weeks 7 to 8, the proponents focused on the Payment,
+Refund, and Reporting Module. Payment management functionality was implemented
+to support the submission and verification of payment proofs. Refund request handling
+was also added to allow eligible refund concerns to be reviewed by the Owner. Booking
+status tracking was developed to enable users and authorized personnel to monitor the
+progress of reservations. In addition, a dashboard using Chart.js was created to present
+STI College Ortigas-Cainta 30
+
+===== PAGE 35 =====
+reports and visual summaries of system data. File upload functionality was also
+developed to support the submission of proof of payment and other necessary
+documents.
+• SPRINT 5 (WEEKS 9–10): TESTING AND DEPLOYMENT
+Finally, during Sprint 5, which took place in Weeks 9 to 10, the proponents
+concentrated on testing, optimization, and deployment. Unit testing and integration
+testing were conducted to verify the correctness and reliability of both individual
+components and the system as a whole. Errors and performance issues identified during
+the testing phase were addressed through bug fixing and optimization. User Acceptance
+Testing (UAT) was also performed to determine whether the system met the needs and
+expectations of its intended users. After the successful completion of these activities,
+the system was deployed to Azure App Service for implementation.
+Overall, the proponents were able to complete the project in a systematic and organized manner
+through the use of Agile methodology. By following structured sprints and continuously evaluating
+the progress of development, the proponents successfully designed, developed, tested, and
+deployed the system in accordance with the project goals and requirements.
+RESOURCES
+This section presents the hardware and software resources utilized in the development, testing, and
+deployment of the proposed Online Booking and Scheduling Management System for Professional
+Event Entertainers Service.
+HARDWARE RESOURCES
+• Desktop Computers or Laptops – are utilized by the proponents for system
+development, coding, interface design, testing, debugging, documentation, and
+STI College Ortigas-Cainta 31
+
+===== PAGE 36 =====
+deployment activities. These devices serve as the primary working environment for
+developing the proposed web-based system.
+• Stable Internet Connection – is utilized to support online development activities,
+package installation, cloud deployment, email configuration, testing of online
+functionalities, and access to external development resources. It also ensures proper
+communication between the system and cloud-based services.
+• Cloud Hosting Services – are utilized to deploy and host the web application online.
+This allows the proposed system to become accessible through internet browsers and
+supports remote access for clients, staff, and administrators.
+• Mobile Devices (Smartphones/Tablets) – are utilized for responsive testing and
+accessibility checking of the system interface. These devices help ensure that the web
+application remains functional and properly displayed across different screen sizes and
+platforms.
+• External Storage Devices – are utilized for backup purposes, storage of development
+files, database copies, project documentation, and deployment resources to prevent
+accidental data loss during development.
+• Printer and Scanner – are utilized for printing project documentation, forms, reports,
+and scanning supporting documents related to system testing and academic
+requirements.
+SOFTWARE RESOURCES
+• ASP.NET Core MVC (.NET 9) – is utilized as the primary backend framework of the
+system. It manages business logic, routing, role-based modules, request processing, and
+communication between the user interface and database.
+• Entity Framework Core (EF Core) – is utilized as the Object-Relational Mapping
+(ORM) framework of the system. It enables efficient interaction with the database using
+C# objects and simplifies data management processes.
+• SQL Server – is utilized as the relational database management system of the project.
+It stores and manages booking records, user accounts, payments, schedules,
+notifications, and other system-related data securely and efficiently.
+STI College Ortigas-Cainta 32
+
+===== PAGE 37 =====
+• ASP.NET Core Identity – is utilized for authentication and role-based authorization.
+It manages user registration, login, password recovery, and role restrictions for Admin,
+Staff, and Client accounts.
+• Visual Studio 2022 – is utilized as the primary Integrated Development Environment
+(IDE) for developing, debugging, testing, and maintaining the proposed system.
+• Visual Studio Code – is utilized as an additional lightweight code editor for frontend
+customization, quick modifications, and interface styling.
+• Bootstrap 5 – is utilized as the frontend CSS framework for creating responsive,
+modern, and consistent user interface components such as forms, cards, buttons, tables,
+alerts, and modal windows.
+• HTML5 – is utilized as the standard markup language for structuring the web pages
+and content of the system.
+• CSS3 – is utilized to enhance the visual appearance, layout, spacing, responsiveness,
+and overall user experience of the web application.
+• JavaScript – is utilized to implement interactive and dynamic functionalities such as
+client-side validation, modal interactions, calendar behavior, notifications, and real-
+time interface updates.
+• Chart.js – is utilized in the reporting and analytics module to generate graphical reports
+and data visualizations related to bookings, transactions, and operational summaries.
+• FullCalendar – is utilized in the calendar module to display reservation schedules,
+blocked dates, booking limits, and event information through an interactive calendar
+interface.
+• MailKit with SMTP Configuration – is utilized for sending email notifications
+related to booking approvals, payment verification, password recovery, schedule
+conflicts, and other important system-generated updates.
+• Git and GitHub – are utilized for version control, source code management, backup,
+collaboration, and tracking project changes throughout the development process.
+• Microsoft Edge / Google Chrome – are utilized as the primary web browsers for
+testing, debugging, and accessing the deployed system interface.
+STI College Ortigas-Cainta 33
+
+===== PAGE 38 =====
+Requirements Analysis
+In this part, the proposed system provides computing solutions to address the needs of event-based
+entertainment service providers in terms of the following:
+• WHO
+o Clients – The clients are individuals who book entertainment services for their
+events through the proposed system. They can view packages, submit booking
+requests, upload proof of payment, request rescheduling, request refunds, and
+monitor transaction status.
+o Owner – The Owner is responsible for final business-related decisions such as
+payment verification, refund verification, calendar control, reschedule
+approval, and reviewing reports related to bookings, payments, income, and
+package trends.
+o Admin – The Admin is responsible for managing system operations such as
+booking records, service packages, user accounts, calendar settings, and overall
+system monitoring.
+o Staff – The Staff supports daily operations by monitoring booking records,
+schedules, reschedule requests, completed events, and service-related tasks.
+• WHAT
+o User Authentication and Account Management – The system provides
+secure login, account registration, and role-based access control for Client,
+Owner, Admin, and Staff.
+o Service Catalog Browsing – The system allows clients to browse available
+entertainment services and packages.
+o Booking Management – The system allows clients to submit booking requests
+and allows authorized users to monitor and manage booking records.
+o Smart Booking and Scheduling – The system supports schedule validation,
+calendar monitoring, booking limits, and conflict checking to help reduce
+double booking and scheduling conflicts.
+o Payment Management – The system allows clients to upload proof of
+downpayment and allows the Owner to verify or reject payment submissions.
+STI College Ortigas-Cainta 34
+
+===== PAGE 39 =====
+o Refund Management – The system allows clients to submit refund requests
+and allows the Owner to approve or reject refund requests based on booking
+and payment records.
+o Package Management – The system allows the admin to manage service
+packages, prices, inclusions, and package availability.
+o Reports and Analytics – The system allows the Owner to view booking,
+payment, income, and package trend reports for business monitoring and
+decision-making.
+o Notification System – The system sends notifications to users regarding
+booking updates, payment verification, refund decisions, reschedule requests,
+and other important system actions.
+• WHERE
+o Web-Based Platform – The proposed system operates as a web-based
+application that is accessible through internet browsers.
+• WHEN
+o 24/7 Accessibility – The proposed system is accessible 24/7, allowing clients
+to book entertainment services at their most convenient time.
+• HOW
+o Time Availability Validation – The system validates the selected schedule to
+help ensure that the date and time are available.
+o Schedule Conflict Detection – The system checks existing booking records,
+blocked dates, and booking limits to help prevent overlapping reservations.
+o Role-Based Access Control – The system assigns different features and
+permissions to Client, Owner, Admin, and Staff based on their responsibilities.
+o Notification Sending – The system sends notifications to concerned users
+regarding booking, payment, refund, and reschedule updates.
+o Real-Time Status Monitoring – The system provides updated booking,
+payment, refund, and reschedule statuses to keep users informed about their
+transactions.
+STI College Ortigas-Cainta 35
+
+===== PAGE 40 =====
+Requirements Documentation
+This section establishes the basis of agreement between the client and the developers regarding the
+system’s functionalities.
+Under Agile methodology, requirements are documented through:
+• Product Backlog – A complete list of system features
+• SPRINT BACKLOG – TASKS SELECTED FOR EACH SPRINT
+• User Stories – Functional descriptions of system requirements
+Examples of User Stories:
+• As a client, I want to book an entertainer for my event so that I can secure a schedule
+efficiently.
+• As a client, I want to upload proof of downpayment so that my booking can proceed to
+payment verification.
+• As a client, I want to request a refund for an eligible booking so that payment concerns
+can be properly reviewed.
+• As an owner, I want to verify payment submissions so that only valid payments can
+confirm bookings.
+• As an owner, I want to review refund requests so that refund-related concerns are
+properly handled.
+• As an owner, I want to view reports so that I can monitor income, booking performance,
+and package trends.
+• As an admin, I want to manage service packages so that I can update available
+offerings.
+• As an admin, I want to manage user accounts so that system access remains organized
+and controlled.
+• As a staff member, I want to view booking records so that I can assist in monitoring
+scheduled events.
+STI College Ortigas-Cainta 36
+
+===== PAGE 41 =====
+• As a staff member, I want to view completed bookings so that past event records remain
+organized.
+All software features are enumerated and implemented incrementally per sprint. System interfaces
+are presented through designed Razor Views (.cshtml) showing how the software appears once
+developed and deployed.
+Design of Software, System, Product, and/or Processes
+Data Flow Diagram
+Figure 3: Level 0 Context Diagram
+Figure 4: Level 1 – Top Level Processes
+STI College Ortigas-Cainta 37
+
+===== PAGE 42 =====
+Figure 5: Level 2 – Detailed Processes
+r
+Figure 6: ERD Diagram
+
+===== PAGE 43 =====
+Figure 7: Use Case Diagram
+35
+
+===== PAGE 44 =====
+Figure 8: Owner Flow
+SYSTEM FLOW
+36
+
+===== PAGE 45 =====
+Figure 9: Admin Flow
+37
+
+===== PAGE 46 =====
+Figure 10: Staff Flow
+38
+
+===== PAGE 47 =====
+Figure 11: Client Flow
+39
+
+===== PAGE 48 =====
+The system follows a layered architectural pattern:
+1. Presentation Layer – Razor Views (.cshtml), HTML5, CSS3, Bootstrap
+2. Business Logic Layer – ASP.NET Core MVC Controllers and Services
+3. Data Access Layer – Entity Framework Core
+4. Database Layer – SQL Server
+Security is implemented using ASP.NET Core Identity with role-based authentication and
+authorization for Client, Owner, Admin, and Staff users. Each role has different access permissions
+based on its responsibilities. Clients can submit and monitor transactions, Owners can verify
+payments, approve refunds, manage reschedule decisions, and view reports, Admins can manage
+system records and user accounts, while Staff can monitor bookings, schedules, and completed
+events.
+The system is designed to be responsive, secure, scalable, and maintainable. The use of Agile
+methodology ensures that the system continuously evolves through iterative development and
+systematic testing until full deployment.
+REFERENCES
+Cabiles, J. R., Santos, M. P., & Dela Cruz, A. T. (2025). Online booking systems and customer
+satisfaction among selected hotels in Quezon City. Ascendens Asia Journal of Multidisciplinary
+Research, 5(1), 34–45.
+Fontanilla, K. L., Ramirez, P. D., & Morales, J. T. (2025). Online reservation systems and service
+efficiency in selected restaurants in Makati City. Ascendens Asia Journal of Multidisciplinary
+Research, 6(1), 21–32.
+Alcantara-Zamudio, M. L. (2025). Customer preferences and perceptions of onsite vs digital
+ticketing of travel and tour services in Camarines Sur. International Journal of Tourism and
+Hospitality Research, 9(1), 44–55.
+40
+
+===== PAGE 49 =====
+Rabanillo, J. C., Reyes, D. G., Huya, E. O., & Cruz, C. P. (2025). Digitalized booking for Hundred
+Islands: A developmental approach towards industrial advancement of Alaminos City tourism.
+International Journal of Research and Innovation in Social Science, 9(3), 210–218.
+Gaspay, A. R., Gullim, J., Magno, J. J., Sabalbarino, C., Baclaya, R. J. K., & Villasor, R. A. (2025).
+Travel and tours management system: Tour creation, itinerary management, transportation
+booking and hotel reservation using AI-driven adjustments. Ascendens Asia Singapore – Bestlink
+College of the Philippines Journal of Multidisciplinary Research, 6(2), 60–
+72.
+Verzosa, J. M., Poblete, R. A., Membrebe, Z. J. O., Ng, L. T., Daraway, A. C., & Diaz, M. N. R.
+(2024). Service quality and customer satisfaction towards a first choice decision framework of a
+tourist destination in selected resort hotels in Palawan. Ignatian International Journal for
+Multidisciplinary Research, 2(11), 590–630.
+Gosela, M. A., & Encarnacion, R. P. (2024). Location-based booking and reservation application
+for tourism services in the Philippines. International Journal of Advanced Research in Science,
+Communication and Technology, 4(2), 155–162.
+World Journal of Advanced Research and Reviews. (2025). Service quality and client satisfaction
+in events management companies in Cabanatuan City, Nueva Ecija. 28(03), 694–698,
+Department of Tourism Philippines. (2022). Tourism entertainment activities and visitor
+engagement in Philippine destinations. Department of Tourism Research Report, 1(1), 1–8.
+Bautista, R. S. (2020). Event management practices in the Philippine tourism industry. Journal of
+Hospitality and Tourism Management Philippines, 8(1), 15–25.
+Barua, M., & Kaiser, R. (2024). Online event management system: A critical review of research
+findings. International Journal of Innovations in Engineering and Science.
+Ganiyu, A., et al. (2024). Online reservation systems in the hospitality industry: An indepth
+examination of their impact on service delivery. Marketing Journal.
+Maurya, R., et al. (2025). Event planning platform powered by artificial intelligence.
+International Journal for Research in Applied Science and Engineering Technology (IJRASET).
+41
+
+===== PAGE 50 =====
+Niu, X., et al. (2023). A review of optimization studies for system appointment scheduling. MDPI
+Journal.
+Razali, N., et al. (2023). Online events booking and reservation system. ResearchGate Publication.
+Springer Nature. (2024). Evaluation study of an adaptive appointment booking system. Springer
+Publication.
+Wahyuni, S., et al. (2025). Implementation of a web-based event reservation information system.
+Indonesian Journal of Computer Science.
+Anonymous Author. (2023). Technology-based scheduling and event management in sports. MRI
+India Journal.
+Anonymous Author. (n.d.). Online events ticketing management system: A case study of
+Namboole Stadium. ResearchGate Publication.
+Kim, J., Lee, S., & Park, H. (2021). Influence of mobile travel applications on consumer decision-
+making. International Journal of Tourism Technology, 10(3), 55–70.
+Wang, Y., & Zhang, L. (2022). The impact of online reservation systems on operational
+effectiveness in the hospitality industry. Journal of Hospitality and Tourism Technology, 13(2),
+101–118.
+Lopez, R., Hernandez, P., & Martinez, F. (2023). Technology integration and guest satisfaction in
+hospitality and entertainment services. International Journal of Hospitality Management, 45(4),
+210–225.
+Johnson, K., & Lee, D. (2022). Digital ticketing and reservation analysis for large-scale
+entertainment events. Event Management Journal, 26(3), 145–162.
+Silva, A., & Ferreira, R. (2022). Web-based event management systems: Operational efficiency,
+scalability, and accessibility. Journal of Event Technology and Management, 9(2), 88– 104.
+Veena, N., & Thejaswini, S. (2023). Aadhaar block: An authenticated system for counterfeit
+Aadhaar enrolment in citizen services using blockchain. In S. Shakya, V. E. Balas, & W. Haoxiang
+(Eds.), Proceedings of the Third International Conference on Sustainable Expert Systems.
+Springer.
+42
+
+===== PAGE 51 =====
+Kurniawan, A., et al. (2024). Event management system using web-based technology. Journal
+Innovations Computer Science (JICS).
+Rithanya, P. M., & Santhi, K. (2025). A modular event management system with real-time
+collaboration and online booking features. International Journal of Innovative Research in
+Electrical, Electronics, Instrumentation and Control Engineering.
+Sari, D., et al. (2024). Design and implementation of a web-based event management system.
+Indonesian Journal of Computer Science (IJCS).
+APPENDICES
+APPENDIX A. RESOURCE PERSONS
+APPENDIX B. PERSONAL TECHNICAL VITAE
+Curriculum Vitae of
+GABRIEL NICOLE BENEDICTO
+26 Noble Street, A Prime, San Andres, Cainta, Rizal
+gabrielnicolebenedicto25@gmail.com
+09658555335
+EDUCATIONAL BACKGROUND
+Level Inclusive Dates Name of school/ Institution
+Tertiary 2023-present STI College Ortigas-Cainta
+Senior High School 2 0 1 9 -2021 Cainta Senior High School
+High School 2017-2021 Francisco P. Felix Memorial
+National High School
+Elementary 2011-2017 Cainta Elementary School
+43
+
+===== PAGE 52 =====
+Curriculum Vitae of
+EJ RIDGE LERIOS
+Blk 6 Lot 12 Venus Street, Nagpayong, Pinagbuhatan, Pasig City
+leriosejridge@gmail.com
+09763476426
+EDUCATIONAL BACKGROUND
+Level Inclusive Dates Name of school/ Institution
+Tertiary 2023-present STI College Ortigas-Cainta
+Senior High School 2020-2022 Rizal High Senior School
+High School 2016-2020 Rizal High School
+Elementary 2010-2016 San Miguel Elementary School
+Curriculum Vitae of
+JOHN MICHAEL P. SOGUILON
+190 Velasquez Street, San Juan, Taytay, Rizal
+09560729657
+EDUCATIONAL BACKGROUND
+Level Inclusive Dates Name of school/ Institution
+Tertiary 2023-present STI College Ortigas-Cainta
+Senior High School 2021-2023 Taytay Senior High School
+STI College <School Name>
+
+===== PAGE 53 =====
+High School 2018-2021 Manuel Ignacio Santos Memorial National
+High School
+High School 2016-2018 Sampaguita Village National High School
+Elementary 2015-2016 San Isidro Village Elementary School
+Elementary 2011-2015 San Juan Elementary School
+Curriculum Vitae of
+DANIEL P. TUPRIO
+Blk 7, Floodway Kabisig, San Andres, Cainta, Rizal
+danieltuprio01@gmail.com
+09497375217
+EDUCATIONAL BACKGROUND
+Level Inclusive Dates Name of school/ Institution
+Tertiary 2023-present STI College Ortigas-Cainta
+Senior High School 2021-2023 Sta. Lucia Senior High School
+High School 2017-2021 St. Michael Montessori High School
+Elementary 2011-2017 Maybunga Elementary School
+TRANSCRIPT
+Interview Date: April 13, 2026
+Interviewee: Lazaro Benedicto (Aries)
+Interviewer: Benedicto, Gabriel Nicole Lerios, EJ Ridge
+Recording method: Audio
+EJ Ridge Lerios (00:02)
+Okay. My name is EJ Ridge Lerios, one of, um, the groupmates of this Capstone group.
+STI College <School Name>
+
+===== PAGE 54 =====
+Gabriel Benedicto (00:09)
+And I am Gabriel Benedicto, one of the interviewers for today, and this is our first question po.
+Ano yung platform na ginagamit niyo sa pag-take ng reservation?
+Aries (Client) (00:21)
+Uh, mostlyang ginagamit namin for, uh, reservation, especially mas madali kaming makita ng
+client, uh, using Facebook or, uh, Instagram. Yun din kasi yung ginagamit naming, uh, platform
+kung saan naglalagay kami ng mga advertisement.
+Gabriel Benedicto (00:42)
+Okay. Ano naman po yung ginagamit niyo sa pag-manage ng mga bookings? Like, for
+example, yun nga, may mga bu-bookings na, paano niyo po namo-monitor
+and nalalaman kung ano po yung mga upcoming, uh, booking sa araw na 'to?
+Aries (Client) (00:58)
+Sa calendar ba?
+Gabriel Benedicto (00:59)
+Mm.
+Aries (Client) (00:59)
+Uh, bale, uh, unfortunately, ano pa rin eh, nasa traditional way pa rin ako eh, uh,
+manual na na booking, like isusulat siya sa, sa, sa book namin, or kasi ang ginagawa namin just to
+make sure na, na nagta-tally lahat ng reser- uh, lahat ng bookings, and just to avoid yung double
+booking, is, uh, naka-manual siya na sinusulat.
+Aries (Client) (01:29)
+Uh, also nire-record din namin siya from page to my personal account. Uh, may copy din kami ng,
+ng booking doon.
+STI College <School Name>
+
+===== PAGE 55 =====
+Aries (Client) (01:37)
+At the same time, uh, medyo ma-synchronize sa akin using, uh, Google Calendar.
+Gabriel Benedicto (01:44)
+Okay. Google Calendar.
+EJ Ridge Lerios (01:46)
+Ay, ay, pwede po kaming manghingi ng example ng
+actual niyo na, ano, na tawag doon sa manual booking po, yung actual
+po na lista niyo sa mga totoong bookings po?
+Gabriel Benedicto (01:58)
+Paano niyo, paano niyo gusto?
+Aries (Client) (02:00)
+Recorded po ba 'yon? Or, or nino-note na lang niya?
+Gabriel Benedicto (02:03)
+Recording lang po 'yun, pero ilalagay naman po namin. Pwede naman po namin i-ano lang.
+Aries (02:08)
+Mm. Ah, okay. Wala.
+Speaker C (02:11)
+Nasa bahay yung ano.
+Aries (Client) (02:12)
+Hindi, hindi naman po ngayon, pero.
+Aries (Client) (02:13)
+Ah, yung mga pinaka.
+STI College <School Name>
+
+===== PAGE 56 =====
+EJ Ridge (02:15)
+Oo. Opo.
+Speaker C (02:18)
+Yung pinaka-manual, ano?
+EJ Ridge (02:20)
+Kahit example lang po ng, ano, isang example lang about sa ano niyo.
+Aries (Client) (02:24)
+Ah, okay.
+Gabriel Benedicto (02:25)
+Sige, pause muna natin.
+Aries (Client) (02:27)
+Inano ko lang yung ano eh, yung manual, ano, pero mostly ang ginagamit kasi talaga namin, uh,
+Messenger to, ano, yung from page para may dalawang copies. Kasi dito pwedeng,
+like, magkaroon lang ng problema, mapindot lang for some reason na-delete yung booking,
+so wala na dito.
+Aries (Client) (02:44)
+Ang backup namin is yung from page kapag may naka-book na, ise-send yung details
+doon sa account ko. Parang ganun lang.
+Aries (Client) (02:53)
+Parang dalawang account, parang tatlong account, yung kay Jai, yung, uh,
+page namin, pati sa amin.
+Gabriel Benedicto (02:58)
+To ensure po na may upcoming
+STI College <School Name>
+
+===== PAGE 57 =====
+Aries (Client) (02:59)
+May copies lang kami. Oo, may copy kaming tatlo, parang ganun.
+Aries (Client) (03:03)
+Yun siya. Ang itsura ng booking ay genire.
+Aries (Client) (03:10)
+Thank you for, blah, blah, blah. All right.
+Aries (Client) (03:13)
+A type of events, event birthday, motif, para malaman kung ano yung kulay na susuotin ko. Time
+and date, time, tsaka kung hanggang anong oras, tapos date.
+Gabriel Benedicto (03:24)
+May motif pa?
+Aries (Client) (03:25)
+Oo. Tapos kung yung mismong theme nung party nila, kung ano ba 'yan. This one, uh.
+Aries (Client) (03:31)
+Bumblebee.
+Aries (Client) (03:31)
+Bumblebee. All right. Yun.
+Aries (Client) (03:33)
+Tapos, uh, venue. Venue.
+Aries (Client) (03:38)
+Tapos name ng celebrant, age, kung ilang, uh, guests yung meron, kung anong package i-
+aavail nila.
+STI College <School Name>
+
+===== PAGE 58 =====
+Gabriel Benedicto (03:48)
+Mm.
+Aries (Client) (03:49)
+Tas ito.
+EJ Ridge (03:51)
+Yan. Like, pwede pong maka hingi ng example niyan.
+Kasi diyan makikita po yung mga info na hinihingi niyo sa ano eh, client niyo, ano.
+EJ Ridge (03:58)
+Tama po ba? At yung mga.
+Aries (Client) (03:59)
+Oo. Pwede naman. Itong isa i-copy ko, then send ko kay Nicole.
+Speaker C (04:07)
+Teka lang, mag-send na lang ako sa'yo yung ano, di ko ma-copy. Abnormal 'to si iPhone eh.
+Gabriel Benedicto (04:13)
+Ay ba't po nabasag yung cellphone niyo?
+Speaker C (04:15)
+Hindi pinanta-taching ko yun. Hindi, na-naano sa ano 'to.
+Aries (Client) (04:22)
+Ano nga pangalan mo, Gab, Haha
+Aries (Client) (04:27)
+Ah, ha. Ayun lang, walang paste sa ano.
+Aries (Client) (04:35)
+STI College <School Name>
+
+===== PAGE 59 =====
+Ise-send ko na lang sa'yo. Ise-send ko na lang.
+Aries (Client) (04:38)
+Or, or may follow-up question kayo dito.
+EJ Ridge Lerios (04:42)
+Alin po diyan yung mga ano, yung hindi naman po record na pwedeng i-skip ni client? Yung
+motif po ba?
+EJ Ridge Lerios (04:50)
+Required po ba 'yon?
+Aries (Client) (04:51)
+Ayun. (na-send na yung info)
+Gabriel Benedicto (04:52)
+'Di ba po?
+Aries (Client) (04:53)
+Ayun, napaka-angas. O, ayun. (na-send na yung info)
+Aries (Client) (04:55)
+O, hindi, okay na pala. Okay, game tayo.
+Gabriel Benedicto (04:59)
+Next.
+Aries (Client) (05:00)
+Sorry ah pawis na talaga ako.
+Gabriel Benedicto (05:02)
+Ano po, ano po yung problem na madalas niyong na-encounter or wala naman po masyado?
+STI College <School Name>
+
+===== PAGE 60 =====
+EJ Ridge Lerios (05:06)
+Okay lang naman po kung wala ring masyado.
+Aries (Client) (05:08)
+Regarding doon sa booking. Or kung may nahihirapan po kayong something about sa pag-
+book niyo po, ganun.
+Aries (Client) (05:18)
+Siguro ang, ang magiging problem lang doon, if ever, yung pagma-manual
+check nung, nung, nung yung pagma-manual check na kung ito bang,
+kung yung details ba nito is talagang naka-book siya dito, kung available ba talaga 'to.
+Kasi kapag may binago kang isa dito, babaguhin mo din yun dito.
+Aries (Client) (05:39)
+Ganito, ganyan.
+Gabriel Benedicto (05:40)
+Nakakapag-po sa calendar po.
+Aries (Client) (05:41)
+Mm. Yung sa calendar, babaguhin mo. At the same time, yung sa Messenger, babaguhin mo.
+Gabriel Benedicto (05:46)
+Kasi po, 'di ba po, minsan kapag sa calendar, pag may naka-book doon, may naka-
+mark, hindi niyo makikita agad kung ilan yung naka-book doon sa araw na 'yon.
+Aries (Client) (05:54)
+Oo. Oo. Ganun.
+Aries (Client) (05:56)
+STI College <School Name>
+
+===== PAGE 61 =====
+May ganun din. Ngayon, kung sa yung naka-book naman, like this one, per month, ito siya.
+Gabriel Benedicto (06:23)
+Nagluto pa si Lola. Ah, sige po.
+Gabriel Benedicto (06:27)
+Oh sige po.
+Aries (Client) (06:30)
+Oops saya ah, birthday ko pala bukas.
+Aries (Client) (06:33)
+Amazing.
+Gabriel Benedicto (06:33)
+Birthday ni Tito Aries, bukas.
+Aries (Client) (06:34)
+Hindi, pero wala akong ewan ko, wala akong ano eh. Wala akong.
+Gabriel Benedicto (06:37)
+Wala po kayong ano bukas?
+Gabriel Benedicto (06:39)
+Bukas. Ay, wala kayong show bukas?
+Aries (Client) (06:41)
+May nag pa-book nga sana eh. Hindi tumuloy.
+Aries (Client) (06:44)
+Quezon Province. Diba saya.
+STI College <School Name>
+
+===== PAGE 62 =====
+Aries (Client) (06:49)
+Yun lang siguro, yung pagma-manual check ng, ng pagta-
+tally nung, nung dalawang ano, yung yun nga, yung sa mga record na manual, pati ito.
+Gabriel Benedicto (07:01)
+Parang mas mahirap po siyang i-view. Sana po mas isahan para mas madaling ma-view ang data.
+Aries (Client) (07:07)
+Oo. Actually, may ang pinaka-downside lang kasi talaga sa system na ganito, what if lang, no?
+What if lang na merong nagkaroon ng glitch or nagkaroon ng, ng
+error na ano, yung mangyari, hindi na.
+Aries (Client) (07:22)
+Oo, ganun.
+Gabriel Benedicto (07:23)
+Kasi po, tendency po talaga sa manual, ano, tinuturo din po sa amin, human error din
+po talaga na kapag may na-ano ka, pwedeng ma-delete or bukasan.
+Aries (Client) (07:32)
+Oo. Yun. Pag nawala na 'yon, talagang malaking mana-mana.
+Aries (Client) (07:36)
+Oo. Ta's ito pa pala, isa pang, uh, ito, ito siguro masasabi kong problem siya.
+'Di ba maraming sa ano na 'to eh, sa Messenger na 'to eh, sa sobrang, sa sobrang dami ng client,
+'di ba, natatabunan?
+Aries (Client) (07:53)
+STI College <School Name>
+
+===== PAGE 63 =====
+Ngayon,
+para hanapin mo yung kung sino yung client na ganito, pagdating sa ano ba 'tong ginagamit nami
+ng app?
+Gabriel Benedicto (07:59)
+Ay oo.
+Aries (Client) (08:00)
+Business, uh, suite. Okay.
+Aries (Client) (08:03)
+Pag dito ka, sa iPhone, um, kailangan specific yung name, like Angelica, blah, blah, blah. Yoon
+para lumabas siya.
+Aries (Client) (08:13)
+Ngayon, sa Android, okay
+naman. Ngayon, yung mga keywords na ginagamit, yung mga kin, yung mga ginagamit na keyw
+ords para doon sa mga naka-book dito, oo, yun ang medyo pahirap.
+Aries (Client) (08:30)
+Or, or halimbawa, today, ah, halimbawa, kinabukasan, may event pala ako. Alam ko bukas may
+event ako, kaso nawala dito sa record ko dito.
+Aries (Client) (08:44)
+Ngayon, kung papaano ko mare-retrieve na, sino kaya 'yon? April 14.
+Gabriel Benedicto (08:50)
+Oo.
+Aries (Client) (08:51)
+Yung.
+STI College <School Name>
+
+===== PAGE 64 =====
+Aries (Client) (08:51)
+Kinabukasan.
+Aries (08:52)
+Oo. Or peke. Siguro human error na 'yon eh, pagdating sa ganun.
+Aries (Client) (08:57)
+Yoon ang nagiging problema.
+Gabriel Benedicto (09:00)
+Mahirap po siyang i-ano.
+Aries (Client) (09:01)
+Oo. Pero ang ginagawa na lang namin, like, pupunta lang kami sa Messenger, keyword kung
+April, ganito, ganyan, ganyan. Ta's
+kung ano yung natatandaan namin na keyword na pwedeng lumab, mag-pop
+up yung name na ganun, tsaka yun namin makukuha.
+Gabriel Benedicto (09:15)
+Minsan po ba, Tito, Aries, hindi po nagme-message yung client na, "Sir, ganito po.
+Next week po, ganito ba?" Or madalang po yung ganun?
+Aries (Client) (09:23)
+Um, siguro mga almost 60%, hindi naman na sila nagcha-chat na, "Sir, see
+you, ganito, ganyan, ganyan." Hindi na. Like, ah, one.
+Gabriel Benedicto (09:34)
+Talagang dapat kayo na.
+Aries (09:35)
+STI College <School Name>
+
+===== PAGE 65 =====
+One. One week, one week before the event, nakakapag-message, message pa kami.
+Pero pag medyo malapit na, kasi ang dami nilang kausap na mga suppliers eh, minsan na ne-
+neglect na nila na, "Ay, Sir, si ito, mga ganun." Wala na.
+Gabriel Benedicto (09:48)
+Yun ang problem doon. Pagka wala po kayo doon, wala talaga po kayo, ano?
+Aries (Client) (09:52)
+Oo.
+Gabriel Benedicto (09:53)
+Nangyari na po ba yung ganun, Tito Aries?
+Aries (09:55)
+Hindi, wala pa.
+Gabriel Benedicto (09:56)
+Pero yung ano po ata, na-move ata, ano, nandun na kayo sa may.
+Aries (Client) (10:00)
+Meron. Pumunta kami. Walang.
+Gabriel Benedicto (10:03)
+Hindi nagsabi.
+Aries (Client) (10:04)
+Walang, Walang ano.
+Gabriel Benedicto (10:06)
+STI College <School Name>
+
+===== PAGE 66 =====
+Ano? Paano po yung ganun? Kasalanan niyo?
+Aries (Client) (10:08)
+Error nung client. Ang ginawa kasi niya is, um, nalito siya.
+Aries (10:13)
+Akala niya yung, for example, April ngayon, let's say April, April.
+Gabriel Benedicto (10:19)
+13.
+Aries (Client) (10:20)
+O, April, like April 18 pala yung birthday nung anak niya, and nailagay niya sa fill-up form.
+Gabriel Benedicto (10:28)
+17.
+Aries (Client) (10:28)
+17.
+Gabriel Benedicto (10:29)
+Aray ko.
+Aries (Client) (10:31)
+O, hindi. Pumunta kami ng 17.
+Aries (Client)s (10:33)
+Ta's pagdating namin, walang setup po, tsaka nabukasan po pala yung party.
+Gabriel Benedicto (10:37)
+Paano po yun? Nagbayad na lang din po siya ng extra?
+STI College <School Name>
+
+===== PAGE 67 =====
+Aries (Client) (10:41)
+Hindi. Ginawa niya, binayaran niya ng half eh. Like, parang mga nasa 15 to 10k ata.
+Aries (Client) (10:46)
+Yung ginawa namin, nagbalik na lang kami ng, ah, certain amount. Like, nag-down ng
+15, ginawa namin, binalik namin na yung 5.
+Aries (Client) (10:55)
+Ngayon, yung 10k as damage na lang sa amin kasi nandun na kami eh.
+Gabriel Benedicto (10:59)
+Pero hindi na po kayo yung tumanggap non.
+Aries (11:01)
+Hindi na. Ang ginawa ko, pinasok ko doon sa kaibigan ko.
+Gabriel Benedicto (11:04)
+Kasi po may book din kayo na 18. Ah, mali niya, no?
+Gabriel Benedicto (11:08)
+Sayang.
+Gabriel Benedicto (11:12)
+Pero ganon talaga eh. And wala din po siyang magagawa doon.
+Aries (Client) (11:17)
+Recording pa tayo? Oh okay, Sige, sige. para ma-note mo.
+Aries (Client) (11:20)
+Okay.
+STI College <School Name>
+
+===== PAGE 68 =====
+Gabriel Benedicto (11:21)
+Then.
+Aries (Client) (11:21)
+Yun yung mga nagiging problem. Sige, next question.
+Gabriel Benedicto (11:24)
+Noted naman, no? So, fourth question po.
+Gabriel Benedicto (11:28)
+Pinaka-process po, step by step ng booking.
+Aries (Client) (11:32)
+Ah, first step sa booking, um, let's proceed na lang siguro muna doon sa time of inquiry para ano.
+So, ah, we have the advertisement sa Meta.
+Aries (Client) (11:46)
+Then, pag once mag-message sa amin yung client, I will ask
+them yung, yung venue, yung time, pati yung date. Kasi very important yun.
+Aries (Client) (11:57)
+Just to check kung available pa kami. Kasi anything naman, magbigay man ako ng
+information sa kanila, kung hindi naman kami available, sayang lang din yung oras niya sa amin.
+Aries (Client) (12:08)
+At the same time, sayang oras namin sa kanila. Pero further future reference, minsan sine-
+send na din naman namin.
+Aries (Client) (12:16)
+STI College <School Name>
+
+===== PAGE 69 =====
+Ngayon, if ever na available, o parang ganyan, may nag-i-inquire. So, if ever na available naman
+kami, I will send all the packages.
+Aries (Client) (12:26)
+Babanggitin ko pa ba yung hindi naman na ano?
+Gabriel Benedicto (12:29)
+Yung packages po. Mamaya pa po yun.
+Aries (Client) (12:31)
+O, sige.
+Gabriel Benedicto (12:31)
+After nito.
+Aries (Client) (12:32)
+I will send all the package. Then, they will choose their, their package.
+Aries (Client) (12:37)
+And then, after that, we will proceed with the reservation. Ganun yung ginagawa ko muna.
+Aries (Client) (12:42)
+Hindi muna ako gumagawa ng, ah, contract. Pero ang proper talaga, dapat contract muna.
+Aries (Client) (12:49)
+Ta's after that, reservation. Then, yung, ah, after, ah, sorry.
+Aries (Client) (12:57)
+They have to confirm their, ah, package. Next is, ah, meron muna dapat talaga na fill-up form.
+Aries (Client) (13:05)
+STI College <School Name>
+
+===== PAGE 70 =====
+Next will be the, the, the contract. Kasi doon magbe-base.
+Aries (Client) (13:10)
+After the contract, after the contract, ah, reservation na sila. After the reservation, tsaka namin ise-
+send yung, ah, flow ng program and all the things that they have to provide, ah, before the event
+or on the day of the event para at least na-heads up sila na kung ano yung mga kailangan.
+Aries (Client) (13:38)
+And then, kung ano yung mga guide namin just to help
+them na maging successful yung event nila.
+EJ Ridge Lerios (13:46)
+So, wala pong down payment or hindi niyo po nasabi?
+Aries (Client) (13:50)
+Hindi.
+Speaker C (13:50)
+Para ma-secure yung slot?
+Aries (Client) (13:52)
+Yeah, nasabi ko na.
+EJ Ridge Lerios (13:53)
+Pang-ilang step siya?
+Aries (Client) (13:54)
+Ah, okay. Sige, ulitin ko ah.
+Aries (Client) (13:56)
+So, first, um, they have to choose their, um, their package. Next is fill-up form.
+STI College <School Name>
+
+===== PAGE 71 =====
+Aries (Client) (14:04)
+Ifi-fill up nila yung mga details na kailangan: name ng client, date, time, venue,
+specific yung name ng, name ng magbe-birthday, tsaka type ng event kung birthday ba siya,
+may binyag pa ba, or, um, or, oo, kung ano mang event yan, like, ah, school show, Halloween,
+Easter Sunday, etc. Ah, para yung mga details na yun is ipo-proceed namin
+Aries (Client) (14:32)
+with the next one, which is the contract na tayo. Kasi indicate doon yung terms and agreements.
+Aries (Client) (14:38)
+Oo, terms and agreements, ganun. Pati kung magkano yung down payment na kailangan nilang i-
+reserve.
+Aries (Client) (14:45)
+After that, ah, once na okay na sa kanila, malinaw na, they have to sign the contract. And then,
+next is yung, ah, reservation fee, ah, mode of payment.
+Aries (Client) (14:59)
+Ah, once okay na sa kanilang contract, ayusin ko na lang ha.
+Pero hindi kasi ito yung flow na ginagawa namin na, which is ang ginagawa, o basta doon
+tayo sa tamang process.
+Aries (Client) (15:12)
+After ma-sign nila yung contract at okay na, I will send their, ah, mode of payment
+para sa reservation nila. After nilang mag-send ng reservation, I will send the acknowledgement
+receipt or at least i-acknowledge namin na na-receive na namin yung down payment.
+Aries (Client) (15:35)
+Then, after non, tsaka ko ise-send yung flow ng program pati yung mga, ah, things that they have
+to provide.
+STI College <School Name>
+
+===== PAGE 72 =====
+Gabriel Benedicto (15:46)
+Okay.
+Aries (Client) (15:47)
+Ayun.
+Gabriel Benedicto (15:48)
+Um, okay po.
+Aries (Client) (15:49)
+Pero normally, hindi ko ginagawa yun. Bakit?
+Aries (Client) (15:55)
+Kasi kapagka gumawa ako ng kontrata, gumawa ako ng acknowledgement receipt at sinend ko
+din sa client, nag-send pa ako ng mga ganito, ganyan, ganyan, at hindi din naman sila magpapa-
+book muna, sasayangin nila yung oras ko, namin.
+Kasi sa amin, makakasigurado sila sa amin, sa amin.
+Aries (Client) (16:16)
+Pero kami ba, sure ba kami na magpapa-book sila? Kasi kung magda-down na sila, sure e-
+entertain na namin yun.
+Aries (Client) (16:23)
+Lahat ng details, kailangan nila kasi legit naman kami. Pero some of the customers
+kasi is namamalengke pa, ganito, ganyan, ganyan.
+Aries (Client) (16:31)
+Tatanong ko sa asawa, sa misis, ganito, ganyan.
+Then, dumadating sa point na sumasayang lang yung oras.
+STI College <School Name>
+
+===== PAGE 73 =====
+Aries (Client) (16:40)
+Ganun. Kumbaga, yun ang sa amin. Kaya meron akong mga clients na, ah, nag-send ako ng
+reservation na muna, ah, before the program and everything.
+Aries (Client) (16:50)
+Pero alam na nila muna yung, yung mga packages. Then, reservation muna.
+Aries (Client) (16:55)
+Yung iba, "Sir, ah, may I have the contract first before, ah, sila mag-down?" Sabihin ko, "Okay
+lang naman." Pero yun nga, ah, they have to, ah, reserve din right after. Kasi ginawan kita ng
+contract, nagsayang ako ng oras sa'yo nung sinend ko.
+Aries (Client) (17:13)
+Hindi ka naman pagda-down. Sasayang mo yung oras namin.
+Aries (Client) (17:17)
+Ayun. Ah, next tayo. Sungit ko eh no, yon.
+EJ Ridge (17:20)
+Ilan po yung minimum na down payment.
+Aries (Client) (17:22)
+Ah, minimum of down--
+Gabriel Benedicto (17:24)
+Ito pa yun. Mamaya pa yun.
+Aries (Client) (17:26)
+Sige, sige. Ah, next muna tayo.
+Aries (Client) (17:28)
+STI College <School Name>
+
+===== PAGE 74 =====
+Ah, ano ba? Kayo, kayo, kayo mag-decide.
+Gabriel Benedicto (17:30)
+Ano po yung ano? Magkano po yung pinaka-minimum?
+Gabriel Benedicto (17:32)
+Nagva-vary po ba siya? Depende po ba sa theme or sa layo or sa?
+Aries (Client) (17:36)
+Hmm. Base doon sa amin, ang, ang talagang required na reservation fee lang namin is very
+minimal lang, which is Php2,000, just to reserve yung mismong day.
+Gabriel Benedicto (17:48)
+Slot po.
+Aries (Client) (17:49)
+O, yung slot.
+Gabriel Benedicto (17:50)
+Naka, naka, naka-reserve na po talaga yun.
+Aries (Client) (17:52)
+Naka-reserve na talaga yun. Kahit may magpa-book man na artista, hindi namin.
+Aries (Client) (17:57)
+Yung si ano, si Rana Harake, nagpapa-book yung kapatid ni Zeinab.
+Gabriel Benedicto (18:00)
+Rana? Harake?
+Aries (Client) (18:01)
+STI College <School Name>
+
+===== PAGE 75 =====
+Mm. Eh, may naka-book sa akin nung Sunday. Hindi naman ganun.
+Aries (Client) (18:05)
+Ayun. O, yun. O, yun.
+Aries (Client) (18:08)
+Ah, 2k lang. 2k lang naman yung down payment.
+Gabriel Benedicto (18:10)
+Dapat lang, dapat lang.
+Aries (Client) (18:11)
+Mm. Dapat lang sa 2k. After yun nga, after makapag-reserve ng 2,000, the rest of the
+payments is after the party na.
+Aries (Client) (18:21)
+It's either, ah, bank, bank transfer or bank transfer or mas prefer is cash, ganun.
+Gabriel Benedicto (18:31)
+Pero okay lang po, ano, 50% or hindi naman kayo nag-aano ng 50%?
+Aries (Client) (18:36)
+Hindi namin nire-require ang client na mag-down ng 50%. But if they want, ah, na i-advance na,
+meron naman talagang mga client na gusto na nilang bayaran muna lahat ng payment before the
+event day nila para ma-lessen yung stress sila.
+Aries (Client) (18:56)
+Like, oo, kasi baka mawala pa yung, yung bag nila or ganito, ganyan. Sine-settle na nila.
+Aries (Client) (19:02)
+STI College <School Name>
+
+===== PAGE 76 =====
+Pwede din naman yun. Pero as a performer, mas ginaganahan kaming mag, mag, ah, perform
+kung makukuha namin yung kabuuan halos ng payment after nung party.
+Aries (Client) (19:15)
+Party. Ano ba yun? 25k din sa'yo.
+Aries (Client) (19:19)
+Eh, yung mga ganun. Ayun.
+Aries (Client) (19:22)
+Okay. Next question.
+Gabriel Benedicto (19:23)
+So, okay. Edi, 2k, no?
+Aries (Client) (19:26)
+2k. Very minimal lang. Non-refundable yun.
+Gabriel Benedicto (19:31)
+Opo.
+Aries (Client) (19:31)
+Oo, non-refundable.
+Gabriel Benedicto (19:32)
+Nasa terms and agreements nila po yun.
+Aries (Client) (19:34)
+Oo, nasa, nasa fill-up, nasa ano po yun, nasa mode of payment po yun na.
+Gabriel Benedicto (19:40)
+STI College <School Name>
+
+===== PAGE 77 =====
+Okay. So, ah, ano po yung mga ino-offer niyong service? Lahat po siya.
+Gabriel Benedicto (19:46)
+Meron po ba kayong mga, kunwari po, mga packages po, kunwari po, hosting at saka bubble
+show at saka puppet show, magkakasama po silang tatlo or pwede naman pong i-customize ng
+client?
+Aries (Client) (19:59)
+Okay. Sa.
+Gabriel Benedicto (20:02)
+Packages?
+Aries (Client) (20:02)
+Sa packages namin, tatlo lang. Yung premium, which is yung, ah, magic show, ah, magic
+show na upgraded with illusion and, ah, ah, live animals, ganyan, like the duck rabbit and
+wormy spyton.
+Aries (Client) (20:21)
+Ah, included siya doon. At the same time, merong yung puppet show/ventriloquisms games and
+party hosting.
+Aries (Client) (20:31)
+Ah, regarding with the party hosting, included doon yung, ah, pino-provide namin na, ah, flow ng
+program from start until the end of the program. Yun.
+Aries (Client) (20:42)
+That's the first one. Second is yung deluxe package.
+Aries (Client) (20:48)
+Ang deluxe package naman, or send ko nalang sa'yo?
+STI College <School Name>
+
+===== PAGE 78 =====
+Gabriel Benedicto (20:51)
+Hindi sige tuloy niyo po.
+Aries (Client) (20:52)
+Ah, sige. Yung sa deluxe package naman, um, kaibahan niya sa ang, ang premium package,
+ah, nasa 19,800 lang siya.
+Aries (Client) (21:06)
+Ang deluxe package namin is nasa, ah, 20,000 siya. Ngayon, kung titingnan mo, ang price
+difference niya is nasa Php200 lang.
+Aries (Client) (21:17)
+Pero that's the way na, that's the way para i-market ko yung mga client towards the deluxe
+package. Ah, kung papansinin mo, halos, halos hindi nagkakalayo yung presyo niya.
+Aries (Client) (21:33)
+Pero sa package, magkalayo kasi siya. Kasi instead of more on magic show doon sa second one,
+doon sa deluxe, ang nangyari, magiging basic package, ah, basic magic show lang siya.
+Aries (Client) (21:46)
+Though maganda pa rin naman talaga, pero regular magic show lang siya. Pero magfo-
+focus yung deluxe package more on bubble tricks, bubble show, ganyan, smoke bubbles, ah, basta
+maraming bubble tricks, ganun, iba't ibang klase.
+Aries (Client) (22:02)
+Ngayon, the third one is all in package. Nasa 24,500 ang offer namin.
+Aries (Client) (22:08)
+Ah, yun, ah, lahat ng best, ah, performance, naka-package na siya doon, including bubble show,
+upgraded magic show, um, puppet show, then party hosting and games. Yun.
+STI College <School Name>
+
+===== PAGE 79 =====
+Aries (Client) (22:27)
+And then, sa part ng clients, ang kailangan na lang nila i-provide is yung, ah, game prices and
+then yung sound system. Yun, yun.
+Gabriel Benedicto (22:36)
+Mm. So, tatlo lang po yung package niyo?
+Aries (Client) (22:39)
+Mm. Tatlo lang. And yung ngayon, if ever that they want to have lang yung, ah, magic show lang
+or puppet show lang, pipili lang sila ng package doon.
+Aries (Client) (22:51)
+Ngayon, if without hosting and games, less 2,000 lang. Yun lang yung ino-offer nila.
+Gabriel Benedicto (22:56)
+Ah, less lang po ng less lang?
+Aries (Client) (22:58)
+Hindi. Less lang ng 2,000. That's it.
+Aries (Client) (23:00)
+Yun na Oo.
+Aries (Client) (23:02)
+So, yung puppet show, if ever na tatanggalin nila yung puppet show, that's, ah, less 1k lang. Yun.
+Gabriel Benedicto (23:10)
+Paano po pag hosting lang po kayo kayo?
+STI College <School Name>
+
+===== PAGE 80 =====
+Aries (Client) (23:13)
+Bahala sila eh. Kumuha na sila.
+Aries (Client) (23:15)
+'Di ba? Kasi naka-base na kami doon.
+Gabriel Benedicto (23:17)
+Ah, fixed na po? Fixed na?
+Aries (Client) (23:18)
+Naka-fixed kami doon. Bakit?
+Aries (Client) (23:19)
+Kasi yung time na ire-render ko doon, like nagho-hold, nagha-handle ako ng party from, ah, 2 to
+3 hours. That's 3 hours of, ah, straight din yun.
+Aries (Client) (23:31)
+Mag-i-spend ako ng tatlong oras doon na hosting lang ako doon. Magkano lang usually ang
+charge ng ng host?
+Aries (Client) (23:38)
+Nasa 5,800 or 15 kapagka may professional na.
+Gabriel Benedicto (23:42)
+So, kaya po talagang, kaya talagang package po talaga?
+Aries (Client) (23:45)
+Package na lang. Pero kung, kung hahati-hatiin mo lang
+kasi yung gagawin ng tatlo or apat na tao, ginawa ko na lahat.
+STI College <School Name>
+
+===== PAGE 81 =====
+Gabriel Benedicto (23:53)
+Oo.
+Aries (Client) (23:54)
+So, kung, kung ito-total mo siya, sobrang sulit na noon.
+Gabriel Benedicto (23:57)
+Mm. Oo, no?
+Aries (Client) (23:58)
+Kaya mag-book na kayo. Hindi.
+Aries (Client) (24:02)
+Hindi yun. Ganun ang nagiging system eh.
+Gabriel Benedicto (24:05)
+Oo, tama. Tama.
+Gabriel Benedicto (24:06)
+So, ikaw?
+EJ Ridge Lerios (24:08)
+Ah, na-last na po about sa package. Fixed naman na yung price po non?
+Aries (Client) (24:13)
+Mm. Hindi ako sa package.
+EJ Ridge Lerios (24:14)
+Basta mababawas na lang kung may babawas silang services?
+STI College <School Name>
+
+===== PAGE 82 =====
+Aries (Client) (24:16)
+Oo. Kung, kung may, kung may ibabawas sila na, sir, ah, na services doon or iko-customize nila.
+Pero yun lang talaga eh.
+Aries (Client) (24:24)
+Tatanggalin nila yung hosting, less 2,000, or tatanggalin nila yung puppet show, less 1, less 1k.
+Gabriel Benedicto (24:31)
+Yun lang po yun yung?
+Aries (Client) (24:32)
+Yun lang. Yun.
+Gabriel Benedicto (24:33)
+Paano ho pag tinanggal nila yung magic? Tinanggal ba yung magic?
+Aries (Client) (24:38)
+Hindi pag tinanggal nila yung magic show, like bubble show lang, if ever, depende, magma-
+matter na diyan yung schedule. Kung weekdays lang yan, tatanggapin ko siya.
+Aries (Client) (24:50)
+Like halimbawa, gusto nila bubble show lang. Ah, kung bubble show lang at dito, dito lang
+naman, pwede namin i-offer ng sobrang baba nito, ah, kapagka weekdays ha, mga 5 to 8,000
+bubble show lang ng weekdays.
+Aries (Client) (25:08)
+Ngayon, kapag weekend, hindi talaga namin binabago kasi peak, ah, peak
+season yung ano talaga. Talagang sobra, ah, fully booked, I mean, yung Saturday and Sunday.
+Aries (Client) (25:20)
+STI College <School Name>
+
+===== PAGE 83 =====
+Yun siya.
+Gabriel Benedicto (25:21)
+Mm.
+Aries (Client) (25:22)
+Yun eh. Ang, ang weekdays naman, kasi Monday to Friday, tawag namin diyan, bonus lang naman
+eh.
+Aries (Client) (25:30)
+Yun yung panahon na matutulog lang, wala akong gagawin.
+Gabriel Benedicto (25:33)
+Okay po.
+Aries (Client) (25:33)
+Yun.
+Aries (Client) (25:35)
+Ano next?
+Gabriel Benedicto (25:37)
+So, next. Um, ano po yung ano, um, maximum booking per day niyo po?
+Gabriel Benedicto (25:44)
+Paano po niyo nama-manage na hindi magkakaroon ng sobra-sobrang book everyday?
+Aries (Client) (25:51)
+Okay. Sa, sa maximum of booking, nagawa na namin na tatlong event isang araw. Edi, ang,
+ang nagkakaroon kasi kami ng time slot.
+STI College <School Name>
+
+===== PAGE 84 =====
+Aries (Client) (26:04)
+Nagma-matter din diyan kung ano yung distance nung, nung first event mo to, to your second
+event, then third, ah, event. At least meron man lang, ah, two, ah, 1 to 2 hours of travel time.
+Aries (Client) (26:21)
+Again, nagma-matter kung gaano kalayo yung first event mo papunta sa second event. Ngayon,
+ang ginagawa namin dito, doon na nahahati yung bawat oras.
+Aries (Client) (26:31)
+Merong client na pwedeng open ang booking namin from 9:00, ah, sorry, from
+9:00, teka lang, wala akong second, oras-oras, from 9:00 to 2:00, usually 2 to 3 hours ang party
+eh. So, let's say 9:00, 9:00, 10:00, 11:00, 12:00, pero inaabot namin hanggang 1:00.
+Aries (Client) (26:51)
+Pero mostly kasi ang, ang booking niyan, basta open ang booking from 9:00 to 1:00 or kung
+mas maaga pa, okay lang. Oo.
+Aries (Client) (27:02)
+Basta open to for the first booking. Second booking is, ah, 3:00.
+Aries (Client) (27:09)
+Yung 3:00 to 6:00, tsaka 6:00 to 9:00. Yun siya.
+Aries (Client) (27:16)
+Doon, doon, doon siya nagkaka-dikit-dikit. Merong 11:00, 11:00 to 1:00, like 1:00 to 3:00, like
+1:00, tapos 2:00 to 5:30, ganyan, or 6:00 to 9:00.
+Aries (Client) (27:29)
+Merong ganun ha. So, so kung ia-ano natin, kung, kung oorasan talaga natin, let's say 10:00 to
+1:00.
+STI College <School Name>
+
+===== PAGE 85 =====
+Gabriel Benedicto (27:40)
+May break po kayo?
+Aries (27:41)
+Ayun. 10:00 to 1:00, then 2:00 to 6:00, then 6:00 to 9:00. Yan, doon nagkakahati-hati.
+Gabriel Benedicto (27:51)
+Paano po yun? Hindi niyo na po tinatanggap kapag masyadong medyo malayo po yung ano?
+Aries (Client) (27:56)
+Ah, depende siya. Kung malayo talaga ang event mo, like halimbawa, ah, saan ba manggagaling,
+ah, kami?
+Aries (Client) (28:06)
+Mostly dito lang naman sa Cainta, Rizal. Ang, ang event na nagpapa-book is, ah, Quezon City.
+Aries (Client) (28:12)
+Ang mangyayari nito, ah, teka lang, mag-i-add pa pala ako. Quezon City.
+Aries (Client) (28:17)
+So, ang mangyayari, like nag-book na sila, okay na yun. That's the first one.
+Aries (Client) (28:22)
+Ipa-plot na namin siya sa calendar namin. Ngayon, kung sino yung susunod na magpapa-book,
+doon na kami magbe-base kung anong oras yung party nila.
+Aries (Client) (28:34)
+Kasi kung pasok, kung QC, around QC lang din or malapit lang naman, 30 to 40 minutes away
+from the, from doon sa unang nagpa-book, pwede pa namin siyang tanggapin. Pero kung
+STI College <School Name>
+
+===== PAGE 86 =====
+ang magpapa-book na susunod, like, like mapa, mas maaga doon sa unang nagpa-book or mas
+later doon sa nagpa-book, pero Batangas sila, hindi na namin tatanggapin.
+Gabriel Benedicto (29:00)
+Opo. Okay.
+Aries (Client) (29:00)
+Kasi maaari na, oo, maaaring yung timeframe maapektuhan. Kasi ina-
+avoid namin na magkaroon ng, ah, problema sa, sa booking.
+Aries (Client) (29:15)
+Tapos, ito pa pala ang hindi ko na-i-add diyan. Pag yung, yung tawag dito,
+meron kasing tinatawag na transpo fee.
+Aries (Client) (29:25)
+Kung saan yung, ah, kung saan yung event nung client, kung
+Batangas ba, saan sa Batangas, gaano kalayo, kung Bulacan, Pampanga, or Nueva Ecija, ganyan.
+Gabriel Benedicto (29:38)
+Naabot na po kayo sa Nueva Ecija?
+Aries (Client) 29:40)
+Oo, Mindanao nga, umabot to. Ay, Mindoro pala.
+Gabriel Benedicto (29:43)
+Ah, Mindoro.
+Aries (Client) (29:44)
+Hindi, hindi. Pero ano yun, ay hindi, sa, sa Lawag, Ilocos Norte.
+Gabriel Benedicto (29:49)
+STI College <School Name>
+
+===== PAGE 87 =====
+Okay. Yun pa yung pinaka?
+Aries (Client) (29:50)
+Oo. Yun. Pero sagot naman nila yung transpo non, kumbaga yung bus, sila yung may-ari ng bus
+company, yung Fariñas.
+Gabriel Benedicto (29:59)
+Ah, Ilocos Empanada?
+Aries (Client) (30:01)
+Ay, hindi, hindi. Yung Ilocos Empanadas, yung Fariñas.
+Aries (Client) (30:04)
+O, Fariñas. O, sila may-ari non.
+Gabriel Benedicto (30:06)
+Oh, 'di ba?
+Aries (Client) (30:07)
+Oo. Pucha, sobrang nakakasabik. Wala ako palagi.
+Aries (Client) (30:11)
+Hindi kasi napa, naka, pinatulog kami doon sa warehouse, ah, kasama namin, puro sports car
+lahat.
+Gabriel Benedicto (30:17)
+Pati mga empanada?
+Aries (Client) (30:19)
+Oo, pati yun. Hindi, wala akong empanada.
+STI College <School Name>
+
+===== PAGE 88 =====
+Aries (Client) (30:21)
+Nakahingi lang ako ng isa nung dati, pandemic.
+Speaker C (30:25)
+Regarding po sa transpo, transpo, gaano, ano, I mean, gaano kalayo dapat magkaroon ng ganun?
+Aries (Client) (30:32)
+Ah, siguro ba, ah, magbe-base siguro ako sa 6:00. Teka lang ha, check natin ha.
+Aries (Client) (30:39)
+Kasi hindi ako nagbe-base per kilometer eh. Kapag trip ko lang, magpatagdag doon na ako nagbe-
+base.
+Gabriel Benedicto (30:44)
+Oo, okay ah.
+Aries (Client) (30:45)
+Hindi. Pagka medyo malayo na. So, let's say, ano ba, San Pedro, basta pag out of town na eh, like
+Imus.
+Gabriel Benedicto (30:56)
+Out of Manila?
+Aries (Client) (30:56)
+O sige, mag-base tayo dito. Gaano kalayo ang Imus?
+Aries (31:01)
+STI College <School Name>
+
+===== PAGE 89 =====
+Start.
+Aries (Client) (31:03)
+38. O sige, mag-base na lang tayo. At least 40, 40.
+Gabriel Benedicto (31:11)
+Kilometers?
+Aries (Client) (31:12)
+Kilometers away. 40 km away plus 1k.
+Gabriel Benedicto (31:17)
+Plus 1k?
+Aries (Client) (31:17)
+Plus 1k. Yun ang add.
+Gabriel Benedicto (31:19)
+40 km?
+Aries (Client) (31:21)
+Oo. Pag Batangas, depende sa Batangas. O sige, magbigay, nagpa-search tuloy ako salbahe kayo
+ha, haha.
+Aries (Client) (31:30)
+Ah, mabini, Batangas City. Direction.
+Speaker D (31:36)
+Head toward Canlaon Street.
+Aries (Client) (31:38)
+STI College <School Name>
+
+===== PAGE 90 =====
+Ito, 100 km ang ad namin dito, 3,000.
+Gabriel Benedicto (31:44)
+100 km po?
+Aries (Client) (31:45)
+Oo.
+Gabriel Benedicto (31:47)
+Sa tamang totoo naman na napakalayo. Saan po yun?
+Gabriel Benedicto (31:50)
+Batangas?
+Aries (Client) (31:50)
+Batangas City.
+Gabriel Benedicto (31:53)
+Saan yung pinakamalayo niyo, bukod doon sa ano, Ilocos?
+Aries (Client) (31:58)
+Hindi, yoon na.
+Gabriel Benedicto (31:59)
+Pero yung na-travel niyo po naman.
+Aries (Client) (32:01)
+Lawag. Pucha, layo nito. Lawag eh.
+Aries (32:05)
+STI College <School Name>
+
+===== PAGE 91 =====
+Umalis kami ng gabi nito. Dumating kami doon umaga na eh.
+Gabriel Benedicto (32:10)
+Grabe. Sino po kasama niyo yun? Si Brian?
+Aries (Client) (32:13)
+Hindi, si Miko.
+Gabriel Benedicto (32:14)
+Miko?
+Aries (Client) (32:15)
+Si Miko. Magic Miko.
+Aries (Client) (32:17)
+Si Miko, yung nung kasal namin.
+Gabriel Benedicto (32:20)
+Ah.
+Aries (Client) (32:20)
+Yung magician. Yun.
+Gabriel Benedicto (32:23)
+Oo, sige po.
+Aries (Client) (32:24)
+Oo. O yun. Ano pa?
+STI College <School Name>
+
+===== PAGE 92 =====
+Gabriel Benedicto (32:27)
+O sige po, okay na po yun.
+Aries (32:29)
+Hindi, ano ba?
+Speaker C (32:30)
+Tanong lang po. Ano yung first down payment, first na-serve po ba niyo sa inyo?
+Gabriel Benedicto (32:35)
+Oo naman.
+Aries (Client) (32:35)
+Ah, okay. First come, first serve.
+Aries (Client) (32:37)
+Mm. Kung sino yung unang mag-down.
+Aries (Client) (32:39)
+Pare-,
+Aries (Client) (32:40)
+Oo. Yung sino yung unang mag-down at makapag-send ng reservation
+fee, yun yung unang, yun yung pinaka-policy talaga namin. Kung sino yung unang mag-
+down, yun na yun.
+Aries (Client) (32:52)
+Oo.
+STI College <School Name>
+
+===== PAGE 93 =====
+Gabriel Benedicto (32:54)
+Next po. Um.
+Aries (Client) (32:56)
+O, at yun dapat. Pero depende pa rin yan.
+Gabriel Benedicto (33:02)
+What? Wala naman po kayong ano, ay kapagka po nag-cancel ng ano, wala na pong
+refund kapag kinancel?
+Aries (Client) (33:11)
+Ah, ganito. Ah, sige.
+Gabriel Benedicto (33:12)
+O reschedule po. Pwede ba?
+Aries (Client) (33:14)
+Ang reschedule, ah, dalawa yan. Ah, if ever na-cancel ang event nila, if ever na-cancel ang
+event nila, non-refundable yun.
+Aries (Client) (33:27)
+Ngayon, if ever na gusto na yan, nag-like, nagka-problem, nagkasakit yung may birthday
+or ano, sumakit yung ngipin nong nanay haha, halimbawa lang, pwede nila i-
+reschedule yung event nila, pero magbe-base pa rin sila sa.
+Gabriel Benedicto (33:43)
+Availability niyo po?
+Aries (Client) (33:44)
+Oo, sa availability ko.
+STI College <School Name>
+
+===== PAGE 94 =====
+Gabriel Benedicto (33:45)
+Okay.
+Aries (Client) (33:46)
+Namin. Kung available pa ba kami that day, or if ever naman at hindi na talaga kami available non,
+ang mangyayari, yung reservation nila na Php2,000 na yon ay magre-recommend kami ng
+magician na kaibigan ko na same ng quality ng ginagawa namin.
+Gabriel Benedicto (34:07)
+Mm.
+Aries (Client) (34:08)
+In short, yung reservation na sinend sa amin na yon is gagamitin na lang for reservation
+doon sa kaibigan ko. Ngayon, same package lang din kung magkano yung package ko.
+Aries (Client) (34:20)
+Yun yung remaining na kailangan i-settle doon sa kakilala ko.
+Gabriel Benedicto (34:24)
+Mm.
+Aries (Client) (34:25)
+Ganun siya.
+Gabriel Benedicto (34:26)
+Day off. Wala po kayong naka fix na day off?
+Gabriel Benedicto (34:32)
+Fixed na day off?
+EJ Ridge Lerios (34:34)
+STI College <School Name>
+
+===== PAGE 95 =====
+Kung ayaw niyo magtrabaho, ganun.
+Gabriel Benedicto (34:37)
+Pwede ba yun? Hindi naman pwedeng ganun.
+Gabriel Benedicto (34:39)
+Ayaw mo. Ayaw mo ngayon haha.
+Aries (Client) (34:40)
+Ano? Sorry, sorry.
+Gabriel Benedicto (34:41)
+Fixed po na day off. Wala po kayong fixed na day off.
+Aries (Client) (34:44)
+Fixed na day off usually sa freelancer naman kasi wala ka naman ng itatakda.
+Like ikaw yung mismong business owner ng ano mo.
+Aries (Client) (34:52)
+Wala kang itatakda na mismong araw ng ng day off mo eh. Kasi from time to time, even,
+even naman kasi kahit nasan ka, basta may nag-inquire, sinasagot mo siya, part pa rin ng
+work mo yun eh.
+Gabriel Benedicto (35:10)
+Mm. Sige po.
+Aries (Client) (35:11)
+Ayun. Ngayon, kung kung yung time na open ang yung kung anong oras yung kasi
+meron yun na meron. Yun ang meron.
+Aries (Client) (35:19)
+STI College <School Name>
+
+===== PAGE 96 =====
+Kung anong oras pwede mag-inquire na available yung may magcha-chat sa'yo.
+Gabriel Benedicto (35:24)
+Mm.
+Aries (Client) (35:25)
+Yoon ay, ah, hanggang 2:00 sa madaling araw, gising kami. The same time, ang gising niya,
+may magre-reply na sa'yo ng 8:00 AM.
+Aries (Client) (35:36)
+Ganun. Doon na pumapasok yung chatbot if ever na magcha-chatbot ka. Pero hindi kami nagcha-
+chatbot.
+Aries (Client) (35:43)
+Bakit? Kasi nowadays, mas gusto ng client na nakikipag-usap sa totoong tao.
+Aries (Client) (35:48)
+Pero ito ang, ito ang maitutulong niyo na pinakamalaki sa amin talaga.
+Ang labanan kasi ngayon talaga sa advertisement.
+Gabriel Benedicto (35:57)
+Ads.
+Aries (Client) (35:58)
+Ads. Sa ads. Yun ang, yun ang talagang ano, labanan sa ngayon.
+Aries (Client) (36:06)
+STI College <School Name>
+
+===== PAGE 97 =====
+Yung specific na yung targeting, ganito, ganyan. Kaya nga baka maghanap ako nung, ah, online
+course regarding doon.
+Aries (Client) (36:15)
+Before, naka- nagkaroon na ako eh. Nag-avail ako, like, nagbayad ata ako ng 15,000 para doon or
+10,000.
+Aries (Client) (36:23)
+Ah, yun. Hindi ko din nagamit.
+Aries (Client) (36:25)
+Hindi ko na-apply eh. Kasi ibang, ibang ano siya eh.
+Aries (Client) (36:28)
+Ibang software yung gagamitin mo. Ganito, ganyan, ganyan.
+Aries (Client) (36:32)
+Meron pang website na kailangan, you have to build your own website
+para yung mga pati payments, meron ding, ah, credit card. Ganito, ganyan.
+Gabriel Benedicto (36:43)
+Ayun nga yung ginagawa natin.
+EJ Ridge Lerios (36:45)
+Mm. Parang yun.
+Aries (Client) (36:47)
+Ah, na pwede ang credit card.
+Aries (Client) (36:51)
+Ah, hindi. Oo.
+STI College <School Name>
+
+===== PAGE 98 =====
+Aries (Client) (36:51)
+Meron din ganun ha. Meron, merong, meron akong kakilalang magician na nag-accept ng credit
+card.
+Aries (Client) (36:58)
+Na ang nangyari, ah, ibinabawas sa kanya per, like, parang nag-i-
+installment yung TF niya doon sa sa client ko. Parang ganun.
+Aries (Client) (37:10)
+Parang sa bangko siya na paid na yung magician nung bangko, pero yung client
+is nagbabayad monthly na paunti-unti doon sa bangko.
+Gabriel Benedicto (37:21)
+Terms and agreement kailangan natin.
+EJ Ridge Lerios (37:23)
+Ah, ito po yung mga parang hindi naman parang. Kailangan po namin sa inyo yung, ayun nga,
+terms and agreement.
+EJ Ridge Lerios (37:30)
+Tapos, ano po yun, yung hinihingi niyo, yung, yung fill up form?
+Aries (Client) (37:34)
+Ah, yun na yung sinend ko na kay--
+Gabriel Benedicto (37:36)
+Yung terms and agreements nalang po, para may reference po kami. Pero kahit mamaya na po.
+Gabriel Benedicto (37:42)
+Color po ng UI or theme sa inyo po ng gusto niyo.
+STI College <School Name>
+
+===== PAGE 99 =====
+Aries (Client) (37:46)
+Theme na gusto ko. Teka lang ha.
+Aries (Client) (37:49)
+I'll use the magic artist. Usually, ito eh.
+Gabriel Benedicto (38:00)
+Ah, ganyan po, red.
+Gabriel Benedicto (38:03)
+Nakita mo.
+Aries (Client) (38:04)
+Nasaan na ba yun? Ito.
+Gabriel Benedicto (38:07)
+Ganyan.
+Aries (Client) (38:09)
+Ganyan. Ah, nasaan na ba to? Basta ito siya.
+Aries (Client) (38:19)
+Parang theater.
+Gabriel Benedicto (38:21)
+Pa-theater?
+Aries (Client) (38:23)
+Oo. Or depende pa rin sa inyo. Basta parang like magical yung website, something.
+STI College <School Name>
+
+===== PAGE 100 =====
+Gabriel Benedicto (38:32)
+Oh, sige.
+Aries (Client) (38:33)
+I think kaso ito, medyo masyadong parang alam mo yung pag tinignan mo,
+parang gawa na siya ng AI something eh.
+Gabriel Benedicto (38:42)
+Okay, sige po.
+Aries (Client) (38:43)
+Mm.
+Gabriel Benedicto (38:45)
+Sige po, I-ano niyo na, i-follow up, i-ano niyo na lang din po yung terms and agreements if ever
+po.
+Gabriel Benedicto (38:53)
+Suggestions po. May suggestions po ba kayo, features na pwedeng gusto niyo pong i-
+implement sa system?
+Aries (Client) (39:01)
+Paano? Ah.
+Gabriel Benedicto (39:02)
+Kunwari po, yung sinabi niyo nga po na ano, gusto niyo yung makita agad yung booking
+ng isang araw, hindi na yung i-scroll pa sa calendar o whatsoever.
+Aries (Client) (39:11)
+Oo, ganun lang.
+STI College <School Name>
+
+===== PAGE 101 =====
+Gabriel Benedicto (39:13)
+Ganun lang.
+Aries (Client) (39:14)
+Or system na ano ba yun, yang system na yan ba is para sa amin or para siya sa client,
+like pupunta siya sa website na ganito-?
+Gabriel Benedicto (39:23)
+Sa inyo, sa inyo din po. May user na client, may pang-client, meron pong pang-admin,
+and panglahat po talaga.
+EJ Ridge (39:30)
+Dun niyo na po i-ma-manage na. Ah, kumbaga nandun na siya lahat.
+Speaker C (39:33)
+Kumbaga pag pumasok siya, like, ah, they want to see the sample
+videos, ganito, ganyan, ganyan. Nandun na lahat.
+Gabriel Benedicto (39:40)
+Opo. Nakikita po ng
+client yung mga packages niyo. Kapag sinend niyo po, ano ba yung sinend mo na link?
+Gabriel Benedicto (39:46)
+Ganun ba, ganun? Kunwari, if ever.
+EJ Ridge (39:47)
+Link ng website.
+Gabriel Benedicto (39:48)
+Link ng website. Doon papasok po yung client, tapos makikita niyo yung mga packages niyo po.
+STI College <School Name>
+
+===== PAGE 102 =====
+Gabriel Benedicto (39:53)
+Meron nga din po kaming ginawa, kaso hindi pa po yun accurate. Syempre, ngayon lang
+po namin kayo nakausap non.
+Gabriel Benedicto (39:58)
+Hindi pa siya accurate, yung mga package-packages niyo po doon. But.
+Aries (Client) (40:02)
+Kumbaga yan is ano yan, thesis niyo ba or?
+Gabriel Benedicto (40:04)
+Opo, thesis.
+Aries (Client) (40:06)
+Ah, okay, okay, okay.
+Gabriel Benedicto (40:07)
+Tapos makikita po ng client doon kung ayun, yung mga ano, ikaw na mag-explain-.
+Aries (Client) (40:14)
+Ilan kayo sa grupo?
+Gabriel Benedicto (40:16)
+Apat po.
+EJ Ridge (40:17)
+Hindi, mas madali kasi explain next time pag may pini-present na po na website talaga.
+Aries (Client) (40:22)
+Oo.
+STI College <School Name>
+
+===== PAGE 103 =====
+EJ Ridge (40:23)
+Kasi nangangapa rin siya.
+Gabriel Benedicto (40:32)
+So sa yun lang po yung suggestion niyo po.
+Aries (Client) (40:35)
+Mm.
+Gabriel Benedicto (40:36)
+Pero ayun, papakita nga.
+Aries (Client) (40:38)
+Bale, more on shortcuts. Kasi ang iniisip ko diyan, kung gagawa kayo ng website na ganun,
+so kakailanganin niyo din nung mga files na nasa akin na ia-upload niyo doon sa website.
+Gabriel Benedicto (40:48)
+Kasi tapos, yung sinasabi niyo po kasi sa calendar, once po na may calendar po
+doon, tapos kapag pinindot niyo po, makikita niyo na po agad doon yung mga ano, yung mga na
+ka-book, mga naka-ano. So madali din po talaga siya.
+Gabriel Benedicto (41:01)
+And sa last na tanong ko po, yes. Paano po ba kayo nagsimula sa business niyo?
+Gabriel Benedicto (41:07)
+Like from the start. Pero kaya ko po kasi to talagang i-ano sa papers namin eh.
+Gabriel Benedicto (41:12)
+STI College <School Name>
+
+===== PAGE 104 =====
+Kasi alam ko naman po kung paano kayo nag-ano eh. Pero para sa inyo naman
+po, paano niyo po siya i—kasi po i-introduce po namin kayo doon sa first ano eh, first page
+eh, na ito client namin.
+Gabriel Benedicto (41:24)
+Sige, ganito, ganito, ganyan kayo. So paano po kayo nagsimula sa business niyo?
+Aries (Client) (41:30)
+Recording na tayo.
+Gabriel Benedicto (41:31)
+Okay. Ah, po, kanina pa po to. Hindi po ako nakikinig.
+Aries (Client) (41:33)
+Okay. Ah, Ari, sa magic artist here, nag-start ako ng magic muna. Ah, balik-tanaw lang tayo.
+Aries (Client) (41:41)
+Grade 5, nag-start na introduce sa akin yung magic. Then, um, ah, first na nag-perform ako ng
+magic, ah, high school.
+Aries (Client) (41:52)
+That was, ah, third year high school ako. Then, fourth year high school.
+Aries (Client) (41:58)
+Then, pagdating ko na ng college, nakapag-ipon na kahit papaano. Doon na ako nag-perform ng,
+ah, ng magic-magic.
+Aries (Client) (42:08)
+Ini-start ko yung market talaga, ah, way back 2014. Ah, at the beginning, nag-
+apply muna kami sa mga party needs, ganyan.
+STI College <School Name>
+
+===== PAGE 105 =====
+Aries (Client) (42:22)
+Nag, ah, nag-clown ako before.
+Gabriel Benedicto (42:26)
+Nag-clown.
+Aries (Client) (42:27)
+Yeah. And then, after non, nakaipon. Ah, ini-stop ko na yung clowning around, ah, 2017.
+Aries (Client) (42:37)
+Nag-focus ako sa more on magic show. And then, pagtungtong ng 2020, na-stop yung industry
+because of the pandemic.
+Aries (Client) (42:49)
+Ah, yeah. After non, ah, 2020, after non, ah, 2021, doon na nag-start na since, ah,
+since bumagsak talaga at na-reset ang ang kabuuan ng industriya regard, ah, regarding sa magic.
+Aries (Client) (43:11)
+Ah, doon na nag-boom yung, ah, name namin sa sa industry, which is yun, ah, Aries, the magic
+artist na kilala as, um, ah, magician of, ah, celebrities like, ah, Zaynab Harake, ah, Christine
+Hermosa, Joel Cruz, um, Diane Medina, Chris Bernal, Roger Cruz. Dami pa eh.
+Aries (Client) (43:42)
+Arnie Rose, almost, ah, most of the celebrities na yung mga kids nila is magbe-birthday.
+Gabriel Benedicto (43:50)
+Mm.
+Aries (Client) (43:51)
+Yun.
+STI College <School Name>
+
+===== PAGE 106 =====
+Gabriel Benedicto (43:52)
+Okay.
+Aries (Client) (43:55)
+And then, and then, ah, from that, um, after non, naging friend ko yung mga celebrities. At the
+same time, pino-promote din nila yung, ah, page namin.
+EJ Ridge Lerios (44:05)
+TV shows po.
+Aries (Client) (44:06)
+Ah, yeah, TV shows. Yes.
+Aries (Client) (44:07)
+Um, ah, nakapag, nakapag-guest kami doon. Time of pandemic, nakapag, ah,
+perform ako sa Lunch Out Loud sa TV5.
+Aries (Client) (44:22)
+At the same time, nakapag-perform ako sa, ah, Welcome Kapatid. That is, ah.
+Gabriel Benedicto (44:30)
+TV5 din yun?
+Aries (Client) (44:32)
+TV5 din yun, ano?
+Gabriel Benedicto (44:32)
+TV5 din.
+Aries (Client) (44:33)
+STI College <School Name>
+
+===== PAGE 107 =====
+TV5.
+Gabriel Benedicto (44:34)
+Good morning Kapatid,
+Aries (Client) (44:34)
+Good morning, kapatid. Ah, TV5, Unang Hirit, ah.
+Gabriel Benedicto (44:39)
+Eat Bulaga?
+Aries (Client) (44:40)
+Eat Bulaga, yung kauna-unahan. That was, ah, way back 2017.
+Aries (Client) (44:45)
+Tapos, ah, yun nga, Unang Hirit, parang last year lang siya.
+Gabriel Benedicto (44:51)
+Mm.
+Aries (Client) (44:52)
+Tapos, ano pa ba? Ayun, sa ano, sa sa TV5, kung ano nung mga pinaggagawa nilang ini-
+invite ako.
+Aries (Client) (45:03)
+Ayun.
+Gabriel Benedicto (45:03)
+Oh, sige.
+Aries (Client) (45:04)
+STI College <School Name>
+
+===== PAGE 108 =====
+Pinagtitirpan na lang ata ako eh hehe. Ayun.
+Aries (Client) (45:10)
+Kanegosyo. Yun pa rin, kanegosyo kay Diane Medina.
+Gabriel Benedicto (45:15)
+Okay na. Like, wala ka nang a-add?
+EJ Ridge Lerios (45:17)
+Ah, tanong lang. Parang nalagpasan kanina about sa reschedule.
+EJ Ridge Lerios (45:22)
+Kung sakaling may available date na reschedule, may additional fee po ba? Wala naman.
+Aries (Client) (45:26)
+Sorry?
+Gabriel Benedicto (45:27)
+Reschedule po. Pagka, pagka may rereschedule, may additional po ba yun na fee?
+Gabriel Benedicto (45:32)
+Or wala lang?
+Gabriel Benedicto (45:32)
+Kung available naman yung date na reschedule po nila.
+Aries (Client) C (45:35)
+Ah, okay. At least magkaroon, ma-inform, may deadline ang ano, may deadline ang, ah,
+rescheduling.
+Aries (Client) (45:45)
+STI College <School Name>
+
+===== PAGE 109 =====
+Ah, meron lang at least, teka lang ha, at least 2 weeks before, ah, prior the event para magpa-
+reschedule. At the same time, magma-matter kung available pa kami that time.
+Aries (Client) (46:01)
+Pero kung may additional pa naman, wala na kasi very minimal lang
+naman yung amount na pina.
+Gabriel Benedicto (46:09)
+Paano po baga lumagpas po ng 2 weeks?
+Aries (Client) (46:11)
+Wala na.
+EJ Ridge Lerios (46:12)
+Hindi na po siya mababawi pa.
+Aries (Client) (46:13)
+Hindi na.
+Gabriel Benedicto (46:14)
+Hindi na.
+EJ Ridge Lerios (46:14)
+Kasama naman po sa-,
+Aries (Client)(46:15)
+Mananakit na ko ng tao, haha, ha?
+Gabriel Benedicto (46:17)
+Kasama po sa agreements
+STI College <School Name>
+
+===== PAGE 110 =====
+Aries (Client) (46:19)
+O, nakalagay naman. Oo, nakalagay naman sa amin.
+Gabriel Benedicto (46:23)
+So kapag po lumagpas na.
+Aries (Client) (46:24)
+Kaya nakalagay.
+Gabriel Benedicto (46:25)
+Oo.
+Gabriel Benedicto (46:25)
+Lumagpas na sa reschedule na binigay niyo na limit, so hindi na din po yun nire-refund
+and wala na po talaga yun.
+Aries (Client) (46:32)
+Oo.
+Gabriel Benedicto (46:33)
+Ang gagawin po nila, magbu-book na lang po sila ng bago. Pwede po ba yun?
+Aries (Client) (46:37)
+Oo, magpapa-book na sila ng bago if ever.
+Gabriel Benedicto (46:40)
+So ganun na.
+Aries (Client) (46:41)
+Mm.
+STI College <School Name>
+
+===== PAGE 111 =====
+Gabriel Benedicto (46:44)
+Okay na.
+Aries (Client) (46:45)
+Pero mostly kasi kapagka sinabi na na-refundable na ang ano, na-refundable na yung.
+Aries (Client) (46:53)
+Pag binanggit na na-refundable na yung DP, parang matic na yun na na pwede na lang nila ipa-
+reschedule. Pero parang hindi naman na siya parang valid na kasi iba kaya tinatanong.
+Aries (Client) (47:09)
+Ah, ito pa, ito pa, catch diyan. Merong iba, ah, sige, papa-reschedule namin ng ganitong date.
+Aries (Client) (47:15)
+Tapos after nung naipa-reschedule na, e di matagal na ulit yung time na na inano nila na,
+sorry, nagma-matter lang 'tong sinasabi kong 'to kung meron pang
+50% na makukukuha doon sa dinawn mo ng ginagawa ng iba. O sige, imo-move na lang nila,
+like, ito na yung araw kasi, ah, one before to ha, ganito yung policy ko, ah,
+Aries (Client) (47:40)
+one week, at least one week before the event, kung ika-cancel mo siya, i-
+inform mo na agad ako one week before para at least makuha mo yung 50%.
+Gabriel Benedicto (47:53)
+Mm.
+Aries (Client) 47:53)
+Kaso hindi, hindi umaabot yung iba. Ginagawa nila, nire-reschedule na lang nila.
+STI College <School Name>
+
+===== PAGE 112 =====
+Aries (Client) (47:57)
+Like, hindi pa man dumadating to event na 'to, nandito, ah, let's say Sunday 'to, nandito pa
+lang sila sa parang, parang basta ganun. Ang gagawin nila, imo-move nila ng mas malayo.
+Aries (Client) (48:12)
+Tapos pagka ang itsura is malayo pa yung event, e di nabura na 'to.
+Ang mangyayari, dito kami magbe-base.
+Aries (Client) (48:19)
+Tapos gagawin nila, tsaka nila dito kaka-cancelin. Sasabihin na yung 50% kukunin mo.
+Aries (Client) (48:25)
+Hindi na kasi nagbe-base tayo doon sa unang ibinook niyo. Yun, tigas niyo na.
+Gabriel Benedicto (48:32)
+Mautak ha.
+Aries (Client) (48:33)
+Oo, ganun.
+Gabriel Benedicto (48:35)
+Okay.
+Aries (Client) (48:36)
+Yun, yun, yun, halos yun na yun.
+Gabriel Benedicto (48:37)
+Okay.
+EJ Ridge Lerios (48:38)
+Regarding po sa down payment.
+STI College <School Name>
+
+===== PAGE 113 =====
+Aries (Client) (48:40)
+Ay haha, hindi pa pala tapos. Ano pa?
+EJ Ridge Lerios (48:42)
+Kasi yung ano lang po, yung parang iche-check niyo lang po kung magse-send lang po sila ng
+picture ng ano, ng.
+Aries (Client) (48:48)
+Ah, magse-send sila ng picture ng ng receipt nila, screenshot or picture ng mismong, ah, deposit
+slip nila if ever nasa BDO. Tapos at the same time, gagawin namin, iche-check
+din namin kung pumasok talaga sa amin.
+Aries (Client) (49:06)
+Mm, yun, manual yun. Iche-check namin sa GCash.
+Aries (Client) (49:09)
+Mostly GCash ko siya, namin siya chine-check kung pumasok na yung DP ng client
+at hindi, hindi na po sa amin GCash eh. Kasi
+kung sa bangko, mangyayari pa, pupunta pa ako sa ATM ko para ko i-check.
+Aries (Client) (49:26)
+Hindi ko ginawang ikonekta yung bangko namin sa online.
+Gabriel Benedicto (49:32)
+Mm.
+Aries (Client) (49:33)
+Gawa nung nagkakaroon ng cyber, ano, ah, hacking, ganyan, ganyan.
+Gabriel Benedicto (49:39)
+STI College <School Name>
+
+===== PAGE 114 =====
+Mm. Direkta po sa GCash.
+Aries (Client) (49:42)
+Oo, direct.
+Aries (Client) (49:43)
+Okay, what else?
+Gabriel Benedicto (49:46)
+Okay na. Okay na po salamat.
+EJ Ridge Lerios (49:47)
+Thankyou po.
+Client Signature
+STI College <School Name>

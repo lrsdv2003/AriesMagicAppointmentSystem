@@ -1,5 +1,6 @@
 using AriesMagicAppointmentSystem.Data;
 using AriesMagicAppointmentSystem.Models;
+using AriesMagicAppointmentSystem.Services;
 using AriesMagicAppointmentSystem.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -7,18 +8,22 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AriesMagicAppointmentSystem.Controllers
 {
-    [Authorize(Roles = "Admin,Owner")]
+    [Authorize(Roles = "Owner")]
     public class ReportsController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly IHistoryService _historyService;
 
-        public ReportsController(ApplicationDbContext context)
+        public ReportsController(ApplicationDbContext context, IHistoryService historyService)
         {
             _context = context;
+            _historyService = historyService;
         }
 
         public async Task<IActionResult> Index()
         {
+            var historySummary = await _historyService.GetSummaryAsync();
+
             var bookings = await _context.Bookings
                 .Include(b => b.Client)
                 .Include(b => b.Service)
@@ -46,7 +51,14 @@ namespace AriesMagicAppointmentSystem.Controllers
 
                 PendingCount = payments.Count(p => p.Status == PaymentStatus.Pending),
                 VerifiedCount = payments.Count(p => p.Status == PaymentStatus.Verified),
-                RejectedCount = payments.Count(p => p.Status == PaymentStatus.Rejected)
+                RejectedCount = payments.Count(p => p.Status == PaymentStatus.Rejected),
+
+                UpcomingEvents = historySummary.UpcomingEvents,
+                TodaysEvents = historySummary.TodaysEvents,
+                HistoryCount = historySummary.HistoryCount,
+                CompletedThisMonth = historySummary.CompletedThisMonth,
+                CompletedThisYear = historySummary.CompletedThisYear,
+                LifetimeEvents = historySummary.LifetimeEvents
             };
 
             model.ConfirmationRate = model.TotalBookings == 0

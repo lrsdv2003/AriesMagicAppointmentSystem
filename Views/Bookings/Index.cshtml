@@ -61,8 +61,8 @@
                     <option value="AwaitingDownpayment" selected="@(Model.BookingStatus == "AwaitingDownpayment")">Awaiting Downpayment</option>
                     <option value="AwaitingVerification" selected="@(Model.BookingStatus == "AwaitingVerification")">Awaiting Verification</option>
                     <option value="Confirmed" selected="@(Model.BookingStatus == "Confirmed")">Confirmed</option>
-                    <option value="Completed" selected="@(Model.BookingStatus == "Completed")">Completed</option>
                     <option value="Declined" selected="@(Model.BookingStatus == "Declined")">Declined</option>
+                    <option value="Cancelled" selected="@(Model.BookingStatus == "Cancelled")">Cancelled</option>
                     <option value="Expired" selected="@(Model.BookingStatus == "Expired")">Expired</option>
                 </select>
             </div>
@@ -92,7 +92,7 @@
     <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
         <div>
             <h3 class="mb-1">Booking Records</h3>
-            <p class="page-subtitle mb-0">Showing @Model.Bookings.Count booking(s) based on the current filters.</p>
+            <p class="page-subtitle mb-0">Showing @Model.Bookings.Count booking(s) based on the current filters. Completed events move automatically into <a asp-controller="History" asp-action="Index">Booking History</a>.</p>
         </div>
     </div>
 
@@ -129,6 +129,7 @@
                         "Confirmed" => "status-confirmed",
                         "Completed" => "status-completed",
                         "Declined" => "status-declined",
+                        "Cancelled" => "status-declined",
                         "Expired" => "status-expired",
                         _ => "status-read"
                     };
@@ -161,7 +162,7 @@
                             <div class="booking-action-group">
                                 <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-light package-btn-light">Details</a>
 
-                                @if (User.IsInRole("Staff"))
+                                @if (User.CanManageBookingRecords())
                                 {
                                     @if (item.BookingStatus == "Pending")
                                     {
@@ -171,16 +172,12 @@
 
                                     <a asp-action="AddNote" asp-route-id="@item.Id" class="btn btn-sm btn-secondary">Note</a>
 
-                                    @if (item.BookingStatus == "Confirmed")
+                                    @if (item.BookingStatus == "Confirmed" && User.CanCompleteBookings())
                                     {
                                         <a asp-action="Complete" asp-route-id="@item.Id" class="btn btn-sm btn-primary">Complete</a>
                                     }
                                 }
 
-                                @if (User.IsInRole("Admin"))
-                                {
-                                    <a asp-controller="Payments" asp-action="PendingVerification" class="btn btn-sm btn-secondary">Payments</a>
-                                }
                             </div>
                         </td>
                     </tr>

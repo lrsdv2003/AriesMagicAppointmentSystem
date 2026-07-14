@@ -45,8 +45,9 @@
         </div>
 
         <div class="d-flex gap-2 mt-4">
-            @if (User.IsInRole("Admin")){
-            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">Edit</a>
+            @if (User.CanEditPackages())
+            {
+                <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">Edit</a>
             }
             <a asp-action="Index" class="btn btn-outline-secondary">Back</a>
         </div>

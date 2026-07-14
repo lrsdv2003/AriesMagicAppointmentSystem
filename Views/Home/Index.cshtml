@@ -1,5 +1,19 @@
 ﻿@{
     ViewData["Title"] = "Home";
+
+    var isAuthenticated = User.Identity != null && User.Identity.IsAuthenticated;
+    var isStaffAdminOrOwner = isAuthenticated && !User.IsInRole("Client");
+
+    var bookCtaController = "Bookings";
+    var bookCtaAction = "CreateStepOne";
+
+    if (isStaffAdminOrOwner)
+    {
+        bookCtaAction = "Index";
+        bookCtaController = User.IsInRole("Owner") ? "Reports"
+            : User.IsInRole("Admin") ? "UserManagement"
+            : "Bookings";
+    }
 }
 
 <section class="client-hero-section">
@@ -18,7 +32,7 @@
                 </p>
 
                 <div class="client-hero-actions">
-                    <a asp-controller="Bookings" asp-action="CreateStepOne" class="btn btn-primary btn-lg">
+                    <a asp-controller="@bookCtaController" asp-action="@bookCtaAction" class="btn btn-primary btn-lg">
                         Book Now
                     </a>
                     <a href="#packages" class="btn btn-outline-light btn-lg">
@@ -65,11 +79,34 @@
 
                     <div class="hero-highlight-footer">
                         <span class="hero-highlight-price">Starts at ₱24,500</span>
-                        <a asp-controller="Bookings" asp-action="CreateStepOne" class="btn btn-light">
+                        <a asp-controller="@bookCtaController" asp-action="@bookCtaAction" class="btn btn-light">
                             Choose Package
                         </a>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="landing-section am-stats-section">
+    <div class="container">
+        <div class="am-stats-strip">
+            <div class="am-stat-item">
+                <span class="am-stat-value">&#8369;2,000</span>
+                <span class="am-stat-label">Fixed Downpayment</span>
+            </div>
+            <div class="am-stat-item">
+                <span class="am-stat-value">3 hrs</span>
+                <span class="am-stat-label">Standard Performance Window</span>
+            </div>
+            <div class="am-stat-item">
+                <span class="am-stat-value">1 hr</span>
+                <span class="am-stat-label">Buffer Between Bookings</span>
+            </div>
+            <div class="am-stat-item">
+                <span class="am-stat-value">2</span>
+                <span class="am-stat-label">Customizable Inclusions per Package</span>
             </div>
         </div>
     </div>
@@ -88,7 +125,7 @@
 
         <div class="landing-feature-grid">
             <div class="landing-feature-card">
-                <div class="feature-icon-circle">🎩</div>
+                <div class="feature-icon-circle"><i class="bi bi-stars"></i></div>
                 <h4>Professional Event Experience</h4>
                 <p>
                     Enjoy a more complete entertainment setup led by a skilled host and performer
@@ -97,7 +134,7 @@
             </div>
 
             <div class="landing-feature-card">
-                <div class="feature-icon-circle">✨</div>
+                <div class="feature-icon-circle"><i class="bi bi-magic"></i></div>
                 <h4>Flexible Package Options</h4>
                 <p>
                     Choose the package that fits your event best and customize selected removable
@@ -106,7 +143,7 @@
             </div>
 
             <div class="landing-feature-card">
-                <div class="feature-icon-circle">📅</div>
+                <div class="feature-icon-circle"><i class="bi bi-calendar2-check"></i></div>
                 <h4>Organized Booking Workflow</h4>
                 <p>
                     Submit your request online, monitor updates, upload payment proof, and receive
@@ -143,7 +180,7 @@
                     <li>Illusion Magic Performance</li>
                     <li>Audience Participation</li>
                 </ul>
-                <a asp-controller="Bookings" asp-action="CreateStepOne" class="btn btn-outline-primary w-100">
+                <a asp-controller="@bookCtaController" asp-action="@bookCtaAction" class="btn btn-outline-primary w-100">
                     Book Premium
                 </a>
             </div>
@@ -163,7 +200,7 @@
                     <li>Ventriloquism</li>
                     <li>Bubble Show Experience</li>
                 </ul>
-                <a asp-controller="Bookings" asp-action="CreateStepOne" class="btn btn-primary w-100">
+                <a asp-controller="@bookCtaController" asp-action="@bookCtaAction" class="btn btn-primary w-100">
                     Book Deluxe
                 </a>
             </div>
@@ -183,9 +220,47 @@
                     <li>Bubble Show Highlights</li>
                     <li>Premium Event Experience</li>
                 </ul>
-                <a asp-controller="Bookings" asp-action="CreateStepOne" class="btn btn-outline-primary w-100">
+                <a asp-controller="@bookCtaController" asp-action="@bookCtaAction" class="btn btn-outline-primary w-100">
                     Book All In
                 </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="how-it-works" class="landing-section">
+    <div class="container">
+        <div class="section-heading centered-heading">
+            <span class="section-kicker">How It Works</span>
+            <h2>Simple Booking in Just a Few Steps</h2>
+            <p>
+                Our system makes it easier to request, customize, and confirm bookings online.
+            </p>
+        </div>
+
+        <div class="how-it-works-grid">
+            <div class="how-card">
+                <div class="how-step-number">1</div>
+                <h4>Fill Out Event Details</h4>
+                <p>Enter your event information such as date, time, venue, celebrant, and contact details.</p>
+            </div>
+
+            <div class="how-card">
+                <div class="how-step-number">2</div>
+                <h4>Select and Customize Package</h4>
+                <p>Choose a package and remove selected inclusions based on your event needs and budget.</p>
+            </div>
+
+            <div class="how-card">
+                <div class="how-step-number">3</div>
+                <h4>Wait for Booking Review</h4>
+                <p>Your booking request will be reviewed by the staff before moving to the next stage.</p>
+            </div>
+
+            <div class="how-card">
+                <div class="how-step-number">4</div>
+                <h4>Upload Downpayment</h4>
+                <p>After approval, upload your payment proof for the required ₱2,000 downpayment.</p>
             </div>
         </div>
     </div>
@@ -312,44 +387,6 @@
     </div>
 </section>
 
-<section id="how-it-works" class="landing-section light-section">
-    <div class="container">
-        <div class="section-heading centered-heading">
-            <span class="section-kicker">How It Works</span>
-            <h2>Simple Booking in Just a Few Steps</h2>
-            <p>
-                Our system makes it easier to request, customize, and confirm bookings online.
-            </p>
-        </div>
-
-        <div class="how-it-works-grid">
-            <div class="how-card">
-                <div class="how-step-number">1</div>
-                <h4>Fill Out Event Details</h4>
-                <p>Enter your event information such as date, time, venue, celebrant, and contact details.</p>
-            </div>
-
-            <div class="how-card">
-                <div class="how-step-number">2</div>
-                <h4>Select and Customize Package</h4>
-                <p>Choose a package and remove selected inclusions based on your event needs and budget.</p>
-            </div>
-
-            <div class="how-card">
-                <div class="how-step-number">3</div>
-                <h4>Wait for Booking Review</h4>
-                <p>Your booking request will be reviewed by the staff before moving to the next stage.</p>
-            </div>
-
-            <div class="how-card">
-                <div class="how-step-number">4</div>
-                <h4>Upload Downpayment</h4>
-                <p>After approval, upload your payment proof for the required ₱2,000 downpayment.</p>
-            </div>
-        </div>
-    </div>
-</section>
-
 <section class="landing-section">
     <div class="container">
         <div class="cta-banner">
@@ -362,7 +399,7 @@
             </div>
 
             <div class="cta-banner-actions">
-                <a asp-controller="Bookings" asp-action="CreateStepOne" class="btn btn-primary btn-lg">
+                <a asp-controller="@bookCtaController" asp-action="@bookCtaAction" class="btn btn-primary btn-lg">
                     Start Booking
                 </a>
                 <a asp-controller="Account" asp-action="Register" class="btn btn-outline-primary btn-lg">

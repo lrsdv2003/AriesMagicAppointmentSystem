@@ -2,17 +2,16 @@
 
 @{
     ViewData["Title"] = "Create Booking - Step 2";
+    ViewData["WizardPhysicalStep"] = 2;
+    ViewData["WizardSubStep"] = 1;
 }
 
-<div class="booking-steps mb-4">
-    <div class="booking-step completed">1. Event Details</div>
-    <div class="booking-step active">2. Package Selection</div>
-</div>
+<partial name="_BookingWizardTracker" />
 
 <div class="page-header">
     <div>
         <h1>Create Booking</h1>
-        <p class="page-subtitle">Step 2 of 2 — Choose your package, review the inclusions, and confirm your booking.</p>
+        <p class="page-subtitle">Choose your package, review the inclusions, then confirm your booking.</p>
     </div>
 </div>
 
@@ -167,179 +166,223 @@
 
     <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
 
-    <div class="dashboard-panel mb-4">
-        <div class="form-section-header mb-3">
-            <div>
-                <div class="form-section-title mb-1">Select Package</div>
-                <p class="page-subtitle mb-0">
-                    Choose the package you want for your event. You can customize removable inclusions below.
-                </p>
+    <!-- PANEL 3: PACKAGE & CUSTOMIZE -->
+    <div class="am-panel" id="panelPackage" data-panel-index="3">
+        <div class="dashboard-panel mb-4">
+            <div class="form-section-title mb-3">Select Package</div>
+
+            <div class="package-selector-wrap">
+                <select asp-for="ServiceId"
+                        class="form-select package-selector-dropdown"
+                        onchange="window.location.href='@Url.Action("CreateStepTwo", "Bookings")?serviceId=' + this.value">
+                    @foreach (var packageItem in Model.AvailablePackages)
+                    {
+                        <option value="@packageItem.Id">
+                            @packageItem.Name - &#8369;@packageItem.Price.ToString("N2")
+                        </option>
+                    }
+                </select>
             </div>
+
+            <span asp-validation-for="ServiceId" class="text-danger"></span>
         </div>
 
-        <div class="package-selector-wrap">
-            <select asp-for="ServiceId"
-                    class="form-select package-selector-dropdown"
-                    onchange="window.location.href='@Url.Action("CreateStepTwo", "Bookings")?serviceId=' + this.value">
-                @foreach (var packageItem in Model.AvailablePackages)
-                {
-                    <option value="@packageItem.Id">
-                        @packageItem.Name - ₱@packageItem.Price.ToString("N2")
-                    </option>
-                }
-            </select>
-        </div>
-
-        <span asp-validation-for="ServiceId" class="text-danger"></span>
-    </div>
-
-    <div class="booking-package-layout">
-        <div class="dashboard-panel">
-            <div class="package-preview-header">
-                <div>
-                    <div class="package-card-badge">Selected Package</div>
-                    <h3 class="package-preview-title mt-2">@Model.PackageName</h3>
-                    <p class="page-subtitle mb-0">
-                        Review the inclusions below. You can remove up to 2 removable inclusions only.
-                    </p>
-                </div>
-
-                <div class="package-preview-price">₱@Model.BasePrice.ToString("N2")</div>
-            </div>
-
-            <div class="package-preview-summary mt-4">
-                <div class="package-meta-box">
-                    <span class="package-meta-label">Base Price</span>
-                    <span class="package-meta-value">₱@Model.BasePrice.ToString("N2")</span>
-                </div>
-
-                <div class="package-meta-box">
-                    <span class="package-meta-label">Required Downpayment</span>
-                    <span class="package-meta-value">₱2,000.00</span>
-                </div>
-            </div>
-
-            <div class="mt-4">
-                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+        <div class="booking-package-layout">
+            <div class="dashboard-panel">
+                <div class="package-preview-header">
                     <div>
-                        <div class="form-section-title mb-1">Package Inclusions</div>
+                        <div class="package-card-badge">Selected Package</div>
+                        <h3 class="package-preview-title mt-2">@Model.PackageName</h3>
                         <p class="page-subtitle mb-0">
-                            Uncheck removable inclusions to reduce the final package cost.
-                            Removing one or two inclusions gives a fixed total deduction of ₱2,000.00.
+                            Review the inclusions below. You can remove up to 2 removable inclusions only.
                         </p>
+                    </div>
+
+                    <div class="package-preview-price">&#8369;@Model.BasePrice.ToString("N2")</div>
+                </div>
+
+                <div class="package-preview-summary mt-4">
+                    <div class="package-meta-box">
+                        <span class="package-meta-label">Base Price</span>
+                        <span class="package-meta-value">&#8369;@Model.BasePrice.ToString("N2")</span>
+                    </div>
+
+                    <div class="package-meta-box">
+                        <span class="package-meta-label">Required Downpayment</span>
+                        <span class="package-meta-value">&#8369;2,000.00</span>
                     </div>
                 </div>
 
-                <div class="booking-summary-note mb-3">
-                    Fixed inclusions cannot be removed. You can remove up to <strong>2 inclusions only</strong>.
-                    Removing one or two inclusions gives a fixed total deduction of <strong>₱2,000.00</strong>.
-                    The required downpayment stays at <strong>₱2,000.00</strong>.
-                </div>
+                <div class="mt-4">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+                        <div>
+                            <div class="form-section-title mb-1">Package Inclusions</div>
+                            <p class="page-subtitle mb-0">
+                                Uncheck removable inclusions to reduce the final package cost.
+                                Removing one or two inclusions gives a fixed total deduction of &#8369;2,000.00.
+                            </p>
+                        </div>
+                    </div>
 
-                <div id="removedInclusionLimitWarning" class="alert alert-warning d-none mb-3">
-                    You can only remove up to 2 inclusions.
-                </div>
+                    <div class="booking-summary-note mb-3">
+                        Fixed inclusions cannot be removed. You can remove up to <strong>2 inclusions only</strong>.
+                        Removing one or two inclusions gives a fixed total deduction of <strong>&#8369;2,000.00</strong>.
+                        The required downpayment stays at <strong>&#8369;2,000.00</strong>.
+                    </div>
 
-                <div id="removedInputsContainer"></div>
+                    <div id="removedInclusionLimitWarning" class="alert alert-warning d-none mb-3">
+                        You can only remove up to 2 inclusions.
+                    </div>
 
-                <div class="booking-inclusion-list">
-                    @for (int i = 0; i < Model.Inclusions.Count; i++)
-                    {
-                        <div class="booking-inclusion-card">
-                            <div class="booking-inclusion-main">
-                                <div>
-                                    <div class="booking-inclusion-name">@Model.Inclusions[i].Name</div>
+                    <div id="removedInputsContainer"></div>
 
-                                    <div class="booking-inclusion-deduction">
-                                        @if (Model.Inclusions[i].IsRemovable)
-                                        {
-                                            <span>Eligible for fixed ₱2,000.00 total deduction</span>
-                                        }
-                                        else
-                                        {
-                                            <span>No deduction available</span>
-                                        }
-                                    </div>
-                                </div>
+                    <div class="booking-inclusion-list">
+                        @for (int i = 0; i < Model.Inclusions.Count; i++)
+                        {
+                            <div class="booking-inclusion-card">
+                                <div class="booking-inclusion-main">
+                                    <div>
+                                        <div class="booking-inclusion-name">@Model.Inclusions[i].Name</div>
 
-                                <div class="booking-inclusion-action">
-                                    @if (Model.Inclusions[i].IsRemovable)
-                                    {
-                                        <div class="form-check form-switch">
-                                            @if (Model.Inclusions[i].IsSelected)
+                                        <div class="booking-inclusion-deduction">
+                                            @if (Model.Inclusions[i].IsRemovable)
                                             {
-                                                <input class="form-check-input inclusion-checkbox"
-                                                       type="checkbox"
-                                                       value="@Model.Inclusions[i].Id"
-                                                       checked />
+                                                <span>Eligible for fixed &#8369;2,000.00 total deduction</span>
                                             }
                                             else
                                             {
-                                                <input class="form-check-input inclusion-checkbox"
-                                                       type="checkbox"
-                                                       value="@Model.Inclusions[i].Id" />
+                                                <span>No deduction available</span>
                                             }
-
-                                            <label class="form-check-label">Included</label>
                                         </div>
-                                    }
-                                    else
-                                    {
-                                        <span class="status-badge status-read">Fixed Inclusion</span>
-                                    }
+                                    </div>
+
+                                    <div class="booking-inclusion-action">
+                                        @if (Model.Inclusions[i].IsRemovable)
+                                        {
+                                            <div class="form-check form-switch">
+                                                @if (Model.Inclusions[i].IsSelected)
+                                                {
+                                                    <input class="form-check-input inclusion-checkbox"
+                                                           type="checkbox"
+                                                           data-name="@Model.Inclusions[i].Name"
+                                                           value="@Model.Inclusions[i].Id"
+                                                           checked />
+                                                }
+                                                else
+                                                {
+                                                    <input class="form-check-input inclusion-checkbox"
+                                                           type="checkbox"
+                                                           data-name="@Model.Inclusions[i].Name"
+                                                           value="@Model.Inclusions[i].Id" />
+                                                }
+
+                                                <label class="form-check-label">Included</label>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <span class="status-badge status-read">Fixed Inclusion</span>
+                                        }
+                                    </div>
                                 </div>
                             </div>
-                        </div>
 
-                        <input type="hidden" name="Inclusions[@i].Id" value="@Model.Inclusions[i].Id" />
-                        <input type="hidden" name="Inclusions[@i].Name" value="@Model.Inclusions[i].Name" />
-                        <input type="hidden" name="Inclusions[@i].DeductionAmount" value="@(Model.Inclusions[i].IsRemovable ? "2000" : "0")" />
-                        <input type="hidden" name="Inclusions[@i].IsRemovable" value="@(Model.Inclusions[i].IsRemovable ? "true" : "false")" />
-                        <input type="hidden" name="Inclusions[@i].IsSelected" value="@(Model.Inclusions[i].IsSelected ? "true" : "false")" />
-                    }
+                            <input type="hidden" name="Inclusions[@i].Id" value="@Model.Inclusions[i].Id" />
+                            <input type="hidden" name="Inclusions[@i].Name" value="@Model.Inclusions[i].Name" />
+                            <input type="hidden" name="Inclusions[@i].DeductionAmount" value="@(Model.Inclusions[i].IsRemovable ? "2000" : "0")" />
+                            <input type="hidden" name="Inclusions[@i].IsRemovable" value="@(Model.Inclusions[i].IsRemovable ? "true" : "false")" />
+                            <input type="hidden" name="Inclusions[@i].IsSelected" value="@(Model.Inclusions[i].IsSelected ? "true" : "false")" />
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div class="dashboard-panel booking-price-panel">
+                <div class="form-section-title mb-3">Booking Summary</div>
+                <p class="page-subtitle mb-3">
+                    This summary updates automatically based on the inclusions you keep or remove.
+                </p>
+
+                <div class="booking-price-row">
+                    <span>Base Price</span>
+                    <strong>&#8369;<span id="basePriceText">@Model.BasePrice.ToString("N2")</span></strong>
+                </div>
+
+                <div class="booking-price-row">
+                    <span>Total Deduction</span>
+                    <strong>&#8369;<span id="deductionText">0.00</span></strong>
+                </div>
+
+                <div class="booking-price-row booking-total-row">
+                    <span>Final Price</span>
+                    <strong>&#8369;<span id="finalPriceText">@Model.FinalPrice.ToString("N2")</span></strong>
+                </div>
+
+                <div class="booking-price-row">
+                    <span>Required Downpayment</span>
+                    <strong>&#8369;2,000.00</strong>
+                </div>
+
+                <div class="am-panel-nav">
+                    <a asp-action="CreateStepOne" class="btn btn-outline-secondary">Back to Step 1</a>
+                    <button type="button" class="btn btn-primary" id="goToReviewBtn">Continue to Review</button>
                 </div>
             </div>
         </div>
+    </div>
 
-        <div class="dashboard-panel booking-price-panel">
-            <div class="form-section-title mb-3">Booking Summary</div>
-            <p class="page-subtitle mb-3">
-                This summary updates automatically based on the inclusions you keep or remove.
-            </p>
+    <!-- PANEL 4: REVIEW & CONFIRM -->
+    <div class="am-panel" id="panelReview" data-panel-index="4" hidden>
+        <div class="dashboard-panel">
+            <div class="form-section-title mb-3">Review &amp; Confirm</div>
+            <p class="page-subtitle mb-4">Double-check your final amount and package before submitting your booking.</p>
+
+            <div class="row g-3 mb-4">
+                <div class="col-md-6">
+                    <div class="package-meta-box h-100">
+                        <span class="package-meta-label">Package</span>
+                        <span class="package-meta-value" id="reviewPackageName">@Model.PackageName</span>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="package-meta-box h-100">
+                        <span class="package-meta-label">Removed Inclusions</span>
+                        <span class="package-meta-value" id="reviewRemovedInclusions">None</span>
+                    </div>
+                </div>
+            </div>
 
             <div class="booking-price-row">
                 <span>Base Price</span>
-                <strong>₱<span id="basePriceText">@Model.BasePrice.ToString("N2")</span></strong>
+                <strong>&#8369;<span id="reviewBasePriceText">@Model.BasePrice.ToString("N2")</span></strong>
             </div>
-
             <div class="booking-price-row">
                 <span>Total Deduction</span>
-                <strong>₱<span id="deductionText">0.00</span></strong>
+                <strong>&#8369;<span id="reviewDeductionText">0.00</span></strong>
             </div>
-
             <div class="booking-price-row booking-total-row">
                 <span>Final Price</span>
-                <strong>₱<span id="finalPriceText">@Model.FinalPrice.ToString("N2")</span></strong>
+                <strong>&#8369;<span id="reviewFinalPriceText">@Model.FinalPrice.ToString("N2")</span></strong>
             </div>
-
             <div class="booking-price-row">
                 <span>Required Downpayment</span>
-                <strong>₱2,000.00</strong>
+                <strong>&#8369;2,000.00</strong>
             </div>
 
-            <div class="booking-summary-note mt-3">
+            <div class="booking-summary-note mt-3 mb-4">
                 Please review the final amount carefully before submitting your booking request.
+                You must agree to the Terms &amp; Agreement to submit.
             </div>
 
-            <div class="d-flex flex-column gap-2 mt-4">
+            <div class="am-panel-nav">
+                <button type="button" class="btn btn-outline-secondary" id="backToPackageBtn">Back to Package</button>
+
                 <button type="button"
                         class="btn btn-primary"
                         data-bs-toggle="modal"
                         data-bs-target="#termsAgreementModal">
                     Submit Booking
                 </button>
-
-                <a asp-action="CreateStepOne" class="btn btn-outline-secondary">Back to Step 1</a>
             </div>
         </div>
     </div>
@@ -373,7 +416,7 @@
                     <div class="agreement-term-content">
                         <h6>1. Downpayment</h6>
                         <p>
-                            A ₱2,000 downpayment is required to secure your reservation.
+                            A &#8369;2,000 downpayment is required to secure your reservation.
                             The remaining balance will be paid after the event.
                         </p>
                     </div>
@@ -489,6 +532,11 @@
     <script>
         const maxRemovedInclusions = 2;
         const fixedDeductionPerInclusion = 2000;
+
+        function currentRemovedNames() {
+            return Array.from(document.querySelectorAll(".inclusion-checkbox:not(:checked)"))
+                .map(cb => cb.getAttribute("data-name"));
+        }
 
         function syncRemovedInclusions(changedCheckbox = null) {
             const removedInputsContainer = document.getElementById("removedInputsContainer");
@@ -639,6 +687,62 @@
                             errorSpan.classList.add("field-validation-error");
                         }
                     }
+                });
+            }
+
+            // ---- internal 2-panel mini-wizard for this physical step ----
+            const panelPackage = document.getElementById("panelPackage");
+            const panelReview = document.getElementById("panelReview");
+            const goToReviewBtn = document.getElementById("goToReviewBtn");
+            const backToPackageBtn = document.getElementById("backToPackageBtn");
+            const tracker = document.getElementById("ariesWizardTracker");
+
+            function setTrackerActive(nodeIndex) {
+                if (!tracker) return;
+                tracker.querySelectorAll(".am-wizard-node").forEach(function (node) {
+                    const idx = parseInt(node.getAttribute("data-node"), 10);
+                    node.classList.remove("is-active", "is-done", "is-upcoming");
+                    if (idx < nodeIndex) node.classList.add("is-done");
+                    else if (idx === nodeIndex) node.classList.add("is-active");
+                    else node.classList.add("is-upcoming");
+
+                    const dot = node.querySelector(".am-wizard-node-dot");
+                    if (dot) dot.innerHTML = idx < nodeIndex ? '<i class="bi bi-check-lg"></i>' : idx;
+                });
+            }
+
+            function populateReview() {
+                document.getElementById("reviewPackageName").textContent =
+                    document.querySelector(".package-preview-title")?.textContent.trim() || "";
+
+                document.getElementById("reviewBasePriceText").textContent =
+                    document.getElementById("basePriceText")?.textContent || "0.00";
+                document.getElementById("reviewDeductionText").textContent =
+                    document.getElementById("deductionText")?.textContent || "0.00";
+                document.getElementById("reviewFinalPriceText").textContent =
+                    document.getElementById("finalPriceText")?.textContent || "0.00";
+
+                const removedNames = currentRemovedNames();
+                document.getElementById("reviewRemovedInclusions").textContent =
+                    removedNames.length > 0 ? removedNames.join(", ") : "None";
+            }
+
+            if (goToReviewBtn) {
+                goToReviewBtn.addEventListener("click", function () {
+                    populateReview();
+                    panelPackage.hidden = true;
+                    panelReview.hidden = false;
+                    setTrackerActive(4);
+                    panelReview.scrollIntoView({ behavior: "smooth", block: "start" });
+                });
+            }
+
+            if (backToPackageBtn) {
+                backToPackageBtn.addEventListener("click", function () {
+                    panelReview.hidden = true;
+                    panelPackage.hidden = false;
+                    setTrackerActive(3);
+                    panelPackage.scrollIntoView({ behavior: "smooth", block: "start" });
                 });
             }
         });

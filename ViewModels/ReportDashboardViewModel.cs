@@ -23,5 +23,14 @@ namespace AriesMagicAppointmentSystem.ViewModels
         public int PendingCount { get; set; }
         public int VerifiedCount { get; set; }
         public int RejectedCount { get; set; }
+
+        // History module integration - completed bookings are counted here instead of inside
+        // the active booking totals above.
+        public int UpcomingEvents { get; set; }
+        public int TodaysEvents { get; set; }
+        public int HistoryCount { get; set; }
+        public int CompletedThisMonth { get; set; }
+        public int CompletedThisYear { get; set; }
+        public int LifetimeEvents { get; set; }
     }
 }

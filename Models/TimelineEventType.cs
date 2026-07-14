@@ -14,6 +14,8 @@ namespace AriesMagicAppointmentSystem.Models
         public const string RescheduleRejected = "RescheduleRejected";
         public const string BookingExpired = "BookingExpired";
         public const string BookingDeclined = "BookingDeclined";
+        public const string BookingCancelled = "BookingCancelled";
         public const string RefundRequested = "RefundRequested";
+        public const string BookingArchived = "BookingArchived";
     }
 }

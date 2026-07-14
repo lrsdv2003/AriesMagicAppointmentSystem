@@ -1,4 +1,5 @@
 @model IEnumerable<AriesMagicAppointmentSystem.Models.Booking>
+@using AriesMagicAppointmentSystem.Models
 
 @{
     ViewData["Title"] = "My Bookings";
@@ -7,6 +8,19 @@
 
     var unavailableBookingIds =
         ViewBag.UnavailableBookingIds as List<int> ?? new List<int>();
+
+    // The "spotlight" is computed here in the view from data the controller
+    // already returns -- no controller/model changes needed. It surfaces the
+    // single most relevant booking: the soonest upcoming event that is still
+    // active in the workflow (not completed, declined, or cancelled).
+    var activeStatuses = new[] { BookingStatus.Pending, BookingStatus.AwaitingDownpayment, BookingStatus.AwaitingVerification, BookingStatus.Confirmed };
+    var spotlight = bookings
+        .Where(b => activeStatuses.Contains(b.Status) && !unavailableBookingIds.Contains(b.Id))
+        .OrderBy(b => b.EventDate)
+        .ThenBy(b => b.StartTime)
+        .FirstOrDefault();
+
+    var daysUntilSpotlight = spotlight != null ? Math.Max((spotlight.EventDate.Date - DateTime.Today).Days, 0) : 0;
 }
 
 <div class="client-portal-header">
@@ -23,36 +37,10 @@
     </div>
 </div>
 
-<div class="client-portal-stats">
-    <div class="client-portal-stat-card">
-        <span class="client-portal-stat-label">Total Bookings</span>
-        <strong class="client-portal-stat-value">@bookings.Count</strong>
-        <span class="client-portal-stat-note">All booking requests under your account</span>
-    </div>
-
-    <div class="client-portal-stat-card">
-        <span class="client-portal-stat-label">Confirmed</span>
-        <strong class="client-portal-stat-value">
-            @bookings.Count(x => x.Status == AriesMagicAppointmentSystem.Models.BookingStatus.Confirmed)
-        </strong>
-        <span class="client-portal-stat-note">Bookings already approved and confirmed</span>
-    </div>
-
-    <div class="client-portal-stat-card">
-        <span class="client-portal-stat-label">Active Requests</span>
-        <strong class="client-portal-stat-value">
-            @bookings.Count(x =>
-                x.Status != AriesMagicAppointmentSystem.Models.BookingStatus.Completed &&
-                x.Status != AriesMagicAppointmentSystem.Models.BookingStatus.Declined)
-        </strong>
-        <span class="client-portal-stat-note">Requests still moving in the workflow</span>
-    </div>
-</div>
-
 @if (TempData["Success"] != null)
 {
     <div class="client-success-banner mb-4">
-        <div class="client-success-icon">✓</div>
+        <div class="client-success-icon"><i class="bi bi-check-lg"></i></div>
         <div>
             <div class="client-success-title">Booking Submitted</div>
             <div class="client-success-text">@TempData["Success"]</div>
@@ -63,13 +51,91 @@
 @if (TempData["Error"] != null)
 {
     <div class="client-error-banner mb-4">
-        <div class="client-error-icon">!</div>
+        <div class="client-error-icon"><i class="bi bi-exclamation-lg"></i></div>
         <div>
             <div class="client-error-title">Booking Update</div>
             <div class="client-error-text">@TempData["Error"]</div>
         </div>
     </div>
 }
+
+@if (spotlight != null)
+{
+    var spotlightPackage = string.IsNullOrWhiteSpace(spotlight.PackageName) ? spotlight.Service?.Name : spotlight.PackageName;
+    var spotlightStatusLabel = spotlight.Status switch
+    {
+        "AwaitingDownpayment" => "Awaiting Downpayment",
+        "AwaitingVerification" => "Awaiting Verification",
+        _ => spotlight.Status
+    };
+
+    <div class="am-spotlight mb-4">
+        <div class="am-spotlight-glow" aria-hidden="true"></div>
+        <div class="am-spotlight-body">
+            <div class="am-spotlight-kicker">
+                <i class="bi bi-stars"></i>
+                <span>@(daysUntilSpotlight == 0 ? "Happening today" : daysUntilSpotlight == 1 ? "Coming up tomorrow" : $"In {daysUntilSpotlight} days")</span>
+            </div>
+            <h2 class="am-spotlight-title">@spotlightPackage</h2>
+            <div class="am-spotlight-meta">
+                <span><i class="bi bi-calendar-event"></i> @spotlight.EventDate.ToString("MMMM dd, yyyy")</span>
+                <span><i class="bi bi-clock"></i> @spotlight.StartTime.ToString("hh:mm tt")</span>
+                <span><i class="bi bi-geo-alt"></i> @spotlight.PartyVenue</span>
+            </div>
+            <span class="status-badge am-spotlight-badge">@spotlightStatusLabel</span>
+        </div>
+
+        <div class="am-spotlight-actions">
+            @if (spotlight.Status == BookingStatus.AwaitingDownpayment)
+            {
+                <a asp-controller="Payments" asp-action="Upload" class="btn btn-light">Upload Payment</a>
+            }
+        </div>
+    </div>
+}
+
+<div class="am-quick-actions mb-4">
+    <a asp-action="CreateStepOne" class="am-quick-action">
+        <span class="am-quick-action-icon"><i class="bi bi-calendar-plus"></i></span>
+        <span>New Booking</span>
+    </a>
+    <a asp-controller="Payments" asp-action="Upload" class="am-quick-action">
+        <span class="am-quick-action-icon"><i class="bi bi-upload"></i></span>
+        <span>Upload Payment</span>
+    </a>
+    <a asp-controller="Payments" asp-action="RequestRefund" class="am-quick-action">
+        <span class="am-quick-action-icon"><i class="bi bi-arrow-counterclockwise"></i></span>
+        <span>Request Refund</span>
+    </a>
+    <a asp-controller="RescheduleRequests" asp-action="Create" class="am-quick-action">
+        <span class="am-quick-action-icon"><i class="bi bi-calendar2-week"></i></span>
+        <span>Request Reschedule</span>
+    </a>
+</div>
+
+<div class="client-portal-stats">
+    <div class="client-portal-stat-card">
+        <span class="client-portal-stat-label">Total Bookings</span>
+        <strong class="client-portal-stat-value">@bookings.Count</strong>
+        <span class="client-portal-stat-note">All booking requests under your account</span>
+    </div>
+
+    <div class="client-portal-stat-card">
+        <span class="client-portal-stat-label">Confirmed</span>
+        <strong class="client-portal-stat-value">
+            @bookings.Count(x => x.Status == BookingStatus.Confirmed)
+        </strong>
+        <span class="client-portal-stat-note">Bookings already approved and confirmed</span>
+    </div>
+
+    <div class="client-portal-stat-card">
+        <span class="client-portal-stat-label">Active Requests</span>
+        <strong class="client-portal-stat-value">
+            @bookings.Count(x => x.Status != BookingStatus.Completed && x.Status != BookingStatus.Declined && x.Status != BookingStatus.Cancelled)
+        </strong>
+        <span class="client-portal-stat-note">Requests still moving in the workflow</span>
+    </div>
+</div>
 
 @if (!bookings.Any())
 {
@@ -84,7 +150,27 @@
 }
 else
 {
-    <div class="client-booking-grid">
+    <div class="am-list-toolbar mb-3">
+        <div class="am-search-box">
+            <i class="bi bi-search"></i>
+            <input type="text" id="bookingSearchInput" class="form-control" placeholder="Search by package, event type, or venue" aria-label="Search bookings">
+        </div>
+
+        <div class="am-filter-chips" id="bookingFilterChips" role="group" aria-label="Filter bookings by status">
+            <button type="button" class="am-chip is-active" data-filter="all">All</button>
+            <button type="button" class="am-chip" data-filter="active">Active</button>
+            <button type="button" class="am-chip" data-filter="confirmed">Confirmed</button>
+            <button type="button" class="am-chip" data-filter="completed">Completed</button>
+            <button type="button" class="am-chip" data-filter="declined">Declined / Cancelled</button>
+        </div>
+    </div>
+
+    <div id="bookingEmptyFilterState" class="empty-state client-empty-state d-none">
+        <h3>No bookings match your search</h3>
+        <p>Try a different keyword or clear the filters above.</p>
+    </div>
+
+    <div class="client-booking-grid" id="bookingGrid">
         @foreach (var item in bookings)
         {
             var isUnavailable = unavailableBookingIds.Contains(item.Id);
@@ -97,15 +183,25 @@ else
                 "Confirmed" => "status-confirmed",
                 "Completed" => "status-completed",
                 "Declined" => "status-declined",
+                "Cancelled" => "status-declined",
                 "Expired" => "status-expired",
                 _ => "status-read"
+            };
+
+            var filterGroup = item.Status switch
+            {
+                "Completed" => "completed",
+                "Declined" => "declined",
+                "Cancelled" => "declined",
+                "Confirmed" => "confirmed",
+                _ => "active"
             };
 
             var packageName = string.IsNullOrWhiteSpace(item.PackageName)
                 ? item.Service?.Name
                 : item.PackageName;
 
-            <div class="client-booking-card">
+            <div class="client-booking-card" data-filter-group="@filterGroup" data-search-text="@($"{packageName} {item.EventType} {item.PartyVenue}".ToLowerInvariant())">
                 <div class="client-booking-top">
                     <div>
                         <div class="client-booking-code">
@@ -126,11 +222,11 @@ else
                         {
                             <text>Schedule Unavailable</text>
                         }
-                        else if (item.Status == AriesMagicAppointmentSystem.Models.BookingStatus.AwaitingDownpayment)
+                        else if (item.Status == BookingStatus.AwaitingDownpayment)
                         {
                             <text>Awaiting Downpayment</text>
                         }
-                        else if (item.Status == AriesMagicAppointmentSystem.Models.BookingStatus.AwaitingVerification)
+                        else if (item.Status == BookingStatus.AwaitingVerification)
                         {
                             <text>Awaiting Verification</text>
                         }
@@ -139,6 +235,21 @@ else
                             @item.Status
                         }
                     </span>
+                </div>
+
+                <div class="am-mini-timeline">
+                    <div class="am-mini-timeline-track">
+                        @{
+                            var timelineSteps = new[] { "Pending", "AwaitingDownpayment", "AwaitingVerification", "Confirmed", "Completed" };
+                            var isTerminalNegative = item.Status == BookingStatus.Declined || item.Status == BookingStatus.Cancelled || item.Status == BookingStatus.Expired;
+                            var currentIndex = Array.IndexOf(timelineSteps, item.Status);
+                        }
+                        @for (int s = 0; s < timelineSteps.Length; s++)
+                        {
+                            var stepDone = !isTerminalNegative && currentIndex >= s;
+                            <span class="am-mini-timeline-dot @(stepDone ? "is-done" : "") @(isTerminalNegative ? "is-halted" : "")"></span>
+                        }
+                    </div>
                 </div>
 
                 <div class="client-booking-meta">
@@ -157,64 +268,70 @@ else
                     </div>
                 </div>
 
-                <div class="client-booking-details">
-                    <div class="client-booking-detail-row">
-                        <span>Event Type</span>
-                        <strong>@item.EventType</strong>
+                <details class="am-details-toggle">
+                    <summary>View booking details</summary>
+
+                    <div class="client-booking-details mt-3">
+                        <div class="client-booking-detail-row">
+                            <span>Event Type</span>
+                            <strong>@item.EventType</strong>
+                        </div>
+
+                        <div class="client-booking-detail-row">
+                            <span>Venue</span>
+                            <strong>@item.PartyVenue</strong>
+                        </div>
+
+                        <div class="client-booking-detail-row">
+                            <span>Final Price</span>
+                            <strong>&#8369;@item.FinalPrice.ToString("N2")</strong>
+                        </div>
+
+                        <div class="client-booking-detail-row">
+                            <span>Required Downpayment</span>
+                            <strong>&#8369;@item.RequiredDownpayment.ToString("N2")</strong>
+                        </div>
                     </div>
 
-                    <div class="client-booking-detail-row">
-                        <span>Venue</span>
-                        <strong>@item.PartyVenue</strong>
+                    <div class="client-booking-note mt-3">
+                        @if (isUnavailable)
+                        {
+                            <span>This booking schedule has already been secured by another paid booking.</span>
+                        }
+                        else if (item.Status == BookingStatus.Pending)
+                        {
+                            <span>Your booking is waiting for staff review.</span>
+                        }
+                        else if (item.Status == BookingStatus.AwaitingDownpayment)
+                        {
+                            <span>Your booking was approved. Please upload your payment proof to continue.</span>
+                        }
+                        else if (item.Status == BookingStatus.AwaitingVerification)
+                        {
+                            <span>Your payment proof was submitted and is now waiting for admin verification.</span>
+                        }
+                        else if (item.Status == BookingStatus.Confirmed)
+                        {
+                            <span>Your booking is confirmed and scheduled.</span>
+                        }
+                        else if (item.Status == BookingStatus.Completed)
+                        {
+                            <span>This booking has already been completed.</span>
+                        }
+                        else if (item.Status == BookingStatus.Declined)
+                        {
+                            <span>This booking was declined. Please review the booking details or contact support for more information.</span>
+                        }
+                        else if (item.Status == BookingStatus.Cancelled)
+                        {
+                            <span>You cancelled this booking.</span>
+                        }
+                        else
+                        {
+                            <span>Check this booking regularly for status updates.</span>
+                        }
                     </div>
-
-                    <div class="client-booking-detail-row">
-                        <span>Final Price</span>
-                        <strong>₱@item.FinalPrice.ToString("N2")</strong>
-                    </div>
-
-                    <div class="client-booking-detail-row">
-                        <span>Required Downpayment</span>
-                        <strong>₱@item.RequiredDownpayment.ToString("N2")</strong>
-                    </div>
-                </div>
-
-                <div class="client-booking-note">
-                    @if (isUnavailable)
-                    {
-                        <span>
-                            This booking schedule has already been secured by another paid booking.
-                        </span>
-                    }
-                    else if (item.Status == AriesMagicAppointmentSystem.Models.BookingStatus.Pending)
-                    {
-                        <span>Your booking is waiting for staff review.</span>
-                    }
-                    else if (item.Status == AriesMagicAppointmentSystem.Models.BookingStatus.AwaitingDownpayment)
-                    {
-                        <span>Your booking was approved. Please upload your payment proof to continue.</span>
-                    }
-                    else if (item.Status == AriesMagicAppointmentSystem.Models.BookingStatus.AwaitingVerification)
-                    {
-                        <span>Your payment proof was submitted and is now waiting for admin verification.</span>
-                    }
-                    else if (item.Status == AriesMagicAppointmentSystem.Models.BookingStatus.Confirmed)
-                    {
-                        <span>Your booking is confirmed and scheduled.</span>
-                    }
-                    else if (item.Status == AriesMagicAppointmentSystem.Models.BookingStatus.Completed)
-                    {
-                        <span>This booking has already been completed.</span>
-                    }
-                    else if (item.Status == AriesMagicAppointmentSystem.Models.BookingStatus.Declined)
-                    {
-                        <span>This booking was declined. Please review the booking details or contact support for more information.</span>
-                    }
-                    else
-                    {
-                        <span>Check this booking regularly for status updates.</span>
-                    }
-                </div>
+                </details>
 
                 <div class="client-booking-footer">
                     @if (isUnavailable)
@@ -233,7 +350,7 @@ else
                     }
 
                     <div class="client-booking-footer-actions">
-                        @if (item.Status == AriesMagicAppointmentSystem.Models.BookingStatus.AwaitingDownpayment)
+                        @if (item.Status == BookingStatus.AwaitingDownpayment)
                         {
                             if (isUnavailable)
                             {
@@ -250,15 +367,71 @@ else
                                 </a>
                             }
                         }
-                        else
+                        else if (item.Status != BookingStatus.Pending &&
+                                 item.Status != BookingStatus.AwaitingVerification)
                         {
                             <button type="button" class="btn btn-outline-secondary" disabled>
                                 No Action Needed
                             </button>
+                        }
+
+                        @if (item.Status == BookingStatus.Pending ||
+                             item.Status == BookingStatus.AwaitingDownpayment ||
+                             item.Status == BookingStatus.AwaitingVerification)
+                        {
+                            <a asp-action="Cancel" asp-route-id="@item.Id" class="btn btn-outline-danger">
+                                Cancel Booking
+                            </a>
                         }
                     </div>
                 </div>
             </div>
         }
     </div>
+}
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            var searchInput = document.getElementById("bookingSearchInput");
+            var chips = document.querySelectorAll("#bookingFilterChips .am-chip");
+            var cards = document.querySelectorAll("#bookingGrid .client-booking-card");
+            var emptyState = document.getElementById("bookingEmptyFilterState");
+            var activeFilter = "all";
+
+            function applyFilters() {
+                var query = (searchInput && searchInput.value || "").trim().toLowerCase();
+                var visibleCount = 0;
+
+                cards.forEach(function (card) {
+                    var group = card.getAttribute("data-filter-group");
+                    var text = card.getAttribute("data-search-text") || "";
+
+                    var matchesFilter = activeFilter === "all" || group === activeFilter;
+                    var matchesSearch = query === "" || text.indexOf(query) !== -1;
+                    var visible = matchesFilter && matchesSearch;
+
+                    card.style.display = visible ? "" : "none";
+                    if (visible) visibleCount++;
+                });
+
+                if (emptyState) {
+                    emptyState.classList.toggle("d-none", visibleCount !== 0);
+                }
+            }
+
+            if (searchInput) {
+                searchInput.addEventListener("input", applyFilters);
+            }
+
+            chips.forEach(function (chip) {
+                chip.addEventListener("click", function () {
+                    chips.forEach(function (c) { c.classList.remove("is-active"); });
+                    chip.classList.add("is-active");
+                    activeFilter = chip.getAttribute("data-filter");
+                    applyFilters();
+                });
+            });
+        });
+    </script>
 }

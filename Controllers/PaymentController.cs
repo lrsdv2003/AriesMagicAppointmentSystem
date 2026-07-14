@@ -159,21 +159,21 @@ namespace AriesMagicAppointmentSystem.Controllers
             await _context.SaveChangesAsync();
             await NotifyAffectedClientsAboutLockedScheduleAsync(booking);
 
-            var adminIdentityUsers = await _userManager.GetUsersInRoleAsync("Admin");
+            var ownerIdentityUsers = await _userManager.GetUsersInRoleAsync("Owner");
 
-            foreach (var admin in adminIdentityUsers)
+            foreach (var owner in ownerIdentityUsers)
             {
                 await CreateNotificationAsync(
-                    admin.Id,
+                    owner.Id,
                     "Payment Awaiting Verification",
                     "A client uploaded a payment proof that needs verification.",
                     "/Payments/PendingVerification");
             }
 
-            foreach (var admin in adminIdentityUsers.Where(u => !string.IsNullOrWhiteSpace(u.Email)))
+            foreach (var owner in ownerIdentityUsers.Where(u => !string.IsNullOrWhiteSpace(u.Email)))
             {
                 await _emailService.SendEmailAsync(
-                    admin.Email!,
+                    owner.Email!,
                     "Payment Awaiting Verification",
                     @"
                     <h2>Payment Awaiting Verification</h2>
@@ -181,7 +181,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                     <p>Please check the admin payment verification page.</p>");
             }
 
-            TempData["Success"] = "Your payment proof was uploaded successfully. Please wait for admin verification.";
+            TempData["Success"] = "Your payment proof was uploaded successfully. Please wait for owner verification.";
             return RedirectToAction(nameof(MyUploads));
         }
 
@@ -202,7 +202,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             return View(payments);
         }
 
-        [Authorize(Roles = "Admin,Owner")]
+        [Authorize(Roles = "Owner")]
         public async Task<IActionResult> PendingVerification()
         {
             var pendingPayments = await _context.Payments
@@ -217,7 +217,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             return View(pendingPayments);
         }
 
-        [Authorize(Roles = "Admin,Owner")]
+        [Authorize(Roles = "Owner")]
         public async Task<IActionResult> Verify(int? id)
         {
             if (id == null) return NotFound();
@@ -235,7 +235,7 @@ namespace AriesMagicAppointmentSystem.Controllers
         }
 
         [HttpPost, ActionName("Verify")]
-        [Authorize(Roles = "Admin,Owner")]
+        [Authorize(Roles = "Owner")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> VerifyConfirmed(int id)
         {
@@ -256,7 +256,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                 {
                     BookingId = payment.Booking.Id,
                     EventType = TimelineEventType.PaymentVerified,
-                    Notes = "Admin verified payment proof.",
+                    Notes = "Owner verified payment proof.",
                     CreatedAt = DateTime.Now
                 });
 
@@ -317,7 +317,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             return RedirectToAction(nameof(PendingVerification));
         }
 
-        [Authorize(Roles = "Admin,Owner")]
+        [Authorize(Roles = "Owner")]
         public async Task<IActionResult> Reject(int? id)
         {
             if (id == null) return NotFound();
@@ -335,7 +335,7 @@ namespace AriesMagicAppointmentSystem.Controllers
         }
 
         [HttpPost, ActionName("Reject")]
-        [Authorize(Roles = "Admin,Owner")]
+        [Authorize(Roles = "Owner")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RejectConfirmed(int id, string? rejectionReason)
         {
@@ -493,13 +493,13 @@ namespace AriesMagicAppointmentSystem.Controllers
                 CreatedAt = DateTime.Now
             });
 
-            var admins = await _userManager.GetUsersInRoleAsync("Admin");
+            var owners = await _userManager.GetUsersInRoleAsync("Owner");
 
-            foreach (var admin in admins)
+            foreach (var owner in owners)
             {
                 _context.Notifications.Add(new Notification
                 {
-                    UserId = admin.Id,
+                    UserId = owner.Id,
                     Title = "New Refund Request",
                     Message = "A client submitted a refund request for review.",
                     Link = "/Payments/RefundRequests",
@@ -510,7 +510,7 @@ namespace AriesMagicAppointmentSystem.Controllers
 
             await _context.SaveChangesAsync();
 
-            TempData["Success"] = "Your refund request has been submitted. Please wait for admin review.";
+            TempData["Success"] = "Your refund request has been submitted. Please wait for owner review.";
             return RedirectToAction(nameof(MyRefundRequests));
         }
 
@@ -529,7 +529,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             return View(requests);
         }
 
-        [Authorize(Roles = "Admin,Owner")]
+        [Authorize(Roles = "Owner")]
         public async Task<IActionResult> RefundRequests()
         {
             var requests = await _context.RefundRequests
@@ -544,7 +544,7 @@ namespace AriesMagicAppointmentSystem.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "Admin,Owner")]
+        [Authorize(Roles = "Owner")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ApproveRefund(int id, string? adminRemarks)
         {
@@ -565,7 +565,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                 await CreateNotificationAsync(
                     refund.Booking.ApplicationUserId,
                     "Refund Request Approved",
-                    "Your refund request was approved. Please wait for the admin to process the actual GCash refund.",
+                    "Your refund request was approved. Please wait for the owner to process the actual GCash refund.",
                     "/Payments/MyRefundRequests");
             }
 
@@ -574,7 +574,7 @@ namespace AriesMagicAppointmentSystem.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "Admin,Owner")]
+        [Authorize(Roles = "Owner")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> MarkAsRefunded(int id, string? adminRemarks)
         {
@@ -595,7 +595,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                 await CreateNotificationAsync(
                     refund.Booking.ApplicationUserId,
                     "Refund Processed",
-                    "Your refund has been marked as processed by the admin.",
+                    "Your refund has been marked as processed by the owner.",
                     "/Payments/MyRefundRequests");
             }
 
@@ -604,7 +604,7 @@ namespace AriesMagicAppointmentSystem.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "Admin,Owe")]  
+        [Authorize(Roles = "Owner")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RejectRefund(int id, string? adminRemarks)
         {
@@ -625,7 +625,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                 await CreateNotificationAsync(
                     refund.Booking.ApplicationUserId,
                     "Refund Request Rejected",
-                    "Your refund request was rejected. Please check the admin remarks.",
+                    "Your refund request was rejected. Please check the owner remarks.",
                     "/Payments/MyRefundRequests");
             }
 

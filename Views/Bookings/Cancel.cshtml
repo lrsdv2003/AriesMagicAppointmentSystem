@@ -1,0 +1,131 @@
+@model AriesMagicAppointmentSystem.Models.Booking
+
+@{
+    ViewData["Title"] = "Cancel Booking";
+
+    var packageName = string.IsNullOrWhiteSpace(Model.PackageName)
+        ? Model.Service?.Name
+        : Model.PackageName;
+}
+
+<div class="client-portal-header">
+    <div>
+        <div class="section-kicker">Client Portal</div>
+        <h1 class="client-portal-title">Cancel Booking</h1>
+        <p class="client-portal-text">
+            Review the booking details below before confirming the cancellation. This action cannot be undone.
+        </p>
+    </div>
+</div>
+
+<div class="booking-details-layout">
+    <div class="dashboard-panel">
+        <div class="form-section-title mb-3">Booking Information</div>
+
+        <div class="row g-3">
+            <div class="col-md-6">
+                <div class="package-meta-box h-100">
+                    <span class="package-meta-label">Booking Code</span>
+                    <span class="package-meta-value">BK-@Model.CreatedAt.Year-@Model.Id.ToString("D3")</span>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="package-meta-box h-100">
+                    <span class="package-meta-label">Package</span>
+                    <span class="package-meta-value">@packageName</span>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="package-meta-box h-100">
+                    <span class="package-meta-label">Event Type</span>
+                    <span class="package-meta-value">@Model.EventType</span>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="package-meta-box h-100">
+                    <span class="package-meta-label">Status</span>
+                    <span class="package-meta-value">@Model.Status</span>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="package-meta-box h-100">
+                    <span class="package-meta-label">Event Date</span>
+                    <span class="package-meta-value">@Model.EventDate.ToString("MMMM dd, yyyy")</span>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="package-meta-box h-100">
+                    <span class="package-meta-label">Start Time</span>
+                    <span class="package-meta-value">@Model.StartTime.ToString("hh:mm tt")</span>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="package-meta-box h-100">
+                    <span class="package-meta-label">End Time</span>
+                    <span class="package-meta-value">@Model.EndTime.ToString("hh:mm tt")</span>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="package-meta-box h-100">
+                    <span class="package-meta-label">Venue</span>
+                    <span class="package-meta-value">@Model.PartyVenue</span>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="package-meta-box h-100">
+                    <span class="package-meta-label">Contact Person</span>
+                    <span class="package-meta-value">@Model.ContactPerson</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="dashboard-panel">
+        <div class="form-section-title mb-3">Cancellation</div>
+
+        <div class="booking-price-row">
+            <span>Final Price</span>
+            <strong>₱@Model.FinalPrice.ToString("N2")</strong>
+        </div>
+
+        <div class="booking-price-row">
+            <span>Required Downpayment</span>
+            <strong>₱@Model.RequiredDownpayment.ToString("N2")</strong>
+        </div>
+
+        <div class="booking-summary-note mt-4 mb-4">
+            @if (Model.Status == AriesMagicAppointmentSystem.Models.BookingStatus.AwaitingVerification)
+            {
+                <text>
+                    You already have a payment proof under verification for this booking. If you already sent a
+                    downpayment and want it back, please submit a refund request instead of cancelling.
+                </text>
+            }
+            else
+            {
+                <text>
+                    Cancelling this booking will free up the requested schedule. This action cannot be undone, and
+                    you will need to create a new booking if you change your mind.
+                </text>
+            }
+        </div>
+
+        <form asp-action="Cancel" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="Id" />
+
+            <div class="d-flex gap-2 flex-wrap">
+                <button type="submit" class="btn btn-danger">Confirm Cancellation</button>
+                <a asp-action="MyBookings" class="btn btn-outline-secondary">Keep Booking</a>
+            </div>
+        </form>
+    </div>
+</div>

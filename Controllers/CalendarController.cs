@@ -1,5 +1,6 @@
 using AriesMagicAppointmentSystem.Data;
 using AriesMagicAppointmentSystem.Models;
+using AriesMagicAppointmentSystem.Services;
 using AriesMagicAppointmentSystem.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -11,21 +12,38 @@ namespace AriesMagicAppointmentSystem.Controllers
     public class CalendarController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly IHistoryService _historyService;
 
-        public CalendarController(ApplicationDbContext context)
+        public CalendarController(ApplicationDbContext context, IHistoryService historyService)
         {
             _context = context;
+            _historyService = historyService;
         }
 
-        public async Task<IActionResult> Index()
+        /// <summary>
+        /// showHistorical=true also plots completed/archived events on the calendar (read-only,
+        /// for context). Default is false so the operational calendar only shows active bookings.
+        /// </summary>
+        public async Task<IActionResult> Index(bool showHistorical = false)
         {
+            // Keep the operational calendar honest: anything whose event time has passed moves
+            // out of "Confirmed" (and off this calendar) automatically.
+            await _historyService.ArchiveDueBookingsAsync();
+
+            var statusesToShow = showHistorical
+                ? new[] { BookingStatus.Confirmed, BookingStatus.Completed }
+                : new[] { BookingStatus.Confirmed };
+
             var bookings = await _context.Bookings
                 .Include(b => b.Client)
                 .Include(b => b.Service)
-                .Where(b => b.Status == BookingStatus.Confirmed)
+                .Include(b => b.Payments)
+                .Where(b => statusesToShow.Contains(b.Status))
                 .OrderBy(b => b.EventDate)
                 .ThenBy(b => b.StartTime)
                 .ToListAsync();
+
+            ViewBag.ShowHistorical = showHistorical;
 
             var blockedDates = await _context.BlockedDates
                 .Select(x => new
@@ -81,12 +99,16 @@ namespace AriesMagicAppointmentSystem.Controllers
 
         [Authorize(Roles = "Staff,Admin,Owner")]
         [HttpGet]
-        public async Task<IActionResult> GetReservationsByDate(DateTime date)
+        public async Task<IActionResult> GetReservationsByDate(DateTime date, bool showHistorical = false)
         {
+            var statusesToShow = showHistorical
+                ? new[] { BookingStatus.Confirmed, BookingStatus.Completed }
+                : new[] { BookingStatus.Confirmed };
+
             var reservations = await _context.Bookings
                 .Include(b => b.Client)
                 .Include(b => b.Service)
-                .Where(b => b.EventDate.Date == date.Date && b.Status == BookingStatus.Confirmed)
+                .Where(b => b.EventDate.Date == date.Date && statusesToShow.Contains(b.Status))
                 .OrderBy(b => b.StartTime)
                 .Select(b => new
                 {

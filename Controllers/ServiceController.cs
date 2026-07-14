@@ -18,7 +18,7 @@ namespace AriesMagicAppointmentSystem.Controllers
         }
 
         // STAFF + ADMIN: view active packages
-        [Authorize(Roles = "Admin,Staff")]
+        [Authorize(Roles = "Staff,Admin")]
         public async Task<IActionResult> Index()
         {
             var packages = await _context.Services
@@ -30,7 +30,7 @@ namespace AriesMagicAppointmentSystem.Controllers
         }
 
         // STAFF + ADMIN: view package details
-        [Authorize(Roles = "Admin,Staff")]
+        [Authorize(Roles = "Staff,Admin")]
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null) return NotFound();
@@ -45,7 +45,7 @@ namespace AriesMagicAppointmentSystem.Controllers
         }
 
         // STAFF + ADMIN: view archived packages
-        [Authorize(Roles = "Admin,Staff")]
+        [Authorize(Roles = "Staff,Admin")]
         public async Task<IActionResult> Archived()
         {
             var archivedPackages = await _context.Services
@@ -193,7 +193,7 @@ namespace AriesMagicAppointmentSystem.Controllers
         }
 
         // STAFF + ADMIN: archive package
-        [Authorize(Roles = "Admin,staff")]
+        [Authorize(Roles = "Staff,Admin")]
         public async Task<IActionResult> Archive(int? id)
         {
             if (id == null) return NotFound();
@@ -207,7 +207,7 @@ namespace AriesMagicAppointmentSystem.Controllers
         }
 
         [HttpPost, ActionName("Archive")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Staff,Admin")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ArchiveConfirmed(int id)
         {
@@ -221,7 +221,7 @@ namespace AriesMagicAppointmentSystem.Controllers
         }
 
         // STAFF + ADMIN: restore package
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Staff,Admin")]
         public async Task<IActionResult> Restore(int? id)
         {
             if (id == null) return NotFound();
@@ -235,7 +235,7 @@ namespace AriesMagicAppointmentSystem.Controllers
         }
 
         [HttpPost, ActionName("Restore")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Staff,Admin")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RestoreConfirmed(int id)
         {

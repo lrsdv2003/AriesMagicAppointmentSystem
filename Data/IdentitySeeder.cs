@@ -10,7 +10,7 @@ namespace AriesMagicAppointmentSystem.Data
             var roleManager = serviceProvider.GetRequiredService<RoleManager<IdentityRole>>();
             var userManager = serviceProvider.GetRequiredService<UserManager<ApplicationUser>>();
 
-            string[] roles = { "Client", "Owner","Staff", "Admin" };
+            string[] roles = { "Client", "Staff", "Admin", "Owner" };
 
             foreach (var role in roles)
             {
@@ -31,12 +31,7 @@ namespace AriesMagicAppointmentSystem.Data
                 password: "client123",
                 fullName: "Default Client",
                 role: "Client");
-            await EnsureUserAsync(
-                userManager,
-                email: "owner@ariesmagic.com",
-                password: "owner123",
-                fullName: "System Owner",
-                role: "Owner");
+
             await EnsureUserAsync(
                 userManager,
                 email: "admin2@ariesmagic.com",
@@ -50,6 +45,13 @@ namespace AriesMagicAppointmentSystem.Data
                 password: "staff123",
                 fullName: "Staff User",
                 role: "Staff");
+
+            await EnsureUserAsync(
+                userManager,
+                email: "owner@ariesmagic.com",
+                password: "owner123",
+                fullName: "Business Owner",
+                role: "Owner");
         }
 
         private static async Task EnsureUserAsync(
