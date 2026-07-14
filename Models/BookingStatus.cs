@@ -8,6 +8,7 @@ namespace AriesMagicAppointmentSystem.Models
         public const string Confirmed = "Confirmed";
         public const string Completed = "Completed";
         public const string Declined = "Declined";
+        public const string Cancelled = "Cancelled";
         public const string Expired = "Expired";
         public const string PaymentSubmitted = "Payment Submitted";
     }

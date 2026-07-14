@@ -1,0 +1,69 @@
+@model List<AriesMagicAppointmentSystem.ViewModels.HistoryRowViewModel>
+@{
+    Layout = null;
+    var generatedAt = (DateTime)ViewBag.GeneratedAt;
+    var totalRevenue = Model.Sum(r => r.AmountPaid);
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Booking History Report</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 24px; color: #111; }
+        h1 { font-size: 20px; margin-bottom: 4px; }
+        .meta { color: #555; font-size: 12px; margin-bottom: 16px; }
+        table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        th, td { border: 1px solid #ccc; padding: 6px 8px; text-align: left; }
+        th { background: #f1f1f1; }
+        .print-actions { margin-bottom: 16px; }
+        @@media print {
+            .print-actions { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="print-actions">
+        <button onclick="window.print()">Print</button>
+    </div>
+
+    <h1>Aries Magic - Booking History Report</h1>
+    <div class="meta">
+        Generated @generatedAt.ToString("MMMM dd, yyyy hh:mm tt") &middot;
+        @Model.Count record(s) &middot;
+        Total revenue collected: ₱@totalRevenue.ToString("N2")
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Booking</th>
+                <th>Client</th>
+                <th>Event Type</th>
+                <th>Package</th>
+                <th>Event Date</th>
+                <th>Amount Paid</th>
+                <th>Balance</th>
+                <th>Payment</th>
+                <th>Refund</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var row in Model)
+            {
+                <tr>
+                    <td>@row.BookingCode</td>
+                    <td>@row.ClientName</td>
+                    <td>@row.EventType</td>
+                    <td>@row.PackageName</td>
+                    <td>@row.EventDate.ToString("MMM dd, yyyy")</td>
+                    <td>₱@row.AmountPaid.ToString("N2")</td>
+                    <td>₱@row.RemainingBalance.ToString("N2")</td>
+                    <td>@row.PaymentStatus</td>
+                    <td>@row.RefundStatus</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</body>
+</html>

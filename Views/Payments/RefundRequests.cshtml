@@ -87,7 +87,7 @@
                                 <form method="post" class="d-flex flex-column gap-2">
                                     @Html.AntiForgeryToken()
                                     <input type="hidden" name="id" value="@item.Id" />
-                                    <textarea name="adminRemarks" class="form-control form-control-sm" rows="2" placeholder="Admin remarks">@item.AdminRemarks</textarea>
+                                    <textarea name="adminRemarks" class="form-control form-control-sm" rows="2" placeholder="Owner remarks">@item.AdminRemarks</textarea>
 
                                     @if (item.Status == AriesMagicAppointmentSystem.Models.RefundStatus.Pending)
                                     {

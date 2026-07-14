@@ -37,6 +37,43 @@
     </div>
 </div>
 
+<div class="dashboard-panel mt-4">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+        <div>
+            <h3 class="mb-1">Event History</h3>
+            <p class="page-subtitle mb-0">Completed events are archived automatically and tracked separately from active bookings.</p>
+        </div>
+        <a asp-controller="History" asp-action="Index" class="btn btn-primary btn-sm">View Full History</a>
+    </div>
+
+    <div class="dashboard-stats mb-0">
+        <div class="stat-card">
+            <div class="stat-label">Upcoming Events</div>
+            <div class="stat-value">@Model.UpcomingEvents</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Today's Events</div>
+            <div class="stat-value">@Model.TodaysEvents</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">History Count</div>
+            <div class="stat-value">@Model.HistoryCount</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Completed This Month</div>
+            <div class="stat-value">@Model.CompletedThisMonth</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Completed This Year</div>
+            <div class="stat-value">@Model.CompletedThisYear</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Lifetime Events</div>
+            <div class="stat-value">@Model.LifetimeEvents</div>
+        </div>
+    </div>
+</div>
+
 <div class="row g-4 mb-4">
     <div class="col-lg-6">
         <div class="dashboard-panel">

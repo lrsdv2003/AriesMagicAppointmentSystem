@@ -1,0 +1,263 @@
+@model AriesMagicAppointmentSystem.ViewModels.HistoryIndexViewModel
+@using AriesMagicAppointmentSystem.Extensions
+
+@{
+    Layout = "_DashboardLayout";
+    ViewData["Title"] = "Booking History";
+    var f = Model.Filters;
+}
+
+<div class="dashboard-stats mb-4">
+    <div class="stat-card">
+        <div class="stat-label">Upcoming Events</div>
+        <div class="stat-value">@Model.Summary.UpcomingEvents</div>
+        <div class="stat-subtext">Confirmed bookings still ahead on the calendar.</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Today's Events</div>
+        <div class="stat-value">@Model.Summary.TodaysEvents</div>
+        <div class="stat-subtext">Confirmed bookings scheduled for today.</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">History Count</div>
+        <div class="stat-value">@Model.Summary.HistoryCount</div>
+        <div class="stat-subtext">Completed events archived so far.</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Completed This Month</div>
+        <div class="stat-value">@Model.Summary.CompletedThisMonth</div>
+        <div class="stat-subtext">Events that took place this calendar month.</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Completed This Year</div>
+        <div class="stat-value">@Model.Summary.CompletedThisYear</div>
+        <div class="stat-subtext">Events that took place this calendar year.</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Lifetime Events</div>
+        <div class="stat-value">@Model.Summary.LifetimeEvents</div>
+        <div class="stat-subtext">All-time completed events (₱@Model.Summary.LifetimeRevenue.ToString("N2") collected).</div>
+    </div>
+</div>
+
+<div class="dashboard-panel mb-4">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+        <div>
+            <div class="form-section-title mb-1">Search and Filters</div>
+            <p class="page-subtitle mb-0">Every completed event lives here - active modules no longer show it.</p>
+        </div>
+
+        @if (User.CanExportHistoryReports())
+        {
+            <div class="d-flex gap-2">
+                <a class="btn btn-outline-secondary btn-sm" target="_blank"
+                   asp-action="Print" asp-all-route-data="@GetRouteData(f)">
+                    <i class="bi bi-printer"></i> Print
+                </a>
+                <a class="btn btn-outline-secondary btn-sm"
+                   asp-action="ExportCsv" asp-all-route-data="@GetRouteData(f)">
+                    <i class="bi bi-filetype-csv"></i> Export Excel/CSV
+                </a>
+                <a class="btn btn-outline-secondary btn-sm"
+                   asp-action="ExportPdf" asp-all-route-data="@GetRouteData(f)">
+                    <i class="bi bi-filetype-pdf"></i> Export PDF
+                </a>
+            </div>
+        }
+    </div>
+
+    <form method="get" asp-action="Index">
+        <div class="row g-3 align-items-end">
+            <div class="col-lg-3 col-md-6">
+                <label class="form-label">Search</label>
+                <input type="text" name="Search" value="@f.Search" class="form-control"
+                       placeholder="Booking ID, client, phone, package..." />
+            </div>
+
+            <div class="col-lg-2 col-md-6">
+                <label class="form-label">Date Range</label>
+                <select name="DateRange" class="form-select">
+                    <option value="" selected="@(string.IsNullOrEmpty(f.DateRange))">Any Time</option>
+                    <option value="Today" selected="@(f.DateRange == "Today")">Today</option>
+                    <option value="ThisWeek" selected="@(f.DateRange == "ThisWeek")">This Week</option>
+                    <option value="ThisMonth" selected="@(f.DateRange == "ThisMonth")">This Month</option>
+                    <option value="Year" selected="@(f.DateRange == "Year")">Year</option>
+                </select>
+            </div>
+
+            <div class="col-lg-2 col-md-6">
+                <label class="form-label">Package</label>
+                <select name="ServiceId" class="form-select">
+                    <option value="">All Packages</option>
+                    @foreach (var svc in Model.AvailableServices)
+                    {
+                        <option value="@svc.Id" selected="@(f.ServiceId == svc.Id)">@svc.Name</option>
+                    }
+                </select>
+            </div>
+
+            <div class="col-lg-2 col-md-6">
+                <label class="form-label">Event Type</label>
+                <select name="EventType" class="form-select">
+                    <option value="All" selected="@(string.IsNullOrEmpty(f.EventType) || f.EventType == "All")">All Types</option>
+                    @foreach (var type in Model.AvailableEventTypes)
+                    {
+                        <option value="@type" selected="@(f.EventType == type)">@type</option>
+                    }
+                </select>
+            </div>
+
+            <div class="col-lg-2 col-md-6">
+                <label class="form-label">Payment Status</label>
+                <select name="PaymentStatus" class="form-select">
+                    <option value="All" selected="@(string.IsNullOrEmpty(f.PaymentStatus) || f.PaymentStatus == "All")">All</option>
+                    <option value="No Payment" selected="@(f.PaymentStatus == "No Payment")">No Payment</option>
+                    <option value="Pending" selected="@(f.PaymentStatus == "Pending")">Pending</option>
+                    <option value="Verified" selected="@(f.PaymentStatus == "Verified")">Verified</option>
+                    <option value="Rejected" selected="@(f.PaymentStatus == "Rejected")">Rejected</option>
+                </select>
+            </div>
+
+            <div class="col-lg-1 col-md-6">
+                <label class="form-label">Refund</label>
+                <select name="RefundStatus" class="form-select">
+                    <option value="All" selected="@(string.IsNullOrEmpty(f.RefundStatus) || f.RefundStatus == "All")">All</option>
+                    <option value="None" selected="@(f.RefundStatus == "None")">None</option>
+                    <option value="Pending" selected="@(f.RefundStatus == "Pending")">Pending</option>
+                    <option value="Approved" selected="@(f.RefundStatus == "Approved")">Approved</option>
+                    <option value="Rejected" selected="@(f.RefundStatus == "Rejected")">Rejected</option>
+                    <option value="Refunded" selected="@(f.RefundStatus == "Refunded")">Refunded</option>
+                </select>
+            </div>
+
+            <div class="col-lg-2 col-md-6">
+                <label class="form-label">Sort By</label>
+                <select name="SortBy" class="form-select">
+                    <option value="Newest" selected="@(string.IsNullOrEmpty(f.SortBy) || f.SortBy == "Newest")">Newest</option>
+                    <option value="Oldest" selected="@(f.SortBy == "Oldest")">Oldest</option>
+                    <option value="HighestRevenue" selected="@(f.SortBy == "HighestRevenue")">Highest Revenue</option>
+                    <option value="LowestRevenue" selected="@(f.SortBy == "LowestRevenue")">Lowest Revenue</option>
+                    <option value="ClientName" selected="@(f.SortBy == "ClientName")">Client Name</option>
+                </select>
+            </div>
+
+            <div class="col-lg-2 col-md-6">
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-primary">Apply Filters</button>
+                    <a asp-action="Index" class="btn btn-outline-secondary">Reset</a>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<div class="dashboard-panel">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+        <div>
+            <h3 class="mb-1">Archived Events</h3>
+            <p class="page-subtitle mb-0">Showing @Model.Bookings.Count of @Model.TotalCount completed event(s).</p>
+        </div>
+    </div>
+
+    @if (!Model.Bookings.Any())
+    {
+        <div class="empty-state">
+            <h3>No completed events yet</h3>
+            <p>Once a confirmed booking's event date passes, it will automatically appear here.</p>
+        </div>
+    }
+    else
+    {
+        <div class="table-clean booking-table-wrap">
+            <table class="table align-middle booking-management-table">
+                <thead>
+                    <tr>
+                        <th>Booking ID</th>
+                        <th>Client</th>
+                        <th>Event Type</th>
+                        <th>Package</th>
+                        <th>Event Date</th>
+                        <th>Amount Paid</th>
+                        <th>Payment</th>
+                        <th>Refund</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.Bookings)
+                    {
+                        var paymentClass = item.PaymentStatus switch
+                        {
+                            "Pending" => "status-pending",
+                            "Verified" => "status-verified",
+                            "Rejected" => "status-rejected",
+                            _ => "status-read"
+                        };
+
+                        var refundClass = item.RefundStatus switch
+                        {
+                            "Pending" => "status-pending",
+                            "Approved" => "status-verified",
+                            "Refunded" => "status-verified",
+                            "Rejected" => "status-rejected",
+                            _ => "status-read"
+                        };
+
+                        <tr>
+                            <td><div class="booking-code-cell">@item.BookingCode</div></td>
+                            <td>
+                                <div class="fw-semibold">@item.ClientName</div>
+                                <div class="text-muted small">@item.ClientPhone</div>
+                            </td>
+                            <td>@item.EventType</td>
+                            <td>@item.PackageName</td>
+                            <td>@item.EventDate.ToString("MMM dd, yyyy")</td>
+                            <td>₱@item.AmountPaid.ToString("N2")</td>
+                            <td><span class="status-badge @paymentClass">@item.PaymentStatus</span></td>
+                            <td><span class="status-badge @refundClass">@item.RefundStatus</span></td>
+                            <td class="text-end">
+                                <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-light package-btn-light">Details</a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (Model.TotalPages > 1)
+        {
+            <nav class="history-pagination mt-3">
+                <ul class="pagination">
+                    @for (var p = 1; p <= Model.TotalPages; p++)
+                    {
+                        <li class="page-item @(p == f.Page ? "active" : "")">
+                            <a class="page-link"
+                               asp-action="Index"
+                               asp-all-route-data="@GetRouteData(f, p)">@p</a>
+                        </li>
+                    }
+                </ul>
+            </nav>
+        }
+    }
+</div>
+
+@functions {
+    private Dictionary<string, string> GetRouteData(AriesMagicAppointmentSystem.ViewModels.HistoryFilterViewModel f, int? page = null)
+    {
+        var data = new Dictionary<string, string>
+        {
+            ["Search"] = f.Search ?? "",
+            ["DateRange"] = f.DateRange ?? "",
+            ["Year"] = f.Year?.ToString() ?? "",
+            ["ServiceId"] = f.ServiceId?.ToString() ?? "",
+            ["EventType"] = f.EventType ?? "",
+            ["PaymentStatus"] = f.PaymentStatus ?? "",
+            ["RefundStatus"] = f.RefundStatus ?? "",
+            ["SortBy"] = f.SortBy ?? "",
+            ["Page"] = (page ?? f.Page).ToString()
+        };
+
+        return data;
+    }
+}

@@ -269,7 +269,6 @@
 
         </div>
     </div>
-</div>
 
     <div class="dashboard-panel">
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
@@ -359,29 +358,58 @@
     </div>
 </div>
 
-<div class="dashboard-panel mt-4">
-    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
-        <div>
-            <div class="form-section-title mb-1">Available Actions</div>
-            <p class="page-subtitle mb-0">Perform actions based on the current booking status.</p>
+@{
+    var isPending = Model.Status == AriesMagicAppointmentSystem.Models.BookingStatus.Pending;
+    var isConfirmed = Model.Status == AriesMagicAppointmentSystem.Models.BookingStatus.Confirmed;
+    var canComplete = isConfirmed && User.CanCompleteBookings();
+    var hasPrimaryAction = isPending || canComplete;
+}
+
+@if (User.CanManageBookingRecords())
+{
+    <div class="dashboard-panel mt-4 booking-actions-panel">
+        <div class="booking-actions-bar">
+            <div class="booking-actions-info">
+                <div class="form-section-title mb-1">Available Actions</div>
+                <p class="page-subtitle mb-0">Only actions valid for the current status are shown.</p>
+            </div>
+
+            <div class="booking-actions-controls">
+                @if (isPending)
+                {
+                    <a asp-action="Decline" asp-route-id="@Model.Id" class="btn btn-outline-danger">
+                        <i class="bi bi-x-lg"></i> Decline
+                    </a>
+                    <a asp-action="Approve" asp-route-id="@Model.Id" class="btn btn-success">
+                        <i class="bi bi-check-lg"></i> Approve Booking
+                    </a>
+                }
+
+                @if (canComplete)
+                {
+                    <a asp-action="Complete" asp-route-id="@Model.Id" class="btn btn-primary">
+                        <i class="bi bi-flag-fill"></i> Mark as Completed
+                    </a>
+                }
+
+                <div class="dropdown booking-actions-more">
+                    <button type="button"
+                            class="btn @(hasPrimaryAction ? "btn-outline-secondary" : "btn-secondary")"
+                            data-bs-toggle="dropdown"
+                            aria-expanded="false"
+                            title="More actions">
+                        <i class="bi bi-three-dots"></i>
+                        <span>More Actions</span>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li>
+                            <a class="dropdown-item" asp-action="AddNote" asp-route-id="@Model.Id">
+                                <i class="bi bi-journal-plus"></i> Add Internal Note
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
         </div>
     </div>
-
-    <div class="d-flex gap-2 flex-wrap">
-        @if (User.IsInRole("Staff"))
-        {
-            @if (Model.Status == AriesMagicAppointmentSystem.Models.BookingStatus.Pending)
-            {
-                <a asp-action="Approve" asp-route-id="@Model.Id" class="btn btn-success">Approve</a>
-                <a asp-action="Decline" asp-route-id="@Model.Id" class="btn btn-danger">Decline</a>
-            }
-
-            <a asp-action="AddNote" asp-route-id="@Model.Id" class="btn btn-outline-secondary">Add Note</a>
-
-            @if (Model.Status == AriesMagicAppointmentSystem.Models.BookingStatus.Confirmed)
-            {
-                <a asp-action="Complete" asp-route-id="@Model.Id" class="btn btn-primary">Complete</a>
-            }
-        }
-    </div>
-</div>
+}

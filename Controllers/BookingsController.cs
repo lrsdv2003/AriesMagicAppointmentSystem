@@ -2,6 +2,7 @@ using System.Security.Claims;
 using System.Text.Json;
 using AriesMagicAppointmentSystem.Data;
 using AriesMagicAppointmentSystem.Models;
+using AriesMagicAppointmentSystem.Services;
 using AriesMagicAppointmentSystem.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -14,29 +15,39 @@ namespace AriesMagicAppointmentSystem.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly IHistoryService _historyService;
         private const int MaxRemovedInclusions = 2;
         private const decimal FixedInclusionDeduction = 2000m;
         private const decimal FixedRequiredDownpayment = 2000m;
 
-        public BookingsController(ApplicationDbContext context, UserManager<ApplicationUser> userManager)
+        public BookingsController(
+            ApplicationDbContext context,
+            UserManager<ApplicationUser> userManager,
+            IHistoryService historyService)
         {
             _context = context;
             _userManager = userManager;
+            _historyService = historyService;
         }
 
-        [Authorize(Roles = "Staff,Admin,Owner")]
+        [Authorize(Roles = "Staff,Admin")]
         public IActionResult Pending()
         {
             return RedirectToAction(nameof(Index), new { bookingStatus = "Pending" });
         }
 
-        [Authorize(Roles = "Staff,Admin,Owner")]
+        [Authorize(Roles = "Staff,Admin")]
         public async Task<IActionResult> Index(string? search, string? bookingStatus, string? paymentStatus)
         {
+            // Lazily flip any bookings whose event has already ended into Completed/archived
+            // before we build this list, so nothing that has already happened lingers here.
+            await _historyService.ArchiveDueBookingsAsync();
+
             var bookingsQuery = _context.Bookings
                 .Include(b => b.Client)
                 .Include(b => b.Service)
                 .Include(b => b.Payments)
+                .Where(b => b.Status != BookingStatus.Completed)
                 .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(bookingStatus) && bookingStatus != "All")
@@ -523,7 +534,7 @@ namespace AriesMagicAppointmentSystem.Controllers
 
             return View(bookings);
         }
-        [Authorize(Roles = "Staff,Admin,Owner")]
+        [Authorize(Roles = "Staff,Admin")]
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null) return NotFound();
@@ -540,7 +551,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             return View(booking);
         }
 
-        [Authorize(Roles = "Staff")]
+        [Authorize(Roles = "Staff,Admin")]
         public async Task<IActionResult> Approve(int? id)
         {
             if (id == null) return NotFound();
@@ -564,7 +575,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             {
                 BookingId = booking.Id,
                 EventType = TimelineEventType.BookingApproved,
-                Notes = "Booking was approved by staff and is now awaiting downpayment.",
+                Notes = "Booking was approved and is now awaiting downpayment.",
                 CreatedAt = DateTime.Now
             });
 
@@ -586,7 +597,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        [Authorize(Roles = "Staff")]
+        [Authorize(Roles = "Staff,Admin")]
         public async Task<IActionResult> Decline(int? id)
         {
             if (id == null) return NotFound();
@@ -610,7 +621,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             {
                 BookingId = booking.Id,
                 EventType = TimelineEventType.BookingDeclined,
-                Notes = "Booking was declined by staff.",
+                Notes = "Booking was declined.",
                 CreatedAt = DateTime.Now
             });
 
@@ -634,10 +645,188 @@ namespace AriesMagicAppointmentSystem.Controllers
             return RedirectToAction(nameof(MyBookings));
         }
 
+        [Authorize(Roles = "Staff,Admin")]
+        public async Task<IActionResult> AddNote(int? id)
+        {
+            if (id == null) return NotFound();
+
+            var booking = await _context.Bookings
+                .Include(b => b.Client)
+                .Include(b => b.Service)
+                .FirstOrDefaultAsync(b => b.Id == id);
+
+            if (booking == null) return NotFound();
+
+            return View(booking);
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "Staff,Admin")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddNote(int id, string? internalNotes)
+        {
+            var booking = await _context.Bookings.FirstOrDefaultAsync(b => b.Id == id);
+
+            if (booking == null) return NotFound();
+
+            booking.InternalNotes = internalNotes;
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = "Internal note saved.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        [Authorize(Roles = "Staff")]
+        public async Task<IActionResult> Complete(int? id)
+        {
+            if (id == null) return NotFound();
+
+            var booking = await _context.Bookings
+                .Include(b => b.Client)
+                .Include(b => b.Service)
+                .FirstOrDefaultAsync(b => b.Id == id);
+
+            if (booking == null) return NotFound();
+
+            if (booking.Status != BookingStatus.Confirmed)
+            {
+                TempData["Error"] = "Only confirmed bookings can be marked as completed.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            return View(booking);
+        }
+
+        [HttpPost, ActionName("Complete")]
+        [Authorize(Roles = "Staff")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CompleteConfirmed(int id)
+        {
+            var booking = await _context.Bookings.FirstOrDefaultAsync(b => b.Id == id);
+
+            if (booking == null) return NotFound();
+
+            if (booking.Status != BookingStatus.Confirmed)
+            {
+                TempData["Error"] = "Only confirmed bookings can be marked as completed.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            booking.Status = BookingStatus.Completed;
+            booking.IsCompletedLocked = true;
+
+            _context.BookingTimelines.Add(new BookingTimeline
+            {
+                BookingId = booking.Id,
+                EventType = TimelineEventType.BookingCompleted,
+                Notes = "Staff marked the booking as completed.",
+                CreatedAt = DateTime.Now
+            });
+
+            if (!string.IsNullOrWhiteSpace(booking.ApplicationUserId))
+            {
+                _context.Notifications.Add(new Notification
+                {
+                    UserId = booking.ApplicationUserId,
+                    Title = "Booking Completed",
+                    Message = $"Your event on {booking.EventDate:MMMM dd, yyyy} has been marked as completed. Thank you for choosing Aries Magic!",
+                    Link = "/Bookings/MyBookings",
+                    IsRead = false,
+                    CreatedAt = DateTime.Now
+                });
+            }
+
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = "Booking marked as completed.";
+            return RedirectToAction(nameof(Index));
+        }
+
         [Authorize(Roles = "Client")]
         public IActionResult Create()
         {
             return RedirectToAction(nameof(CreateStepOne));
+        }
+
+        private static readonly string[] ClientCancellableStatuses =
+        {
+            BookingStatus.Pending,
+            BookingStatus.AwaitingDownpayment,
+            BookingStatus.AwaitingVerification
+        };
+
+        [Authorize(Roles = "Client")]
+        [HttpGet]
+        public async Task<IActionResult> Cancel(int? id)
+        {
+            if (id == null) return NotFound();
+
+            var appUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            var booking = await _context.Bookings
+                .Include(b => b.Client)
+                .Include(b => b.Service)
+                .FirstOrDefaultAsync(b => b.Id == id && b.ApplicationUserId == appUserId);
+
+            if (booking == null) return NotFound();
+
+            if (!ClientCancellableStatuses.Contains(booking.Status))
+            {
+                TempData["Error"] = "This booking can no longer be cancelled because it is already confirmed, completed, or otherwise finalized. Please submit a refund or reschedule request instead.";
+                return RedirectToAction(nameof(MyBookings));
+            }
+
+            return View(booking);
+        }
+
+        [HttpPost, ActionName("Cancel")]
+        [Authorize(Roles = "Client")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CancelConfirmed(int id)
+        {
+            var appUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            var booking = await _context.Bookings
+                .FirstOrDefaultAsync(b => b.Id == id && b.ApplicationUserId == appUserId);
+
+            if (booking == null) return NotFound();
+
+            if (!ClientCancellableStatuses.Contains(booking.Status))
+            {
+                TempData["Error"] = "This booking can no longer be cancelled.";
+                return RedirectToAction(nameof(MyBookings));
+            }
+
+            booking.Status = BookingStatus.Cancelled;
+
+            _context.BookingTimelines.Add(new BookingTimeline
+            {
+                BookingId = booking.Id,
+                EventType = TimelineEventType.BookingCancelled,
+                Notes = "Booking was cancelled by the client.",
+                CreatedAt = DateTime.Now
+            });
+
+            var staffUsers = await _userManager.GetUsersInRoleAsync("Staff");
+            var adminUsers = await _userManager.GetUsersInRoleAsync("Admin");
+
+            foreach (var recipient in staffUsers.Concat(adminUsers))
+            {
+                _context.Notifications.Add(new Notification
+                {
+                    UserId = recipient.Id,
+                    Title = "Booking Cancelled",
+                    Message = $"A client cancelled their booking for {booking.EventDate:MMMM dd, yyyy}.",
+                    Link = $"/Bookings/Details/{booking.Id}",
+                    IsRead = false,
+                    CreatedAt = DateTime.Now
+                });
+            }
+
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = "Your booking was cancelled successfully.";
+            return RedirectToAction(nameof(MyBookings));
         }
 
         private void SetCreateStepOneViewBags()

@@ -1,0 +1,118 @@
+@model AriesMagicAppointmentSystem.ViewModels.HistoryDetailsViewModel
+@{
+    Layout = "_DashboardLayout";
+    ViewData["Title"] = "Archived Booking " + Model.BookingCode;
+    var booking = Model.Booking;
+}
+
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+    <div>
+        <h3 class="mb-1">@Model.BookingCode <span class="status-badge status-completed">Completed</span></h3>
+        <p class="page-subtitle mb-0">This is a permanent, read-only archive record.</p>
+    </div>
+    <a asp-action="Index" class="btn btn-outline-secondary">Back to History</a>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-7">
+        <div class="dashboard-panel mb-4">
+            <div class="form-section-title mb-3">Event Details</div>
+            <dl class="row mb-0">
+                <dt class="col-sm-4">Client Name</dt>
+                <dd class="col-sm-8">@(booking.Client?.FullName ?? "N/A")</dd>
+
+                <dt class="col-sm-4">Event Type</dt>
+                <dd class="col-sm-8">@booking.EventType</dd>
+
+                <dt class="col-sm-4">Package</dt>
+                <dd class="col-sm-8">@booking.PackageName</dd>
+
+                <dt class="col-sm-4">Service</dt>
+                <dd class="col-sm-8">@(booking.Service?.Name ?? "N/A")</dd>
+
+                <dt class="col-sm-4">Venue</dt>
+                <dd class="col-sm-8">@booking.PartyVenue</dd>
+
+                <dt class="col-sm-4">Event Date</dt>
+                <dd class="col-sm-8">@booking.EventDate.ToString("MMMM dd, yyyy")</dd>
+
+                <dt class="col-sm-4">Start / End Time</dt>
+                <dd class="col-sm-8">@booking.StartTime.ToString("hh:mm tt") - @booking.EndTime.ToString("hh:mm tt")</dd>
+
+                <dt class="col-sm-4">Guests</dt>
+                <dd class="col-sm-8">@booking.PaxCount</dd>
+
+                <dt class="col-sm-4">Completion Date</dt>
+                <dd class="col-sm-8">@(Model.CompletedAt?.ToString("MMMM dd, yyyy hh:mm tt") ?? "N/A")</dd>
+            </dl>
+        </div>
+
+        <div class="dashboard-panel">
+            <div class="form-section-title mb-3">Payment &amp; Refund</div>
+            <dl class="row mb-0">
+                <dt class="col-sm-4">Final Price</dt>
+                <dd class="col-sm-8">₱@booking.FinalPrice.ToString("N2")</dd>
+
+                <dt class="col-sm-4">Downpayment Required</dt>
+                <dd class="col-sm-8">₱@booking.RequiredDownpayment.ToString("N2")</dd>
+
+                <dt class="col-sm-4">Amount Paid</dt>
+                <dd class="col-sm-8">₱@Model.AmountPaid.ToString("N2")</dd>
+
+                <dt class="col-sm-4">Remaining Balance</dt>
+                <dd class="col-sm-8">₱@Model.RemainingBalance.ToString("N2")</dd>
+
+                <dt class="col-sm-4">Payment Status</dt>
+                <dd class="col-sm-8"><span class="status-badge">@Model.PaymentStatus</span></dd>
+
+                <dt class="col-sm-4">Refund Status</dt>
+                <dd class="col-sm-8"><span class="status-badge">@Model.RefundStatus</span></dd>
+
+                @if (Model.Refund != null)
+                {
+                    <dt class="col-sm-4">Refund Amount</dt>
+                    <dd class="col-sm-8">₱@Model.Refund.Amount.ToString("N2")</dd>
+                }
+            </dl>
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="dashboard-panel">
+            <div class="form-section-title mb-3">Booking Timeline</div>
+
+            @if (!Model.Timeline.Any())
+            {
+                <p class="text-muted">No timeline events recorded.</p>
+            }
+            else
+            {
+                <ul class="history-timeline">
+                    @foreach (var item in Model.Timeline)
+                    {
+                        <li class="history-timeline-item">
+                            <div class="history-timeline-dot"></div>
+                            <div class="history-timeline-body">
+                                <div class="fw-semibold">@FormatEventType(item.EventType)</div>
+                                @if (!string.IsNullOrWhiteSpace(item.Notes))
+                                {
+                                    <div class="text-muted small">@item.Notes</div>
+                                }
+                                <div class="text-muted small">@item.CreatedAt.ToString("MMM dd, yyyy hh:mm tt")</div>
+                            </div>
+                        </li>
+                    }
+                </ul>
+            }
+        </div>
+    </div>
+</div>
+
+@functions {
+    private string FormatEventType(string eventType)
+    {
+        // Turns "BookingCompleted" into "Booking Completed" for display.
+        var result = System.Text.RegularExpressions.Regex.Replace(eventType, "(?<!^)([A-Z])", " $1");
+        return result;
+    }
+}

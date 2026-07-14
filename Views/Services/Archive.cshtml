@@ -27,7 +27,8 @@
         <dd class="col-sm-9">@Model.DurationInHours hour(s)</dd>
     </dl>
 
-    <form asp-action="Archive" class="d-flex gap-2">
+    <form asp-action="Archive" method="post" class="d-flex gap-2">
+        @Html.AntiForgeryToken()
         <input type="hidden" asp-for="Id" />
         <button type="submit" class="btn btn-danger">Archive</button>
         <a asp-action="Index" class="btn btn-secondary">Cancel</a>

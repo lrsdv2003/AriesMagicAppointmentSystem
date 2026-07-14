@@ -2,8 +2,10 @@
     ViewData["Title"] = "Access Denied";
 }
 
-<div class="card-clean">
-    <h1>Access Denied</h1>
-    <p class="page-subtitle">You do not have permission to access this page.</p>
-    <a asp-controller="Home" asp-action="Index" class="btn btn-secondary">Back to Home</a>
-</div>
+<section class="auth-section">
+    <div class="auth-card client-empty-state" style="max-width:460px;">
+        <h1 class="mb-2">Access Denied</h1>
+        <p class="page-subtitle mb-3">You do not have permission to access this page.</p>
+        <a asp-controller="Home" asp-action="Index" class="btn btn-primary">Back to Home</a>
+    </div>
+</section>

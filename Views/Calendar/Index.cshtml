@@ -13,9 +13,18 @@
 <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css" rel="stylesheet" />
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
 
-<div class="page-header d-flex justify-content-between align-items-center">
+<div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-2">
 
-    @if (User.IsInRole("Admin"))
+    <form method="get" asp-action="Index" class="d-flex align-items-center gap-2">
+        <div class="form-check form-switch mb-0">
+            <input class="form-check-input" type="checkbox" role="switch" id="showHistoricalToggle"
+                   name="showHistorical" value="true" onchange="this.form.submit()"
+                   checked="@(ViewBag.ShowHistorical == true)" />
+            <label class="form-check-label" for="showHistoricalToggle">Show Historical Events</label>
+        </div>
+    </form>
+
+    @if (User.CanManageCalendarSettings())
     {
         <button class="btn btn-primary d-flex align-items-center gap-2"
                 type="button"
@@ -48,6 +57,12 @@
 
 
 <div class="dashboard-panel mb-4">
+    <div class="calendar-legend">
+        <span class="calendar-legend-item"><i class="cal-dot cal-dot-confirmed"></i>Confirmed</span>
+        <span class="calendar-legend-item"><i class="cal-dot cal-dot-completed"></i>Completed</span>
+        <span class="calendar-legend-item"><i class="cal-dot cal-dot-pending"></i>Pending / Awaiting</span>
+        <span class="calendar-legend-item"><i class="cal-dot cal-dot-declined"></i>Declined / Expired</span>
+    </div>
     <div id="calendar"></div>
 </div>
 
@@ -96,7 +111,10 @@
                     <td><span class="status-badge @statusClass">@item.Status</span></td>
                     <td>@item.InternalNotes</td>
                     <td class="text-end">
-                        <a asp-controller="Bookings" asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-secondary">View</a>
+                        @if (User.CanManageBookingRecords())
+                        {
+                            <a asp-controller="Bookings" asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-secondary">View</a>
+                        }
                     </td>
                 </tr>
 }
@@ -105,7 +123,7 @@
     </div>
 </div>
 
-@if (User.IsInRole("Admin"))
+@if (User.CanManageCalendarSettings())
 {
     <div class="offcanvas offcanvas-end" tabindex="-1" id="calendarManagePanel" aria-labelledby="calendarManagePanelLabel">
         <div class="offcanvas-header">
@@ -279,6 +297,28 @@
                     var theme = (item.PartyTheme ?? "N/A").Replace("'", "\\'");
                     var status = item.Status.ToString().Replace("'", "\\'");
 
+                    var statusKey = item.Status switch
+                    {
+                        BookingStatus.Confirmed => "confirmed",
+                        BookingStatus.Completed => "completed",
+                        BookingStatus.Pending => "pending",
+                        BookingStatus.AwaitingDownpayment => "pending",
+                        BookingStatus.AwaitingVerification => "pending",
+                        BookingStatus.Declined => "declined",
+                        BookingStatus.Expired => "declined",
+                        _ => "pending"
+                    };
+
+                    var latestPayment = item.Payments?.OrderByDescending(p => p.UploadedAt).FirstOrDefault();
+                    var paymentStatus = (latestPayment?.Status ?? "No Payment").Replace("'", "\\'");
+
+                    var initialsSource = item.Client?.FullName ?? "NA";
+                    var initialsParts = initialsSource.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                    var initials = initialsParts.Length >= 2
+                        ? $"{initialsParts[0][0]}{initialsParts[^1][0]}"
+                        : (initialsSource.Length >= 2 ? initialsSource.Substring(0, 2) : initialsSource.PadRight(2).Substring(0, 2));
+                    initials = initials.ToUpperInvariant().Replace("'", "");
+
                     <text>
                     {
                         id: '@item.Id',
@@ -289,6 +329,7 @@
                             bookingId: '@item.Id',
                             bookingCode: '@bookingCode',
                             clientName: '@clientName',
+                            clientInitials: '@initials',
                             serviceName: '@serviceName',
                             eventDate: '@item.EventDate.ToString("MMMM dd, yyyy")',
                             eventTime: '@item.StartTime.ToString("hh:mm tt") - @item.EndTime.ToString("hh:mm tt")',
@@ -296,6 +337,8 @@
                             eventType: '@eventType',
                             theme: '@theme',
                             status: '@status',
+                            statusKey: '@statusKey',
+                            paymentStatus: '@paymentStatus',
                             detailsUrl: '@detailsUrl'
                         }
                     },
@@ -313,6 +356,46 @@
                 },
                 events: events,
                 dayMaxEvents: true,
+                eventOrder: 'start',
+                eventClassNames: function(arg) {
+                    return ['cal-chip', 'cal-chip-' + arg.event.extendedProps.statusKey];
+                },
+                eventContent: function(arg) {
+                    const props = arg.event.extendedProps;
+                    const wrap = document.createElement('div');
+                    wrap.className = 'cal-chip-inner';
+                    wrap.innerHTML = `
+                        <span class="cal-chip-avatar">${props.clientInitials}</span>
+                        <span class="cal-chip-text">
+                            <span class="cal-chip-id">${props.bookingCode}</span>
+                            <span class="cal-chip-time">${arg.timeText}</span>
+                        </span>
+                    `;
+                    return { domNodes: [wrap] };
+                },
+                eventDidMount: function(info) {
+                    const props = info.event.extendedProps;
+                    const tooltipHtml = `
+                        <div class="cal-tooltip">
+                            <div class="cal-tooltip-row cal-tooltip-title">${props.bookingCode} &middot; ${props.serviceName}</div>
+                            <div class="cal-tooltip-row"><i class="bi bi-person"></i> ${props.clientName}</div>
+                            <div class="cal-tooltip-row"><i class="bi bi-box-seam"></i> ${props.serviceName}</div>
+                            <div class="cal-tooltip-row"><i class="bi bi-stars"></i> ${props.eventType}</div>
+                            <div class="cal-tooltip-row"><i class="bi bi-calendar-event"></i> ${props.eventDate}</div>
+                            <div class="cal-tooltip-row"><i class="bi bi-clock"></i> ${props.eventTime}</div>
+                            <div class="cal-tooltip-row"><i class="bi bi-flag"></i> Status: ${props.status}</div>
+                            <div class="cal-tooltip-row"><i class="bi bi-credit-card"></i> Payment: ${props.paymentStatus}</div>
+                        </div>
+                    `;
+
+                    info.el.setAttribute('data-bs-toggle', 'tooltip');
+                    info.el.setAttribute('data-bs-html', 'true');
+                    info.el.setAttribute('data-bs-placement', 'top');
+                    info.el.setAttribute('data-bs-custom-class', 'cal-tooltip-popover');
+                    info.el.setAttribute('title', tooltipHtml);
+
+                    new bootstrap.Tooltip(info.el, { trigger: 'hover focus' });
+                },
                 dayCellDidMount: function(info) {
                     const dateKey = info.date.toISOString().split('T')[0];
                     const top = info.el.querySelector('.fc-daygrid-day-top');

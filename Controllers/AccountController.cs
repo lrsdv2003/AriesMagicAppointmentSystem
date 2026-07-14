@@ -135,37 +135,30 @@ namespace AriesMagicAppointmentSystem.Controllers
             }
 
             var user = await _userManager.FindByEmailAsync(model.Email);
-
             if (user == null)
             {
-                ModelState.AddModelError(string.Empty, "Incorrect Email or Password.");
+                ModelState.AddModelError("", "Incorrect Email or Password.");
                 return View(model);
             }
 
             if (!user.IsActive)
             {
-                ModelState.AddModelError(string.Empty,
-                    "Your account has been disabled. Please contact the administrator.");
+                ModelState.AddModelError("", "Your account has been disabled. Please contact the administrator.");
                 return View(model);
             }
 
             if (!user.EmailConfirmed)
             {
-                const int expiryDays = 3;
+                var expiryDays = 3;
 
                 if (user.CreatedAt.AddDays(expiryDays) < DateTime.UtcNow)
                 {
                     await _userManager.DeleteAsync(user);
-
-                    ModelState.AddModelError(string.Empty,
-                        "Your unverified account has expired. Please register again.");
-
+                    ModelState.AddModelError("", "Your unverified account has expired. Please register again.");
                     return View(model);
                 }
 
-                ModelState.AddModelError(string.Empty,
-                    "Please confirm your email first before logging in.");
-
+                ModelState.AddModelError("", "Please confirm your email first before logging in.");
                 return View(model);
             }
 
@@ -177,59 +170,38 @@ namespace AriesMagicAppointmentSystem.Controllers
 
             if (result.Succeeded)
             {
-                if (!string.IsNullOrWhiteSpace(returnUrl) &&
-                    Url.IsLocalUrl(returnUrl))
+                if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
                 {
-                    return LocalRedirect(returnUrl);
+                    var isClient = await _userManager.IsInRoleAsync(user, "Client");
+
+                    if (!isClient)
+                    {
+                        return LocalRedirect(returnUrl);
+                    }
                 }
 
                 if (await _userManager.IsInRoleAsync(user, "Owner"))
-                {
-                    return RedirectToAction("Owner", "Dashboard");
-                }
+                    return RedirectToAction("Index", "Reports");
 
                 if (await _userManager.IsInRoleAsync(user, "Admin"))
-                {
-                    return RedirectToAction("Admin", "Dashboard");
-                }
+                    return RedirectToAction("Index", "UserManagement");
 
                 if (await _userManager.IsInRoleAsync(user, "Staff"))
-                {
-                    return RedirectToAction("Staff", "Dashboard");
-                }
+                    return RedirectToAction("Index", "Bookings");
 
                 if (await _userManager.IsInRoleAsync(user, "Client"))
-                {
                     return RedirectToAction("MyBookings", "Bookings");
-                }
 
-                await _signInManager.SignOutAsync();
-
-                ModelState.AddModelError(string.Empty,
-                    "Your account has no assigned role.");
-
-                return View(model);
+                return RedirectToAction("Index", "Home");
             }
 
             if (result.IsLockedOut)
             {
-                ModelState.AddModelError(string.Empty,
-                    "Your account is locked.");
-
+                ModelState.AddModelError("", "Your account is locked.");
                 return View(model);
             }
 
-            if (result.IsNotAllowed)
-            {
-                ModelState.AddModelError(string.Empty,
-                    "Login is not allowed.");
-
-                return View(model);
-            }
-
-            ModelState.AddModelError(string.Empty,
-                "Incorrect Email or Password.");
-
+            ModelState.AddModelError("", "Incorrect Email or Password.");
             return View(model);
         }
         [Authorize]

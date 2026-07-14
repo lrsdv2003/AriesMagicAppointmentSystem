@@ -15,7 +15,8 @@
 </div>
 
 <div class="form-card">
-    <form asp-action="AddNote">
+    <form asp-action="AddNote" method="post">
+        @Html.AntiForgeryToken()
         <input type="hidden" asp-for="Id" />
 
         <div class="mb-3">

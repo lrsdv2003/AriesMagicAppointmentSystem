@@ -1,0 +1,1564 @@
+[
+  {
+    "page": 1,
+    "chars": 454,
+    "first_lines": [
+      "Online Booking and Scheduling Management System for Professional Event Entertainers",
+      "Service",
+      "A Capstone Project Proposal Presented to the Faculty of the Information and",
+      "Communications Technology Program STI College Ortigas",
+      "In Partial Fulfilment of the Requirements for the Degree Bachelor of Science Information",
+      "Technology",
+      "Benedicto, Gabriel Nicole C.",
+      "Lerios, Ej Ridge L."
+    ]
+  },
+  {
+    "page": 2,
+    "chars": 620,
+    "first_lines": [
+      "ENDORSEMENT FORM FOR PROPOSAL DEFENSE",
+      "TITLE OF RESEARCH: Online Booking and Scheduling Management System for",
+      "Professional Event Entertainers Service",
+      "NAME OF PROPONENTS: Gabriel Nicole C. Benedicto",
+      "EJ Ridge L. Lerios",
+      "John Michael P. Soguilon",
+      "Daniel B. Tuprio",
+      "In Partial Fulfilment of the Requirements"
+    ]
+  },
+  {
+    "page": 3,
+    "chars": 863,
+    "first_lines": [
+      "APPROVAL SHEET",
+      "This capstone project titled Online Booking and Scheduling Management System for",
+      "Professional Event Entertainers Service prepared and submitted by Gabriel Nicole C.",
+      "Benedicto, EJ Ridge L. Lerios, John Michael P. Soguilon, and Daniel B. Tuprio in partial",
+      "fulfillment of the requirements for the degree of Bachelor of Science in Information Technology,",
+      "has been examined and is recommended for acceptance and approval.",
+      "Mr. Richard A. Santos",
+      "Capstone Project Adviser"
+    ]
+  },
+  {
+    "page": 4,
+    "chars": 508,
+    "first_lines": [
+      "TABLE OF CONTENTS",
+      "Title Page I",
+      "Endorsement Form for Oral Defense II",
+      "Approval Sheet III",
+      "Table of Contents IV",
+      "INTRODUCTION 1",
+      "Project Context 1",
+      "Purpose and Description 2"
+    ]
+  },
+  {
+    "page": 5,
+    "chars": 1967,
+    "first_lines": [
+      "INTRODUCTION",
+      "Project Context",
+      "In the Philippines, event-based services such as magic shows, puppet shows, bubble shows, and",
+      "party hosting are often managed through manual methods, including phone calls, social media",
+      "messages, handwritten schedules, and personal messaging applications. While these practices are",
+      "commonly used, they often result in operational issues such as double booking, schedule conflicts,",
+      "delayed confirmations, missed appointments, inaccurate event details, and poor record",
+      "management. These problems become more significant as the number of clients and bookings"
+    ]
+  },
+  {
+    "page": 6,
+    "chars": 2155,
+    "first_lines": [
+      "In response to these concerns, there is a clear need for a computerized booking and scheduling",
+      "management system that can provide a more organized, accurate, and efficient way of handling",
+      "event service operations. These conditions highlight the need for a reliable booking and scheduling",
+      "management system that can help professional entertainers and event service providers manage",
+      "appointments, prevent double bookings, maintain organized records, and improve overall service",
+      "efficiency.",
+      "Purpose and Description",
+      "The purpose of this project is to design and develop an organized online booking and scheduling"
+    ]
+  },
+  {
+    "page": 7,
+    "chars": 1699,
+    "first_lines": [
+      "improves accessibility, organization, and efficiency compared to traditional manual booking",
+      "methods.",
+      "The project is also connected to the second objective, which focuses on designing a reporting and",
+      "analytics module that generates and displays overall sales and booking data, including daily,",
+      "weekly, monthly, and yearly sales reports, while supporting the identification of package trends.",
+      "Since all booking requests, payment submissions, package selections, and transaction records are",
+      "processed and stored within the system, the reports module can provide organized data for",
+      "monitoring, review, and decision-making. Through this module, the Owner can monitor income,"
+    ]
+  },
+  {
+    "page": 8,
+    "chars": 1788,
+    "first_lines": [
+      "To design and develop an online booking and scheduling management system for professional",
+      "entertainer services that automates client booking, service selection, scheduling, payment handling,",
+      "refund processing, and event management to improve the efficiency, accuracy, organization, and service",
+      "quality of the business.",
+      "SPECIFIC OBJECTIVES",
+      "The project specifically aims to:",
+      "• To design an online booking module that allows clients to select services, event details,",
+      "date, time, location, and packages through a digital platform."
+    ]
+  },
+  {
+    "page": 9,
+    "chars": 1947,
+    "first_lines": [
+      "The proponents addressed this objective by designing a dedicated reports module",
+      "that centralizes booking, payment, and transaction records for business monitoring",
+      "and review. Since all booking requests, confirmed reservations, payment",
+      "submissions, and package selections are processed and stored within the system,",
+      "these records can serve as the basis for generating sales and booking reports.",
+      "The reports module allows the Owner to view daily, weekly, monthly, and yearly",
+      "sales summaries, monitor booking performance, review income-related records,",
+      "and identify frequently selected service packages. Through this module, the system"
+    ]
+  },
+  {
+    "page": 10,
+    "chars": 1821,
+    "first_lines": [
+      "and monitored through the calendar. Through this role-based structure and",
+      "scheduling process, the system supports more organized reservation management",
+      "and helps minimize overlapping bookings.",
+      "Scope and Limitations",
+      "Scope",
+      "The proposed Online Booking and Scheduling Management System for Professional Event",
+      "Entertainers Service covers the major operations needed to manage client bookings, service",
+      "packages, schedules, payments, refund requests, reschedule requests, reports, notifications, and"
+    ]
+  },
+  {
+    "page": 11,
+    "chars": 2367,
+    "first_lines": [
+      "• Homepage module – The Homepage Module presents the public landing page of Aries",
+      "Magic. It displays the business information, available entertainment services, highlighted",
+      "packages, and call-to-action buttons for booking or viewing packages. This module helps",
+      "visitors understand the services offered before creating an account or submitting a",
+      "booking request.",
+      "• Booking Module - The Booking Module allows clients to submit a formal booking request",
+      "through the system. In this module, clients can select their preferred service package and",
+      "provide the required event information such as event date, event time, event type, venue,"
+    ]
+  },
+  {
+    "page": 12,
+    "chars": 2118,
+    "first_lines": [
+      "submit it for Owner review. The Owner will then approve or reject the refund request",
+      "based on booking and payment records.",
+      "• Reschedule Module – The Reschedule Request Module allows clients to request changes",
+      "to their event schedule. Clients can select an existing booking, propose a new date and",
+      "time, and submit the request for review. The request will be reviewed by the Owner based",
+      "on schedule availability.",
+      "• Notifications Module – The Notifications Module keeps clients updated about important",
+      "booking activities. Clients receive notifications regarding booking status, payment"
+    ]
+  },
+  {
+    "page": 13,
+    "chars": 2102,
+    "first_lines": [
+      "the booking information, payment history, reason for refund, and refund eligibility before",
+      "approving or rejecting the request.",
+      "• Calendar Management Module - The Calendar Management Module allows the Owner",
+      "to monitor and control confirmed bookings, blocked dates, booking limits, and event",
+      "schedules. This module helps prevent overbooking and schedule conflicts by providing a",
+      "centralized view of event availability and confirmed reservations.",
+      "• History Module - The History Module allows the Owner to view completed events,",
+      "archived bookings, transaction history, and important activity records. This module helps"
+    ]
+  },
+  {
+    "page": 14,
+    "chars": 1889,
+    "first_lines": [
+      "• Admin Dashboard Module - The Admin Dashboard Module provides an overview of",
+      "system activities and operational records. It allows the admin to monitor booking counts,",
+      "pending requests, service records, user accounts, and important system activities.",
+      "• Booking Management Module – The Booking Management Module allows the admin to",
+      "monitor and manage booking records submitted by clients. The admin can view booking",
+      "details, search bookings, filter records, check important event information, and approve",
+      "or reject initial booking requests before clients proceed to payment submission. This",
+      "module helps keep booking records organized and accessible."
+    ]
+  },
+  {
+    "page": 15,
+    "chars": 2072,
+    "first_lines": [
+      "Staff Module",
+      "The Staff Module supports the Owner and Admin in daily booking and scheduling operations.",
+      "Staff members have limited access compared to the Owner and Admin. Their main responsibility",
+      "is to monitor records, check schedules, assist in service-related tasks, review completed events,",
+      "and support operational coordination.",
+      "• Staff Dashboard Module - The Staff Dashboard Module provides staff with a quick",
+      "overview of operational tasks and booking activities. It helps staff monitor pending",
+      "bookings, upcoming events, completed events, and important notifications."
+    ]
+  },
+  {
+    "page": 16,
+    "chars": 1860,
+    "first_lines": [
+      "Limitations",
+      "• Limited payment mode – The system does not support direct integration with online",
+      "payment APIs; processing is limited to manual verification of uploads.",
+      "• Internet dependency – The system requires an internet or local server connection to",
+      "function.",
+      "• Exclusively Designed – The system is exclusively designed for the business operations of",
+      "Aries the Magic Artist, focusing on the specific booking and management requirements of",
+      "the owner and is not intended for use by other entertainment entities."
+    ]
+  },
+  {
+    "page": 17,
+    "chars": 2365,
+    "first_lines": [
+      "Fontanilla et al. (2025) explored the use of online reservation systems in restaurants and found that",
+      "digital reservation platforms improve service efficiency by organizing customer bookings and",
+      "reducing waiting time. However, the researchers also noted that improper management of",
+      "reservation systems may still lead to scheduling errors such as double bookings. This study is",
+      "relevant to the proposed system because scheduling conflicts and double bookings are also",
+      "common problems experienced by event entertainers who rely on manual booking methods. The",
+      "findings of this research support the need for an organized reservation management system. In the",
+      "proposed system, this concept will be implemented through automatic schedule management, real-"
+    ]
+  },
+  {
+    "page": 18,
+    "chars": 2132,
+    "first_lines": [
+      "proposed system because it highlights the importance of organized entertainment services within",
+      "digital platforms. Similar to tourism services, event entertainment also requires proper",
+      "organization of service offerings. In the proposed system, this concept is implemented by",
+      "organizing entertainer services into structured service packages such as magic shows, puppet",
+      "shows, bubble shows, and party hosting. This allows clients to easily browse and select the most",
+      "appropriate entertainment service for their event.",
+      "“User Experience and Interface Design in Mobile Travel Applications”",
+      "Kim et al. (2021) examined mobile travel applications and found that features such as intuitive"
+    ]
+  },
+  {
+    "page": 19,
+    "chars": 2010,
+    "first_lines": [
+      "Lopez et al. (2023) emphasized that technology integration and user-friendly interfaces",
+      "significantly influence customer satisfaction in hospitality and entertainment services. The study",
+      "found that transparent information and smooth navigation improve user trust and service",
+      "experience. This research is relevant to the proposed system because it highlights the importance",
+      "of clear system design and service information. The idea will be implemented by presenting service",
+      "descriptions, packages, and booking details in a clear and organized interface, allowing clients to",
+      "understand available entertainment services before making a booking.",
+      "“Ticketing and Reservation Patterns in Entertainment Events”"
+    ]
+  },
+  {
+    "page": 20,
+    "chars": 2247,
+    "first_lines": [
+      "Gaspay et al. (2025) explained that digital event management systems automate planning processes",
+      "such as booking coordination, itinerary generation, and event scheduling. Automation reduces",
+      "manual tasks and improves efficiency in event-related operations. This literature is directly related",
+      "to the proposed system because the system also aims to automate event booking and scheduling",
+      "processes. In the proposed platform, automation will be implemented through automatic booking",
+      "confirmations, event schedule generation, and centralized client data storage, reducing the need",
+      "for manual coordination.",
+      "“Integrated Reservation Systems in Tourism Applications”"
+    ]
+  },
+  {
+    "page": 21,
+    "chars": 1805,
+    "first_lines": [
+      "goal of improving booking accuracy, scheduling organization, and service clarity to enhance",
+      "customer satisfaction.",
+      "“Evolution of Modern Reservation Systems as Strategic Tools for Customer Experience and",
+      "Operational Efficiency”",
+      "Ivanov and Webster (2021) explained that modern reservation systems have evolved into strategic",
+      "tools that improve customer experience and operational efficiency through automation and",
+      "analytics. The proposed system adopts this concept by implementing",
+      "automated scheduling and real-time calendar updates to prevent conflicts and improve booking"
+    ]
+  },
+  {
+    "page": 22,
+    "chars": 2342,
+    "first_lines": [
+      "system because it supports the concept of integrating multiple services within a single online",
+      "platform. Similar to the system discussed in the study, the proposed platform will allow users to",
+      "browse entertainment services, view available packages, and book events through an online",
+      "interface. By centralizing these features, the system can enhance accessibility and improve service",
+      "coordination for both entertainers and clients.",
+      "“Web-Based Event Organizer Systems for Improved Business Process Integration and Event",
+      "Management Efficiency”",
+      "According to Lalo et al. (2025), web-based event organizer systems help improve business"
+    ]
+  },
+  {
+    "page": 23,
+    "chars": 2044,
+    "first_lines": [
+      "the concepts discussed in the study, the proposed system will integrate booking management,",
+      "service packages, and scheduling tools in a single platform. By implementing these features, the",
+      "system can improve coordination between entertainers and clients while providing a more efficient",
+      "and organized event booking process.",
+      "“Web-Based Event Reservation Information Systems for Improved Booking and Scheduling",
+      "Efficiency”",
+      "According to Wahyuni et al. (2025), web-based event reservation information systems",
+      "significantly improve the efficiency of managing event bookings and scheduling processes. The"
+    ]
+  },
+  {
+    "page": 24,
+    "chars": 2224,
+    "first_lines": [
+      "reservations, and obtain relevant information through digital platforms, which ultimately improves",
+      "customer satisfaction and operational efficiency.",
+      "Many researchers also pointed out that digital reservation systems help reduce common",
+      "operational issues such as scheduling conflicts, manual documentation errors, and inefficient",
+      "communication between service providers and clients. Features such as automated scheduling,",
+      "centralized data management, and real-time availability updates enable organizations to manage",
+      "bookings more accurately and effectively. These technologies also allow service providers to",
+      "monitor demand patterns, manage event schedules, and organize service offerings in a structured"
+    ]
+  },
+  {
+    "page": 25,
+    "chars": 1310,
+    "first_lines": [
+      "with a convenient way to browse entertainment services, select service packages, and schedule",
+      "events while allowing entertainers to manage bookings and client information more efficient.",
+      "METHODOLOGY",
+      "Figure 1: Agile Methodology",
+      "The proponents used the Agile Development Methodology in developing the proposed Online Booking",
+      "and Scheduling Management System for Professional Event Entertainers Service. Agile was selected",
+      "because it is flexible, iterative, and suitable for a system with several modules such as client booking,",
+      "user management, payment verification, refund management, calendar scheduling, reschedule requests,"
+    ]
+  },
+  {
+    "page": 26,
+    "chars": 2092,
+    "first_lines": [
+      "Agile, the proponents were able to monitor progress, adjust features based on system requirements, and",
+      "improve the overall functionality of the system.",
+      "The Agile methodology used in this project followed the steps of Planning, Designing, Development,",
+      "Testing, Review, and Deployment.",
+      "Planning Phase",
+      "The Planning Phase served as the foundation of the project. In this phase, the proponents identified the",
+      "main problems experienced by Aries the Magic Artist, especially the manual booking process, difficulty",
+      "in monitoring schedules, possible double booking, delayed updates, unorganized records, and manual"
+    ]
+  },
+  {
+    "page": 27,
+    "chars": 2188,
+    "first_lines": [
+      "The proponents designed the user interface based on the role of each user. The Client interface was",
+      "designed for booking requests, package viewing, payment submission, refund requests, reschedule",
+      "requests, and notifications. The Owner interface was designed for payment verification, refund",
+      "verification, calendar control, reports, and business monitoring. The admin interface was designed for",
+      "booking records, user management, service and package management, calendar settings, and system",
+      "monitoring. The Staff interface was designed for monitoring bookings, schedules, reschedule requests,",
+      "completed events, and service-related tasks.",
+      "The database design was also planned during this phase. Important records such as users, roles,"
+    ]
+  },
+  {
+    "page": 28,
+    "chars": 2089,
+    "first_lines": [
+      "Testing Phase",
+      "The Testing Phase was conducted to check whether the system features worked correctly and met the",
+      "intended requirements. The proponents tested the system by checking each module individually and then",
+      "testing how the modules worked together.",
+      "The proponents performed testing on the booking process, payment upload, Owner payment",
+      "verification, refund request handling, reschedule request approval, calendar monitoring, notifications,",
+      "reports, user login, and role-based access control. The system was also tested to check if users could",
+      "only access the modules assigned to their role."
+    ]
+  },
+  {
+    "page": 29,
+    "chars": 1544,
+    "first_lines": [
+      "Deployment Phase",
+      "The Deployment Phase involved preparing the system for actual use. After the main features were",
+      "developed and tested, the proponents prepared the system for deployment. This included checking the",
+      "database connection, application settings, file upload functionality, user roles, and final system behavior.",
+      "The system was prepared as a web-based application that can be accessed through internet browsers.",
+      "Since the system is intended to support online booking and scheduling, deployment allows users such as",
+      "Clients, Owners, Admins, and Staff to access the system based on their assigned roles.",
+      "In this phase, the proponents also checked whether the system could properly support the main business"
+    ]
+  },
+  {
+    "page": 30,
+    "chars": 2099,
+    "first_lines": [
+      "Technical Background",
+      "The following technologies are utilized in the development of the system:",
+      "BACKEND DEVELOPMENT",
+      "• ASP.NET Core MVC (.NET 9) - is utilized as the main backend framework of the system.",
+      "It provides a structured approach in developing web applications by dividing the system",
+      "into three major components, namely the Model, View, and Controller. This framework is",
+      "used to manage the business logic of the application, process user requests, handle routing,",
+      "and connect the user interface with the database efficiently. It also supports the role-based"
+    ]
+  },
+  {
+    "page": 31,
+    "chars": 2161,
+    "first_lines": [
+      "FRONTEND DEVELOPMENT",
+      "• Razor Views (.cshtml) - are utilized to create the dynamic user interface of the system.",
+      "They allow the combination of HTML and C# code in a single file, making it possible to",
+      "display data from the backend directly on web pages. This technology is used in rendering",
+      "the system pages such as booking forms, dashboard interfaces, calendar views, payment",
+      "modules, notification pages, and service management pages.",
+      "• HTML5 - is utilized as the standard markup language for structuring the web pages of the",
+      "system. It defines the layout and content of each page, including forms, tables, navigation"
+    ]
+  },
+  {
+    "page": 32,
+    "chars": 2121,
+    "first_lines": [
+      "monitoring by displaying event dates, reservation counts, blocked dates, and booking",
+      "details in an organized and interactive interface.",
+      "ADDITIONAL FUNCTIONAL COMPONENTS",
+      "• File Upload using IFormFile - is utilized in the payment module of the system. It allows",
+      "clients to upload proof of downpayment images, which are then reviewed by the Owner",
+      "during payment verification. This supports the booking confirmation process by ensuring",
+      "that payment proof is recorded and checked before a booking is finalized.",
+      "• Email Sending Service is utilized through SMTP configuration and MailKit"
+    ]
+  },
+  {
+    "page": 33,
+    "chars": 1114,
+    "first_lines": [
+      "CALENDAR OF ACTIVITIES",
+      "Figure 2. Gantt Chart",
+      "This section presents the detailed sequence of activities that the proponents will undergo in",
+      "completing the project. The development follows Agile methodology through structured sprints.",
+      "The project development was carried out using the Agile methodology through a series of",
+      "structured sprints. This approach enabled the proponents to divide the development process into",
+      "manageable phases, allowing continuous monitoring, evaluation, and improvement of the system.",
+      "Each sprint consisted of Sprint Planning, Development, Sprint Review, and Sprint Retrospective"
+    ]
+  },
+  {
+    "page": 34,
+    "chars": 2034,
+    "first_lines": [
+      "Admin, and Staff, in order to define their specific roles and functions. In addition, the",
+      "database was designed using SQL Server, the overall system architecture was planned,",
+      "and the initial setup of the ASP.NET Core MVC project was completed to establish the",
+      "foundation for the succeeding development phases.",
+      "• Sprint 2 (Weeks 3–4): Core Module Development",
+      "In Sprint 2, conducted during Weeks 3 to 4, the proponents developed the core modules",
+      "of the system. The login and authentication features were implemented using ASP.NET",
+      "Core Identity to provide secure access to authorized users. Role-based access control"
+    ]
+  },
+  {
+    "page": 35,
+    "chars": 1657,
+    "first_lines": [
+      "reports and visual summaries of system data. File upload functionality was also",
+      "developed to support the submission of proof of payment and other necessary",
+      "documents.",
+      "• SPRINT 5 (WEEKS 9–10): TESTING AND DEPLOYMENT",
+      "Finally, during Sprint 5, which took place in Weeks 9 to 10, the proponents",
+      "concentrated on testing, optimization, and deployment. Unit testing and integration",
+      "testing were conducted to verify the correctness and reliability of both individual",
+      "components and the system as a whole. Errors and performance issues identified during"
+    ]
+  },
+  {
+    "page": 36,
+    "chars": 2048,
+    "first_lines": [
+      "deployment activities. These devices serve as the primary working environment for",
+      "developing the proposed web-based system.",
+      "• Stable Internet Connection – is utilized to support online development activities,",
+      "package installation, cloud deployment, email configuration, testing of online",
+      "functionalities, and access to external development resources. It also ensures proper",
+      "communication between the system and cloud-based services.",
+      "• Cloud Hosting Services – are utilized to deploy and host the web application online.",
+      "This allows the proposed system to become accessible through internet browsers and"
+    ]
+  },
+  {
+    "page": 37,
+    "chars": 2082,
+    "first_lines": [
+      "• ASP.NET Core Identity – is utilized for authentication and role-based authorization.",
+      "It manages user registration, login, password recovery, and role restrictions for Admin,",
+      "Staff, and Client accounts.",
+      "• Visual Studio 2022 – is utilized as the primary Integrated Development Environment",
+      "(IDE) for developing, debugging, testing, and maintaining the proposed system.",
+      "• Visual Studio Code – is utilized as an additional lightweight code editor for frontend",
+      "customization, quick modifications, and interface styling.",
+      "• Bootstrap 5 – is utilized as the frontend CSS framework for creating responsive,"
+    ]
+  },
+  {
+    "page": 38,
+    "chars": 1812,
+    "first_lines": [
+      "Requirements Analysis",
+      "In this part, the proposed system provides computing solutions to address the needs of event-based",
+      "entertainment service providers in terms of the following:",
+      "• WHO",
+      "o Clients – The clients are individuals who book entertainment services for their",
+      "events through the proposed system. They can view packages, submit booking",
+      "requests, upload proof of payment, request rescheduling, request refunds, and",
+      "monitor transaction status."
+    ]
+  },
+  {
+    "page": 39,
+    "chars": 1686,
+    "first_lines": [
+      "o Refund Management – The system allows clients to submit refund requests",
+      "and allows the Owner to approve or reject refund requests based on booking",
+      "and payment records.",
+      "o Package Management – The system allows the admin to manage service",
+      "packages, prices, inclusions, and package availability.",
+      "o Reports and Analytics – The system allows the Owner to view booking,",
+      "payment, income, and package trend reports for business monitoring and",
+      "decision-making."
+    ]
+  },
+  {
+    "page": 40,
+    "chars": 1379,
+    "first_lines": [
+      "Requirements Documentation",
+      "This section establishes the basis of agreement between the client and the developers regarding the",
+      "system’s functionalities.",
+      "Under Agile methodology, requirements are documented through:",
+      "• Product Backlog – A complete list of system features",
+      "• SPRINT BACKLOG – TASKS SELECTED FOR EACH SPRINT",
+      "• User Stories – Functional descriptions of system requirements",
+      "Examples of User Stories:"
+    ]
+  },
+  {
+    "page": 41,
+    "chars": 487,
+    "first_lines": [
+      "• As a staff member, I want to view completed bookings so that past event records remain",
+      "organized.",
+      "All software features are enumerated and implemented incrementally per sprint. System interfaces",
+      "are presented through designed Razor Views (.cshtml) showing how the software appears once",
+      "developed and deployed.",
+      "Design of Software, System, Product, and/or Processes",
+      "Data Flow Diagram",
+      "Figure 3: Level 0 Context Diagram"
+    ]
+  },
+  {
+    "page": 42,
+    "chars": 62,
+    "first_lines": [
+      "Figure 5: Level 2 – Detailed Processes",
+      "r",
+      "Figure 6: ERD Diagram"
+    ]
+  },
+  {
+    "page": 43,
+    "chars": 29,
+    "first_lines": [
+      "Figure 7: Use Case Diagram",
+      "35"
+    ]
+  },
+  {
+    "page": 44,
+    "chars": 35,
+    "first_lines": [
+      "Figure 8: Owner Flow",
+      "SYSTEM FLOW",
+      "36"
+    ]
+  },
+  {
+    "page": 45,
+    "chars": 23,
+    "first_lines": [
+      "Figure 9: Admin Flow",
+      "37"
+    ]
+  },
+  {
+    "page": 46,
+    "chars": 24,
+    "first_lines": [
+      "Figure 10: Staff Flow",
+      "38"
+    ]
+  },
+  {
+    "page": 47,
+    "chars": 25,
+    "first_lines": [
+      "Figure 11: Client Flow",
+      "39"
+    ]
+  },
+  {
+    "page": 48,
+    "chars": 1628,
+    "first_lines": [
+      "The system follows a layered architectural pattern:",
+      "1. Presentation Layer – Razor Views (.cshtml), HTML5, CSS3, Bootstrap",
+      "2. Business Logic Layer – ASP.NET Core MVC Controllers and Services",
+      "3. Data Access Layer – Entity Framework Core",
+      "4. Database Layer – SQL Server",
+      "Security is implemented using ASP.NET Core Identity with role-based authentication and",
+      "authorization for Client, Owner, Admin, and Staff users. Each role has different access permissions",
+      "based on its responsibilities. Clients can submit and monitor transactions, Owners can verify"
+    ]
+  },
+  {
+    "page": 49,
+    "chars": 2230,
+    "first_lines": [
+      "Rabanillo, J. C., Reyes, D. G., Huya, E. O., & Cruz, C. P. (2025). Digitalized booking for Hundred",
+      "Islands: A developmental approach towards industrial advancement of Alaminos City tourism.",
+      "International Journal of Research and Innovation in Social Science, 9(3), 210–218.",
+      "Gaspay, A. R., Gullim, J., Magno, J. J., Sabalbarino, C., Baclaya, R. J. K., & Villasor, R. A. (2025).",
+      "Travel and tours management system: Tour creation, itinerary management, transportation",
+      "booking and hotel reservation using AI-driven adjustments. Ascendens Asia Singapore – Bestlink",
+      "College of the Philippines Journal of Multidisciplinary Research, 6(2), 60–",
+      "72."
+    ]
+  },
+  {
+    "page": 50,
+    "chars": 1871,
+    "first_lines": [
+      "Niu, X., et al. (2023). A review of optimization studies for system appointment scheduling. MDPI",
+      "Journal.",
+      "Razali, N., et al. (2023). Online events booking and reservation system. ResearchGate Publication.",
+      "Springer Nature. (2024). Evaluation study of an adaptive appointment booking system. Springer",
+      "Publication.",
+      "Wahyuni, S., et al. (2025). Implementation of a web-based event reservation information system.",
+      "Indonesian Journal of Computer Science.",
+      "Anonymous Author. (2023). Technology-based scheduling and event management in sports. MRI"
+    ]
+  },
+  {
+    "page": 51,
+    "chars": 1030,
+    "first_lines": [
+      "Kurniawan, A., et al. (2024). Event management system using web-based technology. Journal",
+      "Innovations Computer Science (JICS).",
+      "Rithanya, P. M., & Santhi, K. (2025). A modular event management system with real-time",
+      "collaboration and online booking features. International Journal of Innovative Research in",
+      "Electrical, Electronics, Instrumentation and Control Engineering.",
+      "Sari, D., et al. (2024). Design and implementation of a web-based event management system.",
+      "Indonesian Journal of Computer Science (IJCS).",
+      "APPENDICES"
+    ]
+  },
+  {
+    "page": 52,
+    "chars": 706,
+    "first_lines": [
+      "Curriculum Vitae of",
+      "EJ RIDGE LERIOS",
+      "Blk 6 Lot 12 Venus Street, Nagpayong, Pinagbuhatan, Pasig City",
+      "leriosejridge@gmail.com",
+      "09763476426",
+      "EDUCATIONAL BACKGROUND",
+      "Level Inclusive Dates Name of school/ Institution",
+      "Tertiary 2023-present STI College Ortigas-Cainta"
+    ]
+  },
+  {
+    "page": 53,
+    "chars": 947,
+    "first_lines": [
+      "High School 2018-2021 Manuel Ignacio Santos Memorial National",
+      "High School",
+      "High School 2016-2018 Sampaguita Village National High School",
+      "Elementary 2015-2016 San Isidro Village Elementary School",
+      "Elementary 2011-2015 San Juan Elementary School",
+      "Curriculum Vitae of",
+      "DANIEL P. TUPRIO",
+      "Blk 7, Floodway Kabisig, San Andres, Cainta, Rizal"
+    ]
+  },
+  {
+    "page": 54,
+    "chars": 1275,
+    "first_lines": [
+      "Gabriel Benedicto (00:09)",
+      "And I am Gabriel Benedicto, one of the interviewers for today, and this is our first question po.",
+      "Ano yung platform na ginagamit niyo sa pag-take ng reservation?",
+      "Aries (Client) (00:21)",
+      "Uh, mostlyang ginagamit namin for, uh, reservation, especially mas madali kaming makita ng",
+      "client, uh, using Facebook or, uh, Instagram. Yun din kasi yung ginagamit naming, uh, platform",
+      "kung saan naglalagay kami ng mga advertisement.",
+      "Gabriel Benedicto (00:42)"
+    ]
+  },
+  {
+    "page": 55,
+    "chars": 782,
+    "first_lines": [
+      "Aries (Client) (01:37)",
+      "At the same time, uh, medyo ma-synchronize sa akin using, uh, Google Calendar.",
+      "Gabriel Benedicto (01:44)",
+      "Okay. Google Calendar.",
+      "EJ Ridge Lerios (01:46)",
+      "Ay, ay, pwede po kaming manghingi ng example ng",
+      "actual niyo na, ano, na tawag doon sa manual booking po, yung actual",
+      "po na lista niyo sa mga totoong bookings po?"
+    ]
+  },
+  {
+    "page": 56,
+    "chars": 884,
+    "first_lines": [
+      "EJ Ridge (02:15)",
+      "Oo. Opo.",
+      "Speaker C (02:18)",
+      "Yung pinaka-manual, ano?",
+      "EJ Ridge (02:20)",
+      "Kahit example lang po ng, ano, isang example lang about sa ano niyo.",
+      "Aries (Client) (02:24)",
+      "Ah, okay."
+    ]
+  },
+  {
+    "page": 57,
+    "chars": 823,
+    "first_lines": [
+      "Aries (Client) (02:59)",
+      "May copies lang kami. Oo, may copy kaming tatlo, parang ganun.",
+      "Aries (Client) (03:03)",
+      "Yun siya. Ang itsura ng booking ay genire.",
+      "Aries (Client) (03:10)",
+      "Thank you for, blah, blah, blah. All right.",
+      "Aries (Client) (03:13)",
+      "A type of events, event birthday, motif, para malaman kung ano yung kulay na susuotin ko. Time"
+    ]
+  },
+  {
+    "page": 58,
+    "chars": 757,
+    "first_lines": [
+      "Gabriel Benedicto (03:48)",
+      "Mm.",
+      "Aries (Client) (03:49)",
+      "Tas ito.",
+      "EJ Ridge (03:51)",
+      "Yan. Like, pwede pong maka hingi ng example niyan.",
+      "Kasi diyan makikita po yung mga info na hinihingi niyo sa ano eh, client niyo, ano.",
+      "EJ Ridge (03:58)"
+    ]
+  },
+  {
+    "page": 59,
+    "chars": 732,
+    "first_lines": [
+      "Ise-send ko na lang sa'yo. Ise-send ko na lang.",
+      "Aries (Client) (04:38)",
+      "Or, or may follow-up question kayo dito.",
+      "EJ Ridge Lerios (04:42)",
+      "Alin po diyan yung mga ano, yung hindi naman po record na pwedeng i-skip ni client? Yung",
+      "motif po ba?",
+      "EJ Ridge Lerios (04:50)",
+      "Required po ba 'yon?"
+    ]
+  },
+  {
+    "page": 60,
+    "chars": 982,
+    "first_lines": [
+      "EJ Ridge Lerios (05:06)",
+      "Okay lang naman po kung wala ring masyado.",
+      "Aries (Client) (05:08)",
+      "Regarding doon sa booking. Or kung may nahihirapan po kayong something about sa pag-",
+      "book niyo po, ganun.",
+      "Aries (Client) (05:18)",
+      "Siguro ang, ang magiging problem lang doon, if ever, yung pagma-manual",
+      "check nung, nung, nung yung pagma-manual check na kung ito bang,"
+    ]
+  },
+  {
+    "page": 61,
+    "chars": 678,
+    "first_lines": [
+      "May ganun din. Ngayon, kung sa yung naka-book naman, like this one, per month, ito siya.",
+      "Gabriel Benedicto (06:23)",
+      "Nagluto pa si Lola. Ah, sige po.",
+      "Gabriel Benedicto (06:27)",
+      "Oh sige po.",
+      "Aries (Client) (06:30)",
+      "Oops saya ah, birthday ko pala bukas.",
+      "Aries (Client) (06:33)"
+    ]
+  },
+  {
+    "page": 62,
+    "chars": 1059,
+    "first_lines": [
+      "Aries (Client) (06:49)",
+      "Yun lang siguro, yung pagma-manual check ng, ng pagta-",
+      "tally nung, nung dalawang ano, yung yun nga, yung sa mga record na manual, pati ito.",
+      "Gabriel Benedicto (07:01)",
+      "Parang mas mahirap po siyang i-view. Sana po mas isahan para mas madaling ma-view ang data.",
+      "Aries (Client) (07:07)",
+      "Oo. Actually, may ang pinaka-downside lang kasi talaga sa system na ganito, what if lang, no?",
+      "What if lang na merong nagkaroon ng glitch or nagkaroon ng, ng"
+    ]
+  },
+  {
+    "page": 63,
+    "chars": 869,
+    "first_lines": [
+      "Ngayon,",
+      "para hanapin mo yung kung sino yung client na ganito, pagdating sa ano ba 'tong ginagamit nami",
+      "ng app?",
+      "Gabriel Benedicto (07:59)",
+      "Ay oo.",
+      "Aries (Client) (08:00)",
+      "Business, uh, suite. Okay.",
+      "Aries (Client) (08:03)"
+    ]
+  },
+  {
+    "page": 64,
+    "chars": 883,
+    "first_lines": [
+      "Aries (Client) (08:51)",
+      "Kinabukasan.",
+      "Aries (08:52)",
+      "Oo. Or peke. Siguro human error na 'yon eh, pagdating sa ganun.",
+      "Aries (Client) (08:57)",
+      "Yoon ang nagiging problema.",
+      "Gabriel Benedicto (09:00)",
+      "Mahirap po siyang i-ano."
+    ]
+  },
+  {
+    "page": 65,
+    "chars": 727,
+    "first_lines": [
+      "One. One week, one week before the event, nakakapag-message, message pa kami.",
+      "Pero pag medyo malapit na, kasi ang dami nilang kausap na mga suppliers eh, minsan na ne-",
+      "neglect na nila na, \"Ay, Sir, si ito, mga ganun.\" Wala na.",
+      "Gabriel Benedicto (09:48)",
+      "Yun ang problem doon. Pagka wala po kayo doon, wala talaga po kayo, ano?",
+      "Aries (Client) (09:52)",
+      "Oo.",
+      "Gabriel Benedicto (09:53)"
+    ]
+  },
+  {
+    "page": 66,
+    "chars": 703,
+    "first_lines": [
+      "Ano? Paano po yung ganun? Kasalanan niyo?",
+      "Aries (Client) (10:08)",
+      "Error nung client. Ang ginawa kasi niya is, um, nalito siya.",
+      "Aries (10:13)",
+      "Akala niya yung, for example, April ngayon, let's say April, April.",
+      "Gabriel Benedicto (10:19)",
+      "13.",
+      "Aries (Client) (10:20)"
+    ]
+  },
+  {
+    "page": 67,
+    "chars": 817,
+    "first_lines": [
+      "Aries (Client) (10:41)",
+      "Hindi. Ginawa niya, binayaran niya ng half eh. Like, parang mga nasa 15 to 10k ata.",
+      "Aries (Client) (10:46)",
+      "Yung ginawa namin, nagbalik na lang kami ng, ah, certain amount. Like, nag-down ng",
+      "15, ginawa namin, binalik namin na yung 5.",
+      "Aries (Client) (10:55)",
+      "Ngayon, yung 10k as damage na lang sa amin kasi nandun na kami eh.",
+      "Gabriel Benedicto (10:59)"
+    ]
+  },
+  {
+    "page": 68,
+    "chars": 951,
+    "first_lines": [
+      "Gabriel Benedicto (11:21)",
+      "Then.",
+      "Aries (Client) (11:21)",
+      "Yun yung mga nagiging problem. Sige, next question.",
+      "Gabriel Benedicto (11:24)",
+      "Noted naman, no? So, fourth question po.",
+      "Gabriel Benedicto (11:28)",
+      "Pinaka-process po, step by step ng booking."
+    ]
+  },
+  {
+    "page": 69,
+    "chars": 906,
+    "first_lines": [
+      "Ngayon, if ever na available, o parang ganyan, may nag-i-inquire. So, if ever na available naman",
+      "kami, I will send all the packages.",
+      "Aries (Client) (12:26)",
+      "Babanggitin ko pa ba yung hindi naman na ano?",
+      "Gabriel Benedicto (12:29)",
+      "Yung packages po. Mamaya pa po yun.",
+      "Aries (Client) (12:31)",
+      "O, sige."
+    ]
+  },
+  {
+    "page": 70,
+    "chars": 917,
+    "first_lines": [
+      "Next will be the, the, the contract. Kasi doon magbe-base.",
+      "Aries (Client) (13:10)",
+      "After the contract, after the contract, ah, reservation na sila. After the reservation, tsaka namin ise-",
+      "send yung, ah, flow ng program and all the things that they have to provide, ah, before the event",
+      "or on the day of the event para at least na-heads up sila na kung ano yung mga kailangan.",
+      "Aries (Client) (13:38)",
+      "And then, kung ano yung mga guide namin just to help",
+      "them na maging successful yung event nila."
+    ]
+  },
+  {
+    "page": 71,
+    "chars": 1420,
+    "first_lines": [
+      "Aries (Client) (14:04)",
+      "Ifi-fill up nila yung mga details na kailangan: name ng client, date, time, venue,",
+      "specific yung name ng, name ng magbe-birthday, tsaka type ng event kung birthday ba siya,",
+      "may binyag pa ba, or, um, or, oo, kung ano mang event yan, like, ah, school show, Halloween,",
+      "Easter Sunday, etc. Ah, para yung mga details na yun is ipo-proceed namin",
+      "Aries (Client) (14:32)",
+      "with the next one, which is the contract na tayo. Kasi indicate doon yung terms and agreements.",
+      "Aries (Client) (14:38)"
+    ]
+  },
+  {
+    "page": 72,
+    "chars": 915,
+    "first_lines": [
+      "Gabriel Benedicto (15:46)",
+      "Okay.",
+      "Aries (Client) (15:47)",
+      "Ayun.",
+      "Gabriel Benedicto (15:48)",
+      "Um, okay po.",
+      "Aries (Client) (15:49)",
+      "Pero normally, hindi ko ginagawa yun. Bakit?"
+    ]
+  },
+  {
+    "page": 73,
+    "chars": 933,
+    "first_lines": [
+      "Aries (Client) (16:40)",
+      "Ganun. Kumbaga, yun ang sa amin. Kaya meron akong mga clients na, ah, nag-send ako ng",
+      "reservation na muna, ah, before the program and everything.",
+      "Aries (Client) (16:50)",
+      "Pero alam na nila muna yung, yung mga packages. Then, reservation muna.",
+      "Aries (Client) (16:55)",
+      "Yung iba, \"Sir, ah, may I have the contract first before, ah, sila mag-down?\" Sabihin ko, \"Okay",
+      "lang naman.\" Pero yun nga, ah, they have to, ah, reserve din right after. Kasi ginawan kita ng"
+    ]
+  },
+  {
+    "page": 74,
+    "chars": 804,
+    "first_lines": [
+      "Ah, ano ba? Kayo, kayo, kayo mag-decide.",
+      "Gabriel Benedicto (17:30)",
+      "Ano po yung ano? Magkano po yung pinaka-minimum?",
+      "Gabriel Benedicto (17:32)",
+      "Nagva-vary po ba siya? Depende po ba sa theme or sa layo or sa?",
+      "Aries (Client) (17:36)",
+      "Hmm. Base doon sa amin, ang, ang talagang required na reservation fee lang namin is very",
+      "minimal lang, which is Php2,000, just to reserve yung mismong day."
+    ]
+  },
+  {
+    "page": 75,
+    "chars": 983,
+    "first_lines": [
+      "Mm. Eh, may naka-book sa akin nung Sunday. Hindi naman ganun.",
+      "Aries (Client) (18:05)",
+      "Ayun. O, yun. O, yun.",
+      "Aries (Client) (18:08)",
+      "Ah, 2k lang. 2k lang naman yung down payment.",
+      "Gabriel Benedicto (18:10)",
+      "Dapat lang, dapat lang.",
+      "Aries (Client) (18:11)"
+    ]
+  },
+  {
+    "page": 76,
+    "chars": 706,
+    "first_lines": [
+      "Pwede din naman yun. Pero as a performer, mas ginaganahan kaming mag, mag, ah, perform",
+      "kung makukuha namin yung kabuuan halos ng payment after nung party.",
+      "Aries (Client) (19:15)",
+      "Party. Ano ba yun? 25k din sa'yo.",
+      "Aries (Client) (19:19)",
+      "Eh, yung mga ganun. Ayun.",
+      "Aries (Client) (19:22)",
+      "Okay. Next question."
+    ]
+  },
+  {
+    "page": 77,
+    "chars": 1043,
+    "first_lines": [
+      "Okay. So, ah, ano po yung mga ino-offer niyong service? Lahat po siya.",
+      "Gabriel Benedicto (19:46)",
+      "Meron po ba kayong mga, kunwari po, mga packages po, kunwari po, hosting at saka bubble",
+      "show at saka puppet show, magkakasama po silang tatlo or pwede naman pong i-customize ng",
+      "client?",
+      "Aries (Client) (19:59)",
+      "Okay. Sa.",
+      "Gabriel Benedicto (20:02)"
+    ]
+  },
+  {
+    "page": 78,
+    "chars": 1295,
+    "first_lines": [
+      "Gabriel Benedicto (20:51)",
+      "Hindi sige tuloy niyo po.",
+      "Aries (Client) (20:52)",
+      "Ah, sige. Yung sa deluxe package naman, um, kaibahan niya sa ang, ang premium package,",
+      "ah, nasa 19,800 lang siya.",
+      "Aries (Client) (21:06)",
+      "Ang deluxe package namin is nasa, ah, 20,000 siya. Ngayon, kung titingnan mo, ang price",
+      "difference niya is nasa Php200 lang."
+    ]
+  },
+  {
+    "page": 79,
+    "chars": 866,
+    "first_lines": [
+      "Aries (Client) (22:27)",
+      "And then, sa part ng clients, ang kailangan na lang nila i-provide is yung, ah, game prices and",
+      "then yung sound system. Yun, yun.",
+      "Gabriel Benedicto (22:36)",
+      "Mm. So, tatlo lang po yung package niyo?",
+      "Aries (Client) (22:39)",
+      "Mm. Tatlo lang. And yung ngayon, if ever that they want to have lang yung, ah, magic show lang",
+      "or puppet show lang, pipili lang sila ng package doon."
+    ]
+  },
+  {
+    "page": 80,
+    "chars": 835,
+    "first_lines": [
+      "Aries (Client) (23:13)",
+      "Bahala sila eh. Kumuha na sila.",
+      "Aries (Client) (23:15)",
+      "'Di ba? Kasi naka-base na kami doon.",
+      "Gabriel Benedicto (23:17)",
+      "Ah, fixed na po? Fixed na?",
+      "Aries (Client) (23:18)",
+      "Naka-fixed kami doon. Bakit?"
+    ]
+  },
+  {
+    "page": 81,
+    "chars": 593,
+    "first_lines": [
+      "Gabriel Benedicto (23:53)",
+      "Oo.",
+      "Aries (Client) (23:54)",
+      "So, kung, kung ito-total mo siya, sobrang sulit na noon.",
+      "Gabriel Benedicto (23:57)",
+      "Mm. Oo, no?",
+      "Aries (Client) (23:58)",
+      "Kaya mag-book na kayo. Hindi."
+    ]
+  },
+  {
+    "page": 82,
+    "chars": 1097,
+    "first_lines": [
+      "Aries (Client) (24:16)",
+      "Oo. Kung, kung may, kung may ibabawas sila na, sir, ah, na services doon or iko-customize nila.",
+      "Pero yun lang talaga eh.",
+      "Aries (Client) (24:24)",
+      "Tatanggalin nila yung hosting, less 2,000, or tatanggalin nila yung puppet show, less 1, less 1k.",
+      "Gabriel Benedicto (24:31)",
+      "Yun lang po yun yung?",
+      "Aries (Client) (24:32)"
+    ]
+  },
+  {
+    "page": 83,
+    "chars": 709,
+    "first_lines": [
+      "Yun siya.",
+      "Gabriel Benedicto (25:21)",
+      "Mm.",
+      "Aries (Client) (25:22)",
+      "Yun eh. Ang, ang weekdays naman, kasi Monday to Friday, tawag namin diyan, bonus lang naman",
+      "eh.",
+      "Aries (Client) (25:30)",
+      "Yun yung panahon na matutulog lang, wala akong gagawin."
+    ]
+  },
+  {
+    "page": 84,
+    "chars": 1286,
+    "first_lines": [
+      "Aries (Client) (26:04)",
+      "Nagma-matter din diyan kung ano yung distance nung, nung first event mo to, to your second",
+      "event, then third, ah, event. At least meron man lang, ah, two, ah, 1 to 2 hours of travel time.",
+      "Aries (Client) (26:21)",
+      "Again, nagma-matter kung gaano kalayo yung first event mo papunta sa second event. Ngayon,",
+      "ang ginagawa namin dito, doon na nahahati yung bawat oras.",
+      "Aries (Client) (26:31)",
+      "Merong client na pwedeng open ang booking namin from 9:00, ah, sorry, from"
+    ]
+  },
+  {
+    "page": 85,
+    "chars": 1087,
+    "first_lines": [
+      "Gabriel Benedicto (27:40)",
+      "May break po kayo?",
+      "Aries (27:41)",
+      "Ayun. 10:00 to 1:00, then 2:00 to 6:00, then 6:00 to 9:00. Yan, doon nagkakahati-hati.",
+      "Gabriel Benedicto (27:51)",
+      "Paano po yun? Hindi niyo na po tinatanggap kapag masyadong medyo malayo po yung ano?",
+      "Aries (Client) (27:56)",
+      "Ah, depende siya. Kung malayo talaga ang event mo, like halimbawa, ah, saan ba manggagaling,"
+    ]
+  },
+  {
+    "page": 86,
+    "chars": 967,
+    "first_lines": [
+      "ang magpapa-book na susunod, like, like mapa, mas maaga doon sa unang nagpa-book or mas",
+      "later doon sa nagpa-book, pero Batangas sila, hindi na namin tatanggapin.",
+      "Gabriel Benedicto (29:00)",
+      "Opo. Okay.",
+      "Aries (Client) (29:00)",
+      "Kasi maaari na, oo, maaaring yung timeframe maapektuhan. Kasi ina-",
+      "avoid namin na magkaroon ng, ah, problema sa, sa booking.",
+      "Aries (Client) (29:15)"
+    ]
+  },
+  {
+    "page": 87,
+    "chars": 711,
+    "first_lines": [
+      "Okay. Yun pa yung pinaka?",
+      "Aries (Client) (29:50)",
+      "Oo. Yun. Pero sagot naman nila yung transpo non, kumbaga yung bus, sila yung may-ari ng bus",
+      "company, yung Fariñas.",
+      "Gabriel Benedicto (29:59)",
+      "Ah, Ilocos Empanada?",
+      "Aries (Client) (30:01)",
+      "Ay, hindi, hindi. Yung Ilocos Empanadas, yung Fariñas."
+    ]
+  },
+  {
+    "page": 88,
+    "chars": 728,
+    "first_lines": [
+      "Aries (Client) (30:21)",
+      "Nakahingi lang ako ng isa nung dati, pandemic.",
+      "Speaker C (30:25)",
+      "Regarding po sa transpo, transpo, gaano, ano, I mean, gaano kalayo dapat magkaroon ng ganun?",
+      "Aries (Client) (30:32)",
+      "Ah, siguro ba, ah, magbe-base siguro ako sa 6:00. Teka lang ha, check natin ha.",
+      "Aries (Client) (30:39)",
+      "Kasi hindi ako nagbe-base per kilometer eh. Kapag trip ko lang, magpatagdag doon na ako nagbe-"
+    ]
+  },
+  {
+    "page": 89,
+    "chars": 574,
+    "first_lines": [
+      "Start.",
+      "Aries (Client) (31:03)",
+      "38. O sige, mag-base na lang tayo. At least 40, 40.",
+      "Gabriel Benedicto (31:11)",
+      "Kilometers?",
+      "Aries (Client) (31:12)",
+      "Kilometers away. 40 km away plus 1k.",
+      "Gabriel Benedicto (31:17)"
+    ]
+  },
+  {
+    "page": 90,
+    "chars": 531,
+    "first_lines": [
+      "Ito, 100 km ang ad namin dito, 3,000.",
+      "Gabriel Benedicto (31:44)",
+      "100 km po?",
+      "Aries (Client) (31:45)",
+      "Oo.",
+      "Gabriel Benedicto (31:47)",
+      "Sa tamang totoo naman na napakalayo. Saan po yun?",
+      "Gabriel Benedicto (31:50)"
+    ]
+  },
+  {
+    "page": 91,
+    "chars": 475,
+    "first_lines": [
+      "Umalis kami ng gabi nito. Dumating kami doon umaga na eh.",
+      "Gabriel Benedicto (32:10)",
+      "Grabe. Sino po kasama niyo yun? Si Brian?",
+      "Aries (Client) (32:13)",
+      "Hindi, si Miko.",
+      "Gabriel Benedicto (32:14)",
+      "Miko?",
+      "Aries (Client) (32:15)"
+    ]
+  },
+  {
+    "page": 92,
+    "chars": 604,
+    "first_lines": [
+      "Gabriel Benedicto (32:27)",
+      "O sige po, okay na po yun.",
+      "Aries (32:29)",
+      "Hindi, ano ba?",
+      "Speaker C (32:30)",
+      "Tanong lang po. Ano yung first down payment, first na-serve po ba niyo sa inyo?",
+      "Gabriel Benedicto (32:35)",
+      "Oo naman."
+    ]
+  },
+  {
+    "page": 93,
+    "chars": 841,
+    "first_lines": [
+      "Gabriel Benedicto (32:54)",
+      "Next po. Um.",
+      "Aries (Client) (32:56)",
+      "O, at yun dapat. Pero depende pa rin yan.",
+      "Gabriel Benedicto (33:02)",
+      "What? Wala naman po kayong ano, ay kapagka po nag-cancel ng ano, wala na pong",
+      "refund kapag kinancel?",
+      "Aries (Client) (33:11)"
+    ]
+  },
+  {
+    "page": 94,
+    "chars": 837,
+    "first_lines": [
+      "Gabriel Benedicto (33:45)",
+      "Okay.",
+      "Aries (Client) (33:46)",
+      "Namin. Kung available pa ba kami that day, or if ever naman at hindi na talaga kami available non,",
+      "ang mangyayari, yung reservation nila na Php2,000 na yon ay magre-recommend kami ng",
+      "magician na kaibigan ko na same ng quality ng ginagawa namin.",
+      "Gabriel Benedicto (34:07)",
+      "Mm."
+    ]
+  },
+  {
+    "page": 95,
+    "chars": 864,
+    "first_lines": [
+      "Kung ayaw niyo magtrabaho, ganun.",
+      "Gabriel Benedicto (34:37)",
+      "Pwede ba yun? Hindi naman pwedeng ganun.",
+      "Gabriel Benedicto (34:39)",
+      "Ayaw mo. Ayaw mo ngayon haha.",
+      "Aries (Client) (34:40)",
+      "Ano? Sorry, sorry.",
+      "Gabriel Benedicto (34:41)"
+    ]
+  },
+  {
+    "page": 96,
+    "chars": 786,
+    "first_lines": [
+      "Kung anong oras pwede mag-inquire na available yung may magcha-chat sa'yo.",
+      "Gabriel Benedicto (35:24)",
+      "Mm.",
+      "Aries (Client) (35:25)",
+      "Yoon ay, ah, hanggang 2:00 sa madaling araw, gising kami. The same time, ang gising niya,",
+      "may magre-reply na sa'yo ng 8:00 AM.",
+      "Aries (Client) (35:36)",
+      "Ganun. Doon na pumapasok yung chatbot if ever na magcha-chatbot ka. Pero hindi kami nagcha-"
+    ]
+  },
+  {
+    "page": 97,
+    "chars": 831,
+    "first_lines": [
+      "Yung specific na yung targeting, ganito, ganyan. Kaya nga baka maghanap ako nung, ah, online",
+      "course regarding doon.",
+      "Aries (Client) (36:15)",
+      "Before, naka- nagkaroon na ako eh. Nag-avail ako, like, nagbayad ata ako ng 15,000 para doon or",
+      "10,000.",
+      "Aries (Client) (36:23)",
+      "Ah, yun. Hindi ko din nagamit.",
+      "Aries (Client) (36:25)"
+    ]
+  },
+  {
+    "page": 98,
+    "chars": 985,
+    "first_lines": [
+      "Aries (Client) (36:51)",
+      "Meron din ganun ha. Meron, merong, meron akong kakilalang magician na nag-accept ng credit",
+      "card.",
+      "Aries (Client) (36:58)",
+      "Na ang nangyari, ah, ibinabawas sa kanya per, like, parang nag-i-",
+      "installment yung TF niya doon sa sa client ko. Parang ganun.",
+      "Aries (Client) (37:10)",
+      "Parang sa bangko siya na paid na yung magician nung bangko, pero yung client"
+    ]
+  },
+  {
+    "page": 99,
+    "chars": 561,
+    "first_lines": [
+      "Aries (Client) (37:46)",
+      "Theme na gusto ko. Teka lang ha.",
+      "Aries (Client) (37:49)",
+      "I'll use the magic artist. Usually, ito eh.",
+      "Gabriel Benedicto (38:00)",
+      "Ah, ganyan po, red.",
+      "Gabriel Benedicto (38:03)",
+      "Nakita mo."
+    ]
+  },
+  {
+    "page": 100,
+    "chars": 771,
+    "first_lines": [
+      "Gabriel Benedicto (38:32)",
+      "Oh, sige.",
+      "Aries (Client) (38:33)",
+      "I think kaso ito, medyo masyadong parang alam mo yung pag tinignan mo,",
+      "parang gawa na siya ng AI something eh.",
+      "Gabriel Benedicto (38:42)",
+      "Okay, sige po.",
+      "Aries (Client) (38:43)"
+    ]
+  },
+  {
+    "page": 101,
+    "chars": 907,
+    "first_lines": [
+      "Gabriel Benedicto (39:13)",
+      "Ganun lang.",
+      "Aries (Client) (39:14)",
+      "Or system na ano ba yun, yang system na yan ba is para sa amin or para siya sa client,",
+      "like pupunta siya sa website na ganito-?",
+      "Gabriel Benedicto (39:23)",
+      "Sa inyo, sa inyo din po. May user na client, may pang-client, meron pong pang-admin,",
+      "and panglahat po talaga."
+    ]
+  },
+  {
+    "page": 102,
+    "chars": 723,
+    "first_lines": [
+      "Gabriel Benedicto (39:53)",
+      "Meron nga din po kaming ginawa, kaso hindi pa po yun accurate. Syempre, ngayon lang",
+      "po namin kayo nakausap non.",
+      "Gabriel Benedicto (39:58)",
+      "Hindi pa siya accurate, yung mga package-packages niyo po doon. But.",
+      "Aries (Client) (40:02)",
+      "Kumbaga yan is ano yan, thesis niyo ba or?",
+      "Gabriel Benedicto (40:04)"
+    ]
+  },
+  {
+    "page": 103,
+    "chars": 904,
+    "first_lines": [
+      "EJ Ridge (40:23)",
+      "Kasi nangangapa rin siya.",
+      "Gabriel Benedicto (40:32)",
+      "So sa yun lang po yung suggestion niyo po.",
+      "Aries (Client) (40:35)",
+      "Mm.",
+      "Gabriel Benedicto (40:36)",
+      "Pero ayun, papakita nga."
+    ]
+  },
+  {
+    "page": 104,
+    "chars": 1080,
+    "first_lines": [
+      "Kasi alam ko naman po kung paano kayo nag-ano eh. Pero para sa inyo naman",
+      "po, paano niyo po siya i—kasi po i-introduce po namin kayo doon sa first ano eh, first page",
+      "eh, na ito client namin.",
+      "Gabriel Benedicto (41:24)",
+      "Sige, ganito, ganito, ganyan kayo. So paano po kayo nagsimula sa business niyo?",
+      "Aries (Client) (41:30)",
+      "Recording na tayo.",
+      "Gabriel Benedicto (41:31)"
+    ]
+  },
+  {
+    "page": 105,
+    "chars": 1027,
+    "first_lines": [
+      "Aries (Client) (42:22)",
+      "Nag, ah, nag-clown ako before.",
+      "Gabriel Benedicto (42:26)",
+      "Nag-clown.",
+      "Aries (Client) (42:27)",
+      "Yeah. And then, after non, nakaipon. Ah, ini-stop ko na yung clowning around, ah, 2017.",
+      "Aries (Client) (42:37)",
+      "Nag-focus ako sa more on magic show. And then, pagtungtong ng 2020, na-stop yung industry"
+    ]
+  },
+  {
+    "page": 106,
+    "chars": 687,
+    "first_lines": [
+      "Gabriel Benedicto (43:52)",
+      "Okay.",
+      "Aries (Client) (43:55)",
+      "And then, and then, ah, from that, um, after non, naging friend ko yung mga celebrities. At the",
+      "same time, pino-promote din nila yung, ah, page namin.",
+      "EJ Ridge Lerios (44:05)",
+      "TV shows po.",
+      "Aries (Client) (44:06)"
+    ]
+  },
+  {
+    "page": 107,
+    "chars": 593,
+    "first_lines": [
+      "TV5.",
+      "Gabriel Benedicto (44:34)",
+      "Good morning Kapatid,",
+      "Aries (Client) (44:34)",
+      "Good morning, kapatid. Ah, TV5, Unang Hirit, ah.",
+      "Gabriel Benedicto (44:39)",
+      "Eat Bulaga?",
+      "Aries (Client) (44:40)"
+    ]
+  },
+  {
+    "page": 108,
+    "chars": 804,
+    "first_lines": [
+      "Pinagtitirpan na lang ata ako eh hehe. Ayun.",
+      "Aries (Client) (45:10)",
+      "Kanegosyo. Yun pa rin, kanegosyo kay Diane Medina.",
+      "Gabriel Benedicto (45:15)",
+      "Okay na. Like, wala ka nang a-add?",
+      "EJ Ridge Lerios (45:17)",
+      "Ah, tanong lang. Parang nalagpasan kanina about sa reschedule.",
+      "EJ Ridge Lerios (45:22)"
+    ]
+  },
+  {
+    "page": 109,
+    "chars": 684,
+    "first_lines": [
+      "Ah, meron lang at least, teka lang ha, at least 2 weeks before, ah, prior the event para magpa-",
+      "reschedule. At the same time, magma-matter kung available pa kami that time.",
+      "Aries (Client) (46:01)",
+      "Pero kung may additional pa naman, wala na kasi very minimal lang",
+      "naman yung amount na pina.",
+      "Gabriel Benedicto (46:09)",
+      "Paano po baga lumagpas po ng 2 weeks?",
+      "Aries (Client) (46:11)"
+    ]
+  },
+  {
+    "page": 110,
+    "chars": 615,
+    "first_lines": [
+      "Aries (Client) (46:19)",
+      "O, nakalagay naman. Oo, nakalagay naman sa amin.",
+      "Gabriel Benedicto (46:23)",
+      "So kapag po lumagpas na.",
+      "Aries (Client) (46:24)",
+      "Kaya nakalagay.",
+      "Gabriel Benedicto (46:25)",
+      "Oo."
+    ]
+  },
+  {
+    "page": 111,
+    "chars": 1132,
+    "first_lines": [
+      "Gabriel Benedicto (46:44)",
+      "Okay na.",
+      "Aries (Client) (46:45)",
+      "Pero mostly kasi kapagka sinabi na na-refundable na ang ano, na-refundable na yung.",
+      "Aries (Client) (46:53)",
+      "Pag binanggit na na-refundable na yung DP, parang matic na yun na na pwede na lang nila ipa-",
+      "reschedule. Pero parang hindi naman na siya parang valid na kasi iba kaya tinatanong.",
+      "Aries (Client) (47:09)"
+    ]
+  },
+  {
+    "page": 112,
+    "chars": 812,
+    "first_lines": [
+      "Aries (Client) (47:57)",
+      "Like, hindi pa man dumadating to event na 'to, nandito, ah, let's say Sunday 'to, nandito pa",
+      "lang sila sa parang, parang basta ganun. Ang gagawin nila, imo-move nila ng mas malayo.",
+      "Aries (Client) (48:12)",
+      "Tapos pagka ang itsura is malayo pa yung event, e di nabura na 'to.",
+      "Ang mangyayari, dito kami magbe-base.",
+      "Aries (Client) (48:19)",
+      "Tapos gagawin nila, tsaka nila dito kaka-cancelin. Sasabihin na yung 50% kukunin mo."
+    ]
+  },
+  {
+    "page": 113,
+    "chars": 973,
+    "first_lines": [
+      "Aries (Client) (48:40)",
+      "Ay haha, hindi pa pala tapos. Ano pa?",
+      "EJ Ridge Lerios (48:42)",
+      "Kasi yung ano lang po, yung parang iche-check niyo lang po kung magse-send lang po sila ng",
+      "picture ng ano, ng.",
+      "Aries (Client) (48:48)",
+      "Ah, magse-send sila ng picture ng ng receipt nila, screenshot or picture ng mismong, ah, deposit",
+      "slip nila if ever nasa BDO. Tapos at the same time, gagawin namin, iche-check"
+    ]
+  },
+  {
+    "page": 114,
+    "chars": 234,
+    "first_lines": [
+      "Mm. Direkta po sa GCash.",
+      "Aries (Client) (49:42)",
+      "Oo, direct.",
+      "Aries (Client) (49:43)",
+      "Okay, what else?",
+      "Gabriel Benedicto (49:46)",
+      "Okay na. Okay na po salamat.",
+      "EJ Ridge Lerios (49:47)"
+    ]
+  }
+]
