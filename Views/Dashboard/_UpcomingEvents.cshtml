@@ -1,0 +1,64 @@
+@model AriesMagicAppointmentSystem.ViewModels.RoleDashboardViewModel
+
+<div class="dashboard-list-panel">
+
+    <div class="dashboard-list-heading">
+        <div>
+            <span class="role-dashboard-eyebrow">
+                Schedule
+            </span>
+
+            <h3>Upcoming confirmed events</h3>
+        </div>
+
+        <a asp-controller="Calendar"
+           asp-action="Index">
+            View calendar
+        </a>
+    </div>
+
+    @if (Model.UpcomingEvents.Count == 0)
+    {
+        <div class="dashboard-empty-state">
+            <i class="bi bi-calendar2-check"></i>
+            <p>No upcoming confirmed events.</p>
+        </div>
+    }
+    else
+    {
+        <div class="dashboard-record-list">
+
+            @foreach (var booking in Model.UpcomingEvents)
+            {
+                <a asp-controller="Bookings"
+                   asp-action="Details"
+                   asp-route-id="@booking.Id"
+                   class="dashboard-record-item">
+
+                    <div class="dashboard-date-tile">
+                        <span>
+                            @booking.EventDate.ToString("MMM")
+                        </span>
+
+                        <strong>
+                            @booking.EventDate.ToString("dd")
+                        </strong>
+                    </div>
+
+                    <div class="dashboard-record-copy">
+                        <strong>@booking.PackageName</strong>
+
+                        <span>
+                            @booking.EventType ·
+                            @booking.StartTime.ToString("h:mm tt")
+                        </span>
+
+                        <small>@booking.PartyVenue</small>
+                    </div>
+
+                    <i class="bi bi-chevron-right"></i>
+                </a>
+            }
+        </div>
+    }
+</div>

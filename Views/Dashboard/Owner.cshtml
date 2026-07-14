@@ -1,0 +1,140 @@
+@model AriesMagicAppointmentSystem.ViewModels.RoleDashboardViewModel
+
+@{
+    ViewData["Title"] = "Dashboard";
+    Layout = "_DashboardLayout";
+}
+
+<div class="role-dashboard-hero">
+    <div>
+        <span class="role-dashboard-eyebrow">
+            Business overview
+        </span>
+
+        <h2>Welcome back, Owner</h2>
+
+        <p>
+            Review financial decisions, upcoming events,
+            and requests that need your approval.
+        </p>
+    </div>
+
+    <a asp-controller="Reports"
+       asp-action="Index"
+       class="btn btn-primary">
+        <i class="bi bi-bar-chart-line me-1"></i>
+        View full reports
+    </a>
+</div>
+
+<div class="dashboard-stat-grid">
+
+    <a asp-controller="Payments"
+       asp-action="PendingVerification"
+       class="dashboard-stat-card stat-warning">
+
+        <span class="dashboard-stat-icon">
+            <i class="bi bi-credit-card-2-front"></i>
+        </span>
+
+        <span class="dashboard-stat-label">
+            Payments to verify
+        </span>
+
+        <strong>@Model.PendingPayments</strong>
+
+        <small>Requires Owner decision</small>
+    </a>
+
+    <a asp-controller="Payments"
+       asp-action="RefundRequests"
+       class="dashboard-stat-card stat-danger">
+
+        <span class="dashboard-stat-icon">
+            <i class="bi bi-arrow-counterclockwise"></i>
+        </span>
+
+        <span class="dashboard-stat-label">
+            Refund requests
+        </span>
+
+        <strong>@Model.PendingRefunds</strong>
+
+        <small>Pending review</small>
+    </a>
+
+    <a asp-controller="RescheduleRequests"
+       asp-action="Index"
+       class="dashboard-stat-card stat-info">
+
+        <span class="dashboard-stat-icon">
+            <i class="bi bi-calendar2-week"></i>
+        </span>
+
+        <span class="dashboard-stat-label">
+            Reschedule requests
+        </span>
+
+        <strong>@Model.PendingReschedules</strong>
+
+        <small>Awaiting final decision</small>
+    </a>
+
+    <a asp-controller="Bookings"
+       asp-action="Index"
+       class="dashboard-stat-card stat-success">
+
+        <span class="dashboard-stat-icon">
+            <i class="bi bi-calendar-check"></i>
+        </span>
+
+        <span class="dashboard-stat-label">
+            Upcoming confirmed
+        </span>
+
+        <strong>@Model.UpcomingBookings</strong>
+
+        <small>Scheduled events</small>
+    </a>
+</div>
+
+<div class="dashboard-stat-grid dashboard-stat-grid-compact">
+
+    <div class="dashboard-stat-card stat-neutral">
+        <span class="dashboard-stat-label">
+            All-time verified payments
+        </span>
+
+        <strong>
+            ₱@Model.VerifiedRevenue.ToString("N2")
+        </strong>
+    </div>
+
+    <div class="dashboard-stat-card stat-neutral">
+        <span class="dashboard-stat-label">
+            Verified this month
+        </span>
+
+        <strong>
+            ₱@Model.CurrentMonthRevenue.ToString("N2")
+        </strong>
+    </div>
+
+    <div class="dashboard-stat-card stat-neutral">
+        <span class="dashboard-stat-label">
+            Confirmed bookings
+        </span>
+
+        <strong>@Model.ConfirmedBookings</strong>
+    </div>
+
+    <div class="dashboard-stat-card stat-neutral">
+        <span class="dashboard-stat-label">
+            Completed events
+        </span>
+
+        <strong>@Model.CompletedBookings</strong>
+    </div>
+</div>
+
+<partial name="_UpcomingEvents" model="Model" />

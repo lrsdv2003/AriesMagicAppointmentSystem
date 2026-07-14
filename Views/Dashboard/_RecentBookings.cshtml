@@ -1,0 +1,63 @@
+@model AriesMagicAppointmentSystem.ViewModels.RoleDashboardViewModel
+
+<div class="dashboard-list-panel">
+
+    <div class="dashboard-list-heading">
+        <div>
+            <span class="role-dashboard-eyebrow">
+                Activity
+            </span>
+
+            <h3>Recent booking submissions</h3>
+        </div>
+
+        <a asp-controller="Bookings"
+           asp-action="Index">
+            View all
+        </a>
+    </div>
+
+    @if (Model.RecentBookings.Count == 0)
+    {
+        <div class="dashboard-empty-state">
+            <i class="bi bi-inbox"></i>
+            <p>No booking records yet.</p>
+        </div>
+    }
+    else
+    {
+        <div class="dashboard-record-list">
+
+            @foreach (var booking in Model.RecentBookings)
+            {
+                <a asp-controller="Bookings"
+                   asp-action="Details"
+                   asp-route-id="@booking.Id"
+                   class="dashboard-record-item">
+
+                    <div class="dashboard-record-icon">
+                        <i class="bi bi-journal-text"></i>
+                    </div>
+
+                    <div class="dashboard-record-copy">
+                        <strong>@booking.PackageName</strong>
+
+                        <span>
+                            @booking.EventType ·
+                            @booking.EventDate.ToString("MMM dd, yyyy")
+                        </span>
+
+                        <small>
+                            Submitted
+                            @booking.CreatedAt.ToString("MMM dd, h:mm tt")
+                        </small>
+                    </div>
+
+                    <span class="dashboard-status-pill">
+                        @booking.Status
+                    </span>
+                </a>
+            }
+        </div>
+    }
+</div>

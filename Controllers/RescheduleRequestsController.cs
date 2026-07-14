@@ -170,7 +170,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             return View(requests);
         }
 
-        [Authorize(Roles = "Staff,Admin")]
+        [Authorize(Roles = "Staff,Admin,Owner")]
         public async Task<IActionResult> Index()
         {
             var requests = await _context.RescheduleRequests
@@ -184,7 +184,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             return View(requests);
         }
 
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin,Owner")]
         public async Task<IActionResult> Approve(int? id)
         {
             if (id == null)
@@ -208,7 +208,7 @@ namespace AriesMagicAppointmentSystem.Controllers
         }
 
         [HttpPost, ActionName("Approve")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin,Owner")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ApproveConfirmed(int id, string? adminRemarks)
         {
@@ -288,7 +288,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin,Owner")]
         public async Task<IActionResult> Reject(int? id)
         {
             if (id == null)
@@ -312,7 +312,7 @@ namespace AriesMagicAppointmentSystem.Controllers
         }
 
         [HttpPost, ActionName("Reject")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin,Owner")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RejectConfirmed(int id, string? adminRemarks)
         {

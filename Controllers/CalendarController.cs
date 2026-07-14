@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AriesMagicAppointmentSystem.Controllers
 {
-    [Authorize(Roles = "Staff,Admin")]
+    [Authorize(Roles = "Staff,Admin,Owner")]
     public class CalendarController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -79,7 +79,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             return View(model);
         }
 
-        [Authorize(Roles = "Staff,Admin")]
+        [Authorize(Roles = "Staff,Admin,Owner")]
         [HttpGet]
         public async Task<IActionResult> GetReservationsByDate(DateTime date)
         {

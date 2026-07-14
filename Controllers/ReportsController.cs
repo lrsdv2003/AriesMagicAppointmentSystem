@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AriesMagicAppointmentSystem.Controllers
 {
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,Owner")]
     public class ReportsController : Controller
     {
         private readonly ApplicationDbContext _context;

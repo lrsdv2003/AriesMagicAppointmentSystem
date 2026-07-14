@@ -1,0 +1,105 @@
+@model AriesMagicAppointmentSystem.ViewModels.RoleDashboardViewModel
+
+@{
+    ViewData["Title"] = "Dashboard";
+    Layout = "_DashboardLayout";
+}
+
+<div class="role-dashboard-hero">
+    <div>
+        <span class="role-dashboard-eyebrow">
+            Daily monitoring
+        </span>
+
+        <h2>Welcome back, Staff</h2>
+
+        <p>
+            Monitor confirmed schedules, booking details,
+            packages, and operational updates.
+        </p>
+    </div>
+
+    <a asp-controller="Calendar"
+       asp-action="Index"
+       class="btn btn-primary">
+
+        <i class="bi bi-calendar3 me-1"></i>
+        Open calendar
+    </a>
+</div>
+
+<div class="dashboard-stat-grid">
+
+    <a asp-controller="Bookings"
+       asp-action="Index"
+       class="dashboard-stat-card stat-info">
+
+        <span class="dashboard-stat-icon">
+            <i class="bi bi-journals"></i>
+        </span>
+
+        <span class="dashboard-stat-label">
+            All bookings
+        </span>
+
+        <strong>@Model.TotalBookings</strong>
+
+        <small>Monitoring access</small>
+    </a>
+
+    <a asp-controller="Calendar"
+       asp-action="Index"
+       class="dashboard-stat-card stat-success">
+
+        <span class="dashboard-stat-icon">
+            <i class="bi bi-calendar-check"></i>
+        </span>
+
+        <span class="dashboard-stat-label">
+            Upcoming events
+        </span>
+
+        <strong>@Model.UpcomingBookings</strong>
+
+        <small>Confirmed schedules</small>
+    </a>
+
+    <a asp-controller="Bookings"
+       asp-action="Index"
+       class="dashboard-stat-card stat-neutral">
+
+        <span class="dashboard-stat-icon">
+            <i class="bi bi-check2-circle"></i>
+        </span>
+
+        <span class="dashboard-stat-label">
+            Completed events
+        </span>
+
+        <strong>@Model.CompletedBookings</strong>
+
+        <small>Historical records</small>
+    </a>
+
+    <a asp-controller="RescheduleRequests"
+       asp-action="Index"
+       class="dashboard-stat-card stat-warning">
+
+        <span class="dashboard-stat-icon">
+            <i class="bi bi-calendar2-week"></i>
+        </span>
+
+        <span class="dashboard-stat-label">
+            Reschedules to monitor
+        </span>
+
+        <strong>@Model.PendingReschedules</strong>
+
+        <small>Owner decides final status</small>
+    </a>
+</div>
+
+<div class="dashboard-two-column">
+    <partial name="_UpcomingEvents" model="Model" />
+    <partial name="_RecentBookings" model="Model" />
+</div>

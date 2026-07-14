@@ -24,13 +24,13 @@ namespace AriesMagicAppointmentSystem.Controllers
             _userManager = userManager;
         }
 
-        [Authorize(Roles = "Staff,Admin")]
+        [Authorize(Roles = "Staff,Admin,Owner")]
         public IActionResult Pending()
         {
             return RedirectToAction(nameof(Index), new { bookingStatus = "Pending" });
         }
 
-        [Authorize(Roles = "Staff,Admin")]
+        [Authorize(Roles = "Staff,Admin,Owner")]
         public async Task<IActionResult> Index(string? search, string? bookingStatus, string? paymentStatus)
         {
             var bookingsQuery = _context.Bookings
@@ -523,7 +523,7 @@ namespace AriesMagicAppointmentSystem.Controllers
 
             return View(bookings);
         }
-        [Authorize(Roles = "Staff,Admin")]
+        [Authorize(Roles = "Staff,Admin,Owner")]
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null) return NotFound();

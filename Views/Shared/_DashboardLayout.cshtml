@@ -26,74 +26,102 @@
                 <div class="sidebar-section-label">Dashboard</div>
 
                 <nav class="sidebar-nav">
-                    @if (User.Identity != null && User.Identity.IsAuthenticated)
+                @if (User.Identity != null && User.Identity.IsAuthenticated)
+                {
+                    <a asp-controller="Dashboard"
+                    asp-action="Index"
+                    class="sidebar-link @(currentController == "Dashboard" ? "active" : "")">
+                        <i class="bi bi-grid-1x2-fill"></i>
+                        Overview
+                    </a>
+                    @if (User.IsInRole("Owner"))
                     {
-                        @if (User.IsInRole("Staff"))
-                        {
-                            <a asp-controller="Bookings" asp-action="Index"
-                               class="sidebar-link @(currentController == "Bookings" ? "active" : "")">
-                                Bookings
-                            </a>
-                            <a asp-controller="Calendar" asp-action="Index"
-                               class="sidebar-link @(currentController == "Calendar" ? "active" : "")">
-                                Calendar
-                            </a>
-
-                            <a asp-controller="Services" asp-action="Index"
-                            class="sidebar-link @(currentController == "Services" ? "active" : "")">
-                                Packages
-                            </a>
-
-                            <a asp-controller="RescheduleRequests" asp-action="Index"
-                               class="sidebar-link @(currentController == "RescheduleRequests" ? "active" : "")">
-                                Reschedules
-                            </a>
-                        }
-
-                        @if (User.IsInRole("Admin"))
-                        {
-                            <a asp-controller="Bookings" asp-action="Index"
-                               class="sidebar-link @(currentController == "Bookings" && currentAction == "Index" ? "active" : "")">
-                                Bookings
-                            </a>
-
-                            <a asp-controller="Payments" asp-action="PendingVerification"
-                               class="sidebar-link @(currentController == "Payments" && currentAction == "PendingVerification" ? "active" : "")">
-                                Verify Payments
-                            </a>
-                            
-                            <a asp-controller="Payments" asp-action="RefundRequests"
-                            class="sidebar-link @(currentController == "Payments" && currentAction == "RefundRequests" ? "active" : "")">
-                                Refund Requests
-                            </a>
-
-                            <a asp-controller="UserManagement" asp-action="Index"
-                               class="sidebar-link @(currentController == "UserManagement" ? "active" : "")">
-                                User Management
-                            </a>
-
-                            <a asp-controller="Calendar" asp-action="Index"
-                               class="sidebar-link @(currentController == "Calendar" ? "active" : "")">
-                                Calendar
-                            </a>
-                        
-                            <a asp-controller="RescheduleRequests" asp-action="Index"
-                               class="sidebar-link @(currentController == "RescheduleRequests" ? "active" : "")">
-                                Reschedules
-                            </a>
-
-                            <a asp-controller="Services" asp-action="Index"
-                            class="sidebar-link @(currentController == "Services" ? "active" : "")">
-                                Packages
-                            </a>
-
-                            <a asp-controller="Reports" asp-action="Index"
-                               class="sidebar-link @(currentController == "Reports" ? "active" : "")">
-                                Reports
-                            </a>
-                        }
+                        <a asp-controller="Payments"
+                        asp-action="PendingVerification"
+                        class="sidebar-link @(currentController == "Payments" && currentAction == "PendingVerification" ? "active" : "")">
+                            Verify Payments
+                        </a>
+                        <a asp-controller="Payments"
+                        asp-action="RefundRequests"
+                        class="sidebar-link @(currentController == "Payments" && currentAction == "RefundRequests" ? "active" : "")">
+                            Refund Requests
+                        </a>
+                        <a asp-controller="Calendar"
+                        asp-action="Index"
+                        class="sidebar-link @(currentController == "Calendar" ? "active" : "")">
+                            Calendar
+                        </a>
+                        <a asp-controller="RescheduleRequests"
+                        asp-action="Index"
+                        class="sidebar-link @(currentController == "RescheduleRequests" ? "active" : "")">
+                            Reschedules
+                        </a>
+                        <a asp-controller="Reports"
+                        asp-action="Index"
+                        class="sidebar-link @(currentController == "Reports" ? "active" : "")">
+                            Reports
+                        </a>
                     }
-                </nav>
+
+                    @if (User.IsInRole("Staff"))
+                    {
+                        <a asp-controller="Bookings"
+                        asp-action="Index"
+                        class="sidebar-link @(currentController == "Bookings" ? "active" : "")">
+                            Bookings
+                        </a>
+
+                        <a asp-controller="Calendar"
+                        asp-action="Index"
+                        class="sidebar-link @(currentController == "Calendar" ? "active" : "")">
+                            Calendar
+                        </a>
+
+                        <a asp-controller="Services"
+                        asp-action="Index"
+                        class="sidebar-link @(currentController == "Services" ? "active" : "")">
+                            Packages
+                        </a>
+
+                        <a asp-controller="RescheduleRequests"
+                        asp-action="Index"
+                        class="sidebar-link @(currentController == "RescheduleRequests" ? "active" : "")">
+                            Reschedules
+                        </a>
+                    }
+
+                    @if (User.IsInRole("Admin"))
+                    {
+                        <a asp-controller="Bookings"
+                        asp-action="Index"
+                        class="sidebar-link @(currentController == "Bookings" && currentAction == "Index" ? "active" : "")">
+                            Bookings
+                        </a>
+                        <a asp-controller="UserManagement"
+                        asp-action="Index"
+                        class="sidebar-link @(currentController == "UserManagement" ? "active" : "")">
+                            User Management
+                        </a>
+                        <a asp-controller="Calendar"
+                        asp-action="Index"
+                        class="sidebar-link @(currentController == "Calendar" ? "active" : "")">
+                            Calendar
+                        </a>
+
+                        <a asp-controller="RescheduleRequests"
+                        asp-action="Index"
+                        class="sidebar-link @(currentController == "RescheduleRequests" ? "active" : "")">
+                            Reschedules
+                        </a>
+
+                        <a asp-controller="Services"
+                        asp-action="Index"
+                        class="sidebar-link @(currentController == "Services" ? "active" : "")">
+                            Packages
+                        </a>
+                    }
+                }
+            </nav>
             </div>
         </aside>
 
@@ -143,11 +171,25 @@
                         {
                             userRole = "Staff";
                         }
+                        else if (User.IsInRole("Owner"))
+                        {
+                             userRole = "Owner";
+                        }
                     }
 
                     <div class="topbar-user-dropdown">
                         <div class="topbar-user-text">
-                            <div class="topbar-user-name">@userRole User</div>
+                            @{
+                                if(User.IsInRole("Owner"))
+                                {
+                                    <div class="topbar-user-name">@userRole</div>
+                                }
+                                else
+                                {
+                                    <div class="topbar-user-name">@userRole User</div>
+                                }
+                            }
+
                             <div class="topbar-user-email">@User.Identity?.Name</div>
                         </div>
 

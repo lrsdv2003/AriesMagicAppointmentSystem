@@ -1,0 +1,105 @@
+@model AriesMagicAppointmentSystem.ViewModels.RoleDashboardViewModel
+
+@{
+    ViewData["Title"] = "Dashboard";
+    Layout = "_DashboardLayout";
+}
+
+<div class="role-dashboard-hero">
+    <div>
+        <span class="role-dashboard-eyebrow">
+            Operations center
+        </span>
+
+        <h2>Welcome back, Admin</h2>
+
+        <p>
+            Manage initial booking requests, packages,
+            users, and calendar settings.
+        </p>
+    </div>
+
+    <a asp-controller="Bookings"
+       asp-action="Index"
+       class="btn btn-primary">
+
+        <i class="bi bi-journal-check me-1"></i>
+        Manage bookings
+    </a>
+</div>
+
+<div class="dashboard-stat-grid">
+
+    <a asp-controller="Bookings"
+       asp-action="Index"
+       class="dashboard-stat-card stat-warning">
+
+        <span class="dashboard-stat-icon">
+            <i class="bi bi-hourglass-split"></i>
+        </span>
+
+        <span class="dashboard-stat-label">
+            Pending bookings
+        </span>
+
+        <strong>@Model.PendingBookings</strong>
+
+        <small>For initial review</small>
+    </a>
+
+    <a asp-controller="UserManagement"
+       asp-action="Index"
+       class="dashboard-stat-card stat-info">
+
+        <span class="dashboard-stat-icon">
+            <i class="bi bi-people"></i>
+        </span>
+
+        <span class="dashboard-stat-label">
+            Active clients
+        </span>
+
+        <strong>@Model.ActiveClients</strong>
+
+        <small>@Model.ActiveStaff active staff</small>
+    </a>
+
+    <a asp-controller="Service"
+       asp-action="Index"
+       class="dashboard-stat-card stat-success">
+
+        <span class="dashboard-stat-icon">
+            <i class="bi bi-box-seam"></i>
+        </span>
+
+        <span class="dashboard-stat-label">
+            Active packages
+        </span>
+
+        <strong>@Model.ActivePackages</strong>
+
+        <small>@Model.ArchivedPackages archived</small>
+    </a>
+
+    <a asp-controller="Calendar"
+       asp-action="Manage"
+       class="dashboard-stat-card stat-danger">
+
+        <span class="dashboard-stat-icon">
+            <i class="bi bi-calendar-x"></i>
+        </span>
+
+        <span class="dashboard-stat-label">
+            Upcoming blocked dates
+        </span>
+
+        <strong>@Model.BlockedDates</strong>
+
+        <small>Calendar restrictions</small>
+    </a>
+</div>
+
+<div class="dashboard-two-column">
+    <partial name="_RecentBookings" model="Model" />
+    <partial name="_UpcomingEvents" model="Model" />
+</div>

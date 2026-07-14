@@ -202,7 +202,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             return View(payments);
         }
 
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin,Owner")]
         public async Task<IActionResult> PendingVerification()
         {
             var pendingPayments = await _context.Payments
@@ -217,7 +217,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             return View(pendingPayments);
         }
 
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin,Owner")]
         public async Task<IActionResult> Verify(int? id)
         {
             if (id == null) return NotFound();
@@ -235,7 +235,7 @@ namespace AriesMagicAppointmentSystem.Controllers
         }
 
         [HttpPost, ActionName("Verify")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin,Owner")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> VerifyConfirmed(int id)
         {
@@ -317,7 +317,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             return RedirectToAction(nameof(PendingVerification));
         }
 
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin,Owner")]
         public async Task<IActionResult> Reject(int? id)
         {
             if (id == null) return NotFound();
@@ -335,7 +335,7 @@ namespace AriesMagicAppointmentSystem.Controllers
         }
 
         [HttpPost, ActionName("Reject")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin,Owner")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RejectConfirmed(int id, string? rejectionReason)
         {
@@ -529,7 +529,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             return View(requests);
         }
 
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin,Owner")]
         public async Task<IActionResult> RefundRequests()
         {
             var requests = await _context.RefundRequests
@@ -544,7 +544,7 @@ namespace AriesMagicAppointmentSystem.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin,Owner")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ApproveRefund(int id, string? adminRemarks)
         {
@@ -574,7 +574,7 @@ namespace AriesMagicAppointmentSystem.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin,Owner")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> MarkAsRefunded(int id, string? adminRemarks)
         {
@@ -604,7 +604,7 @@ namespace AriesMagicAppointmentSystem.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin,Owe")]  
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RejectRefund(int id, string? adminRemarks)
         {
