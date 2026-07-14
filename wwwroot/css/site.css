@@ -3876,7 +3876,13 @@ h1, h2, h3, h4, h5 {
   color: #166534;
 }
 .reschedule-table-wrap {
+  width: 100%;
   overflow-x: auto;
+}
+
+.reschedule-management-table {
+  width: 100%;
+  margin-bottom: 0;
 }
 
 .reschedule-management-table th {
@@ -3886,13 +3892,6 @@ h1, h2, h3, h4, h5 {
 
 .reschedule-management-table td {
   vertical-align: middle;
-}
-
-.reschedule-action-group {
-  display: inline-flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 0.5rem;
 }
 
 @media (max-width: 991px) {

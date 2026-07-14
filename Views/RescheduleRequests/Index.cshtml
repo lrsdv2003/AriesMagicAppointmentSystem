@@ -95,22 +95,35 @@
                         <td>
                             <span class="status-badge @statusClass">@item.Status</span>
                         </td>
-                        <td class="text-end">
-                            <div class="reschedule-action-group">
-                                @if (item.Status == AriesMagicAppointmentSystem.Models.RescheduleRequestStatus.Pending)
-                                {
-                                    @if (User.IsInRole("Owner"))
+                        @if (User.IsInRole("Owner"))
+                        {
+                            <td class="text-end">
+                                <div class="reschedule-action-group">
+                                    @if (item.Status == AriesMagicAppointmentSystem.Models.RescheduleRequestStatus.Pending)
                                     {
-                                    <a asp-action="Approve" asp-route-id="@item.Id" class="btn btn-sm btn-success">Approve</a>
-                                    <a asp-action="Reject" asp-route-id="@item.Id" class="btn btn-sm btn-danger">Reject</a>
+                                        <a asp-action="Approve"
+                                        asp-route-id="@item.Id"
+                                        class="btn btn-sm btn-success">
+                                            Approve
+                                        </a>
+
+                                        <a asp-action="Reject"
+                                        asp-route-id="@item.Id"
+                                        class="btn btn-sm btn-danger">
+                                            Reject
+                                        </a>
                                     }
-                                }
-                                else
-                                {
-                                    <button type="button" class="btn btn-sm btn-outline-secondary" disabled>No Action Needed</button>
-                                }
-                            </div>
-                        </td>
+                                    else
+                                    {
+                                        <button type="button"
+                                                class="btn btn-sm btn-outline-secondary"
+                                                disabled>
+                                            No Action Needed
+                                        </button>
+                                    }
+                                </div>
+                            </td>
+                        }
                     </tr>
 }
                 </tbody>
