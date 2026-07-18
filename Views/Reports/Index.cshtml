@@ -2,214 +2,309 @@
 
 @{
     Layout = "_DashboardLayout";
-    ViewData["Title"] = "Reports & Analytics";
+    ViewData["Title"] = "Reports";
 }
 
 <div class="page-header">
-    
+    <div>
+        <h1>Reports Center</h1>
+        <p class="page-subtitle">
+            Generate and review detailed booking, revenue,
+            payment, and appointment reports.
+        </p>
+    </div>
+
+    <div class="d-flex gap-2 flex-wrap">
+        <a asp-action="ExportCsv"
+           asp-route-startDate="@Model.StartDate?.ToString("yyyy-MM-dd")"
+           asp-route-endDate="@Model.EndDate?.ToString("yyyy-MM-dd")"
+           class="btn btn-success">
+            <i class="bi bi-file-earmark-spreadsheet me-1"></i>
+            Export CSV
+        </a>
+
+        <button type="button"
+                class="btn btn-outline-secondary"
+                onclick="window.print()">
+            <i class="bi bi-printer me-1"></i>
+            Print / Save PDF
+        </button>
+    </div>
+</div>
+
+@if (!ViewData.ModelState.IsValid)
+{
+    <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+}
+
+<div class="dashboard-panel mb-4">
+    <div class="mb-3">
+        <h3 class="mb-1">Report Filters</h3>
+        <p class="page-subtitle mb-0">
+            Select an event date range to filter all report information.
+        </p>
+    </div>
+
+    <form asp-action="Index"
+          method="get"
+          class="row g-3 align-items-end">
+        <div class="col-md-4">
+            <label for="startDate" class="form-label">Start Date</label>
+            <input type="date"
+                   id="startDate"
+                   name="startDate"
+                   value="@Model.StartDate?.ToString("yyyy-MM-dd")"
+                   class="form-control" />
+        </div>
+
+        <div class="col-md-4">
+            <label for="endDate" class="form-label">End Date</label>
+            <input type="date"
+                   id="endDate"
+                   name="endDate"
+                   value="@Model.EndDate?.ToString("yyyy-MM-dd")"
+                   class="form-control" />
+        </div>
+
+        <div class="col-md-4">
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-funnel me-1"></i>
+                Generate Report
+            </button>
+
+            <a asp-action="Index" class="btn btn-outline-secondary">
+                Clear
+            </a>
+        </div>
+    </form>
 </div>
 
 <div class="dashboard-stats">
     <div class="stat-card">
         <div class="stat-label">Total Bookings</div>
         <div class="stat-value">@Model.TotalBookings</div>
-        <div class="stat-subtext">All booking records in the system.</div>
+        <div class="stat-subtext">Booking records within the selected period.</div>
     </div>
+
     <div class="stat-card">
         <div class="stat-label">Confirmed</div>
         <div class="stat-value">@Model.ConfirmedBookings</div>
-        <div class="stat-subtext">Bookings fully approved and confirmed.</div>
+        <div class="stat-subtext">Confirmed upcoming appointments.</div>
     </div>
+
     <div class="stat-card">
-        <div class="stat-label">Expired</div>
-        <div class="stat-value">@Model.ExpiredBookings</div>
-        <div class="stat-subtext">Bookings that are no longer valid.</div>
+        <div class="stat-label">Completed</div>
+        <div class="stat-value">@Model.CompletedBookings</div>
+        <div class="stat-subtext">Successfully completed events.</div>
     </div>
+
     <div class="stat-card">
-        <div class="stat-label">Cancelled</div>
+        <div class="stat-label">Cancelled / Declined</div>
         <div class="stat-value">@Model.CancelledBookings</div>
-        <div class="stat-subtext">Bookings declined or cancelled.</div>
+        <div class="stat-subtext">Cancelled or rejected booking records.</div>
     </div>
+
     <div class="stat-card">
-        <div class="stat-label">Total Revenue</div>
-        <div class="stat-value">₱@Model.TotalRevenue.ToString("N0")</div>
+        <div class="stat-label">Verified Revenue</div>
+        <div class="stat-value">₱@Model.TotalRevenue.ToString("N2")</div>
         <div class="stat-subtext">Revenue from verified payments only.</div>
     </div>
 </div>
 
-<div class="dashboard-panel mt-4">
-    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
-        <div>
-            <h3 class="mb-1">Event History</h3>
-            <p class="page-subtitle mb-0">Completed events are archived automatically and tracked separately from active bookings.</p>
+<div class="row g-4 mt-1 mb-4">
+    <div class="col-lg-6">
+        <div class="dashboard-panel h-100">
+            <h3>Booking Report</h3>
+            <p class="page-subtitle">Booking activity during the last six months.</p>
+            <canvas id="monthlyBookingsChart" height="150"></canvas>
         </div>
-        <a asp-controller="History" asp-action="Index" class="btn btn-primary btn-sm">View Full History</a>
     </div>
 
-    <div class="dashboard-stats mb-0">
-        <div class="stat-card">
-            <div class="stat-label">Upcoming Events</div>
-            <div class="stat-value">@Model.UpcomingEvents</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-label">Today's Events</div>
-            <div class="stat-value">@Model.TodaysEvents</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-label">History Count</div>
-            <div class="stat-value">@Model.HistoryCount</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-label">Completed This Month</div>
-            <div class="stat-value">@Model.CompletedThisMonth</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-label">Completed This Year</div>
-            <div class="stat-value">@Model.CompletedThisYear</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-label">Lifetime Events</div>
-            <div class="stat-value">@Model.LifetimeEvents</div>
+    <div class="col-lg-6">
+        <div class="dashboard-panel h-100">
+            <h3>Revenue Report</h3>
+            <p class="page-subtitle">Verified payment revenue during the last six months.</p>
+            <canvas id="revenueTrendChart" height="150"></canvas>
         </div>
     </div>
 </div>
 
 <div class="row g-4 mb-4">
     <div class="col-lg-6">
-        <div class="dashboard-panel">
-            <h3>Monthly Bookings</h3>
-            <p class="page-subtitle">Last 6 months booking trend</p>
-            <canvas id="monthlyBookingsChart" height="140"></canvas>
-        </div>
-    </div>
-    <div class="col-lg-6">
-        <div class="dashboard-panel">
-            <h3>Revenue Trend</h3>
-            <p class="page-subtitle">Last 6 months revenue performance</p>
-            <canvas id="revenueTrendChart" height="140"></canvas>
-        </div>
-    </div>
-</div>
-
-<div class="row g-4 mb-4">
-    <div class="col-lg-6">
-        <div class="dashboard-panel">
-            <h3>Payment Status Distribution</h3>
-            <p class="page-subtitle">Current payment status breakdown</p>
+        <div class="dashboard-panel h-100">
+            <h3>Payment Status Report</h3>
+            <p class="page-subtitle">Distribution of payment verification statuses.</p>
             <canvas id="paymentStatusChart" height="220"></canvas>
         </div>
     </div>
-    <div class="col-lg-6">
-        <div class="dashboard-panel">
-            <h3>Payment Summary</h3>
-            <p class="page-subtitle">Detailed payment breakdown</p>
 
-            <div class="d-flex justify-content-between py-3 border-bottom">
-                <span>Pending</span>
-                <strong>@Model.PendingCount</strong>
+    <div class="col-lg-6">
+        <div class="dashboard-panel h-100">
+            <h3>Package Trends</h3>
+            <p class="page-subtitle">Most frequently selected service packages.</p>
+
+            @if (Model.PackageLabels.Any())
+            {
+                <canvas id="packageTrendChart" height="220"></canvas>
+            }
+            else
+            {
+                <div class="empty-state">
+                    <p>No package trend data is available for the selected period.</p>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<div class="dashboard-panel mb-4">
+    <h3>Performance Metrics</h3>
+    <p class="page-subtitle">Key performance indicators for the selected period.</p>
+
+    <div class="dashboard-stats mt-3">
+        <div class="stat-card text-center">
+            <div class="stat-value">@Model.ConfirmationRate.ToString("N1")%</div>
+            <div class="stat-subtext">Successful Booking Rate</div>
+        </div>
+
+        <div class="stat-card text-center">
+            <div class="stat-value">₱@Model.AverageBookingValue.ToString("N2")</div>
+            <div class="stat-subtext">Average Booking Value</div>
+        </div>
+
+        <div class="stat-card text-center">
+            <div class="stat-value">
+                @Model.AveragePaymentProcessingDays.ToString("N1") days
             </div>
-            <div class="d-flex justify-content-between py-3 border-bottom">
-                <span>Verified</span>
-                <strong>@Model.VerifiedCount</strong>
-            </div>
-            <div class="d-flex justify-content-between py-3 border-bottom">
-                <span>Rejected</span>
-                <strong>@Model.RejectedCount</strong>
-            </div>
-            <div class="d-flex justify-content-between pt-4">
-                <span>Total Bookings</span>
-                <strong>@Model.TotalBookings</strong>
-            </div>
+            <div class="stat-subtext">Average Payment Processing</div>
+        </div>
+
+        <div class="stat-card text-center">
+            <div class="stat-value">@Model.CustomerRetentionRate.ToString("N1")%</div>
+            <div class="stat-subtext">Repeat Customer Rate</div>
         </div>
     </div>
 </div>
 
 <div class="dashboard-panel">
-    <h3>Performance Metrics</h3>
-    <p class="page-subtitle">Key performance indicators this month</p>
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+        <div>
+            <h3 class="mb-1">Booking Report Records</h3>
+            <p class="page-subtitle mb-0">
+                Latest 50 booking records within the selected report period.
+            </p>
+        </div>
 
-    <div class="dashboard-stats mt-3">
-        <div class="stat-card text-center">
-            <div class="stat-value">@Model.ConfirmationRate.ToString("N1")%</div>
-            <div class="stat-subtext">Booking Confirmation Rate</div>
-        </div>
-        <div class="stat-card text-center">
-            <div class="stat-value">₱@Model.AverageBookingValue.ToString("N0")</div>
-            <div class="stat-subtext">Average Booking Value</div>
-        </div>
-        <div class="stat-card text-center">
-            <div class="stat-value">@Model.AveragePaymentProcessingDays.ToString("N1") days</div>
-            <div class="stat-subtext">Avg Payment Processing</div>
-        </div>
-        <div class="stat-card text-center">
-            <div class="stat-value">@Model.CustomerRetentionRate.ToString("N1")%</div>
-            <div class="stat-subtext">Customer Retention Rate</div>
-        </div>
+        <span class="badge bg-secondary">
+            @Model.BookingRecords.Count record(s)
+        </span>
     </div>
+
+    @if (!Model.BookingRecords.Any())
+    {
+        <div class="empty-state">
+            <h3>No report records</h3>
+            <p>No bookings were found for the selected date range.</p>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead>
+                    <tr>
+                        <th>Booking ID</th>
+                        <th>Client</th>
+                        <th>Package</th>
+                        <th>Event</th>
+                        <th>Date</th>
+                        <th>Venue</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var booking in Model.BookingRecords)
+                    {
+                        <tr>
+                            <td>#@booking.Id</td>
+                            <td>@(booking.Client?.FullName ?? "Unknown Client")</td>
+                            <td>@booking.PackageName</td>
+                            <td>@booking.EventType</td>
+                            <td>@booking.EventDate.ToString("MMM dd, yyyy")</td>
+                            <td>@booking.PartyVenue</td>
+                            <td>₱@booking.FinalPrice.ToString("N2")</td>
+                            <td><span class="badge bg-secondary">@booking.Status</span></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
 </div>
 
 @section Scripts {
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
     <script>
         const monthlyLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.MonthlyLabels));
         const monthlyBookingCounts = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.MonthlyBookingCounts));
         const monthlyRevenue = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.MonthlyRevenue));
-
-        const paymentCounts = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(new[] {
+        const packageLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.PackageLabels));
+        const packageBookingCounts = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.PackageBookingCounts));
+        const paymentCounts = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(new[]
+        {
             Model.PendingCount,
             Model.VerifiedCount,
             Model.RejectedCount
         }));
 
-        new Chart(document.getElementById('monthlyBookingsChart'), {
-            type: 'bar',
+        new Chart(document.getElementById("monthlyBookingsChart"), {
+            type: "bar",
             data: {
                 labels: monthlyLabels,
-                datasets: [{
-                    label: 'Bookings',
-                    data: monthlyBookingCounts,
-                    borderRadius: 10
-                }]
+                datasets: [{ label: "Bookings", data: monthlyBookingCounts, borderRadius: 8 }]
             },
             options: {
                 responsive: true,
-                plugins: {
-                    legend: { display: false }
-                }
+                plugins: { legend: { display: false } }
             }
         });
 
-        new Chart(document.getElementById('revenueTrendChart'), {
-            type: 'line',
+        new Chart(document.getElementById("revenueTrendChart"), {
+            type: "line",
             data: {
                 labels: monthlyLabels,
-                datasets: [{
-                    label: 'Revenue',
-                    data: monthlyRevenue,
-                    tension: 0.35,
-                    fill: false
-                }]
+                datasets: [{ label: "Verified Revenue", data: monthlyRevenue, tension: 0.35, fill: false }]
             },
             options: {
                 responsive: true,
-                plugins: {
-                    legend: { display: false }
-                }
+                plugins: { legend: { display: false } }
             }
         });
 
-        new Chart(document.getElementById('paymentStatusChart'), {
-            type: 'pie',
+        new Chart(document.getElementById("paymentStatusChart"), {
+            type: "doughnut",
             data: {
-                labels: ['Pending', 'Verified', 'Rejected'],
-                datasets: [{
-                    data: paymentCounts
-                }]
+                labels: ["Pending", "Verified", "Rejected"],
+                datasets: [{ data: paymentCounts }]
             },
-            options: {
-                responsive: true
-            }
+            options: { responsive: true }
         });
+
+        const packageTrendCanvas = document.getElementById("packageTrendChart");
+        if (packageTrendCanvas) {
+            new Chart(packageTrendCanvas, {
+                type: "bar",
+                data: {
+                    labels: packageLabels,
+                    datasets: [{ label: "Bookings", data: packageBookingCounts, borderRadius: 8 }]
+                },
+                options: {
+                    indexAxis: "y",
+                    responsive: true,
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
     </script>
 }

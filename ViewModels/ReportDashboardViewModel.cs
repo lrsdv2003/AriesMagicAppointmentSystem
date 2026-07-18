@@ -1,15 +1,23 @@
-using System.Collections.Generic;
+using AriesMagicAppointmentSystem.Models;
 
 namespace AriesMagicAppointmentSystem.ViewModels
 {
     public class ReportDashboardViewModel
     {
+        public DateTime? StartDate { get; set; }
+        public DateTime? EndDate { get; set; }
+
         public int TotalBookings { get; set; }
         public int ConfirmedBookings { get; set; }
-        public int ExpiredBookings { get; set; }
+        public int CompletedBookings { get; set; }
         public int CancelledBookings { get; set; }
+        public int ExpiredBookings { get; set; }
 
         public decimal TotalRevenue { get; set; }
+
+        public int PendingCount { get; set; }
+        public int VerifiedCount { get; set; }
+        public int RejectedCount { get; set; }
 
         public double ConfirmationRate { get; set; }
         public decimal AverageBookingValue { get; set; }
@@ -20,17 +28,9 @@ namespace AriesMagicAppointmentSystem.ViewModels
         public List<int> MonthlyBookingCounts { get; set; } = new();
         public List<decimal> MonthlyRevenue { get; set; } = new();
 
-        public int PendingCount { get; set; }
-        public int VerifiedCount { get; set; }
-        public int RejectedCount { get; set; }
+        public List<string> PackageLabels { get; set; } = new();
+        public List<int> PackageBookingCounts { get; set; } = new();
 
-        // History module integration - completed bookings are counted here instead of inside
-        // the active booking totals above.
-        public int UpcomingEvents { get; set; }
-        public int TodaysEvents { get; set; }
-        public int HistoryCount { get; set; }
-        public int CompletedThisMonth { get; set; }
-        public int CompletedThisYear { get; set; }
-        public int LifetimeEvents { get; set; }
+        public List<Booking> BookingRecords { get; set; } = new();
     }
 }

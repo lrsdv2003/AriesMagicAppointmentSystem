@@ -1,10 +1,10 @@
 using AriesMagicAppointmentSystem.Data;
 using AriesMagicAppointmentSystem.Models;
-using AriesMagicAppointmentSystem.Services;
 using AriesMagicAppointmentSystem.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Text;
 
 namespace AriesMagicAppointmentSystem.Controllers
 {
@@ -12,103 +12,233 @@ namespace AriesMagicAppointmentSystem.Controllers
     public class ReportsController : Controller
     {
         private readonly ApplicationDbContext _context;
-        private readonly IHistoryService _historyService;
 
-        public ReportsController(ApplicationDbContext context, IHistoryService historyService)
+        public ReportsController(ApplicationDbContext context)
         {
             _context = context;
-            _historyService = historyService;
         }
 
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(DateTime? startDate, DateTime? endDate)
         {
-            var historySummary = await _historyService.GetSummaryAsync();
+            if (startDate.HasValue && endDate.HasValue &&
+                startDate.Value.Date > endDate.Value.Date)
+            {
+                ModelState.AddModelError(
+                    string.Empty,
+                    "The start date cannot be later than the end date.");
+            }
 
-            var bookings = await _context.Bookings
+            var bookingQuery = _context.Bookings
                 .Include(b => b.Client)
                 .Include(b => b.Service)
-                .ToListAsync();
+                .AsNoTracking()
+                .AsQueryable();
 
-            var payments = await _context.Payments
+            var paymentQuery = _context.Payments
                 .Include(p => p.Booking)
+                .AsNoTracking()
+                .AsQueryable();
+
+            if (startDate.HasValue)
+            {
+                var start = startDate.Value.Date;
+                bookingQuery = bookingQuery.Where(b => b.EventDate >= start);
+                paymentQuery = paymentQuery.Where(p => (p.VerifiedAt ?? p.UploadedAt) >= start);
+            }
+
+            if (endDate.HasValue)
+            {
+                var endExclusive = endDate.Value.Date.AddDays(1);
+                bookingQuery = bookingQuery.Where(b => b.EventDate < endExclusive);
+                paymentQuery = paymentQuery.Where(p => (p.VerifiedAt ?? p.UploadedAt) < endExclusive);
+            }
+
+            var bookings = await bookingQuery
+                .OrderByDescending(b => b.EventDate)
+                .ThenByDescending(b => b.StartTime)
                 .ToListAsync();
 
-            var now = DateTime.Now;
-            var sixMonths = Enumerable.Range(0, 6)
-                .Select(i => new DateTime(now.Year, now.Month, 1).AddMonths(-5 + i))
+            var payments = await paymentQuery.ToListAsync();
+            var verifiedPayments = payments
+                .Where(p => p.Status == PaymentStatus.Verified)
                 .ToList();
 
             var model = new ReportDashboardViewModel
             {
+                StartDate = startDate,
+                EndDate = endDate,
                 TotalBookings = bookings.Count,
                 ConfirmedBookings = bookings.Count(b => b.Status == BookingStatus.Confirmed),
+                CompletedBookings = bookings.Count(b => b.Status == BookingStatus.Completed),
+                CancelledBookings = bookings.Count(b =>
+                    b.Status == BookingStatus.Cancelled ||
+                    b.Status == BookingStatus.Declined),
                 ExpiredBookings = bookings.Count(b => b.Status == BookingStatus.Expired),
-                CancelledBookings = bookings.Count(b => b.Status == BookingStatus.Declined),
-
-                TotalRevenue = payments
-                    .Where(p => p.Status == PaymentStatus.Verified)
-                    .Sum(p => p.Amount),
-
+                TotalRevenue = verifiedPayments.Sum(p => p.Amount),
                 PendingCount = payments.Count(p => p.Status == PaymentStatus.Pending),
-                VerifiedCount = payments.Count(p => p.Status == PaymentStatus.Verified),
+                VerifiedCount = verifiedPayments.Count,
                 RejectedCount = payments.Count(p => p.Status == PaymentStatus.Rejected),
-
-                UpcomingEvents = historySummary.UpcomingEvents,
-                TodaysEvents = historySummary.TodaysEvents,
-                HistoryCount = historySummary.HistoryCount,
-                CompletedThisMonth = historySummary.CompletedThisMonth,
-                CompletedThisYear = historySummary.CompletedThisYear,
-                LifetimeEvents = historySummary.LifetimeEvents
+                BookingRecords = bookings.Take(50).ToList()
             };
+
+            var successfulBookingCount =
+                model.ConfirmedBookings + model.CompletedBookings;
 
             model.ConfirmationRate = model.TotalBookings == 0
                 ? 0
-                : Math.Round((double)model.ConfirmedBookings / model.TotalBookings * 100, 1);
+                : Math.Round(
+                    (double)successfulBookingCount / model.TotalBookings * 100,
+                    1);
 
-            model.AverageBookingValue = model.ConfirmedBookings == 0
+            model.AverageBookingValue = successfulBookingCount == 0
                 ? 0
-                : Math.Round(model.TotalRevenue / Math.Max(model.ConfirmedBookings, 1), 2);
+                : Math.Round(model.TotalRevenue / successfulBookingCount, 2);
 
-            var verifiedPayments = payments
+            var paymentsWithProcessingTime = verifiedPayments
                 .Where(p => p.VerifiedAt.HasValue)
                 .ToList();
 
-            model.AveragePaymentProcessingDays = verifiedPayments.Count == 0
+            model.AveragePaymentProcessingDays = paymentsWithProcessingTime.Count == 0
                 ? 0
                 : Math.Round(
-                    verifiedPayments.Average(p => (p.VerifiedAt!.Value - p.UploadedAt).TotalDays),
-                    1
-                );
-
-            var repeatClients = bookings
-                .GroupBy(b => b.ClientId)
-                .Count(g => g.Count() > 1);
+                    paymentsWithProcessingTime.Average(p =>
+                        (p.VerifiedAt!.Value - p.UploadedAt).TotalDays),
+                    1);
 
             var uniqueClients = bookings
                 .Select(b => b.ClientId)
                 .Distinct()
                 .Count();
 
+            var repeatClients = bookings
+                .GroupBy(b => b.ClientId)
+                .Count(group => group.Count() > 1);
+
             model.CustomerRetentionRate = uniqueClients == 0
                 ? 0
                 : Math.Round((double)repeatClients / uniqueClients * 100, 1);
 
-            foreach (var monthStart in sixMonths)
+            BuildMonthlyReportData(model, bookings, verifiedPayments, endDate);
+            BuildPackageTrendData(model, bookings);
+
+            return View(model);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> ExportCsv(DateTime? startDate, DateTime? endDate)
+        {
+            var query = _context.Bookings
+                .Include(b => b.Client)
+                .Include(b => b.Service)
+                .AsNoTracking()
+                .AsQueryable();
+
+            if (startDate.HasValue)
+            {
+                var start = startDate.Value.Date;
+                query = query.Where(b => b.EventDate >= start);
+            }
+
+            if (endDate.HasValue)
+            {
+                var endExclusive = endDate.Value.Date.AddDays(1);
+                query = query.Where(b => b.EventDate < endExclusive);
+            }
+
+            var bookings = await query
+                .OrderByDescending(b => b.EventDate)
+                .ThenByDescending(b => b.StartTime)
+                .ToListAsync();
+
+            var csv = new StringBuilder();
+            csv.AppendLine(
+                "Booking ID,Client,Package,Event Type,Event Date,Start Time,Venue,Final Price,Status");
+
+            foreach (var booking in bookings)
+            {
+                csv.AppendLine(string.Join(",",
+                    EscapeCsv(booking.Id.ToString()),
+                    EscapeCsv(booking.Client?.FullName ?? "Unknown"),
+                    EscapeCsv(booking.PackageName),
+                    EscapeCsv(booking.EventType),
+                    EscapeCsv(booking.EventDate.ToString("yyyy-MM-dd")),
+                    EscapeCsv(booking.StartTime.ToString("hh:mm tt")),
+                    EscapeCsv(booking.PartyVenue),
+                    EscapeCsv(booking.FinalPrice.ToString("0.00")),
+                    EscapeCsv(booking.Status)));
+            }
+
+            var filename =
+                $"AriesMagic-Booking-Report-{DateTime.Now:yyyyMMdd-HHmmss}.csv";
+
+            return File(
+                Encoding.UTF8.GetBytes(csv.ToString()),
+                "text/csv",
+                filename);
+        }
+
+        private static void BuildMonthlyReportData(
+            ReportDashboardViewModel model,
+            List<Booking> bookings,
+            List<Payment> verifiedPayments,
+            DateTime? selectedEndDate)
+        {
+            var referenceDate = selectedEndDate?.Date ?? DateTime.Today;
+            var lastSixMonths = Enumerable.Range(0, 6)
+                .Select(index =>
+                    new DateTime(referenceDate.Year, referenceDate.Month, 1)
+                        .AddMonths(-5 + index))
+                .ToList();
+
+            foreach (var monthStart in lastSixMonths)
             {
                 var monthEnd = monthStart.AddMonths(1);
 
-                model.MonthlyLabels.Add(monthStart.ToString("MMM"));
-
+                model.MonthlyLabels.Add(monthStart.ToString("MMM yyyy"));
                 model.MonthlyBookingCounts.Add(bookings.Count(b =>
                     b.EventDate >= monthStart && b.EventDate < monthEnd));
 
-                model.MonthlyRevenue.Add(payments
-                    .Where(p => p.UploadedAt >= monthStart && p.UploadedAt < monthEnd)
-                    .Where(p => p.Status == PaymentStatus.Verified)
+                model.MonthlyRevenue.Add(verifiedPayments
+                    .Where(p =>
+                        (p.VerifiedAt ?? p.UploadedAt) >= monthStart &&
+                        (p.VerifiedAt ?? p.UploadedAt) < monthEnd)
                     .Sum(p => p.Amount));
             }
+        }
 
-            return View(model);
+        private static void BuildPackageTrendData(
+            ReportDashboardViewModel model,
+            List<Booking> bookings)
+        {
+            var packageTrends = bookings
+                .Where(b => !string.IsNullOrWhiteSpace(b.PackageName))
+                .GroupBy(b => b.PackageName)
+                .Select(group => new
+                {
+                    PackageName = group.Key,
+                    BookingCount = group.Count()
+                })
+                .OrderByDescending(item => item.BookingCount)
+                .Take(8)
+                .ToList();
+
+            model.PackageLabels = packageTrends
+                .Select(item => item.PackageName)
+                .ToList();
+
+            model.PackageBookingCounts = packageTrends
+                .Select(item => item.BookingCount)
+                .ToList();
+        }
+
+        private static string EscapeCsv(string value)
+        {
+            if (value.Contains(',') || value.Contains('"') || value.Contains('\n'))
+            {
+                return $"\"{value.Replace("\"", "\"\"")}\"";
+            }
+
+            return value;
         }
     }
 }

@@ -30,13 +30,13 @@ namespace AriesMagicAppointmentSystem.Controllers
             _historyService = historyService;
         }
 
-        [Authorize(Roles = "Staff,Admin")]
+        [Authorize(Roles = "Staff,Admin,Owner")]
         public IActionResult Pending()
         {
             return RedirectToAction(nameof(Index), new { bookingStatus = "Pending" });
         }
 
-        [Authorize(Roles = "Staff,Admin")]
+        [Authorize(Roles = "Staff,Admin,Owner")]
         public async Task<IActionResult> Index(string? search, string? bookingStatus, string? paymentStatus)
         {
             // Lazily flip any bookings whose event has already ended into Completed/archived
@@ -534,7 +534,7 @@ namespace AriesMagicAppointmentSystem.Controllers
 
             return View(bookings);
         }
-        [Authorize(Roles = "Staff,Admin")]
+        [Authorize(Roles = "Staff,Admin,Owner")]
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null) return NotFound();
@@ -551,7 +551,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             return View(booking);
         }
 
-        [Authorize(Roles = "Staff,Admin")]
+        [Authorize(Roles = "Staff,Admin,Owner")]
         public async Task<IActionResult> Approve(int? id)
         {
             if (id == null) return NotFound();
@@ -597,7 +597,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        [Authorize(Roles = "Staff,Admin")]
+        [Authorize(Roles = "Staff,Admin,Owner")]
         public async Task<IActionResult> Decline(int? id)
         {
             if (id == null) return NotFound();
@@ -645,7 +645,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             return RedirectToAction(nameof(MyBookings));
         }
 
-        [Authorize(Roles = "Staff,Admin")]
+        [Authorize(Roles = "Staff,Admin,Owner")]
         public async Task<IActionResult> AddNote(int? id)
         {
             if (id == null) return NotFound();
@@ -661,7 +661,7 @@ namespace AriesMagicAppointmentSystem.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "Staff,Admin")]
+        [Authorize(Roles = "Staff,Admin,Owner")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> AddNote(int id, string? internalNotes)
         {
