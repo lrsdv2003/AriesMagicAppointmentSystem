@@ -1,8 +1,11 @@
 using AriesMagicAppointmentSystem.Models;
+using AriesMagicAppointmentSystem.Services;
 using AriesMagicAppointmentSystem.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
+using System.Security.Claims;
 
 namespace AriesMagicAppointmentSystem.Controllers
 {
@@ -10,10 +13,12 @@ namespace AriesMagicAppointmentSystem.Controllers
     public class UserManagementController : Controller
     {
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly ISystemActivityService _activityService;
 
-        public UserManagementController(UserManager<ApplicationUser> userManager)
+        public UserManagementController(UserManager<ApplicationUser> userManager, ISystemActivityService activityService)
         {
             _userManager = userManager;
+            _activityService = activityService;
         }
 
         public async Task<IActionResult> Index(string? search, string? status = "All")
@@ -96,6 +101,14 @@ namespace AriesMagicAppointmentSystem.Controllers
 
             await _userManager.AddToRoleAsync(user, "Staff");
 
+            await _activityService.LogAsync(
+                SystemActivityType.UserCreated,
+                $"Created staff account: {user.FullName} ({user.Email})",
+                User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "Unknown",
+                User.Identity?.Name ?? "Unknown",
+                user.Id,
+                "ApplicationUser");
+
             TempData["SuccessMessage"] = "Staff account created successfully.";
             return RedirectToAction(nameof(Index));
         }
@@ -130,6 +143,14 @@ namespace AriesMagicAppointmentSystem.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
+            await _activityService.LogAsync(
+                SystemActivityType.UserEnabled, // Reusing for edit
+                $"Updated staff account: {user.FullName} ({user.Email})",
+                User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "Unknown",
+                User.Identity?.Name ?? "Unknown",
+                user.Id,
+                "ApplicationUser");
+
             TempData["SuccessMessage"] = "Staff account updated successfully.";
             return RedirectToAction(nameof(Index));
         }
@@ -148,6 +169,14 @@ namespace AriesMagicAppointmentSystem.Controllers
             user.IsActive = false;
             await _userManager.UpdateAsync(user);
 
+            await _activityService.LogAsync(
+                SystemActivityType.UserDisabled,
+                $"Disabled staff account: {user.FullName} ({user.Email})",
+                User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "Unknown",
+                User.Identity?.Name ?? "Unknown",
+                user.Id,
+                "ApplicationUser");
+
             TempData["SuccessMessage"] = "Staff account disabled successfully.";
             return RedirectToAction(nameof(Index));
         }
@@ -165,6 +194,14 @@ namespace AriesMagicAppointmentSystem.Controllers
 
             user.IsActive = true;
             await _userManager.UpdateAsync(user);
+
+            await _activityService.LogAsync(
+                SystemActivityType.UserEnabled,
+                $"Activated staff account: {user.FullName} ({user.Email})",
+                User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "Unknown",
+                User.Identity?.Name ?? "Unknown",
+                user.Id,
+                "ApplicationUser");
 
             TempData["SuccessMessage"] = "Staff account activated successfully.";
             return RedirectToAction(nameof(Index));

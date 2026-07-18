@@ -43,7 +43,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             return View(model);
         }
 
-        [Authorize(Roles = "Owner,Admin")]
+        [Authorize(Roles = "Owner")]
         public async Task<IActionResult> Print(HistoryFilterViewModel filters)
         {
             if (!User.CanExportHistoryReports())
@@ -56,7 +56,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             return View(rows);
         }
 
-        [Authorize(Roles = "Owner,Admin")]
+        [Authorize(Roles = "Owner")]
         public async Task<IActionResult> ExportCsv(HistoryFilterViewModel filters)
         {
             if (!User.CanExportHistoryReports())
@@ -95,7 +95,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             return File(bytes, "text/csv", $"booking-history-{DateTime.Now:yyyyMMdd-HHmmss}.csv");
         }
 
-        [Authorize(Roles = "Owner,Admin")]
+        [Authorize(Roles = "Owner")]
         public async Task<IActionResult> ExportPdf(HistoryFilterViewModel filters)
         {
             if (!User.CanExportHistoryReports())

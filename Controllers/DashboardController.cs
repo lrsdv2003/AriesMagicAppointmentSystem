@@ -102,6 +102,15 @@ namespace AriesMagicAppointmentSystem.Controllers
                                b.Status == BookingStatus.Cancelled ||
                                b.Status == BookingStatus.Expired);
 
+            // Clear booking-related stats that are not relevant for Admin
+            model.TotalBookings = 0;
+            model.PendingBookings = 0;
+            model.ConfirmedBookings = 0;
+            model.CompletedBookings = 0;
+            model.UpcomingBookings = 0;
+            model.UpcomingEvents = new List<Booking>();
+            model.RecentBookings = new List<Booking>();
+
             return View(model);
         }
 

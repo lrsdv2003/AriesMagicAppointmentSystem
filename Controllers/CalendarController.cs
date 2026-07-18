@@ -13,19 +13,26 @@ namespace AriesMagicAppointmentSystem.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly IHistoryService _historyService;
+        private readonly ISystemActivityService _activityService;
 
-        public CalendarController(ApplicationDbContext context, IHistoryService historyService)
+        public CalendarController(ApplicationDbContext context, IHistoryService historyService, ISystemActivityService activityService)
         {
             _context = context;
             _historyService = historyService;
+            _activityService = activityService;
         }
 
         /// <summary>
-        /// showHistorical=true also plots completed/archived events on the calendar (read-only,
-        /// for context). Default is false so the operational calendar only shows active bookings.
+        /// For Admin: shows calendar administration tools (blocked dates, limits).
+        /// For Staff/Owner: shows operational calendar with bookings.
         /// </summary>
         public async Task<IActionResult> Index(bool showHistorical = false)
         {
+            if (User.IsInRole("Admin"))
+            {
+                return await AdminIndexAsync();
+            }
+
             // Keep the operational calendar honest: anything whose event time has passed moves
             // out of "Confirmed" (and off this calendar) automatically.
             await _historyService.ArchiveDueBookingsAsync();
@@ -97,6 +104,34 @@ namespace AriesMagicAppointmentSystem.Controllers
             return View(model);
         }
 
+        private async Task<IActionResult> AdminIndexAsync()
+        {
+            var settings = await _context.SystemSettings.FirstOrDefaultAsync();
+            if (settings == null)
+            {
+                settings = new SystemSetting { MaxBookingsPerDay = 3 };
+                _context.SystemSettings.Add(settings);
+                await _context.SaveChangesAsync();
+            }
+
+            var model = new CalendarIndexViewModel
+            {
+                Bookings = new List<Booking>(), // Admin doesn't see operational bookings
+                Manage = new CalendarManageViewModel
+                {
+                    MaxBookingsPerDay = settings.MaxBookingsPerDay,
+                    BlockedDates = await _context.BlockedDates
+                        .OrderByDescending(x => x.Date)
+                        .ToListAsync(),
+                    DateBookingLimits = await _context.DateBookingLimits
+                        .OrderByDescending(x => x.Date)
+                        .ToListAsync()
+                }
+            };
+
+            return View(model);
+        }
+
         [Authorize(Roles = "Staff,Admin,Owner")]
         [HttpGet]
         public async Task<IActionResult> GetReservationsByDate(DateTime date, bool showHistorical = false)
@@ -148,8 +183,18 @@ namespace AriesMagicAppointmentSystem.Controllers
                 _context.SystemSettings.Add(settings);
             }
 
+            var oldMax = settings.MaxBookingsPerDay;
             settings.MaxBookingsPerDay = model.MaxBookingsPerDay;
             await _context.SaveChangesAsync();
+
+            await _activityService.LogAsync(
+                SystemActivityType.SettingsChanged,
+                $"Updated default daily booking limit from {oldMax} to {model.MaxBookingsPerDay}",
+                User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "Unknown",
+                User.Identity?.Name ?? "Unknown",
+                "SystemSettings",
+                "SystemSettings",
+                new { oldMax, newMax = model.MaxBookingsPerDay });
 
             return Json(new { success = true, message = "Maximum daily bookings updated successfully." });
         }
@@ -180,13 +225,23 @@ namespace AriesMagicAppointmentSystem.Controllers
                 return Json(new { success = false, message = "That date is already blocked." });
             }
 
-            _context.BlockedDates.Add(new BlockedDate
+            var blockedDate = new BlockedDate
             {
                 Date = blockDate,
                 Reason = model.BlockReason
-            });
+            };
+            _context.BlockedDates.Add(blockedDate);
 
             await _context.SaveChangesAsync();
+
+            await _activityService.LogAsync(
+                SystemActivityType.CalendarModified,
+                $"Blocked date {blockDate:MMMM dd, yyyy} - {model.BlockReason}",
+                User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "Unknown",
+                User.Identity?.Name ?? "Unknown",
+                blockedDate.Id.ToString(),
+                "BlockedDate"
+            );
 
             return Json(new { success = true, message = "Date blocked successfully." });
         }
@@ -217,7 +272,8 @@ namespace AriesMagicAppointmentSystem.Controllers
             var existing = await _context.DateBookingLimits
                 .FirstOrDefaultAsync(x => x.Date.Date == limitDate.Date);
 
-            if (existing == null)
+            var isNew = existing == null;
+            if (isNew)
             {
                 _context.DateBookingLimits.Add(new DateBookingLimit
                 {
@@ -231,6 +287,18 @@ namespace AriesMagicAppointmentSystem.Controllers
             }
 
             await _context.SaveChangesAsync();
+
+            await _activityService.LogAsync(
+                SystemActivityType.CalendarModified,
+                isNew
+                    ? $"Set custom daily limit of {model.LimitMaxBookings} for {limitDate:MMMM dd, yyyy}"
+                    : $"Updated custom daily limit to {model.LimitMaxBookings} for {limitDate:MMMM dd, yyyy}",
+                User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "Unknown",
+                User.Identity?.Name ?? "Unknown",
+                (isNew ? 0 : existing.Id).ToString(),
+                "DateBookingLimit",
+                new { date = limitDate, maxBookings = model.LimitMaxBookings.Value, isNew }
+            );
 
             return Json(new { success = true, message = "Date-specific booking limit saved successfully." });
         }
@@ -246,8 +314,20 @@ namespace AriesMagicAppointmentSystem.Controllers
                 return Json(new { success = false, message = "Blocked date not found." });
             }
 
+            var reason = blocked.Reason;
+            var date = blocked.Date;
+
             _context.BlockedDates.Remove(blocked);
             await _context.SaveChangesAsync();
+
+            await _activityService.LogAsync(
+                SystemActivityType.CalendarModified,
+                $"Unblocked date {date:MMMM dd, yyyy} (was: {reason})",
+                User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "Unknown",
+                User.Identity?.Name ?? "Unknown",
+                id.ToString(),
+                "BlockedDate"
+            );
 
             return Json(new { success = true, message = "Blocked date removed successfully." });
         }
@@ -263,8 +343,20 @@ namespace AriesMagicAppointmentSystem.Controllers
                 return Json(new { success = false, message = "Date-specific booking limit not found." });
             }
 
+            var limitDate = item.Date;
+            var maxBookings = item.MaxBookings;
+
             _context.DateBookingLimits.Remove(item);
             await _context.SaveChangesAsync();
+
+            await _activityService.LogAsync(
+                SystemActivityType.CalendarModified,
+                $"Removed custom daily limit of {maxBookings} for {limitDate:MMMM dd, yyyy}",
+                User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "Unknown",
+                User.Identity?.Name ?? "Unknown",
+                id.ToString(),
+                "DateBookingLimit"
+            );
 
             return Json(new { success = true, message = "Date-specific booking limit removed successfully." });
         }

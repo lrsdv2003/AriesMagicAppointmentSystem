@@ -1,5 +1,6 @@
 using AriesMagicAppointmentSystem.Data;
 using AriesMagicAppointmentSystem.Models;
+using AriesMagicAppointmentSystem.Services;
 using AriesMagicAppointmentSystem.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -11,10 +12,12 @@ namespace AriesMagicAppointmentSystem.Controllers
     public class ServicesController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly ISystemActivityService _activityService;
 
-        public ServicesController(ApplicationDbContext context)
+        public ServicesController(ApplicationDbContext context, ISystemActivityService activityService)
         {
             _context = context;
+            _activityService = activityService;
         }
 
         // STAFF + ADMIN: view active packages
@@ -56,21 +59,6 @@ namespace AriesMagicAppointmentSystem.Controllers
             return View(archivedPackages);
         }
 
-        // STAFF + ADMIN: create package
-        [Authorize(Roles = "Admin")]
-        public IActionResult Create()
-        {
-            var model = new ServiceManageViewModel
-            {
-                Inclusions = new List<ServiceInclusionInputViewModel>
-                {
-                    new ServiceInclusionInputViewModel()
-                }
-            };
-
-            return View(model);
-        }
-
         [HttpPost]
         [Authorize(Roles = "Admin")]
         [ValidateAntiForgeryToken]
@@ -107,6 +95,16 @@ namespace AriesMagicAppointmentSystem.Controllers
 
             _context.Services.Add(service);
             await _context.SaveChangesAsync();
+
+            await _activityService.LogAsync(
+                SystemActivityType.ServiceCreated,
+                $"Created package '{service.Name}' with price ₱{service.Price:N2}",
+                User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "Unknown",
+                User.Identity?.Name ?? "Unknown",
+                service.Id.ToString(),
+                "Service",
+                new { service.Name, service.Price, service.DurationInHours }
+            );
 
             return RedirectToAction(nameof(Index));
         }
@@ -173,6 +171,9 @@ namespace AriesMagicAppointmentSystem.Controllers
 
             if (service == null) return NotFound();
 
+            var oldName = service.Name;
+            var oldPrice = service.Price;
+
             service.Name = model.Name;
             service.Price = model.Price;
             service.DurationInHours = model.DurationInHours;
@@ -189,21 +190,17 @@ namespace AriesMagicAppointmentSystem.Controllers
 
             await _context.SaveChangesAsync();
 
+            await _activityService.LogAsync(
+                SystemActivityType.ServiceUpdated,
+                $"Updated package '{oldName}' (was ₱{oldPrice:N2}) to '{service.Name}' (₱{service.Price:N2})",
+                User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "Unknown",
+                User.Identity?.Name ?? "Unknown",
+                service.Id.ToString(),
+                "Service",
+                new { oldName, oldPrice, newName = service.Name, newPrice = service.Price }
+            );
+
             return RedirectToAction(nameof(Index));
-        }
-
-        // STAFF + ADMIN: archive package
-        [Authorize(Roles = "Staff,Admin")]
-        public async Task<IActionResult> Archive(int? id)
-        {
-            if (id == null) return NotFound();
-
-            var package = await _context.Services
-                .FirstOrDefaultAsync(s => s.Id == id);
-
-            if (package == null) return NotFound();
-
-            return View(package);
         }
 
         [HttpPost, ActionName("Archive")]
@@ -214,8 +211,21 @@ namespace AriesMagicAppointmentSystem.Controllers
             var package = await _context.Services.FindAsync(id);
             if (package == null) return NotFound();
 
+            var packageName = package.Name;
             package.IsArchived = true;
             await _context.SaveChangesAsync();
+
+            if (User.IsInRole("Admin"))
+            {
+                await _activityService.LogAsync(
+                    SystemActivityType.ServiceArchived,
+                    $"Archived package '{packageName}'",
+                    User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "Unknown",
+                    User.Identity?.Name ?? "Unknown",
+                    package.Id.ToString(),
+                    "Service"
+                );
+            }
 
             return RedirectToAction(nameof(Index));
         }
@@ -242,8 +252,21 @@ namespace AriesMagicAppointmentSystem.Controllers
             var package = await _context.Services.FindAsync(id);
             if (package == null) return NotFound();
 
+            var packageName = package.Name;
             package.IsArchived = false;
             await _context.SaveChangesAsync();
+
+            if (User.IsInRole("Admin"))
+            {
+                await _activityService.LogAsync(
+                    SystemActivityType.ServiceRestored,
+                    $"Restored package '{packageName}'",
+                    User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "Unknown",
+                    User.Identity?.Name ?? "Unknown",
+                    package.Id.ToString(),
+                    "Service"
+                );
+            }
 
             return RedirectToAction(nameof(Archived));
         }
