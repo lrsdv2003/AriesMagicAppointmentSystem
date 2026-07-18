@@ -19,7 +19,10 @@ builder.Services.Configure<EmailSettings>(
 builder.Services.AddScoped<IEmailService, SmtpEmailService>();
 
 builder.Services.AddScoped<IHistoryService, HistoryService>();
+builder.Services.AddScoped<ISystemActivityService, SystemActivityService>();
+builder.Services.AddScoped<ITrashHistoryService, TrashHistoryService>();
 builder.Services.AddHostedService<BookingArchivingBackgroundService>();
+builder.Services.AddHostedService<InactiveAccountBackgroundService>();
 
 builder.Services
     .AddIdentity<ApplicationUser, IdentityRole>(options =>

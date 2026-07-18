@@ -6,13 +6,17 @@
 }
 
 <div class="page-header">
-    
     <div class="d-flex gap-2">
         @if (User.CanEditPackages())
         {
-            <a asp-action="Create" class="btn btn-primary">Create Package</a>
+            <a asp-action="Create" class="btn btn-primary">
+                Create Package
+            </a>
         }
-        <a asp-action="Archived" class="btn btn-outline-secondary">Archived Packages</a>
+
+        <a asp-action="Archived" class="btn btn-outline-secondary">
+            Archived Packages
+        </a>
     </div>
 </div>
 
@@ -57,12 +61,12 @@ else
                 </div>
 
                 <div class="package-card-actions">
+                    <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-light package-btn-light">Details</a>
                     @if (User.CanEditPackages())
                     {
-                        <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-warning">Edit</a>
-                    }
-                    <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-light package-btn-light">Details</a>
+                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-warning">Edit</a>
                     <a asp-action="Archive" asp-route-id="@item.Id" class="btn btn-danger">Archive</a>
+                    }
                 </div>
             </div>
         }

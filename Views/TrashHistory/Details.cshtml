@@ -1,0 +1,207 @@
+@model AriesMagicAppointmentSystem.ViewModels.TrashHistoryDetailsViewModel
+@using AriesMagicAppointmentSystem.Models
+
+@{
+    Layout = "_DashboardLayout";
+    ViewData["Title"] = "Trash History Details";
+    var t = Model.Trash;
+}
+
+<div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+    <div>
+        <span class="role-dashboard-eyebrow">Archive</span>
+        <h2>@t.BookingCode</h2>
+        <p class="page-subtitle mb-0">Archived on @t.ArchivedAt.ToString("MMMM dd, yyyy h:mm tt")</p>
+    </div>
+    <a asp-action="Index" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i> Back</a>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="dashboard-panel mb-4">
+            <h5 class="mb-3">Booking Information</h5>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label text-muted mb-1">Event Type</label>
+                    <div class="fw-semibold">@t.EventType</div>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label text-muted mb-1">Package</label>
+                    <div class="fw-semibold">@t.PackageName</div>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label text-muted mb-1">Event Date</label>
+                    <div class="fw-semibold">@t.EventDate.ToString("MMMM dd, yyyy")</div>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label text-muted mb-1">Time</label>
+                    <div class="fw-semibold">@t.StartTime.ToString(@"hh\:mm") - @t.EndTime.ToString(@"hh\:mm")</div>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label text-muted mb-1">Venue</label>
+                    <div class="fw-semibold">@t.PartyVenue</div>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label text-muted mb-1">Theme</label>
+                    <div>@t.PartyTheme</div>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label text-muted mb-1">Celebrant</label>
+                    <div>@t.CelebrantName</div>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label text-muted mb-1">Age</label>
+                    <div>@(t.Age?.ToString() ?? "N/A")</div>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label text-muted mb-1">Guests</label>
+                    <div>@t.PaxCount</div>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label text-muted mb-1">Contact Person</label>
+                    <div>@t.ContactPerson</div>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label text-muted mb-1">Contact Number</label>
+                    <div>@t.ContactNumber</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="dashboard-panel mb-4">
+            <h5 class="mb-3">Archive Reason</h5>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label text-muted mb-1">Reason</label>
+                    <div class="fw-semibold">
+                        <span class="badge bg-secondary me-2">@t.Reason.ToString()</span>
+                        @t.ReasonDisplay
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label text-muted mb-1">Assigned Staff</label>
+                    <div>@(t.AssignedStaffName ?? "Not assigned")</div>
+                </div>
+                @if (!string.IsNullOrWhiteSpace(t.ReasonNotes))
+                {
+                    <div class="col-12">
+                        <label class="form-label text-muted mb-1">Notes</label>
+                        <div class="p-3 bg-light rounded">@t.ReasonNotes</div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="dashboard-panel mb-4">
+            <h5 class="mb-3">Financial Details</h5>
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label text-muted mb-1">Base Price</label>
+                    <div class="fw-semibold">₱@t.BasePrice.ToString("N2")</div>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label text-muted mb-1">Final Price</label>
+                    <div class="fw-semibold text-primary">₱@t.FinalPrice.ToString("N2")</div>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label text-muted mb-1">Required Downpayment</label>
+                    <div class="fw-semibold">₱@t.RequiredDownpayment.ToString("N2")</div>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label text-muted mb-1">Payment Status</label>
+                    <div>
+                        <span class="badge @(t.PaymentStatus == "Verified" ? "bg-success" : t.PaymentStatus == "Pending" ? "bg-warning text-dark" : t.PaymentStatus == "Rejected" ? "bg-danger" : "bg-secondary")">
+                            @t.PaymentStatus
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="dashboard-panel mb-4">
+            <h5 class="mb-3">Client Information</h5>
+            <div class="d-flex align-items-center mb-3">
+                <div class="topbar-avatar me-3" style="width: 60px; height: 60px; font-size: 1.5rem;">
+                    @(t.ClientName?.Length > 0 ? t.ClientName[0].ToString().ToUpper() : "?")
+                </div>
+                <div>
+                    <div class="fw-bold">@t.ClientName</div>
+                    <div class="text-muted small">@t.ClientEmail</div>
+                    <div class="text-muted small">@t.ClientPhone</div>
+                </div>
+            </div>
+            <hr />
+            <div class="row g-2 text-center">
+                <div class="col-6">
+                    <div class="fw-bold text-primary">@t.EventDate.ToString("dd")</div>
+                    <div class="text-muted small">Day</div>
+                </div>
+                <div class="col-6">
+                    <div class="fw-bold text-primary">@t.EventDate.ToString("MMM")</div>
+                    <div class="text-muted small">Month</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="dashboard-panel mb-4">
+            <h5 class="mb-3">Timeline</h5>
+            <div class="timeline">
+                <div class="timeline-item">
+                    <div class="timeline-marker bg-primary"></div>
+                    <div class="timeline-content">
+                        <div class="fw-semibold">Booking Created</div>
+                        <div class="text-muted small">@t.CreatedAt.ToString("MMMM dd, yyyy h:mm tt")</div>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-marker bg-danger"></div>
+                    <div class="timeline-content">
+                        <div class="fw-semibold">Archived to Trash History</div>
+                        <div class="text-muted small">@t.ArchivedAt.ToString("MMMM dd, yyyy h:mm tt")</div>
+                        <div class="text-muted small">Reason: @t.ReasonDisplay</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="dashboard-panel">
+            <h5 class="mb-3">Original Booking</h5>
+            <p class="text-muted small mb-2">Original Booking ID: @t.OriginalBookingId</p>
+            <p class="text-muted small mb-0">This request was archived before becoming a confirmed booking.</p>
+        </div>
+    </div>
+</div>
+
+<style>
+    .timeline {
+        position: relative;
+        padding-left: 1.5rem;
+    }
+    .timeline::before {
+        content: '';
+        position: absolute;
+        left: 6px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: var(--color-border-soft);
+    }
+    .timeline-item {
+        position: relative;
+        padding-bottom: 1.5rem;
+    }
+    .timeline-marker {
+        position: absolute;
+        left: -1.5rem;
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        border: 3px solid white;
+        box-shadow: 0 0 0 2px var(--color-border-soft);
+    }
+    .timeline-content {
+        padding-left: 0.5rem;
+    }
+</style>

@@ -67,29 +67,35 @@
                                 <i class="bi bi-grid-1x2-fill"></i>
                                 Dashboard
                             </a>
-                            <a asp-controller="Bookings" asp-action="Index"
-                               class="sidebar-link @(currentController == "Bookings" && currentAction == "Index" ? "active" : "")">
-                                Bookings
-                            </a>
 
                             <a asp-controller="UserManagement" asp-action="Index"
                                class="sidebar-link @(currentController == "UserManagement" ? "active" : "")">
+                                <i class="bi bi-people-gear"></i>
                                 User Management
                             </a>
 
                             <a asp-controller="Calendar" asp-action="Index"
                                class="sidebar-link @(currentController == "Calendar" ? "active" : "")">
+                                <i class="bi bi-calendar3"></i>
                                 Calendar
                             </a>
 
                             <a asp-controller="Services" asp-action="Index"
-                            class="sidebar-link @(currentController == "Services" ? "active" : "")">
+                               class="sidebar-link @(currentController == "Services" ? "active" : "")">
+                                <i class="bi bi-box-seam"></i>
                                 Packages
                             </a>
 
-                            <a asp-controller="History" asp-action="Index"
-                               class="sidebar-link @(currentController == "History" ? "active" : "")">
-                                History
+                            <a asp-controller="TrashHistory" asp-action="Index"
+                               class="sidebar-link @(currentController == "TrashHistory" ? "active" : "")">
+                                <i class="bi bi-trash"></i>
+                                Trash History
+                            </a>
+
+                            <a asp-controller="SystemActivity" asp-action="Index"
+                               class="sidebar-link @(currentController == "SystemActivity" ? "active" : "")">
+                                <i class="bi bi-activity"></i>
+                                System Activity
                             </a>
                         }
 

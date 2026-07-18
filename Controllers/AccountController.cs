@@ -135,30 +135,37 @@ namespace AriesMagicAppointmentSystem.Controllers
             }
 
             var user = await _userManager.FindByEmailAsync(model.Email);
+
             if (user == null)
             {
-                ModelState.AddModelError("", "Incorrect Email or Password.");
+                ModelState.AddModelError(string.Empty, "Incorrect Email or Password.");
                 return View(model);
             }
 
             if (!user.IsActive)
             {
-                ModelState.AddModelError("", "Your account has been disabled. Please contact the administrator.");
+                ModelState.AddModelError(string.Empty,
+                    "Your account has been disabled. Please contact the administrator.");
                 return View(model);
             }
 
             if (!user.EmailConfirmed)
             {
-                var expiryDays = 3;
+                const int expiryDays = 3;
 
                 if (user.CreatedAt.AddDays(expiryDays) < DateTime.UtcNow)
                 {
                     await _userManager.DeleteAsync(user);
-                    ModelState.AddModelError("", "Your unverified account has expired. Please register again.");
+
+                    ModelState.AddModelError(string.Empty,
+                        "Your unverified account has expired. Please register again.");
+
                     return View(model);
                 }
 
-                ModelState.AddModelError("", "Please confirm your email first before logging in.");
+                ModelState.AddModelError(string.Empty,
+                    "Please confirm your email first before logging in.");
+
                 return View(model);
             }
 
@@ -170,38 +177,66 @@ namespace AriesMagicAppointmentSystem.Controllers
 
             if (result.Succeeded)
             {
-                if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+                if (!string.IsNullOrWhiteSpace(returnUrl) &&
+                    Url.IsLocalUrl(returnUrl))
                 {
-                    var isClient = await _userManager.IsInRoleAsync(user, "Client");
-
-                    if (!isClient)
-                    {
-                        return LocalRedirect(returnUrl);
-                    }
+                    return LocalRedirect(returnUrl);
                 }
 
                 if (await _userManager.IsInRoleAsync(user, "Owner"))
-                    return RedirectToAction("Index", "Reports");
-
+                {
+                    return RedirectToAction("Owner", "Dashboard");
+                }
                 if (await _userManager.IsInRoleAsync(user, "Admin"))
+                {
+                    return RedirectToAction("Admin", "Dashboard");
+                }
+                if (await _userManager.IsInRoleAsync(user, "Owner"))
+                {
+                    return RedirectToAction("Index", "Reports");
+                }
+                if (await _userManager.IsInRoleAsync(user, "Admin"))
+                {
                     return RedirectToAction("Index", "UserManagement");
+                }
 
                 if (await _userManager.IsInRoleAsync(user, "Staff"))
-                    return RedirectToAction("Index", "Bookings");
+                {
+                    return RedirectToAction("Staff", "Dashboard");
+                }
 
                 if (await _userManager.IsInRoleAsync(user, "Client"))
+                {
                     return RedirectToAction("MyBookings", "Bookings");
+                }
 
-                return RedirectToAction("Index", "Home");
+                await _signInManager.SignOutAsync();
+
+                ModelState.AddModelError(string.Empty,
+                    "Your account has no assigned role.");
+
+                return View(model);
             }
 
             if (result.IsLockedOut)
             {
-                ModelState.AddModelError("", "Your account is locked.");
+                ModelState.AddModelError(string.Empty,
+                    "Your account is locked.");
+
                 return View(model);
             }
 
-            ModelState.AddModelError("", "Incorrect Email or Password.");
+            if (result.IsNotAllowed)
+            {
+                ModelState.AddModelError(string.Empty,
+                    "Login is not allowed.");
+
+                return View(model);
+            }
+
+            ModelState.AddModelError(string.Empty,
+                "Incorrect Email or Password.");
+
             return View(model);
         }
         [Authorize]

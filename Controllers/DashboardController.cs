@@ -77,9 +77,11 @@ namespace AriesMagicAppointmentSystem.Controllers
 
             var clients = await _userManager.GetUsersInRoleAsync("Client");
             var staff = await _userManager.GetUsersInRoleAsync("Staff");
+            var allUsers = await _userManager.Users.ToListAsync();
 
             model.ActiveClients = clients.Count(u => u.IsActive);
             model.ActiveStaff = staff.Count(u => u.IsActive);
+            model.TotalUsers = allUsers.Count;
 
             model.ActivePackages = await _context.Services
                 .CountAsync(s => !s.IsArchived);
@@ -93,6 +95,12 @@ namespace AriesMagicAppointmentSystem.Controllers
             model.PendingReschedules = await _context.RescheduleRequests
                 .CountAsync(r =>
                     r.Status == RescheduleRequestStatus.Pending);
+
+            // Count trashed/failed booking requests
+            model.TrashedBookingsCount = await _context.Bookings
+                .CountAsync(b => b.Status == BookingStatus.Declined ||
+                               b.Status == BookingStatus.Cancelled ||
+                               b.Status == BookingStatus.Expired);
 
             return View(model);
         }

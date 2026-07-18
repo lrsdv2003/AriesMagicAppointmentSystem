@@ -11,11 +11,11 @@ using QuestPDF.Infrastructure;
 namespace AriesMagicAppointmentSystem.Controllers
 {
     /// <summary>
-    /// Permanent archive of completed events. Owner, Admin, and Staff can all browse and search
-    /// the same records; only Owner/Admin can export or print reports. Nobody can edit a
+    /// Permanent archive of completed events. Owner and Staff can browse and search
+    /// the same records; only Owner can export or print reports. Nobody can edit a
     /// historical record through this controller - there is intentionally no Edit/Delete action.
     /// </summary>
-    [Authorize(Roles = "Owner,Admin,Staff")]
+    [Authorize(Roles = "Owner,Staff")]
     public class HistoryController : Controller
     {
         private readonly IHistoryService _historyService;

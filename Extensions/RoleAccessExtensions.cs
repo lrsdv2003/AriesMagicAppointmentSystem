@@ -12,17 +12,17 @@ namespace AriesMagicAppointmentSystem.Extensions
     {
         // Bookings
         public static bool CanManageBookingRecords(this ClaimsPrincipal user) =>
-            user.IsInRole("Staff") || user.IsInRole("Admin");
+            user.IsInRole("Staff") || user.IsInRole("Owner");
 
         public static bool CanCompleteBookings(this ClaimsPrincipal user) =>
             user.IsInRole("Staff");
 
         // Packages / Services
         public static bool CanViewPackages(this ClaimsPrincipal user) =>
-            user.IsInRole("Staff") || user.IsInRole("Admin");
+            user.IsInRole("Staff") || user.IsInRole("Admin") || user.IsInRole("Owner");
 
         public static bool CanEditPackages(this ClaimsPrincipal user) =>
-            user.IsInRole("Admin");
+            user.IsInRole("Admin") || user.IsInRole("Owner");
 
         // Payments / Refunds (business decisions belong to Owner only)
         public static bool CanVerifyPayments(this ClaimsPrincipal user) =>
@@ -55,7 +55,7 @@ namespace AriesMagicAppointmentSystem.Extensions
 
         // History (archived / completed bookings)
         public static bool CanViewHistory(this ClaimsPrincipal user) =>
-            user.IsInRole("Owner") || user.IsInRole("Admin") || user.IsInRole("Staff");
+            user.IsInRole("Owner") || user.IsInRole("Staff");
 
         // Owner and Admin can export/print history reports. Staff can view but not export.
         public static bool CanExportHistoryReports(this ClaimsPrincipal user) =>

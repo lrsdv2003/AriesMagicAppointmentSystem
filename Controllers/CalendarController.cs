@@ -164,13 +164,16 @@ namespace AriesMagicAppointmentSystem.Controllers
                 return Json(new { success = false, message = "Please select a valid date to block." });
             }
 
-            if (model.BlockDate.Value.Date < DateTime.Today)
+            // Treat the date as local (not UTC) to avoid timezone shift
+            var blockDate = DateTime.SpecifyKind(model.BlockDate.Value.Date, DateTimeKind.Local);
+
+            if (blockDate.Date < DateTime.Today)
             {
                 return Json(new { success = false, message = "You cannot block a past date." });
             }
 
             var exists = await _context.BlockedDates
-                .AnyAsync(x => x.Date.Date == model.BlockDate.Value.Date);
+                .AnyAsync(x => x.Date.Date == blockDate.Date);
 
             if (exists)
             {
@@ -179,7 +182,7 @@ namespace AriesMagicAppointmentSystem.Controllers
 
             _context.BlockedDates.Add(new BlockedDate
             {
-                Date = model.BlockDate.Value.Date,
+                Date = blockDate,
                 Reason = model.BlockReason
             });
 
@@ -198,7 +201,10 @@ namespace AriesMagicAppointmentSystem.Controllers
                 return Json(new { success = false, message = "Please select a valid date and maximum booking limit." });
             }
 
-            if (model.LimitDate.Value.Date < DateTime.Today)
+            // Treat the date as local (not UTC) to avoid timezone shift
+            var limitDate = DateTime.SpecifyKind(model.LimitDate.Value.Date, DateTimeKind.Local);
+
+            if (limitDate.Date < DateTime.Today)
             {
                 return Json(new { success = false, message = "You cannot set a limit for a past date." });
             }
@@ -209,13 +215,13 @@ namespace AriesMagicAppointmentSystem.Controllers
             }
 
             var existing = await _context.DateBookingLimits
-                .FirstOrDefaultAsync(x => x.Date.Date == model.LimitDate.Value.Date);
+                .FirstOrDefaultAsync(x => x.Date.Date == limitDate.Date);
 
             if (existing == null)
             {
                 _context.DateBookingLimits.Add(new DateBookingLimit
                 {
-                    Date = model.LimitDate.Value.Date,
+                    Date = limitDate,
                     MaxBookings = model.LimitMaxBookings.Value
                 });
             }

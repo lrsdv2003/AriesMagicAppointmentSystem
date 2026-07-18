@@ -1,0 +1,161 @@
+@model AriesMagicAppointmentSystem.ViewModels.SystemActivityIndexViewModel
+@using AriesMagicAppointmentSystem.Models
+
+@{
+    Layout = "_DashboardLayout";
+    ViewData["Title"] = "System Activity";
+}
+
+<div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+    <div>
+        <span class="role-dashboard-eyebrow">Audit</span>
+        <h2>System Activity History</h2>
+    </div>
+</div>
+
+<div class="dashboard-panel mb-4">
+    <form method="get" asp-action="Index" class="row g-3 align-items-end">
+        <div class="col-lg-3 col-md-6">
+            <label class="form-label">Search</label>
+            <input type="text" name="search" value="@Model.SearchFilter" class="form-control"
+                   placeholder="Action, user, record..." />
+        </div>
+
+        <div class="col-lg-2 col-md-6">
+            <label class="form-label">Activity Type</label>
+            <select name="type" class="form-select">
+                <option value="">All Types</option>
+                @foreach (var t in Model.ActivityTypes)
+                {
+                    <option value="@((int)t)" selected="@(Model.TypeFilter == t)">@t</option>
+                }
+            </select>
+        </div>
+
+        <div class="col-lg-2 col-md-6">
+            <label class="form-label">From Date</label>
+            <input type="date" name="fromDate" value="@(Model.FromDateFilter?.ToString("yyyy-MM-dd"))" class="form-control" />
+        </div>
+
+        <div class="col-lg-2 col-md-6">
+            <label class="form-label">To Date</label>
+            <input type="date" name="toDate" value="@(Model.ToDateFilter?.ToString("yyyy-MM-dd"))" class="form-control" />
+        </div>
+
+        <div class="col-lg-2 col-md-6">
+            <label class="form-label">&nbsp;</label>
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-primary">Filter</button>
+                <a asp-action="Index" class="btn btn-outline-secondary">Reset</a>
+            </div>
+        </div>
+    </form>
+</div>
+
+<div class="dashboard-panel">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+        <div>
+            <h3 class="mb-1">Activity Log</h3>
+            <p class="page-subtitle mb-0">Showing @Model.Activities.Count of @Model.TotalCount activities.</p>
+        </div>
+    </div>
+
+    @if (!Model.Activities.Any())
+    {
+        <div class="empty-state">
+            <i class="bi bi-activity"></i>
+            <h3>No activity recorded</h3>
+            <p>System activities will appear here as administrative actions are performed.</p>
+        </div>
+    }
+    else
+    {
+        <div class="table-clean">
+            <table class="table align-middle">
+                <thead>
+                    <tr>
+                        <th style="width: 120px;">Time</th>
+                        <th>Action</th>
+                        <th>Performed By</th>
+                        <th>Affected Record</th>
+                        <th>Details</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var activity in Model.Activities)
+                    {
+                        var badgeClass = activity.Type switch
+                        {
+                            SystemActivityType.UserCreated => "bg-success",
+                            SystemActivityType.UserDisabled => "bg-danger",
+                            SystemActivityType.UserEnabled => "bg-success",
+                            SystemActivityType.ServiceCreated => "bg-primary",
+                            SystemActivityType.ServiceUpdated => "bg-info",
+                            SystemActivityType.ServiceArchived => "bg-warning text-dark",
+                            SystemActivityType.ServiceRestored => "bg-success",
+                            SystemActivityType.CalendarModified => "bg-primary",
+                            SystemActivityType.SettingsChanged => "bg-secondary",
+                            SystemActivityType.BookingArchived => "bg-info",
+                            SystemActivityType.PaymentVerified => "bg-success",
+                            SystemActivityType.PaymentRejected => "bg-danger",
+                            SystemActivityType.RefundApproved => "bg-success",
+                            SystemActivityType.RefundRejected => "bg-danger",
+                            SystemActivityType.RescheduleApproved => "bg-success",
+                            SystemActivityType.RescheduleRejected => "bg-danger",
+                            _ => "bg-secondary"
+                        };
+
+                        <tr>
+                            <td class="text-nowrap small">@activity.CreatedAt.ToString("MMM dd, yyyy h:mm tt")</td>
+                            <td>
+                                <span class="badge @badgeClass me-2">@activity.Type</span>
+                                <div class="d-inline">@activity.Description</div>
+                            </td>
+                            <td>@activity.PerformedByUserName</td>
+                            <td>
+                                @if (!string.IsNullOrEmpty(activity.AffectedRecordType))
+                                {
+                                    <div class="small">
+                                        <strong>@activity.AffectedRecordType</strong>
+                                        @if (!string.IsNullOrEmpty(activity.AffectedRecordId))
+                                        {
+                                            <span class="text-muted"> #@activity.AffectedRecordId</span>
+                                        }
+                                    </div>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">-</span>
+                                }
+                            </td>
+                            <td class="text-muted small">
+                                @if (!string.IsNullOrEmpty(activity.MetadataJson))
+                                {
+                                    @activity.MetadataJson
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (Model.TotalPages > 1)
+        {
+            <nav class="mt-3">
+                <ul class="pagination justify-content-center">
+                    @for (var p = 1; p <= Model.TotalPages; p++)
+                    {
+                        <li class="page-item @(p == Model.Page ? "active" : "")">
+                            <a class="page-link" asp-action="Index" asp-route-page="@p"
+                               asp-route-type="@(Model.TypeFilter?.ToString("d"))"
+                               asp-route-fromDate="@(Model.FromDateFilter?.ToString("yyyy-MM-dd"))"
+                               asp-route-toDate="@(Model.ToDateFilter?.ToString("yyyy-MM-dd"))"
+                               asp-route-search="@Model.SearchFilter">@p</a>
+                        </li>
+                    }
+                </ul>
+            </nav>
+        }
+    }
+</div>

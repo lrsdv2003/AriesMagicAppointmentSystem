@@ -35,6 +35,13 @@ namespace AriesMagicAppointmentSystem.Models
         public string? ReopenReason { get; set; }
         public string? InternalNotes { get; set; }
 
+        // Trash History fields
+        public TrashReason? TrashReason { get; set; }
+        public string? TrashNotes { get; set; }
+        public DateTime? ArchivedAt { get; set; }
+        public string? AssignedStaffName { get; set; }
+        public int? OriginalBookingId { get; set; }
+
         // Event Details
         [Required]
         public string EventType { get; set; } = string.Empty;

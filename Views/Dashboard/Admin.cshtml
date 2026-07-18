@@ -1,105 +1,182 @@
 @model AriesMagicAppointmentSystem.ViewModels.RoleDashboardViewModel
+@inject AriesMagicAppointmentSystem.Services.ISystemActivityService ActivityService
 
 @{
-    ViewData["Title"] = "Dashboard";
     Layout = "_DashboardLayout";
+    ViewData["Title"] = "Admin Dashboard";
 }
 
 <div class="role-dashboard-hero">
     <div>
-        <span class="role-dashboard-eyebrow">
-            Operations center
-        </span>
-
         <h2>Welcome back, Admin</h2>
-
-        <p>
-            Manage initial booking requests, packages,
-            users, and calendar settings.
-        </p>
     </div>
-
-    <a asp-controller="Bookings"
-       asp-action="Index"
-       class="btn btn-primary">
-
-        <i class="bi bi-journal-check me-1"></i>
-        Manage bookings
-    </a>
 </div>
 
 <div class="dashboard-stat-grid">
-
-    <a asp-controller="Bookings"
-       asp-action="Index"
-       class="dashboard-stat-card stat-warning">
-
-        <span class="dashboard-stat-icon">
-            <i class="bi bi-hourglass-split"></i>
-        </span>
-
-        <span class="dashboard-stat-label">
-            Pending bookings
-        </span>
-
-        <strong>@Model.PendingBookings</strong>
-
-        <small>For initial review</small>
-    </a>
-
     <a asp-controller="UserManagement"
        asp-action="Index"
        class="dashboard-stat-card stat-info">
-
         <span class="dashboard-stat-icon">
             <i class="bi bi-people"></i>
         </span>
-
         <span class="dashboard-stat-label">
-            Active clients
+            Active Clients
         </span>
-
         <strong>@Model.ActiveClients</strong>
-
         <small>@Model.ActiveStaff active staff</small>
     </a>
 
     <a asp-controller="Service"
        asp-action="Index"
        class="dashboard-stat-card stat-success">
-
         <span class="dashboard-stat-icon">
             <i class="bi bi-box-seam"></i>
         </span>
-
         <span class="dashboard-stat-label">
-            Active packages
+            Active Packages
         </span>
-
         <strong>@Model.ActivePackages</strong>
-
         <small>@Model.ArchivedPackages archived</small>
     </a>
 
     <a asp-controller="Calendar"
-       asp-action="Manage"
-       class="dashboard-stat-card stat-danger">
-
+       asp-action="Index"
+       class="dashboard-stat-card stat-warning">
         <span class="dashboard-stat-icon">
             <i class="bi bi-calendar-x"></i>
         </span>
-
         <span class="dashboard-stat-label">
-            Upcoming blocked dates
+            Blocked Dates
         </span>
-
         <strong>@Model.BlockedDates</strong>
-
         <small>Calendar restrictions</small>
+    </a>
+
+    <a asp-controller="TrashHistory"
+       asp-action="Index"
+       class="dashboard-stat-card stat-danger">
+        <span class="dashboard-stat-icon">
+            <i class="bi bi-trash"></i>
+        </span>
+        <span class="dashboard-stat-label">
+            Trash History
+        </span>
+        <strong>@Model.TrashedBookingsCount</strong>
+        <small>Failed booking requests</small>
     </a>
 </div>
 
 <div class="dashboard-two-column">
-    <partial name="_RecentBookings" model="Model" />
-    <partial name="_UpcomingEvents" model="Model" />
+    <div class="dashboard-panel">
+        <div class="dashboard-list-heading">
+            <div>
+                <span class="role-dashboard-eyebrow">Activity</span>
+                <h3>System Activity History</h3>
+            </div>
+            <a asp-controller="SystemActivity" asp-action="Index" class="btn btn-sm btn-outline-secondary">View All</a>
+        </div>
+
+        @{
+            var recentActivity = await ActivityService.GetRecentAsync(10);
+        }
+
+        @if (recentActivity.Count == 0)
+        {
+            <div class="dashboard-empty-state">
+                <i class="bi bi-activity"></i>
+                <p>No system activity recorded yet.</p>
+            </div>
+        }
+        else
+        {
+            <div class="dashboard-record-list">
+                @foreach (var activity in recentActivity)
+                {
+                    var iconClass = activity.Type switch
+                    {
+                        SystemActivityType.UserCreated => "bi-person-plus text-success",
+                        SystemActivityType.UserDisabled => "bi-person-x text-danger",
+                        SystemActivityType.UserEnabled => "bi-person-check text-success",
+                        SystemActivityType.ServiceCreated => "bi-box-seam text-primary",
+                        SystemActivityType.ServiceUpdated => "bi-pencil-square text-info",
+                        SystemActivityType.ServiceArchived => "bi-archive text-warning",
+                        SystemActivityType.ServiceRestored => "bi-arrow-counterclockwise text-success",
+                        SystemActivityType.CalendarModified => "bi-calendar-event text-primary",
+                        SystemActivityType.SettingsChanged => "bi-gear text-secondary",
+                        SystemActivityType.BookingArchived => "bi-archive text-info",
+                        SystemActivityType.PaymentVerified => "bi-credit-card-check text-success",
+                        SystemActivityType.PaymentRejected => "bi-credit-card-x text-danger",
+                        SystemActivityType.RefundApproved => "bi-cash-stack text-success",
+                        SystemActivityType.RefundRejected => "bi-cash-coin text-danger",
+                        SystemActivityType.RescheduleApproved => "bi-calendar-check text-success",
+                        SystemActivityType.RescheduleRejected => "bi-calendar-x text-danger",
+                        _ => "bi-activity text-muted"
+                    };
+
+                    <div class="dashboard-record-item">
+                        <div class="dashboard-record-icon">
+                            <i class="bi @iconClass"></i>
+                        </div>
+                        <div class="dashboard-record-copy">
+                            <strong>@activity.Description</strong>
+                            <span>
+                                @activity.PerformedByUserName @activity.CreatedAt.ToString("MMM dd, yyyy h:mm tt")
+                            </span>
+                            @if (!string.IsNullOrEmpty(activity.AffectedRecordType))
+                            {
+                                <small class="text-muted">@activity.AffectedRecordType @activity.AffectedRecordId</small>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+
+    <div class="dashboard-panel">
+        <div class="dashboard-list-heading">
+            <div>
+                <span class="role-dashboard-eyebrow">Overview</span>
+                <h3>System Health</h3>
+            </div>
+        </div>
+
+        <div class="dashboard-stat-grid dashboard-stat-grid-compact mb-3">
+            <div class="dashboard-stat-card stat-neutral">
+                <span class="dashboard-stat-label">Total Users</span>
+                <strong>@Model.TotalUsers</strong>
+            </div>
+            <div class="dashboard-stat-card stat-neutral">
+                <span class="dashboard-stat-label">Active Packages</span>
+                <strong>@Model.ActivePackages</strong>
+            </div>
+            <div class="dashboard-stat-card stat-neutral">
+                <span class="dashboard-stat-label">Upcoming Blocked Dates</span>
+                <strong>@Model.BlockedDates</strong>
+            </div>
+            <div class="dashboard-stat-card stat-neutral">
+                <span class="dashboard-stat-label">Trashed Requests</span>
+                <strong>@Model.TrashedBookingsCount</strong>
+            </div>
+        </div>
+
+        <div class="dashboard-list-heading">
+            <span class="role-dashboard-eyebrow">Quick Actions</span>
+        </div>
+
+        <div class="d-flex flex-wrap gap-2">
+            <a asp-controller="UserManagement" asp-action="Index" class="btn btn-outline-primary">
+                <i class="bi bi-person-gear me-1"></i> Manage Staff
+            </a>
+            <a asp-controller="Service" asp-action="Create" class="btn btn-outline-success">
+                <i class="bi bi-plus-circle me-1"></i> New Package
+            </a>
+            <a asp-controller="Calendar" asp-action="Index" class="btn btn-outline-warning">
+                <i class="bi bi-calendar-gear me-1"></i> Manage Calendar
+            </a>
+            <a asp-controller="TrashHistory" asp-action="Index" class="btn btn-outline-danger">
+                <i class="bi bi-trash me-1"></i> Trash History
+            </a>
+        </div>
+    </div>
 </div>

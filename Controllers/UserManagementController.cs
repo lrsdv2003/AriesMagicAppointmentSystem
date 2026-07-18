@@ -47,6 +47,10 @@ namespace AriesMagicAppointmentSystem.Controllers
             {
                 staffUsers = staffUsers.Where(u => !u.IsActive).ToList();
             }
+            else if (status == "NeverLoggedIn")
+            {
+                staffUsers = staffUsers.Where(u => !u.LastLoginAt.HasValue).ToList();
+            }
 
             ViewBag.Search = search;
             ViewBag.Status = status;

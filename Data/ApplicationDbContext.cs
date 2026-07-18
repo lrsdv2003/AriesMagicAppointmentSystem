@@ -24,6 +24,10 @@ namespace AriesMagicAppointmentSystem.Data
         public DbSet<ServiceInclusion> ServiceInclusions { get; set; }
         public DbSet<RefundRequest> RefundRequests { get; set; }
 
+        public DbSet<SystemActivity> SystemActivities { get; set; }
+
+        public DbSet<TrashHistory> TrashHistories { get; set; }
+
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);

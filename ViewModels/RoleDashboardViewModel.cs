@@ -25,6 +25,10 @@ namespace AriesMagicAppointmentSystem.ViewModels
         public decimal VerifiedRevenue { get; set; }
         public decimal CurrentMonthRevenue { get; set; }
 
+        // New properties for Admin dashboard
+        public int TotalUsers { get; set; }
+        public int TrashedBookingsCount { get; set; }
+
         public List<Booking> UpcomingEvents { get; set; } = new();
         public List<Booking> RecentBookings { get; set; } = new();
         public List<RescheduleRequest> RecentRescheduleRequests { get; set; } = new();

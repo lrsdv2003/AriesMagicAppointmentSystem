@@ -1,0 +1,171 @@
+@model AriesMagicAppointmentSystem.ViewModels.TrashHistoryIndexViewModel
+@using AriesMagicAppointmentSystem.Models
+
+@{
+    Layout = "_DashboardLayout";
+    ViewData["Title"] = "Trash History";
+    var f = Model.Filters;
+}
+
+<div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+    <div>
+        <span class="role-dashboard-eyebrow">Archive</span>
+        <h2>Trash History</h2>
+    </div>
+</div>
+
+<div class="dashboard-panel mb-4">
+    <form method="get" asp-action="Index" class="row g-3 align-items-end">
+        <div class="col-lg-3 col-md-6">
+            <label class="form-label">Search</label>
+            <input type="text" name="Search" value="@f.Search" class="form-control"
+                   placeholder="Booking ID, client, package, event type..." />
+        </div>
+
+        <div class="col-lg-2 col-md-6">
+            <label class="form-label">Reason</label>
+            <select name="Reason" class="form-select">
+                <option value="">All Reasons</option>
+                @foreach (TrashReason reason in Enum.GetValues(typeof(TrashReason)))
+                {
+                    <option value="@((int)reason)" selected="@(f.Reason == reason)">@reason</option>
+                }
+            </select>
+        </div>
+
+        <div class="col-lg-2 col-md-6">
+            <label class="form-label">Payment Status</label>
+            <select name="PaymentStatus" class="form-select">
+                <option value="All" selected="@(f.PaymentStatus == "All")">All</option>
+                @foreach (var status in Model.AvailablePaymentStatuses)
+                {
+                    <option value="@status" selected="@(f.PaymentStatus == status)">@status</option>
+                }
+            </select>
+        </div>
+
+        <div class="col-lg-2 col-md-6">
+            <label class="form-label">Assigned Staff</label>
+            <select name="AssignedStaffId" class="form-select">
+                <option value="">All Staff</option>
+                @foreach (var staff in Model.AvailableStaff)
+                {
+                    <option value="@staff.Id" selected="@(f.AssignedStaffId == staff.Id)">@staff.FullName</option>
+                }
+            </select>
+        </div>
+
+        <div class="col-lg-2 col-md-6">
+            <label class="form-label">From Date</label>
+            <input type="date" name="DateFrom" value="@(f.DateFrom?.ToString("yyyy-MM-dd"))" class="form-control" />
+        </div>
+
+        <div class="col-lg-2 col-md-6">
+            <label class="form-label">To Date</label>
+            <input type="date" name="DateTo" value="@(f.DateTo?.ToString("yyyy-MM-dd"))" class="form-control" />
+        </div>
+
+        <div class="col-lg-2 col-md-6">
+            <label class="form-label">&nbsp;</label>
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-primary">Apply Filters</button>
+                <a asp-action="Index" class="btn btn-outline-secondary">Reset</a>
+            </div>
+        </div>
+    </form>
+</div>
+
+<div class="dashboard-panel">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+        <div>
+            <h3 class="mb-1">Archived Requests</h3>
+            <p class="page-subtitle mb-0">Showing @Model.Bookings.Count of @Model.TotalCount archived request(s).</p>
+        </div>
+    </div>
+
+    @if (!Model.Bookings.Any())
+    {
+        <div class="empty-state">
+            <i class="bi bi-trash"></i>
+            <h3>No archived requests</h3>
+            <p>Failed booking requests will appear here when archived.</p>
+        </div>
+    }
+    else
+    {
+        <div class="table-clean">
+            <table class="table align-middle">
+                <thead>
+                    <tr>
+                        <th>Booking ID</th>
+                        <th>Client</th>
+                        <th>Event Type</th>
+                        <th>Package</th>
+                        <th>Event Date</th>
+                        <th>Reason</th>
+                        <th>Payment</th>
+                        <th>Archived</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.Bookings)
+                    {
+                        var paymentClass = item.PaymentStatus switch
+                        {
+                            "Pending" => "status-pending",
+                            "Verified" => "status-verified",
+                            "Rejected" => "status-rejected",
+                            _ => "status-read"
+                        };
+
+                        <tr>
+                            <td><div class="booking-code-cell">@item.BookingCode</div></td>
+                            <td>
+                                <div class="fw-semibold">@item.ClientName</div>
+                                <div class="text-muted small">@item.ClientPhone</div>
+                            </td>
+                            <td>@item.EventType</td>
+                            <td>@item.PackageName</td>
+                            <td>@item.EventDate.ToString("MMM dd, yyyy")</td>
+                            <td>
+                                <span class="badge bg-secondary">@item.ReasonDisplay</span>
+                                @if (!string.IsNullOrWhiteSpace(item.ReasonNotes))
+                                {
+                                    <span class="text-muted small d-block">@item.ReasonNotes</span>
+                                }
+                            </td>
+                            <td><span class="status-badge @paymentClass">@item.PaymentStatus</span></td>
+                            <td>@item.ArchivedAt.ToString("MMM dd, yyyy")</td>
+                            <td class="text-end">
+                                <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-eye me-1"></i> View
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (Model.TotalPages > 1)
+        {
+            <nav class="mt-3">
+                <ul class="pagination justify-content-center">
+                    @for (var p = 1; p <= Model.TotalPages; p++)
+                    {
+                        <li class="page-item @(p == f.Page ? "active" : "")">
+                            <a class="page-link" asp-action="Index" asp-route-page="@p"
+                               asp-route-Search="@f.Search"
+                               asp-route-Reason="@(f.Reason?.ToString("d"))"
+                               asp-route-PaymentStatus="@f.PaymentStatus"
+                               asp-route-AssignedStaffId="@f.AssignedStaffId"
+                               asp-route-DateFrom="@(f.DateFrom?.ToString("yyyy-MM-dd"))"
+                               asp-route-DateTo="@(f.DateTo?.ToString("yyyy-MM-dd"))">@p</a>
+                        </li>
+                    }
+                </ul>
+            </nav>
+        }
+    }
+</div>
