@@ -26,6 +26,7 @@ namespace AriesMagicAppointmentSystem.Controllers
         /// For Admin: shows calendar administration tools (blocked dates, limits).
         /// For Staff/Owner: shows operational calendar with bookings.
         /// </summary>
+       [HttpGet]
         public async Task<IActionResult> Index(bool showHistorical = false)
         {
             if (User.IsInRole("Admin"))

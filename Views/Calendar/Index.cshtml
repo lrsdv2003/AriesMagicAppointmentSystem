@@ -24,12 +24,17 @@
                 <h1 class="header-title">Calendar Administration</h1>
                 <p class="header-subtitle">Configure blocked dates, daily limits, and date-specific overrides.</p>
             </div>
-            <div class="header-actions">
-                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#manageCalendarModal">
-                    <i class="bi bi-calendar2-gear me-1"></i>
-                    <span>Manage Calendar</span>
-                </button>
-            </div>
+            @if (User.IsInRole("Admin"))
+            {
+                <div class="header-actions">
+                    <button type="button" class="btn btn-primary"
+                            data-bs-toggle="modal"
+                            data-bs-target="#manageCalendarModal">
+                        <i class="bi bi-calendar2-gear me-1"></i>
+                        <span>Manage Calendar</span>
+                    </button>
+                </div>
+            }
         </div>
     </header>
 
@@ -210,7 +215,7 @@
                 <div class="tab-content">
                     <!-- Daily Limit Tab -->
                     <div class="tab-pane fade show active" id="panel-daily" role="tabpanel" aria-labelledby="tab-daily">
-                        <form id="formDailyLimit" asp-action="UpdateMaxBookingsAjax" asp-controller="Calendar" method="post" class="needs-validation" novalidate>
+                        <form id="formDailyLimit"action="@Url.Action("UpdateMaxBookingsAjax", "Calendar")"method="post"class="needs-validation"novalidate>
                             @Html.AntiForgeryToken()
                             <div class="form-group">
                                 <label for="MaxBookingsPerDay" class="form-label">Maximum Events Per Day</label>
@@ -227,7 +232,7 @@
 
                     <!-- Block Date Tab -->
                     <div class="tab-pane fade" id="panel-block" role="tabpanel" aria-labelledby="tab-block">
-                        <form id="formBlockDate" asp-action="BlockDateAjax" asp-controller="Calendar" method="post" class="needs-validation" novalidate>
+                        <form id="formBlockDate"action="@Url.Action("BlockDateAjax", "Calendar")"method="post"class="needs-validation"novalidate>
                             @Html.AntiForgeryToken()
                             <div class="row g-3">
                                 <div class="col-md-6">
@@ -250,7 +255,7 @@
 
                     <!-- Custom Limit Tab -->
                     <div class="tab-pane fade" id="panel-custom" role="tabpanel" aria-labelledby="tab-custom">
-                        <form id="formCustomLimit" asp-action="SetDateLimitAjax" asp-controller="Calendar" method="post" class="needs-validation" novalidate>
+                        <form id="formCustomLimit"action="@Url.Action("SetDateLimitAjax", "Calendar")"method="post"class="needs-validation"novalidate>
                             @Html.AntiForgeryToken()
                             <div class="row g-3">
                                 <div class="col-md-6">
