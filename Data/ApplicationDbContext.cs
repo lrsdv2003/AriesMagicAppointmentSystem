@@ -23,9 +23,7 @@ namespace AriesMagicAppointmentSystem.Data
         public DbSet<DateBookingLimit> DateBookingLimits { get; set; }
         public DbSet<ServiceInclusion> ServiceInclusions { get; set; }
         public DbSet<RefundRequest> RefundRequests { get; set; }
-
         public DbSet<SystemActivity> SystemActivities { get; set; }
-
         public DbSet<TrashHistory> TrashHistories { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
@@ -34,13 +32,23 @@ namespace AriesMagicAppointmentSystem.Data
 
             builder.Entity<User>().ToTable("Users");
 
-            builder.Entity<Payment>()
-                .Property(p => p.Amount)
-                .HasPrecision(18, 2);
+            // Notifications belong to ASP.NET Identity users (string IDs), not legacy Users (int IDs).
+            builder.Entity<Notification>()
+                .HasOne<ApplicationUser>()
+                .WithMany()
+                .HasForeignKey(n => n.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
 
-            builder.Entity<RefundRequest>()
-                .Property(r => r.Amount)
-                .HasPrecision(18, 2);
+            builder.Entity<Payment>().Property(p => p.Amount).HasPrecision(18, 2);
+            builder.Entity<RefundRequest>().Property(r => r.Amount).HasPrecision(18, 2);
+            builder.Entity<Booking>().Property(b => b.BasePrice).HasPrecision(18, 2);
+            builder.Entity<Booking>().Property(b => b.FinalPrice).HasPrecision(18, 2);
+            builder.Entity<Booking>().Property(b => b.RequiredDownpayment).HasPrecision(18, 2);
+            builder.Entity<Service>().Property(s => s.Price).HasPrecision(18, 2);
+            builder.Entity<ServiceInclusion>().Property(s => s.DeductionAmount).HasPrecision(18, 2);
+            builder.Entity<TrashHistory>().Property(t => t.BasePrice).HasPrecision(18, 2);
+            builder.Entity<TrashHistory>().Property(t => t.FinalPrice).HasPrecision(18, 2);
+            builder.Entity<TrashHistory>().Property(t => t.RequiredDownpayment).HasPrecision(18, 2);
         }
     }
 }

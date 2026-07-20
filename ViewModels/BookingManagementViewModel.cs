@@ -7,7 +7,9 @@ namespace AriesMagicAppointmentSystem.ViewModels
         public string? Search { get; set; }
         public string? BookingStatus { get; set; }
         public string? PaymentStatus { get; set; }
-
+        public DateTime? EventDate { get; set; }
+        public int? ServiceId { get; set; }
+        public List<Service> AvailableServices { get; set; } = new();
         public List<BookingManagementRowViewModel> Bookings { get; set; } = new();
     }
 

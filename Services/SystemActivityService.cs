@@ -62,7 +62,10 @@ namespace AriesMagicAppointmentSystem.Services
 
         public async Task<List<SystemActivity>> GetRecentAsync(int count = 50)
         {
+            count = Math.Clamp(count, 1, 200);
+
             return await _context.SystemActivities
+                .AsNoTracking()
                 .OrderByDescending(a => a.CreatedAt)
                 .Take(count)
                 .ToListAsync();
@@ -76,7 +79,10 @@ namespace AriesMagicAppointmentSystem.Services
             DateTime? toDate = null,
             string? search = null)
         {
-            var query = _context.SystemActivities.AsQueryable();
+            page = Math.Max(page, 1);
+            pageSize = Math.Clamp(pageSize, 1, 100);
+
+            var query = _context.SystemActivities.AsNoTracking().AsQueryable();
 
             if (type.HasValue)
             {
@@ -96,11 +102,11 @@ namespace AriesMagicAppointmentSystem.Services
 
             if (!string.IsNullOrWhiteSpace(search))
             {
-                var term = search.ToLower();
+                var term = search.Trim().ToLower();
                 query = query.Where(a =>
                     a.Description.ToLower().Contains(term) ||
-                    a.PerformedByUserName.ToLower().Contains(term) ||
-                    (a.AffectedRecordId != null && a.AffectedRecordId.Contains(term)) ||
+                    (a.PerformedByUserName != null && a.PerformedByUserName.ToLower().Contains(term)) ||
+                    (a.AffectedRecordId != null && a.AffectedRecordId.ToLower().Contains(term)) ||
                     (a.AffectedRecordType != null && a.AffectedRecordType.ToLower().Contains(term)));
             }
 

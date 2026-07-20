@@ -40,32 +40,45 @@ namespace AriesMagicAppointmentSystem.Controllers
         [Authorize(Roles = "Owner")]
         public async Task<IActionResult> Owner()
         {
-            var model = await BuildCommonDashboardAsync("Owner");
+            var today = DateTime.Today;
+            var monthStart = new DateTime(today.Year, today.Month, 1);
 
-            var monthStart = new DateTime(
-                DateTime.Today.Year,
-                DateTime.Today.Month,
-                1);
-
-            model.PendingPayments = await _context.Payments
-                .CountAsync(p => p.Status == PaymentStatus.Pending);
-
-            model.PendingRefunds = await _context.RefundRequests
-                .CountAsync(r => r.Status == RefundStatus.Pending);
-
-            model.PendingReschedules = await _context.RescheduleRequests
-                .CountAsync(r =>
-                    r.Status == RescheduleRequestStatus.Pending);
-
-            model.VerifiedRevenue = await _context.Payments
-                .Where(p => p.Status == PaymentStatus.Verified)
-                .SumAsync(p => (decimal?)p.Amount) ?? 0;
-
-            model.CurrentMonthRevenue = await _context.Payments
-                .Where(p =>
-                    p.Status == PaymentStatus.Verified &&
-                    p.VerifiedAt >= monthStart)
-                .SumAsync(p => (decimal?)p.Amount) ?? 0;
+            var model = new RoleDashboardViewModel
+            {
+                RoleName = "Owner",
+                PendingPayments = await _context.Payments
+                    .AsNoTracking()
+                    .CountAsync(p => p.Status == PaymentStatus.Pending),
+                PendingRefunds = await _context.RefundRequests
+                    .AsNoTracking()
+                    .CountAsync(r => r.Status == RefundStatus.Pending),
+                UpcomingBookings = await _context.Bookings
+                    .AsNoTracking()
+                    .CountAsync(b => b.EventDate >= today && b.Status == BookingStatus.Confirmed),
+                CurrentMonthRevenue = await _context.Payments
+                    .AsNoTracking()
+                    .Where(p => p.Status == PaymentStatus.Verified && p.VerifiedAt >= monthStart)
+                    .SumAsync(p => (decimal?)p.Amount) ?? 0,
+                RecentPaymentsToVerify = await _context.Payments
+                    .AsNoTracking()
+                    .Include(p => p.Booking)
+                        .ThenInclude(b => b!.Client)
+                    .Include(p => p.Booking)
+                        .ThenInclude(b => b!.Service)
+                    .Where(p => p.Status == PaymentStatus.Pending)
+                    .OrderByDescending(p => p.UploadedAt)
+                    .Take(5)
+                    .ToListAsync(),
+                UpcomingEvents = await _context.Bookings
+                    .AsNoTracking()
+                    .Include(b => b.Client)
+                    .Include(b => b.Service)
+                    .Where(b => b.EventDate >= today && b.Status == BookingStatus.Confirmed)
+                    .OrderBy(b => b.EventDate)
+                    .ThenBy(b => b.StartTime)
+                    .Take(5)
+                    .ToListAsync()
+            };
 
             return View(model);
         }
@@ -117,22 +130,26 @@ namespace AriesMagicAppointmentSystem.Controllers
         [Authorize(Roles = "Staff")]
         public async Task<IActionResult> Staff()
         {
-            var model = await BuildCommonDashboardAsync("Staff");
-
-            model.ActivePackages = await _context.Services
-                .CountAsync(s => !s.IsArchived);
-
-            model.PendingReschedules = await _context.RescheduleRequests
-                .CountAsync(r =>
-                    r.Status == RescheduleRequestStatus.Pending);
-
-            model.RecentRescheduleRequests =
-                await _context.RescheduleRequests
+            var model = new RoleDashboardViewModel
+            {
+                RoleName = "Staff",
+                RecentBookingRequests = await _context.Bookings
+                    .AsNoTracking()
+                    .Include(b => b.Client)
+                    .Include(b => b.Service)
+                    .OrderByDescending(b => b.CreatedAt)
+                    .Take(5)
+                    .ToListAsync(),
+                RecentRescheduleRequests = await _context.RescheduleRequests
+                    .AsNoTracking()
                     .Include(r => r.Booking)
-                    .ThenInclude(b => b!.Service)
+                        .ThenInclude(b => b!.Client)
+                    .Include(r => r.Booking)
+                        .ThenInclude(b => b!.Service)
                     .OrderByDescending(r => r.CreatedAt)
                     .Take(5)
-                    .ToListAsync();
+                    .ToListAsync()
+            };
 
             return View(model);
         }

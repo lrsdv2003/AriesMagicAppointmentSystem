@@ -21,6 +21,5 @@ namespace AriesMagicAppointmentSystem.Models
         public string Role { get; set; } = string.Empty;
 
         public ICollection<Booking> Bookings { get; set; } = new List<Booking>();
-        public ICollection<Notification> Notifications { get; set; } = new List<Notification>();
     }
 }

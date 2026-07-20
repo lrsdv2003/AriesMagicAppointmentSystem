@@ -336,30 +336,60 @@
 
             // Submit form via AJAX
             async function submitForm(formId, successMessage) {
-                const form = document.getElementById(formId);
-                if (!form) return false;
+            const form = document.getElementById(formId);
+            if (!form) return false;
 
-                const formData = new FormData(form);
-                try {
-                    const response = await fetch(form.action, {
-                        method: 'POST',
-                        body: formData
-                    });
+            hideMessage();
 
-                    if (!response.ok) throw new Error('Request failed');
-
-                    const data = await response.json();
-                    showMessage(data.success, data.message || successMessage);
-
-                    if (data.success) {
-                        setTimeout(reloadPage, 700);
-                        return true;
-                    }
-                } catch {
-                    showMessage(false, 'Something went wrong. Please try again.');
-                }
+            if (!form.checkValidity()) {
+                form.classList.add('was-validated');
                 return false;
             }
+
+            const formData = new FormData(form);
+
+            try {
+                const response = await fetch(form.action, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                let data;
+
+                try {
+                    data = await response.json();
+                } catch {
+                    throw new Error(
+                        `Server returned ${response.status} ${response.statusText}`
+                    );
+                }
+
+                if (!response.ok) {
+                    throw new Error(
+                        data.message || `Request failed with status ${response.status}`
+                    );
+                }
+
+                showMessage(
+                    data.success,
+                    data.message || successMessage
+                );
+
+                if (data.success) {
+                    setTimeout(reloadPage, 700);
+                    return true;
+                }
+            } catch (error) {
+                console.error(`${formId} submission failed:`, error);
+
+                showMessage(
+                    false,
+                    error.message || 'Something went wrong. Please try again.'
+                );
+            }
+
+            return false;
+        }
 
             // Delete action via AJAX
             async function deleteItem(action, id) {

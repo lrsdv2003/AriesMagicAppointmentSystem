@@ -1,88 +1,105 @@
 @model AriesMagicAppointmentSystem.ViewModels.BookingManagementViewModel
+@using AriesMagicAppointmentSystem.Extensions
 
 @{
     Layout = "_DashboardLayout";
     ViewData["Title"] = "Booking Management";
-
+    var isStaff = User.IsInRole("Staff");
     var totalBookings = Model.Bookings.Count;
     var pendingCount = Model.Bookings.Count(x => x.BookingStatus == "Pending");
     var confirmedCount = Model.Bookings.Count(x => x.BookingStatus == "Confirmed");
-    var awaitingPaymentCount = Model.Bookings.Count(x =>
-        x.BookingStatus == "AwaitingDownpayment" || x.BookingStatus == "AwaitingVerification");
 }
 
-<div class="page-header">
-    
+<div class="page-header booking-page-header">
+    <div>
+        <span class="role-dashboard-eyebrow">Booking workspace</span>
+        <h1>Booking Management</h1>
+        <p class="page-subtitle mb-0">Review and manage active booking records.</p>
+    </div>
 </div>
 
-<div class="dashboard-stats mb-4">
+<div class="dashboard-stats mb-4 booking-summary-grid">
     <div class="stat-card">
         <div class="stat-label">Total Bookings</div>
         <div class="stat-value">@totalBookings</div>
-        <div class="stat-subtext">All booking records currently loaded in this view.</div>
+        <div class="stat-subtext">Records in the current result set.</div>
     </div>
     <div class="stat-card">
         <div class="stat-label">Pending</div>
         <div class="stat-value">@pendingCount</div>
-        <div class="stat-subtext">Bookings waiting for initial staff action.</div>
+        <div class="stat-subtext">Waiting for staff action.</div>
     </div>
     <div class="stat-card">
         <div class="stat-label">Confirmed</div>
         <div class="stat-value">@confirmedCount</div>
-        <div class="stat-subtext">Bookings already confirmed and scheduled.</div>
+        <div class="stat-subtext">Confirmed and scheduled events.</div>
     </div>
-    
 </div>
 
-<div class="dashboard-panel mb-4">
-    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
-        <div>
-            <div class="form-section-title mb-1">Search and Filters</div>
-            <p class="page-subtitle mb-0">Use filters below to quickly narrow down booking records.</p>
-        </div>
+<div class="dashboard-panel mb-4 booking-filter-panel">
+    <div class="mb-3">
+        <div class="form-section-title mb-1">Search and Filters</div>
+        <p class="page-subtitle mb-0">Narrow the list using the most relevant booking details.</p>
     </div>
 
     <form method="get" asp-action="Index">
-        <div class="row g-3 align-items-end">
-            <div class="col-lg-4 col-md-12">
+        <div class="booking-filter-grid">
+            <div class="booking-filter-field booking-filter-search">
                 <label class="form-label">Search</label>
-                <input type="text"
-                       name="search"
-                       value="@Model.Search"
-                       class="form-control"
-                       placeholder="Search by booking ID, client, email, or service..." />
+                <input type="text" name="search" value="@Model.Search" class="form-control"
+                       placeholder="Booking ID, client, email, or package" />
             </div>
 
-            <div class="col-lg-3 col-md-6">
+            <div class="booking-filter-field">
                 <label class="form-label">Booking Status</label>
                 <select name="bookingStatus" class="form-select">
-                    <option value="All" selected="@(Model.BookingStatus == "All")">All Status</option>
+                    <option value="All" selected="@(Model.BookingStatus == "All")">All Statuses</option>
                     <option value="Pending" selected="@(Model.BookingStatus == "Pending")">Pending</option>
                     <option value="AwaitingDownpayment" selected="@(Model.BookingStatus == "AwaitingDownpayment")">Awaiting Downpayment</option>
                     <option value="AwaitingVerification" selected="@(Model.BookingStatus == "AwaitingVerification")">Awaiting Verification</option>
                     <option value="Confirmed" selected="@(Model.BookingStatus == "Confirmed")">Confirmed</option>
-                    <option value="Declined" selected="@(Model.BookingStatus == "Declined")">Declined</option>
-                    <option value="Cancelled" selected="@(Model.BookingStatus == "Cancelled")">Cancelled</option>
-                    <option value="Expired" selected="@(Model.BookingStatus == "Expired")">Expired</option>
+                    @if (!isStaff)
+                    {
+                        <option value="Declined" selected="@(Model.BookingStatus == "Declined")">Declined</option>
+                        <option value="Cancelled" selected="@(Model.BookingStatus == "Cancelled")">Cancelled</option>
+                        <option value="Expired" selected="@(Model.BookingStatus == "Expired")">Expired</option>
+                    }
                 </select>
             </div>
 
-            <div class="col-lg-3 col-md-6">
-                <label class="form-label">Payment Status</label>
-                <select name="paymentStatus" class="form-select">
-                    <option value="All" selected="@(Model.PaymentStatus == "All")">All Status</option>
-                    <option value="No Payment" selected="@(Model.PaymentStatus == "No Payment")">No Payment</option>
-                    <option value="Pending" selected="@(Model.PaymentStatus == "Pending")">Pending</option>
-                    <option value="Verified" selected="@(Model.PaymentStatus == "Verified")">Verified</option>
-                    <option value="Rejected" selected="@(Model.PaymentStatus == "Rejected")">Rejected</option>
+            <div class="booking-filter-field">
+                <label class="form-label">Event Date</label>
+                <input type="date" name="eventDate" value="@(Model.EventDate?.ToString("yyyy-MM-dd"))" class="form-control" />
+            </div>
+
+            <div class="booking-filter-field">
+                <label class="form-label">Package</label>
+                <select name="serviceId" class="form-select">
+                    <option value="">All Packages</option>
+                    @foreach (var service in Model.AvailableServices)
+                    {
+                        <option value="@service.Id" selected="@(Model.ServiceId == service.Id)">@service.Name</option>
+                    }
                 </select>
             </div>
 
-            <div class="col-lg-2 col-md-12">
-                <div class="d-grid gap-2">
-                    <button type="submit" class="btn btn-primary">Apply Filters</button>
-                    <a asp-action="Index" class="btn btn-outline-secondary">Reset</a>
+            @if (!isStaff)
+            {
+                <div class="booking-filter-field">
+                    <label class="form-label">Payment Status</label>
+                    <select name="paymentStatus" class="form-select">
+                        <option value="All" selected="@(Model.PaymentStatus == "All")">All Statuses</option>
+                        <option value="No Payment" selected="@(Model.PaymentStatus == "No Payment")">No Payment</option>
+                        <option value="Pending" selected="@(Model.PaymentStatus == "Pending")">Pending</option>
+                        <option value="Verified" selected="@(Model.PaymentStatus == "Verified")">Verified</option>
+                        <option value="Rejected" selected="@(Model.PaymentStatus == "Rejected")">Rejected</option>
+                    </select>
                 </div>
+            }
+
+            <div class="booking-filter-actions">
+                <button type="submit" class="btn btn-primary"><i class="bi bi-funnel me-1"></i>Filter</button>
+                <a asp-action="Index" class="btn btn-outline-secondary">Reset</a>
             </div>
         </div>
     </form>
@@ -92,15 +109,16 @@
     <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
         <div>
             <h3 class="mb-1">Booking Records</h3>
-            <p class="page-subtitle mb-0">Showing @Model.Bookings.Count booking(s) based on the current filters. Completed events move automatically into <a asp-controller="History" asp-action="Index">Booking History</a>.</p>
+            <p class="page-subtitle mb-0">Showing @Model.Bookings.Count booking(s). Completed events move automatically to <a asp-controller="History" asp-action="Index">Booking History</a>.</p>
         </div>
     </div>
 
     @if (!Model.Bookings.Any())
     {
         <div class="empty-state">
+            <i class="bi bi-search fs-2"></i>
             <h3>No bookings found</h3>
-            <p>No booking records matched your current search and filters.</p>
+            <p>No booking records matched the current filters.</p>
         </div>
     }
     else
@@ -109,59 +127,35 @@
             <table class="table align-middle booking-management-table">
                 <thead>
                     <tr>
-                        <th>Booking ID</th>
-                        <th>Client Name</th>
-                        <th>Service</th>
-                        <th>Event Date</th>
-                        <th>Booking Status</th>
-                        <th>Payment Status</th>
-                        <th class="text-end">Actions</th>
+                        <th>Booking ID</th><th>Client Name</th><th>Package</th><th>Event Date</th>
+                        <th>Booking Status</th><th>Payment Status</th><th class="text-end">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
-@foreach (var item in Model.Bookings)
-{
+                @foreach (var item in Model.Bookings)
+                {
                     var bookingClass = item.BookingStatus switch
                     {
-                        "Pending" => "status-pending",
-                        "AwaitingDownpayment" => "status-awaiting",
-                        "AwaitingVerification" => "status-awaiting",
-                        "Confirmed" => "status-confirmed",
-                        "Completed" => "status-completed",
-                        "Declined" => "status-declined",
-                        "Cancelled" => "status-declined",
-                        "Expired" => "status-expired",
-                        _ => "status-read"
+                        "Pending" => "status-pending", "AwaitingDownpayment" => "status-awaiting",
+                        "AwaitingVerification" => "status-awaiting", "Confirmed" => "status-confirmed",
+                        "Completed" => "status-completed", "Declined" => "status-declined",
+                        "Cancelled" => "status-declined", "Expired" => "status-expired", _ => "status-read"
                     };
-
                     var paymentClass = item.PaymentStatus switch
                     {
-                        "Pending" => "status-pending",
-                        "Verified" => "status-verified",
-                        "Rejected" => "status-rejected",
-                        "No Payment" => "status-read",
-                        _ => "status-read"
+                        "Pending" => "status-pending", "Verified" => "status-verified",
+                        "Rejected" => "status-rejected", _ => "status-read"
                     };
-
                     <tr>
-                        <td>
-                            <div class="booking-code-cell">@item.BookingCode</div>
-                        </td>
-                        <td>
-                            <div class="fw-semibold">@item.ClientName</div>
-                        </td>
+                        <td><div class="booking-code-cell">@item.BookingCode</div></td>
+                        <td><div class="fw-semibold">@item.ClientName</div></td>
                         <td>@item.ServiceName</td>
                         <td>@item.EventDate.ToString("MMMM dd, yyyy")</td>
-                        <td>
-                            <span class="status-badge @bookingClass">@item.BookingStatus</span>
-                        </td>
-                        <td>
-                            <span class="status-badge @paymentClass">@item.PaymentStatus</span>
-                        </td>
+                        <td><span class="status-badge @bookingClass">@item.BookingStatus</span></td>
+                        <td><span class="status-badge @paymentClass">@item.PaymentStatus</span></td>
                         <td class="text-end">
                             <div class="booking-action-group">
                                 <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-light package-btn-light">Details</a>
-
                                 @if (User.CanManageBookingRecords())
                                 {
                                     @if (item.BookingStatus == "Pending")
@@ -169,19 +163,16 @@
                                         <a asp-action="Approve" asp-route-id="@item.Id" class="btn btn-sm btn-success">Approve</a>
                                         <a asp-action="Decline" asp-route-id="@item.Id" class="btn btn-sm btn-danger">Decline</a>
                                     }
-
                                     <a asp-action="AddNote" asp-route-id="@item.Id" class="btn btn-sm btn-secondary">Note</a>
-
                                     @if (item.BookingStatus == "Confirmed" && User.CanCompleteBookings())
                                     {
                                         <a asp-action="Complete" asp-route-id="@item.Id" class="btn btn-sm btn-primary">Complete</a>
                                     }
                                 }
-
                             </div>
                         </td>
                     </tr>
-}
+                }
                 </tbody>
             </table>
         </div>

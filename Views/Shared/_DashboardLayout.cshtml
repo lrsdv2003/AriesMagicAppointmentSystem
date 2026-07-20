@@ -117,23 +117,11 @@
                                 <i class="bi bi-arrow-counterclockwise"></i>
                                 Refund Requests
                             </a>
-
-                            <a asp-controller="RescheduleRequests" asp-action="Index"
-                               class="sidebar-link @(currentController == "RescheduleRequests" ? "active" : "")">
-                                <i class="bi bi-calendar2-week"></i>
-                                Reschedules
-                            </a>
-
+                            
                             <a asp-controller="Calendar" asp-action="Index"
                                class="sidebar-link @(currentController == "Calendar" ? "active" : "")">
                                 <i class="bi bi-calendar3"></i>
                                 Calendar
-                            </a>
-
-                            <a asp-controller="Notification" asp-action="Index"
-                               class="sidebar-link @(currentController == "Notification" ? "active" : "")">
-                                <i class="bi bi-bell"></i>
-                                Notifications
                             </a>
 
                             <a asp-controller="History" asp-action="Index"
@@ -171,7 +159,7 @@
                             .Count(n => n.UserId == currentUserId && !n.IsRead);
                         }
                     }
-                   <a asp-controller="Notification"
+                   <a asp-controller="Notifications"
                         asp-action="Index"
                         class="topbar-icon topbar-bell"
                         title="Notifications">

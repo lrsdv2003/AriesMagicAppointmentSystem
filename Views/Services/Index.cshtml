@@ -14,9 +14,12 @@
             </a>
         }
 
-        <a asp-action="Archived" class="btn btn-outline-secondary">
-            Archived Packages
-        </a>
+        @if (User.IsInRole("Admin"))
+        {
+            <a asp-action="Archived" class="btn btn-outline-secondary">
+                Archived Packages
+            </a>
+        }
     </div>
 </div>
 

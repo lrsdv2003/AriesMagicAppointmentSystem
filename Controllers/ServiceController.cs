@@ -48,7 +48,7 @@ namespace AriesMagicAppointmentSystem.Controllers
         }
 
         // STAFF + ADMIN: view archived packages
-        [Authorize(Roles = "Staff,Admin")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Archived()
         {
             var archivedPackages = await _context.Services
@@ -57,6 +57,23 @@ namespace AriesMagicAppointmentSystem.Controllers
                 .ToListAsync();
 
             return View(archivedPackages);
+        }
+        // ADMIN: show create package form
+        [Authorize(Roles = "Admin")]
+        [HttpGet]
+        public IActionResult Create()
+        {
+            var model = new ServiceManageViewModel();
+
+            if (model.Inclusions == null || !model.Inclusions.Any())
+            {
+                model.Inclusions = new List<ServiceInclusionInputViewModel>
+                {
+                    new ServiceInclusionInputViewModel()
+                };
+            }
+
+            return View(model);
         }
 
         [HttpPost]
@@ -204,7 +221,7 @@ namespace AriesMagicAppointmentSystem.Controllers
         }
 
         [HttpPost, ActionName("Archive")]
-        [Authorize(Roles = "Staff,Admin")]
+        [Authorize(Roles = "Admin")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ArchiveConfirmed(int id)
         {
@@ -230,8 +247,8 @@ namespace AriesMagicAppointmentSystem.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        // STAFF + ADMIN: restore package
-        [Authorize(Roles = "Staff,Admin")]
+        // ADMIN: restore package
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Restore(int? id)
         {
             if (id == null) return NotFound();
@@ -245,7 +262,7 @@ namespace AriesMagicAppointmentSystem.Controllers
         }
 
         [HttpPost, ActionName("Restore")]
-        [Authorize(Roles = "Staff,Admin")]
+        [Authorize(Roles = "Admin")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RestoreConfirmed(int id)
         {

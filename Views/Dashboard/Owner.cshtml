@@ -5,93 +5,121 @@
     Layout = "_DashboardLayout";
 }
 
-<div class="role-dashboard-hero">
+<div class="role-dashboard-hero role-dashboard-hero-premium">
     <div>
-        <span class="role-dashboard-eyebrow">Business overview</span>
-        <h2>Welcome back, Owner</h2>
-        <p>
-            Monitor business activity, financial requests,
-            booking performance, and upcoming events.
-        </p>
+        <h2>Welcome back, Owner!</h2>
     </div>
 
-    <a asp-controller="Reports"
-       asp-action="Index"
-       class="btn btn-primary">
-        <i class="bi bi-bar-chart-line me-1"></i>
-        Open Reports
+    <a asp-controller="Reports" asp-action="Index" class="btn btn-primary px-4">
+        <i class="bi bi-bar-chart-line me-2"></i>Open Reports
     </a>
 </div>
 
-<div class="dashboard-stat-grid">
-    <a asp-controller="Bookings"
-       asp-action="Index"
-       class="dashboard-stat-card stat-info">
-        <span class="dashboard-stat-icon"><i class="bi bi-journals"></i></span>
-        <span class="dashboard-stat-label">Total Bookings</span>
-        <strong>@Model.TotalBookings</strong>
-        <small>All booking records</small>
+<div class="dashboard-stat-grid owner-summary-grid">
+    <a asp-controller="Payments" asp-action="PendingVerification" class="dashboard-stat-card stat-warning">
+        <span class="dashboard-stat-icon"><i class="bi bi-credit-card-2-front"></i></span>
+        <span class="dashboard-stat-label">Payments to Verify</span>
+        <strong>@Model.PendingPayments</strong>
+        <small>Payment submissions awaiting review</small>
+    </a>
+
+    <a asp-controller="Payments" asp-action="RefundRequests" class="dashboard-stat-card stat-danger">
+        <span class="dashboard-stat-icon"><i class="bi bi-arrow-counterclockwise"></i></span>
+        <span class="dashboard-stat-label">Refund Requests</span>
+        <strong>@Model.PendingRefunds</strong>
+        <small>Pending refund requests</small>
+    </a>
+
+    <a asp-controller="Calendar" asp-action="Index" class="dashboard-stat-card stat-info">
+        <span class="dashboard-stat-icon"><i class="bi bi-calendar2-check"></i></span>
+        <span class="dashboard-stat-label">Confirmed Events</span>
+        <strong>@Model.UpcomingBookings</strong>
+        <small>Upcoming confirmed appointments</small>
     </a>
 
     <div class="dashboard-stat-card stat-success">
-        <span class="dashboard-stat-icon"><i class="bi bi-cash-stack"></i></span>
-        <span class="dashboard-stat-label">Verified Revenue</span>
-        <strong>₱@Model.VerifiedRevenue.ToString("N2")</strong>
-        <small>Verified payments only</small>
-    </div>
-
-    <a asp-controller="Payments"
-       asp-action="PendingVerification"
-       class="dashboard-stat-card stat-warning">
-        <span class="dashboard-stat-icon"><i class="bi bi-hourglass-split"></i></span>
-        <span class="dashboard-stat-label">Pending Requests</span>
-        <strong>@(Model.PendingPayments + Model.PendingRefunds + Model.PendingReschedules)</strong>
-        <small>Payments, refunds, and reschedules</small>
-    </a>
-
-    <a asp-controller="Bookings"
-       asp-action="Index"
-       class="dashboard-stat-card stat-neutral">
-        <span class="dashboard-stat-icon"><i class="bi bi-check2-circle"></i></span>
-        <span class="dashboard-stat-label">Completed Appointments</span>
-        <strong>@Model.CompletedBookings</strong>
-        <small>Finished event records</small>
-    </a>
-</div>
-
-<div class="dashboard-stat-grid dashboard-stat-grid-compact">
-    <a asp-controller="Payments"
-       asp-action="PendingVerification"
-       class="dashboard-stat-card stat-warning">
-        <span class="dashboard-stat-label">Payments to Verify</span>
-        <strong>@Model.PendingPayments</strong>
-        <small>Requires Owner decision</small>
-    </a>
-
-    <a asp-controller="Payments"
-       asp-action="RefundRequests"
-       class="dashboard-stat-card stat-danger">
-        <span class="dashboard-stat-label">Refund Requests</span>
-        <strong>@Model.PendingRefunds</strong>
-        <small>Pending review</small>
-    </a>
-
-    <a asp-controller="RescheduleRequests"
-       asp-action="Index"
-       class="dashboard-stat-card stat-info">
-        <span class="dashboard-stat-label">Reschedule Requests</span>
-        <strong>@Model.PendingReschedules</strong>
-        <small>Awaiting final decision</small>
-    </a>
-
-    <div class="dashboard-stat-card stat-neutral">
+        <span class="dashboard-stat-icon"><i class="bi bi-graph-up-arrow"></i></span>
         <span class="dashboard-stat-label">Revenue This Month</span>
         <strong>₱@Model.CurrentMonthRevenue.ToString("N2")</strong>
-        <small>Current month verified payments</small>
+        <small>Verified payments for the current month</small>
     </div>
 </div>
 
-<div class="dashboard-two-column">
-    <partial name="_RecentBookings" model="Model" />
-    <partial name="_UpcomingEvents" model="Model" />
+<div class="dashboard-two-column owner-dashboard-columns">
+    <section class="dashboard-list-panel">
+        <div class="dashboard-list-heading">
+            <div>
+                <span class="role-dashboard-eyebrow"><i class="bi bi-shield-check me-1"></i>Payment review</span>
+                <h3>Payments to Verify Activity</h3>
+            </div>
+            <a asp-controller="Payments" asp-action="PendingVerification">View all</a>
+        </div>
+
+        @if (!Model.RecentPaymentsToVerify.Any())
+        {
+            <div class="dashboard-empty-state">
+                <i class="bi bi-check2-circle"></i>
+                <p>No payments are currently waiting for verification.</p>
+            </div>
+        }
+        else
+        {
+            <div class="dashboard-record-list">
+                @foreach (var payment in Model.RecentPaymentsToVerify)
+                {
+                    <div class="dashboard-activity-row">
+                        <div class="dashboard-record-icon"><i class="bi bi-receipt"></i></div>
+                        <div class="dashboard-record-copy">
+                            <strong>@(payment.Booking?.Client?.FullName ?? "Unknown client")</strong>
+                            <span>@(payment.Booking?.Service?.Name ?? payment.Booking?.PackageName ?? "Package not available")</span>
+                            <small>Submitted @payment.UploadedAt.ToString("MMM dd, yyyy • hh:mm tt")</small>
+                        </div>
+                        <div class="dashboard-activity-meta">
+                            <strong>₱@payment.Amount.ToString("N2")</strong>
+                            <span class="dashboard-status-pill status-pending">@payment.Status</span>
+                        </div>
+                        <a asp-controller="Payments" asp-action="Verify" asp-route-id="@payment.Id" class="btn btn-sm btn-outline-primary">View Details</a>
+                    </div>
+                }
+            </div>
+        }
+    </section>
+
+    <section class="dashboard-list-panel">
+        <div class="dashboard-list-heading">
+            <div>
+                <span class="role-dashboard-eyebrow"><i class="bi bi-calendar-event me-1"></i>Schedule</span>
+                <h3>Upcoming Confirmed Events</h3>
+            </div>
+            <a asp-controller="Calendar" asp-action="Index">Open calendar</a>
+        </div>
+
+        @if (!Model.UpcomingEvents.Any())
+        {
+            <div class="dashboard-empty-state">
+                <i class="bi bi-calendar2-check"></i>
+                <p>No upcoming confirmed events.</p>
+            </div>
+        }
+        else
+        {
+            <div class="dashboard-record-list">
+                @foreach (var booking in Model.UpcomingEvents)
+                {
+                    <a asp-controller="Bookings" asp-action="Details" asp-route-id="@booking.Id" class="dashboard-record-item">
+                        <div class="dashboard-date-tile">
+                            <span>@booking.EventDate.ToString("MMM")</span>
+                            <strong>@booking.EventDate.Day</strong>
+                        </div>
+                        <div class="dashboard-record-copy">
+                            <strong>@(booking.Client?.FullName ?? "Unknown client")</strong>
+                            <span>@(booking.Service?.Name ?? booking.PackageName)</span>
+                            <small>@booking.PartyVenue</small>
+                        </div>
+                        <span class="dashboard-status-pill status-confirmed">Confirmed</span>
+                    </a>
+                }
+            </div>
+        }
+    </section>
 </div>

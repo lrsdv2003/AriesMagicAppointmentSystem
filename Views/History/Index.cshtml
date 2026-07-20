@@ -106,30 +106,6 @@
                     }
                 </select>
             </div>
-
-            <div class="col-lg-2 col-md-6">
-                <label class="form-label">Payment Status</label>
-                <select name="PaymentStatus" class="form-select">
-                    <option value="All" selected="@(string.IsNullOrEmpty(f.PaymentStatus) || f.PaymentStatus == "All")">All</option>
-                    <option value="No Payment" selected="@(f.PaymentStatus == "No Payment")">No Payment</option>
-                    <option value="Pending" selected="@(f.PaymentStatus == "Pending")">Pending</option>
-                    <option value="Verified" selected="@(f.PaymentStatus == "Verified")">Verified</option>
-                    <option value="Rejected" selected="@(f.PaymentStatus == "Rejected")">Rejected</option>
-                </select>
-            </div>
-
-            <div class="col-lg-1 col-md-6">
-                <label class="form-label">Refund</label>
-                <select name="RefundStatus" class="form-select">
-                    <option value="All" selected="@(string.IsNullOrEmpty(f.RefundStatus) || f.RefundStatus == "All")">All</option>
-                    <option value="None" selected="@(f.RefundStatus == "None")">None</option>
-                    <option value="Pending" selected="@(f.RefundStatus == "Pending")">Pending</option>
-                    <option value="Approved" selected="@(f.RefundStatus == "Approved")">Approved</option>
-                    <option value="Rejected" selected="@(f.RefundStatus == "Rejected")">Rejected</option>
-                    <option value="Refunded" selected="@(f.RefundStatus == "Refunded")">Refunded</option>
-                </select>
-            </div>
-
             <div class="col-lg-2 col-md-6">
                 <label class="form-label">Sort By</label>
                 <select name="SortBy" class="form-select">

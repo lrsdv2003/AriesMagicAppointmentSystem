@@ -51,7 +51,10 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-app.UseHttpsRedirection();
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 app.UseStaticFiles();
 
 app.UseRouting();
@@ -64,15 +67,15 @@ app.MapRazorPages();
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
-// Apply migrations first, then seed roles/users
+// Keep the database schema current before any seeders query it.
 using (var scope = app.Services.CreateScope())
-    {
-        var services = scope.ServiceProvider;
+{
+    var services = scope.ServiceProvider;
+    var dbContext = services.GetRequiredService<ApplicationDbContext>();
 
-        await IdentitySeeder.SeedAsync(services);
-
-        var dbContext = services.GetRequiredService<ApplicationDbContext>();
-        await ServiceSeeder.SeedAsync(dbContext);
-    }
+    await dbContext.Database.MigrateAsync();
+    await IdentitySeeder.SeedAsync(services);
+    await ServiceSeeder.SeedAsync(dbContext);
+}
 
 app.Run();

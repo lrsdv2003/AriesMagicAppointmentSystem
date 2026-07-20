@@ -37,7 +37,7 @@ namespace AriesMagicAppointmentSystem.Controllers
         }
 
         [Authorize(Roles = "Staff,Owner")]
-        public async Task<IActionResult> Index(string? search, string? bookingStatus, string? paymentStatus)
+        public async Task<IActionResult> Index(string? search, string? bookingStatus, string? paymentStatus, DateTime? eventDate, int? serviceId)
         {
             // Lazily flip any bookings whose event has already ended into Completed/archived
             // before we build this list, so nothing that has already happened lingers here.
@@ -53,6 +53,16 @@ namespace AriesMagicAppointmentSystem.Controllers
             if (!string.IsNullOrWhiteSpace(bookingStatus) && bookingStatus != "All")
             {
                 bookingsQuery = bookingsQuery.Where(b => b.Status == bookingStatus);
+            }
+
+            if (eventDate.HasValue)
+            {
+                bookingsQuery = bookingsQuery.Where(b => b.EventDate.Date == eventDate.Value.Date);
+            }
+
+            if (serviceId.HasValue)
+            {
+                bookingsQuery = bookingsQuery.Where(b => b.ServiceId == serviceId.Value);
             }
 
             var bookings = await bookingsQuery
@@ -102,6 +112,13 @@ namespace AriesMagicAppointmentSystem.Controllers
                 Search = search,
                 BookingStatus = bookingStatus ?? "All",
                 PaymentStatus = paymentStatus ?? "All",
+                EventDate = eventDate,
+                ServiceId = serviceId,
+                AvailableServices = await _context.Services
+                    .AsNoTracking()
+                    .Where(s => !s.IsArchived)
+                    .OrderBy(s => s.Name)
+                    .ToListAsync(),
                 Bookings = rows
             };
 
