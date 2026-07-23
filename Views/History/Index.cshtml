@@ -3,219 +3,219 @@
 
 @{
     Layout = "_DashboardLayout";
-    ViewData["Title"] = "Booking History";
+    ViewData["Title"] = "System Activity History";
     var f = Model.Filters;
 }
-
 <div class="dashboard-stats mb-4">
     <div class="stat-card">
         <div class="stat-label">Upcoming Events</div>
         <div class="stat-value">@Model.Summary.UpcomingEvents</div>
-        <div class="stat-subtext">Confirmed bookings still ahead on the calendar.</div>
+      
     </div>
     <div class="stat-card">
         <div class="stat-label">Today's Events</div>
         <div class="stat-value">@Model.Summary.TodaysEvents</div>
-        <div class="stat-subtext">Confirmed bookings scheduled for today.</div>
+        
     </div>
     <div class="stat-card">
         <div class="stat-label">History Count</div>
         <div class="stat-value">@Model.Summary.HistoryCount</div>
-        <div class="stat-subtext">Completed events archived so far.</div>
+       
     </div>
     <div class="stat-card">
         <div class="stat-label">Completed This Month</div>
         <div class="stat-value">@Model.Summary.CompletedThisMonth</div>
-        <div class="stat-subtext">Events that took place this calendar month.</div>
+        
     </div>
     <div class="stat-card">
         <div class="stat-label">Completed This Year</div>
         <div class="stat-value">@Model.Summary.CompletedThisYear</div>
-        <div class="stat-subtext">Events that took place this calendar year.</div>
+        
     </div>
     <div class="stat-card">
         <div class="stat-label">Lifetime Events</div>
         <div class="stat-value">@Model.Summary.LifetimeEvents</div>
-        <div class="stat-subtext">All-time completed events (₱@Model.Summary.LifetimeRevenue.ToString("N2") collected).</div>
+        
     </div>
 </div>
 
-<div class="dashboard-panel mb-4">
-    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+<div class="container-fluid py-4">
+    <!-- Header Section -->
+    <div class="d-flex justify-content-between align-items-start mb-4">
         <div>
-            <div class="form-section-title mb-1">Search and Filters</div>
-            <p class="page-subtitle mb-0">Every completed event lives here - active modules no longer show it.</p>
+            <span class="text-uppercase fw-bold text-primary small tracking-wider">AUDIT</span>
+            <h1 class="h2 fw-bold text-dark mb-0">System Activity History</h1>
         </div>
-
+        
         @if (User.CanExportHistoryReports())
         {
-            <div class="d-flex gap-2">
-                <a class="btn btn-outline-secondary btn-sm" target="_blank"
-                   asp-action="Print" asp-all-route-data="@GetRouteData(f)">
-                    <i class="bi bi-printer"></i> Print
-                </a>
-                <a class="btn btn-outline-secondary btn-sm"
-                   asp-action="ExportCsv" asp-all-route-data="@GetRouteData(f)">
-                    <i class="bi bi-filetype-csv"></i> Export Excel/CSV
-                </a>
-                <a class="btn btn-outline-secondary btn-sm"
-                   asp-action="ExportPdf" asp-all-route-data="@GetRouteData(f)">
-                    <i class="bi bi-filetype-pdf"></i> Export PDF
-                </a>
-            </div>
-        }
-    </div>
-
-    <form method="get" asp-action="Index">
-        <div class="row g-3 align-items-end">
-            <div class="col-lg-3 col-md-6">
-                <label class="form-label">Search</label>
-                <input type="text" name="Search" value="@f.Search" class="form-control"
-                       placeholder="Booking ID, client, phone, package..." />
-            </div>
-
-            <div class="col-lg-2 col-md-6">
-                <label class="form-label">Date Range</label>
-                <select name="DateRange" class="form-select">
-                    <option value="" selected="@(string.IsNullOrEmpty(f.DateRange))">Any Time</option>
-                    <option value="Today" selected="@(f.DateRange == "Today")">Today</option>
-                    <option value="ThisWeek" selected="@(f.DateRange == "ThisWeek")">This Week</option>
-                    <option value="ThisMonth" selected="@(f.DateRange == "ThisMonth")">This Month</option>
-                    <option value="Year" selected="@(f.DateRange == "Year")">Year</option>
-                </select>
-            </div>
-
-            <div class="col-lg-2 col-md-6">
-                <label class="form-label">Package</label>
-                <select name="ServiceId" class="form-select">
-                    <option value="">All Packages</option>
-                    @foreach (var svc in Model.AvailableServices)
-                    {
-                        <option value="@svc.Id" selected="@(f.ServiceId == svc.Id)">@svc.Name</option>
-                    }
-                </select>
-            </div>
-
-            <div class="col-lg-2 col-md-6">
-                <label class="form-label">Event Type</label>
-                <select name="EventType" class="form-select">
-                    <option value="All" selected="@(string.IsNullOrEmpty(f.EventType) || f.EventType == "All")">All Types</option>
-                    @foreach (var type in Model.AvailableEventTypes)
-                    {
-                        <option value="@type" selected="@(f.EventType == type)">@type</option>
-                    }
-                </select>
-            </div>
-            <div class="col-lg-2 col-md-6">
-                <label class="form-label">Sort By</label>
-                <select name="SortBy" class="form-select">
-                    <option value="Newest" selected="@(string.IsNullOrEmpty(f.SortBy) || f.SortBy == "Newest")">Newest</option>
-                    <option value="Oldest" selected="@(f.SortBy == "Oldest")">Oldest</option>
-                    <option value="HighestRevenue" selected="@(f.SortBy == "HighestRevenue")">Highest Revenue</option>
-                    <option value="LowestRevenue" selected="@(f.SortBy == "LowestRevenue")">Lowest Revenue</option>
-                    <option value="ClientName" selected="@(f.SortBy == "ClientName")">Client Name</option>
-                </select>
-            </div>
-
-            <div class="col-lg-2 col-md-6">
-                <div class="d-grid gap-2">
-                    <button type="submit" class="btn btn-primary">Apply Filters</button>
-                    <a asp-action="Index" class="btn btn-outline-secondary">Reset</a>
-                </div>
-            </div>
-        </div>
-    </form>
-</div>
-
-<div class="dashboard-panel">
-    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
-        <div>
-            <h3 class="mb-1">Archived Events</h3>
-            <p class="page-subtitle mb-0">Showing @Model.Bookings.Count of @Model.TotalCount completed event(s).</p>
-        </div>
-    </div>
-
-    @if (!Model.Bookings.Any())
-    {
-        <div class="empty-state">
-            <h3>No completed events yet</h3>
-            <p>Once a confirmed booking's event date passes, it will automatically appear here.</p>
-        </div>
-    }
-    else
-    {
-        <div class="table-clean booking-table-wrap">
-            <table class="table align-middle booking-management-table">
-                <thead>
-                    <tr>
-                        <th>Booking ID</th>
-                        <th>Client</th>
-                        <th>Event Type</th>
-                        <th>Package</th>
-                        <th>Event Date</th>
-                        <th>Amount Paid</th>
-                        <th>Payment</th>
-                        <th>Refund</th>
-                        <th class="text-end">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var item in Model.Bookings)
-                    {
-                        var paymentClass = item.PaymentStatus switch
-                        {
-                            "Pending" => "status-pending",
-                            "Verified" => "status-verified",
-                            "Rejected" => "status-rejected",
-                            _ => "status-read"
-                        };
-
-                        var refundClass = item.RefundStatus switch
-                        {
-                            "Pending" => "status-pending",
-                            "Approved" => "status-verified",
-                            "Refunded" => "status-verified",
-                            "Rejected" => "status-rejected",
-                            _ => "status-read"
-                        };
-
-                        <tr>
-                            <td><div class="booking-code-cell">@item.BookingCode</div></td>
-                            <td>
-                                <div class="fw-semibold">@item.ClientName</div>
-                                <div class="text-muted small">@item.ClientPhone</div>
-                            </td>
-                            <td>@item.EventType</td>
-                            <td>@item.PackageName</td>
-                            <td>@item.EventDate.ToString("MMM dd, yyyy")</td>
-                            <td>₱@item.AmountPaid.ToString("N2")</td>
-                            <td><span class="status-badge @paymentClass">@item.PaymentStatus</span></td>
-                            <td><span class="status-badge @refundClass">@item.RefundStatus</span></td>
-                            <td class="text-end">
-                                <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-light package-btn-light">Details</a>
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
-
-        @if (Model.TotalPages > 1)
-        {
-            <nav class="history-pagination mt-3">
-                <ul class="pagination">
-                    @for (var p = 1; p <= Model.TotalPages; p++)
-                    {
-                        <li class="page-item @(p == f.Page ? "active" : "")">
-                            <a class="page-link"
-                               asp-action="Index"
-                               asp-all-route-data="@GetRouteData(f, p)">@p</a>
-                        </li>
-                    }
+            <div class="dropdown">
+                <button class="btn btn-light rounded-circle shadow-sm p-2 d-flex align-items-center justify-content-center" 
+                        type="button" id="exportDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="width: 42px; height: 42px;">
+                    <i class="bi bi-download fs-5 text-secondary"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end border-0 shadow" aria-labelledby="exportDropdown">
+                    <li>
+                        <a class="dropdown-item d-flex align-items-center gap-2" target="_blank"
+                           asp-action="Print" asp-all-route-data="@GetRouteData(f)">
+                            <i class="bi bi-printer text-muted"></i> Print
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item d-flex align-items-center gap-2"
+                           asp-action="ExportCsv" asp-all-route-data="@GetRouteData(f)">
+                            <i class="bi bi-filetype-csv text-muted"></i> Export Excel/CSV
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item d-flex align-items-center gap-2"
+                           asp-action="ExportPdf" asp-all-route-data="@GetRouteData(f)">
+                            <i class="bi bi-filetype-pdf text-muted"></i> Export PDF
+                        </a>
+                    </li>
                 </ul>
-            </nav>
+            </div>
         }
-    }
+    </div>
+
+    <!-- Search and Filter Bar Card -->
+    <div class="card border-0 shadow-sm rounded-4 p-3 mb-4 bg-white">
+        <form method="get" asp-action="Index">
+            <div class="d-flex flex-column flex-md-row gap-2 align-items-center">
+                
+                <!-- Search Input Field -->
+                <div class="input-group flex-grow-1">
+                    <span class="input-group-text bg-white border-end-0 text-muted ps-3 rounded-start-pill">
+                        <i class="bi bi-search"></i>
+                    </span>
+                    <input type="text" name="Search" value="@f.Search" 
+                           class="form-control border-start-0 ps-2 rounded-end-pill py-2" 
+                           placeholder="Search action, user, record..." />
+                </div>
+
+                <!-- Dropdown Filters Button -->
+                <div class="dropdown position-relative">
+                    <button class="btn btn-outline-secondary dropdown-toggle rounded-pill px-3 py-2 bg-white text-dark d-flex align-items-center gap-2" 
+                            type="button" id="filterDropdown" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
+                        <i class="bi bi-funnel"></i>
+                        <span>Filters</span>
+                    </button>
+
+                    <!-- Filter Popup Card -->
+                    <div class="dropdown-menu dropdown-menu-end border-0 shadow-lg rounded-4 p-4 mt-2" 
+                         aria-labelledby="filterDropdown" style="width: 320px; z-index: 1050;">
+                        <h6 class="fw-bold text-dark mb-3">Filter Activities</h6>
+
+                        <!-- Activity/Package Type -->
+                        <div class="mb-3">
+                            <label class="form-label text-muted text-uppercase fw-semibold" style="font-size: 0.75rem;">ACTIVITY TYPE</label>
+                            <select name="ServiceId" class="form-select rounded-3">
+                                <option value="">All Types</option>
+                                @foreach (var svc in Model.AvailableServices)
+                                {
+                                    <option value="@svc.Id" selected="@(f.ServiceId == svc.Id)">@svc.Name</option>
+                                }
+                            </select>
+                        </div>
+
+                        <!-- Date Range Preset / From Date -->
+                        <div class="mb-3">
+                            <label class="form-label text-muted text-uppercase fw-semibold" style="font-size: 0.75rem;">DATE RANGE</label>
+                            <select name="DateRange" class="form-select rounded-3">
+                                <option value="" selected="@(string.IsNullOrEmpty(f.DateRange))">Any Time</option>
+                                <option value="Today" selected="@(f.DateRange == "Today")">Today</option>
+                                <option value="ThisWeek" selected="@(f.DateRange == "ThisWeek")">This Week</option>
+                                <option value="ThisMonth" selected="@(f.DateRange == "ThisMonth")">This Month</option>
+                                <option value="Year" selected="@(f.DateRange == "Year")">Year</option>
+                            </select>
+                        </div>
+
+                        <!-- Sort Option -->
+                        <div class="mb-4">
+                            <label class="form-label text-muted text-uppercase fw-semibold" style="font-size: 0.75rem;">SORT BY</label>
+                            <select name="SortBy" class="form-select rounded-3">
+                                <option value="Newest" selected="@(string.IsNullOrEmpty(f.SortBy) || f.SortBy == "Newest")">Newest</option>
+                                <option value="Oldest" selected="@(f.SortBy == "Oldest")">Oldest</option>
+                                <option value="ClientName" selected="@(f.SortBy == "ClientName")">Client Name</option>
+                            </select>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="d-flex justify-content-end align-items-center gap-2">
+                            <a asp-action="Index" class="btn btn-light rounded-pill btn-sm px-3 text-dark font-weight-bold">Reset</a>
+                            <button type="submit" class="btn btn-primary rounded-pill btn-sm px-3 fw-bold">Apply Filters</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Submit Search Button -->
+                <button type="submit" class="btn btn-primary rounded-pill px-4 py-2 fw-semibold">
+                    Search
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Activity Log Results Container -->
+    <div class="card border-0 shadow-sm rounded-4 p-4 bg-white">
+        <div class="mb-3">
+            <h3 class="h4 fw-bold text-dark mb-1">Activity Log</h3>
+            <p class="text-muted small mb-0">Showing @Model.Bookings.Count of @Model.TotalCount activities.</p>
+        </div>
+
+        @if (!Model.Bookings.Any())
+        {
+            <!-- Empty State -->
+            <div class="text-center py-5">
+                <i class="bi bi-activity display-3 text-light-emphasis d-block mb-3"></i>
+                <h4 class="fw-bold text-dark mb-1">No activity log found</h4>
+                
+            </div>
+        }
+        else
+        {
+            <!-- Scrollable Activity List (3 items visible at a time) -->
+            <div class="d-flex flex-column gap-2" style="max-height: 270px; overflow-y: auto; padding-right: 4px;">
+                @foreach (var item in Model.Bookings)
+                {
+                    <div class="d-flex justify-content-between align-items-center p-3 rounded-3 border border-light-subtle bg-light-subtle">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="badge bg-primary-subtle text-primary p-2 rounded-3">
+                                <i class="bi bi-calendar-event fs-5"></i>
+                            </div>
+                            <div>
+                                <h6 class="fw-bold text-dark mb-0">@item.BookingCode &middot; @item.ClientName</h6>
+                                <p class="text-muted small mb-0">
+                                    @item.PackageName &middot; @item.EventDate.ToString("MMM dd, yyyy")
+                                </p>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center gap-3">
+                            <span class="badge bg-success-subtle text-success px-3 py-2 rounded-pill">₱@item.AmountPaid.ToString("N2")</span>
+                            <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-outline-secondary rounded-pill px-3">Details</a>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <!-- Pagination -->
+            @if (Model.TotalPages > 1)
+            {
+                <nav class="mt-4 d-flex justify-content-center">
+                    <ul class="pagination pagination-sm mb-0">
+                        @for (var p = 1; p <= Model.TotalPages; p++)
+                        {
+                            <li class="page-item @(p == f.Page ? "active" : "")">
+                                <a class="page-link rounded-circle mx-1"
+                                   asp-action="Index"
+                                   asp-all-route-data="@GetRouteData(f, p)">@p</a>
+                            </li>
+                        }
+                    </ul>
+                </nav>
+            }
+        }
+    </div>
 </div>
 
 @functions {

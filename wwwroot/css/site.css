@@ -6130,3 +6130,59 @@ textarea.form-control { min-height: 100px; resize: vertical; }
         grid-template-columns: 1fr 1fr;
     }
 }
+
+/* Floating Filter Popover Styles */
+.filter-dropdown-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
+.filter-popover-menu {
+    width: 320px;
+    background-color: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 12px;
+    padding: 1.25rem;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+    z-index: 1050 !important;
+}
+
+.filter-popover-menu.show {
+    animation: popoverFadeIn 0.15s ease-out forwards;
+}
+
+@keyframes popoverFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.filter-popover-menu .form-label {
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #6c757d;
+    margin-bottom: 0.35rem;
+}
+
+.filter-active-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    background-color: #0d6efd;
+    border-radius: 50%;
+    margin-left: 2px;
+}
+
+.dashboard-record-list {
+    max-height: 270px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+

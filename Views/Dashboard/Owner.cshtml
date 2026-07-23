@@ -1,7 +1,7 @@
 @model AriesMagicAppointmentSystem.ViewModels.RoleDashboardViewModel
 
 @{
-    ViewData["Title"] = "Dashboard";
+    ViewData["Title"] = "Owner Dashboard";
     Layout = "_DashboardLayout";
 }
 
@@ -20,36 +20,32 @@
         <span class="dashboard-stat-icon"><i class="bi bi-credit-card-2-front"></i></span>
         <span class="dashboard-stat-label">Payments to Verify</span>
         <strong>@Model.PendingPayments</strong>
-        <small>Payment submissions awaiting review</small>
     </a>
 
     <a asp-controller="Payments" asp-action="RefundRequests" class="dashboard-stat-card stat-danger">
         <span class="dashboard-stat-icon"><i class="bi bi-arrow-counterclockwise"></i></span>
         <span class="dashboard-stat-label">Refund Requests</span>
         <strong>@Model.PendingRefunds</strong>
-        <small>Pending refund requests</small>
     </a>
 
     <a asp-controller="Calendar" asp-action="Index" class="dashboard-stat-card stat-info">
         <span class="dashboard-stat-icon"><i class="bi bi-calendar2-check"></i></span>
         <span class="dashboard-stat-label">Confirmed Events</span>
         <strong>@Model.UpcomingBookings</strong>
-        <small>Upcoming confirmed appointments</small>
     </a>
 
     <div class="dashboard-stat-card stat-success">
         <span class="dashboard-stat-icon"><i class="bi bi-graph-up-arrow"></i></span>
         <span class="dashboard-stat-label">Revenue This Month</span>
         <strong>₱@Model.CurrentMonthRevenue.ToString("N2")</strong>
-        <small>Verified payments for the current month</small>
     </div>
 </div>
 
 <div class="dashboard-two-column owner-dashboard-columns">
+    <!-- Payments to Verify Section -->
     <section class="dashboard-list-panel">
         <div class="dashboard-list-heading">
             <div>
-                <span class="role-dashboard-eyebrow"><i class="bi bi-shield-check me-1"></i>Payment review</span>
                 <h3>Payments to Verify Activity</h3>
             </div>
             <a asp-controller="Payments" asp-action="PendingVerification">View all</a>
@@ -64,7 +60,8 @@
         }
         else
         {
-            <div class="dashboard-record-list">
+            <!-- Added max-height and overflow-y for scrolling beyond ~3 items -->
+            <div class="dashboard-record-list" style="max-height: 285px; overflow-y: auto; padding-right: 4px;">
                 @foreach (var payment in Model.RecentPaymentsToVerify)
                 {
                     <div class="dashboard-activity-row">
@@ -85,10 +82,10 @@
         }
     </section>
 
+    <!-- Upcoming Confirmed Events Section -->
     <section class="dashboard-list-panel">
         <div class="dashboard-list-heading">
             <div>
-                <span class="role-dashboard-eyebrow"><i class="bi bi-calendar-event me-1"></i>Schedule</span>
                 <h3>Upcoming Confirmed Events</h3>
             </div>
             <a asp-controller="Calendar" asp-action="Index">Open calendar</a>
@@ -103,7 +100,8 @@
         }
         else
         {
-            <div class="dashboard-record-list">
+            <!-- Added max-height and overflow-y for scrolling beyond ~3 items -->
+            <div class="dashboard-record-list" style="max-height: 285px; overflow-y: auto; padding-right: 4px;">
                 @foreach (var booking in Model.UpcomingEvents)
                 {
                     <a asp-controller="Bookings" asp-action="Details" asp-route-id="@booking.Id" class="dashboard-record-item">

@@ -22,7 +22,7 @@
                     <a asp-controller="Home" asp-action="Index">Aries Magic</a>
                 </div>
 
-                <div class="sidebar-section-label">Dashboard</div>
+                
 
                 <nav class="sidebar-nav">
                     @if (User.Identity != null && User.Identity.IsAuthenticated)
@@ -69,7 +69,7 @@
 
                             <a asp-controller="UserManagement" asp-action="Index"
                                class="sidebar-link @(currentController == "UserManagement" ? "active" : "")">
-                                <i class="bi bi-people-gear"></i>
+                                <i class="bi bi-people-fill me-2"></i>
                                 User Management
                             </a>
 

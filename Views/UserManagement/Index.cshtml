@@ -42,17 +42,17 @@
     <div class="stat-card">
         <div class="stat-label">Total Staff</div>
         <div class="stat-value">@users.Count()</div>
-        <div class="stat-subtext">All staff accounts in the system.</div>
+        
     </div>
     <div class="stat-card">
         <div class="stat-label">Active</div>
         <div class="stat-value text-success">@users.Count(x => x.IsActive)</div>
-        <div class="stat-subtext">Can access the system.</div>
+        
     </div>
     <div class="stat-card">
         <div class="stat-label">Disabled</div>
         <div class="stat-value text-danger">@users.Count(x => !x.IsActive)</div>
-        <div class="stat-subtext">Blocked from login.</div>
+        
     </div>
 </div>
 

@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace AriesMagicAppointmentSystem.Migrations
 {
     /// <inheritdoc />
-    public partial class TotalCleanStart : Migration
+    public partial class InitialIdentity : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -33,6 +33,7 @@ namespace AriesMagicAppointmentSystem.Migrations
                     FullName = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    LastLoginAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     UserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     NormalizedUserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     Email = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
@@ -54,19 +55,83 @@ namespace AriesMagicAppointmentSystem.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "BlockedDates",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Date = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Reason = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_BlockedDates", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "DateBookingLimits",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Date = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    MaxBookings = table.Column<int>(type: "int", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_DateBookingLimits", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Services",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    Name = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: false),
-                    Price = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Price = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
                     DurationInHours = table.Column<int>(type: "int", nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     IsArchived = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Services", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "SystemActivities",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Type = table.Column<int>(type: "int", nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    PerformedByUserId = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    PerformedByUserName = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    AffectedRecordId = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    AffectedRecordType = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    MetadataJson = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_SystemActivities", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "SystemSettings",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    MaxBookingsPerDay = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_SystemSettings", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -192,6 +257,53 @@ namespace AriesMagicAppointmentSystem.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Notifications",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    UserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    Title = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Message = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Link = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    IsRead = table.Column<bool>(type: "bit", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    ReadAt = table.Column<DateTime>(type: "datetime2", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Notifications", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Notifications_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ServiceInclusions",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    ServiceId = table.Column<int>(type: "int", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    DeductionAmount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    IsRemovable = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ServiceInclusions", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ServiceInclusions_Services_ServiceId",
+                        column: x => x.ServiceId,
+                        principalTable: "Services",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Bookings",
                 columns: table => new
                 {
@@ -207,7 +319,26 @@ namespace AriesMagicAppointmentSystem.Migrations
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     IsCompletedLocked = table.Column<bool>(type: "bit", nullable: false),
                     ReopenReason = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    InternalNotes = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    InternalNotes = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    TrashReason = table.Column<int>(type: "int", nullable: true),
+                    TrashNotes = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ArchivedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    AssignedStaffName = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    OriginalBookingId = table.Column<int>(type: "int", nullable: true),
+                    EventType = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Motif = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    PartyTheme = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    PartyVenue = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CelebrantName = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Age = table.Column<int>(type: "int", nullable: true),
+                    PaxCount = table.Column<int>(type: "int", nullable: false),
+                    ContactPerson = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ContactNumber = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    PackageName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    BasePrice = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    FinalPrice = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    RequiredDownpayment = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    RemovedInclusionsJson = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -221,31 +352,6 @@ namespace AriesMagicAppointmentSystem.Migrations
                     table.ForeignKey(
                         name: "FK_Bookings_Users_ClientId",
                         column: x => x.ClientId,
-                        principalTable: "Users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Notifications",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    UserId = table.Column<int>(type: "int", nullable: false),
-                    Title = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Message = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    IsRead = table.Column<bool>(type: "bit", nullable: false),
-                    Link = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    ReadAt = table.Column<DateTime>(type: "datetime2", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Notifications", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Notifications_Users_UserId",
-                        column: x => x.UserId,
                         principalTable: "Users",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
@@ -280,7 +386,7 @@ namespace AriesMagicAppointmentSystem.Migrations
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     BookingId = table.Column<int>(type: "int", nullable: false),
-                    Amount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    Amount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
                     ProofImagePath = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     UploadedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
@@ -292,6 +398,34 @@ namespace AriesMagicAppointmentSystem.Migrations
                     table.PrimaryKey("PK_Payments", x => x.Id);
                     table.ForeignKey(
                         name: "FK_Payments_Bookings_BookingId",
+                        column: x => x.BookingId,
+                        principalTable: "Bookings",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "RefundRequests",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    BookingId = table.Column<int>(type: "int", nullable: false),
+                    Amount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    GCashAccountName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    GCashNumber = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
+                    PaymentProofImagePath = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ClientReason = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    AdminRemarks = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    RequestedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    ProcessedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_RefundRequests", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_RefundRequests_Bookings_BookingId",
                         column: x => x.BookingId,
                         principalTable: "Bookings",
                         principalColumn: "Id",
@@ -319,6 +453,43 @@ namespace AriesMagicAppointmentSystem.Migrations
                     table.PrimaryKey("PK_RescheduleRequests", x => x.Id);
                     table.ForeignKey(
                         name: "FK_RescheduleRequests_Bookings_BookingId",
+                        column: x => x.BookingId,
+                        principalTable: "Bookings",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "TrashHistories",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    BookingId = table.Column<int>(type: "int", nullable: false),
+                    ClientName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ClientEmail = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ClientPhone = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    PackageName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    EventType = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    EventDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    StartTime = table.Column<TimeSpan>(type: "time", nullable: false),
+                    EndTime = table.Column<TimeSpan>(type: "time", nullable: false),
+                    BasePrice = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    FinalPrice = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    RequiredDownpayment = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    Reason = table.Column<int>(type: "int", nullable: false),
+                    ReasonNotes = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    PaymentStatus = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    AssignedStaffId = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    AssignedStaffName = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    ArchivedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_TrashHistories", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_TrashHistories_Bookings_BookingId",
                         column: x => x.BookingId,
                         principalTable: "Bookings",
                         principalColumn: "Id",
@@ -390,8 +561,23 @@ namespace AriesMagicAppointmentSystem.Migrations
                 column: "BookingId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_RefundRequests_BookingId",
+                table: "RefundRequests",
+                column: "BookingId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_RescheduleRequests_BookingId",
                 table: "RescheduleRequests",
+                column: "BookingId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ServiceInclusions_ServiceId",
+                table: "ServiceInclusions",
+                column: "ServiceId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_TrashHistories_BookingId",
+                table: "TrashHistories",
                 column: "BookingId");
         }
 
@@ -414,7 +600,13 @@ namespace AriesMagicAppointmentSystem.Migrations
                 name: "AspNetUserTokens");
 
             migrationBuilder.DropTable(
+                name: "BlockedDates");
+
+            migrationBuilder.DropTable(
                 name: "BookingTimelines");
+
+            migrationBuilder.DropTable(
+                name: "DateBookingLimits");
 
             migrationBuilder.DropTable(
                 name: "Notifications");
@@ -423,7 +615,22 @@ namespace AriesMagicAppointmentSystem.Migrations
                 name: "Payments");
 
             migrationBuilder.DropTable(
+                name: "RefundRequests");
+
+            migrationBuilder.DropTable(
                 name: "RescheduleRequests");
+
+            migrationBuilder.DropTable(
+                name: "ServiceInclusions");
+
+            migrationBuilder.DropTable(
+                name: "SystemActivities");
+
+            migrationBuilder.DropTable(
+                name: "SystemSettings");
+
+            migrationBuilder.DropTable(
+                name: "TrashHistories");
 
             migrationBuilder.DropTable(
                 name: "AspNetRoles");

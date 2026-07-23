@@ -23,7 +23,6 @@
             Active Clients
         </span>
         <strong>@Model.ActiveClients</strong>
-        <small>@Model.ActiveStaff active staff</small>
     </a>
 
     <a asp-controller="Service"
@@ -36,7 +35,6 @@
             Active Packages
         </span>
         <strong>@Model.ActivePackages</strong>
-        <small>@Model.ArchivedPackages archived</small>
     </a>
 
     <a asp-controller="Calendar"
@@ -49,7 +47,6 @@
             Blocked Dates
         </span>
         <strong>@Model.BlockedDates</strong>
-        <small>Calendar restrictions</small>
     </a>
 
     <a asp-controller="TrashHistory"
@@ -62,7 +59,6 @@
             Trash History
         </span>
         <strong>@Model.TrashedBookingsCount</strong>
-        <small>Failed booking requests</small>
     </a>
 </div>
 
@@ -70,10 +66,9 @@
     <div class="dashboard-panel">
         <div class="dashboard-list-heading">
             <div>
-                <span class="role-dashboard-eyebrow">Activity</span>
                 <h3>System Activity History</h3>
             </div>
-            <a asp-controller="SystemActivity" asp-action="Index" class="btn btn-sm btn-outline-secondary">View All</a>
+            <a asp-controller="SystemActivity" asp-action="Index" class="btn btn-sm btn-outline-primary">View All</a>
         </div>
 
         @{
@@ -89,7 +84,8 @@
         }
         else
         {
-            <div class="dashboard-record-list">
+            <!-- UPDATED SCROLLABLE CONTAINER -->
+            <div class="dashboard-record-list" style="max-height: 255px; overflow-y: auto; padding-right: 6px; display: flex; flex-direction: column; gap: 10px;">
                 @foreach (var activity in recentActivity)
                 {
                     var iconClass = activity.Type switch
@@ -110,18 +106,18 @@
                         SystemActivityType.RefundRejected => "bi-cash-coin text-danger",
                         SystemActivityType.RescheduleApproved => "bi-calendar-check text-success",
                         SystemActivityType.RescheduleRejected => "bi-calendar-x text-danger",
-                        _ => "bi-activity text-muted"
+                        _ => "bi-calendar text-primary"
                     };
 
-                    <div class="dashboard-record-item">
-                        <div class="dashboard-record-icon">
-                            <i class="bi @iconClass"></i>
+                    <div class="dashboard-record-item p-3 border rounded-3 bg-light d-flex align-items-center gap-3">
+                        <div class="dashboard-record-icon p-2 rounded bg-white border d-flex align-items-center justify-content-center">
+                            <i class="bi @iconClass fs-5"></i>
                         </div>
-                        <div class="dashboard-record-copy">
-                            <strong>@activity.Description</strong>
-                            <span>
+                        <div class="dashboard-record-copy d-flex flex-column">
+                            <strong class="lh-sm">@activity.Description</strong>
+                            <small class="text-muted">
                                 @activity.PerformedByUserName @activity.CreatedAt.ToString("MMM dd, yyyy h:mm tt")
-                            </span>
+                            </small>
                             @if (!string.IsNullOrEmpty(activity.AffectedRecordType))
                             {
                                 <small class="text-muted">@activity.AffectedRecordType @activity.AffectedRecordId</small>
@@ -136,8 +132,7 @@
     <div class="dashboard-panel">
         <div class="dashboard-list-heading">
             <div>
-                <span class="role-dashboard-eyebrow">Overview</span>
-                <h3>System Health</h3>
+                <h3>System Overview</h3>
             </div>
         </div>
 

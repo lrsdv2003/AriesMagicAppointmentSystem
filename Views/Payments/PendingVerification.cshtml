@@ -2,7 +2,7 @@
 
 @{
     Layout = "_DashboardLayout";
-    ViewData["Title"] = "Pending Payment Verification";
+    ViewData["Title"] = "Verify Payments";
 
     var payments = Model.ToList();
     var totalPending = payments.Count;
@@ -17,12 +17,12 @@
     <div class="stat-card">
         <div class="stat-label">Pending Payments</div>
         <div class="stat-value">@totalPending</div>
-        <div class="stat-subtext">Payment proofs currently awaiting admin review.</div>
+        
     </div>
     <div class="stat-card">
         <div class="stat-label">Uploaded Today</div>
         <div class="stat-value">@todayCount</div>
-        <div class="stat-subtext">New payment proofs submitted today.</div>
+       
     </div>
 
 </div>
@@ -31,7 +31,7 @@
     <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
         <div>
             <h3 class="mb-1">Payment Verification Queue</h3>
-            <p class="page-subtitle mb-0">Showing @payments.Count payment record(s) awaiting verification.</p>
+            
         </div>
     </div>
 
@@ -39,7 +39,7 @@
     {
         <div class="empty-state">
             <h3>No pending payments</h3>
-            <p>There are currently no payment proofs waiting for verification.</p>
+           
         </div>
     }
     else

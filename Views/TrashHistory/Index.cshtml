@@ -4,73 +4,94 @@
 @{
     Layout = "_DashboardLayout";
     ViewData["Title"] = "Trash History";
-    var f = Model.Filters;
+    var f = Model?.Filters;
+    var hasActiveFilters = f != null && (
+        f.Reason.HasValue || 
+        (f.PaymentStatus != null && f.PaymentStatus != "All") || 
+        !string.IsNullOrEmpty(f.AssignedStaffId) || 
+        f.DateFrom.HasValue || 
+        f.DateTo.HasValue
+    );
 }
 
-<div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
-    <div>
-        <span class="role-dashboard-eyebrow">Archive</span>
-        <h2>Trash History</h2>
-    </div>
-</div>
 
 <div class="dashboard-panel mb-4">
-    <form method="get" asp-action="Index" class="row g-3 align-items-end">
-        <div class="col-lg-3 col-md-6">
-            <label class="form-label">Search</label>
-            <input type="text" name="Search" value="@f.Search" class="form-control"
-                   placeholder="Booking ID, client, package, event type..." />
-        </div>
-
-        <div class="col-lg-2 col-md-6">
-            <label class="form-label">Reason</label>
-            <select name="Reason" class="form-select">
-                <option value="">All Reasons</option>
-                @foreach (TrashReason reason in Enum.GetValues(typeof(TrashReason)))
-                {
-                    <option value="@((int)reason)" selected="@(f.Reason == reason)">@reason</option>
-                }
-            </select>
-        </div>
-
-        <div class="col-lg-2 col-md-6">
-            <label class="form-label">Payment Status</label>
-            <select name="PaymentStatus" class="form-select">
-                <option value="All" selected="@(f.PaymentStatus == "All")">All</option>
-                @foreach (var status in Model.AvailablePaymentStatuses)
-                {
-                    <option value="@status" selected="@(f.PaymentStatus == status)">@status</option>
-                }
-            </select>
-        </div>
-
-        <div class="col-lg-2 col-md-6">
-            <label class="form-label">Assigned Staff</label>
-            <select name="AssignedStaffId" class="form-select">
-                <option value="">All Staff</option>
-                @foreach (var staff in Model.AvailableStaff)
-                {
-                    <option value="@staff.Id" selected="@(f.AssignedStaffId == staff.Id)">@staff.FullName</option>
-                }
-            </select>
-        </div>
-
-        <div class="col-lg-2 col-md-6">
-            <label class="form-label">From Date</label>
-            <input type="date" name="DateFrom" value="@(f.DateFrom?.ToString("yyyy-MM-dd"))" class="form-control" />
-        </div>
-
-        <div class="col-lg-2 col-md-6">
-            <label class="form-label">To Date</label>
-            <input type="date" name="DateTo" value="@(f.DateTo?.ToString("yyyy-MM-dd"))" class="form-control" />
-        </div>
-
-        <div class="col-lg-2 col-md-6">
-            <label class="form-label">&nbsp;</label>
-            <div class="d-grid gap-2">
-                <button type="submit" class="btn btn-primary">Apply Filters</button>
-                <a asp-action="Index" class="btn btn-outline-secondary">Reset</a>
+    <form method="get" asp-action="Index">
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            
+            <!-- Direct Search Input -->
+            <div class="flex-grow-1" style="max-width: 400px;">
+                <div class="input-group">
+                    <span class="input-group-text bg-white text-muted">
+                        <i class="bi bi-search"></i>
+                    </span>
+                    <input type="text" name="Search" value="@f?.Search" class="form-control border-start-0"
+                           placeholder="Booking ID, client, package, event type..." />
+                </div>
             </div>
+
+            <!-- Floating Filter Popover Dropdown -->
+            <div class="dropdown filter-dropdown-wrapper">
+                <button class="btn btn-outline-secondary dropdown-toggle d-flex align-items-center gap-2" 
+                        type="button" 
+                        id="trashFilterDropdown" 
+                        data-bs-toggle="dropdown" 
+                        data-bs-auto-close="outside" 
+                        aria-expanded="false">
+                    <i class="bi bi-funnel"></i>
+                    <span>Filters</span>
+                    @if (hasActiveFilters)
+                    {
+                        <span class="filter-active-dot"></span>
+                    }
+                </button>
+
+                <!-- Floating Card Content -->
+                <div class="dropdown-menu dropdown-menu-end filter-popover-menu" 
+                     aria-labelledby="trashFilterDropdown" 
+                     style="width: 350px;">
+                    
+                    <h6 class="fw-bold mb-3">Filter Archived Requests</h6>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Reason</label>
+                        <select name="Reason" class="form-select form-select-sm">
+                            <option value="">All Reasons</option>
+                            @foreach (TrashReason reason in Enum.GetValues(typeof(TrashReason)))
+                            {
+                                <option value="@((int)reason)" selected="@(f?.Reason == reason)">@reason</option>
+                            }
+                        </select>
+                    </div>
+
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label">From Date</label>
+                            <input type="date" name="DateFrom" value="@(f?.DateFrom?.ToString("yyyy-MM-dd"))" class="form-control form-control-sm" />
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">To Date</label>
+                            <input type="date" name="DateTo" value="@(f?.DateTo?.ToString("yyyy-MM-dd"))" class="form-control form-control-sm" />
+                        </div>
+                    </div>
+
+                    <hr class="my-3" />
+
+                    <div class="d-flex justify-content-end gap-2">
+                        <a asp-action="Index" class="btn btn-light btn-sm">Reset</a>
+                        <button type="submit" class="btn btn-primary btn-sm">Apply Filters</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <button type="submit" class="btn btn-primary">Search</button>
+
+            @if (f != null && (!string.IsNullOrEmpty(f.Search) || hasActiveFilters))
+            {
+                <a asp-action="Index" class="btn btn-link text-decoration-none text-muted">Clear all</a>
+            }
         </div>
     </form>
 </div>
@@ -79,16 +100,16 @@
     <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
         <div>
             <h3 class="mb-1">Archived Requests</h3>
-            <p class="page-subtitle mb-0">Showing @Model.Bookings.Count of @Model.TotalCount archived request(s).</p>
+            <p class="page-subtitle mb-0">Showing @(Model?.Bookings?.Count ?? 0) of @(Model?.TotalCount ?? 0) archived request(s).</p>
         </div>
     </div>
 
-    @if (!Model.Bookings.Any())
+    @if (Model?.Bookings == null || !Model.Bookings.Any())
     {
         <div class="empty-state">
             <i class="bi bi-trash"></i>
             <h3>No archived requests</h3>
-            <p>Failed booking requests will appear here when archived.</p>
+            
         </div>
     }
     else
@@ -154,14 +175,14 @@
                 <ul class="pagination justify-content-center">
                     @for (var p = 1; p <= Model.TotalPages; p++)
                     {
-                        <li class="page-item @(p == f.Page ? "active" : "")">
+                        <li class="page-item @(p == f?.Page ? "active" : "")">
                             <a class="page-link" asp-action="Index" asp-route-page="@p"
-                               asp-route-Search="@f.Search"
-                               asp-route-Reason="@(f.Reason?.ToString("d"))"
-                               asp-route-PaymentStatus="@f.PaymentStatus"
-                               asp-route-AssignedStaffId="@f.AssignedStaffId"
-                               asp-route-DateFrom="@(f.DateFrom?.ToString("yyyy-MM-dd"))"
-                               asp-route-DateTo="@(f.DateTo?.ToString("yyyy-MM-dd"))">@p</a>
+                               asp-route-Search="@f?.Search"
+                               asp-route-Reason="@(f?.Reason?.ToString("d"))"
+                               asp-route-PaymentStatus="@f?.PaymentStatus"
+                               asp-route-AssignedStaffId="@f?.AssignedStaffId"
+                               asp-route-DateFrom="@(f?.DateFrom?.ToString("yyyy-MM-dd"))"
+                               asp-route-DateTo="@(f?.DateTo?.ToString("yyyy-MM-dd"))">@p</a>
                         </li>
                     }
                 </ul>

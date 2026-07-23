@@ -5,16 +5,48 @@
     Layout = "_DashboardLayout";
 }
 
-<div class="staff-dashboard-heading">
-    <span class="role-dashboard-eyebrow">Staff workspace</span>
-    <h2>Dashboard</h2>
+
+<div class="dashboard-stat-grid">
+    <a asp-controller="Bookings"
+       asp-action="Index"
+       class="dashboard-stat-card stat-info">
+        <span class="dashboard-stat-icon">
+            <i class="bi bi-people"></i>
+        </span>
+        <span class="dashboard-stat-label">
+            Bookings
+        </span>
+    </a>
+
+    <a asp-controller="Calendar"
+       asp-action="Index"
+       class="dashboard-stat-card stat-success">
+        <span class="dashboard-stat-icon">
+            <i class="bi bi-box-seam"></i>
+        </span>
+        <span class="dashboard-stat-label">
+            Calendar 
+        </span>
+    </a>
+
+    <a asp-controller="Services"
+       asp-action="Index"
+       class="dashboard-stat-card stat-warning">
+        <span class="dashboard-stat-icon">
+            <i class="bi bi-calendar-x"></i>
+        </span>
+        <span class="dashboard-stat-label">
+            Packages
+        </span>
+    </a>
 </div>
 
 <div class="dashboard-two-column staff-activity-grid">
+    <!-- SECTION 1: INCOMING BOOKING REQUESTS -->
     <section class="dashboard-list-panel">
         <div class="dashboard-list-heading">
             <div>
-                <span class="role-dashboard-eyebrow"><i class="bi bi-journal-plus me-1"></i>Incoming</span>
+                
                 <h3>Booking Requests Activity</h3>
             </div>
             <a asp-controller="Bookings" asp-action="Index">View all</a>
@@ -29,28 +61,35 @@
         }
         else
         {
-            <div class="dashboard-record-list">
+            <div class="dashboard-record-list" style="max-height: 270px; overflow-y: auto; padding-right: 6px; display: flex; flex-direction: column; gap: 10px;">
                 @foreach (var booking in Model.RecentBookingRequests)
                 {
-                    <div class="dashboard-activity-row">
-                        <div class="dashboard-record-icon"><i class="bi bi-calendar-plus"></i></div>
-                        <div class="dashboard-record-copy">
-                            <strong>@(booking.Client?.FullName ?? "Unknown client")</strong>
-                            <span>@(booking.Service?.Name ?? booking.PackageName)</span>
-                            <small>Event @booking.EventDate.ToString("MMM dd, yyyy") • Submitted @booking.CreatedAt.ToString("MMM dd, yyyy")</small>
+                    <div class="dashboard-activity-row p-3 border rounded-3 bg-light d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="dashboard-record-icon p-2 rounded bg-white border d-flex align-items-center justify-content-center">
+                                <i class="bi bi-calendar-plus fs-5 text-primary"></i>
+                            </div>
+                            <div class="dashboard-record-copy d-flex flex-column">
+                                <strong class="lh-sm">@(booking.Client?.FullName ?? "Unknown client")</strong>
+                                <span class="text-secondary small">@(booking.Service?.Name ?? booking.PackageName)</span>
+                                <small class="text-muted">Event @booking.EventDate.ToString("MMM dd, yyyy") • Submitted @booking.CreatedAt.ToString("MMM dd, yyyy")</small>
+                            </div>
                         </div>
-                        <span class="dashboard-status-pill">@booking.Status</span>
-                        <a asp-controller="Bookings" asp-action="Details" asp-route-id="@booking.Id" class="btn btn-sm btn-outline-primary">View Details</a>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="dashboard-status-pill">@booking.Status</span>
+                            <a asp-controller="Bookings" asp-action="Details" asp-route-id="@booking.Id" class="btn btn-sm btn-outline-primary">View Details</a>
+                        </div>
                     </div>
                 }
             </div>
         }
     </section>
 
+    <!-- SECTION 2: RESCHEDULE REQUESTS (NOW SCROLLABLE AS WELL) -->
     <section class="dashboard-list-panel">
         <div class="dashboard-list-heading">
             <div>
-                <span class="role-dashboard-eyebrow"><i class="bi bi-calendar2-week me-1"></i>Changes</span>
+                
                 <h3>Reschedule Requests Activity</h3>
             </div>
             <a asp-controller="RescheduleRequests" asp-action="Index">View all</a>
@@ -65,18 +104,26 @@
         }
         else
         {
-            <div class="dashboard-record-list">
+            <div class="dashboard-record-list" style="max-height: 270px; overflow-y: auto; padding-right: 6px; display: flex; flex-direction: column; gap: 10px;">
                 @foreach (var request in Model.RecentRescheduleRequests)
                 {
-                    <div class="dashboard-activity-row">
-                        <div class="dashboard-record-icon"><i class="bi bi-arrow-left-right"></i></div>
-                        <div class="dashboard-record-copy">
-                            <strong>@(request.Booking?.Client?.FullName ?? "Unknown client")</strong>
-                            <span>@(request.Booking?.Service?.Name ?? request.Booking?.PackageName ?? "Package not available")</span>
-                            <small>@(request.Booking?.EventDate.ToString("MMM dd, yyyy") ?? "N/A") → @request.RequestedDate.ToString("MMM dd, yyyy") • Submitted @request.CreatedAt.ToString("MMM dd, yyyy")</small>
+                    <div class="dashboard-activity-row p-3 border rounded-3 bg-light d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="dashboard-record-icon p-2 rounded bg-white border d-flex align-items-center justify-content-center">
+                                <i class="bi bi-arrow-left-right fs-5 text-warning"></i>
+                            </div>
+                            <div class="dashboard-record-copy d-flex flex-column">
+                                <strong class="lh-sm">@(request.Booking?.Client?.FullName ?? "Unknown client")</strong>
+                                <span class="text-secondary small">@(request.Booking?.Service?.Name ?? request.Booking?.PackageName ?? "Package not available")</span>
+                                <small class="text-muted">
+                                    @(request.Booking?.EventDate.ToString("MMM dd, yyyy") ?? "N/A") → @request.RequestedDate.ToString("MMM dd, yyyy") • Submitted @request.CreatedAt.ToString("MMM dd, yyyy")
+                                </small>
+                            </div>
                         </div>
-                        <span class="dashboard-status-pill">@request.Status</span>
-                        <a asp-controller="RescheduleRequests" asp-action="Index" class="btn btn-sm btn-outline-primary">View Details</a>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="dashboard-status-pill">@request.Status</span>
+                            <a asp-controller="RescheduleRequests" asp-action="Index" class="btn btn-sm btn-outline-primary">View Details</a>
+                        </div>
                     </div>
                 }
             </div>

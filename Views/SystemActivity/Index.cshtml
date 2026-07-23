@@ -3,51 +3,85 @@
 
 @{
     Layout = "_DashboardLayout";
-    ViewData["Title"] = "System Activity";
+    ViewData["Title"] = "System Activity History";
 }
 
-<div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
-    <div>
-        <span class="role-dashboard-eyebrow">Audit</span>
-        <h2>System Activity History</h2>
-    </div>
-</div>
 
 <div class="dashboard-panel mb-4">
-    <form method="get" asp-action="Index" class="row g-3 align-items-end">
-        <div class="col-lg-3 col-md-6">
-            <label class="form-label">Search</label>
-            <input type="text" name="search" value="@Model.SearchFilter" class="form-control"
-                   placeholder="Action, user, record..." />
-        </div>
-
-        <div class="col-lg-2 col-md-6">
-            <label class="form-label">Activity Type</label>
-            <select name="type" class="form-select">
-                <option value="">All Types</option>
-                @foreach (var t in Model.ActivityTypes)
-                {
-                    <option value="@((int)t)" selected="@(Model.TypeFilter == t)">@t</option>
-                }
-            </select>
-        </div>
-
-        <div class="col-lg-2 col-md-6">
-            <label class="form-label">From Date</label>
-            <input type="date" name="fromDate" value="@(Model.FromDateFilter?.ToString("yyyy-MM-dd"))" class="form-control" />
-        </div>
-
-        <div class="col-lg-2 col-md-6">
-            <label class="form-label">To Date</label>
-            <input type="date" name="toDate" value="@(Model.ToDateFilter?.ToString("yyyy-MM-dd"))" class="form-control" />
-        </div>
-
-        <div class="col-lg-2 col-md-6">
-            <label class="form-label">&nbsp;</label>
-            <div class="d-grid gap-2">
-                <button type="submit" class="btn btn-primary">Filter</button>
-                <a asp-action="Index" class="btn btn-outline-secondary">Reset</a>
+    <form method="get" asp-action="Index">
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            
+            <!-- Direct Search Input -->
+            <div class="flex-grow-1" style="max-width: 400px;">
+                <div class="input-group">
+                    <span class="input-group-text bg-white text-muted">
+                        <i class="bi bi-search"></i>
+                    </span>
+                    <input type="text" name="search" value="@Model?.SearchFilter" class="form-control border-start-0"
+                           placeholder="Search action, user, record..." />
+                </div>
             </div>
+
+            <!-- Floating Filter Popover Dropdown -->
+            <div class="dropdown filter-dropdown-wrapper">
+                <button class="btn btn-outline-secondary dropdown-toggle d-flex align-items-center gap-2" 
+                        type="button" 
+                        id="filterDropdown" 
+                        data-bs-toggle="dropdown" 
+                        data-bs-auto-close="outside" 
+                        aria-expanded="false">
+                    <i class="bi bi-funnel"></i>
+                    <span>Filters</span>
+                    @if (Model != null && (Model.TypeFilter.HasValue || Model.FromDateFilter.HasValue || Model.ToDateFilter.HasValue))
+                    {
+                        <span class="filter-active-dot"></span>
+                    }
+                </button>
+
+                <!-- Floating Card Content -->
+                <div class="dropdown-menu dropdown-menu-end filter-popover-menu" aria-labelledby="filterDropdown">
+                    <h6 class="fw-bold mb-3">Filter Activities</h6>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Activity Type</label>
+                        <select name="type" class="form-select form-select-sm">
+                            <option value="">All Types</option>
+                            @if (Model?.ActivityTypes != null)
+                            {
+                                foreach (var t in Model.ActivityTypes)
+                                {
+                                    <option value="@((int)t)" selected="@(Model.TypeFilter == t)">@t</option>
+                                }
+                            }
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">From Date</label>
+                        <input type="date" name="fromDate" value="@(Model?.FromDateFilter?.ToString("yyyy-MM-dd"))" class="form-control form-control-sm" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">To Date</label>
+                        <input type="date" name="toDate" value="@(Model?.ToDateFilter?.ToString("yyyy-MM-dd"))" class="form-control form-control-sm" />
+                    </div>
+
+                    <hr class="my-3" />
+
+                    <div class="d-flex justify-content-end gap-2">
+                        <a asp-action="Index" class="btn btn-light btn-sm">Reset</a>
+                        <button type="submit" class="btn btn-primary btn-sm">Apply Filters</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Submit & Clear -->
+            <button type="submit" class="btn btn-primary">Search</button>
+            
+            @if (Model != null && (!string.IsNullOrEmpty(Model.SearchFilter) || Model.TypeFilter.HasValue || Model.FromDateFilter.HasValue || Model.ToDateFilter.HasValue))
+            {
+                <a asp-action="Index" class="btn btn-link text-decoration-none text-muted">Clear all</a>
+            }
         </div>
     </form>
 </div>
@@ -56,16 +90,16 @@
     <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
         <div>
             <h3 class="mb-1">Activity Log</h3>
-            <p class="page-subtitle mb-0">Showing @Model.Activities.Count of @Model.TotalCount activities.</p>
+            <p class="page-subtitle mb-0">Showing @(Model?.Activities?.Count ?? 0) of @(Model?.TotalCount ?? 0) activities.</p>
         </div>
     </div>
 
-    @if (!Model.Activities.Any())
+    @if (Model?.Activities == null || !Model.Activities.Any())
     {
         <div class="empty-state">
             <i class="bi bi-activity"></i>
             <h3>No activity recorded</h3>
-            <p>System activities will appear here as administrative actions are performed.</p>
+            
         </div>
     }
     else

@@ -299,6 +299,7 @@ namespace AriesMagicAppointmentSystem.Controllers
         public async Task<IActionResult> BlockDateAjax(
             [FromForm] CalendarManageViewModel model)
         {
+            
             if (model.BlockDate == null)
             {
                 return Json(new
@@ -317,12 +318,13 @@ namespace AriesMagicAppointmentSystem.Controllers
                 });
             }
 
+
             var blockDate = DateTime.SpecifyKind(
                 model.BlockDate.Value.Date,
                 DateTimeKind.Local
             );
 
-            if (blockDate.Date < DateTime.Today)
+            if (blockDate.Date < DateTime.Today.AddDays(1))
             {
                 return Json(new
                 {
