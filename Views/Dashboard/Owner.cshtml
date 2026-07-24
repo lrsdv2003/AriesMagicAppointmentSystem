@@ -16,39 +16,55 @@
 </div>
 
 <div class="dashboard-stat-grid owner-summary-grid">
-    <a asp-controller="Payments" asp-action="PendingVerification" class="dashboard-stat-card stat-warning">
-        <span class="dashboard-stat-icon"><i class="bi bi-credit-card-2-front"></i></span>
+    <a asp-controller="Payments" asp-action="PendingVerification"
+       class="dashboard-stat-card stat-warning">
+        <span class="dashboard-stat-icon">
+            <i class="bi bi-credit-card-2-front"></i>
+        </span>
         <span class="dashboard-stat-label">Payments to Verify</span>
         <strong>@Model.PendingPayments</strong>
     </a>
 
-    <a asp-controller="Payments" asp-action="RefundRequests" class="dashboard-stat-card stat-danger">
-        <span class="dashboard-stat-icon"><i class="bi bi-arrow-counterclockwise"></i></span>
+    <a asp-controller="Payments" asp-action="RefundRequests"
+       class="dashboard-stat-card stat-danger">
+        <span class="dashboard-stat-icon">
+            <i class="bi bi-arrow-counterclockwise"></i>
+        </span>
         <span class="dashboard-stat-label">Refund Requests</span>
         <strong>@Model.PendingRefunds</strong>
     </a>
 
-    <a asp-controller="Calendar" asp-action="Index" class="dashboard-stat-card stat-info">
-        <span class="dashboard-stat-icon"><i class="bi bi-calendar2-check"></i></span>
+    <a asp-controller="Calendar" asp-action="Index"
+       class="dashboard-stat-card stat-info">
+        <span class="dashboard-stat-icon">
+            <i class="bi bi-calendar2-check"></i>
+        </span>
         <span class="dashboard-stat-label">Confirmed Events</span>
         <strong>@Model.UpcomingBookings</strong>
     </a>
 
-    <div class="dashboard-stat-card stat-success">
-        <span class="dashboard-stat-icon"><i class="bi bi-graph-up-arrow"></i></span>
+    <a asp-controller="Reports" asp-action="Index"
+       class="dashboard-stat-card stat-info">
+        <span class="dashboard-stat-icon">
+            <i class="bi bi-graph-up-arrow"></i>
+        </span>
         <span class="dashboard-stat-label">Revenue This Month</span>
         <strong>₱@Model.CurrentMonthRevenue.ToString("N2")</strong>
-    </div>
+        <small>Verified payments for the current month</small>
+    </a>
 </div>
 
 <div class="dashboard-two-column owner-dashboard-columns">
-    <!-- Payments to Verify Section -->
     <section class="dashboard-list-panel">
         <div class="dashboard-list-heading">
             <div>
                 <h3>Payments to Verify Activity</h3>
             </div>
-            <a asp-controller="Payments" asp-action="PendingVerification">View all</a>
+
+            <a asp-controller="Payments"
+               asp-action="PendingVerification">
+                View all
+            </a>
         </div>
 
         @if (!Model.RecentPaymentsToVerify.Any())
@@ -60,35 +76,60 @@
         }
         else
         {
-            <!-- Added max-height and overflow-y for scrolling beyond ~3 items -->
-            <div class="dashboard-record-list" style="max-height: 285px; overflow-y: auto; padding-right: 4px;">
+            <div class="dashboard-record-list"
+                 style="max-height: 285px; overflow-y: auto; padding-right: 4px;">
+
                 @foreach (var payment in Model.RecentPaymentsToVerify)
                 {
                     <div class="dashboard-activity-row">
-                        <div class="dashboard-record-icon"><i class="bi bi-receipt"></i></div>
-                        <div class="dashboard-record-copy">
-                            <strong>@(payment.Booking?.Client?.FullName ?? "Unknown client")</strong>
-                            <span>@(payment.Booking?.Service?.Name ?? payment.Booking?.PackageName ?? "Package not available")</span>
-                            <small>Submitted @payment.UploadedAt.ToString("MMM dd, yyyy • hh:mm tt")</small>
+                        <div class="dashboard-record-icon">
+                            <i class="bi bi-receipt"></i>
                         </div>
+
+                        <div class="dashboard-record-copy">
+                            <strong>
+                                @(payment.Booking?.Client?.FullName ?? "Unknown client")
+                            </strong>
+
+                            <span>
+                                @(payment.Booking?.Service?.Name
+                                    ?? payment.Booking?.PackageName
+                                    ?? "Package not available")
+                            </span>
+
+                            <small>
+                                Submitted @payment.UploadedAt.ToString("MMM dd, yyyy • hh:mm tt")
+                            </small>
+                        </div>
+
                         <div class="dashboard-activity-meta">
                             <strong>₱@payment.Amount.ToString("N2")</strong>
-                            <span class="dashboard-status-pill status-pending">@payment.Status</span>
+                            <span class="dashboard-status-pill status-pending">
+                                @payment.Status
+                            </span>
                         </div>
-                        <a asp-controller="Payments" asp-action="Verify" asp-route-id="@payment.Id" class="btn btn-sm btn-outline-primary">View Details</a>
+
+                        <a asp-controller="Payments"
+                           asp-action="Verify"
+                           asp-route-id="@payment.Id"
+                           class="btn btn-sm btn-outline-primary">
+                            View Details
+                        </a>
                     </div>
                 }
             </div>
         }
     </section>
 
-    <!-- Upcoming Confirmed Events Section -->
     <section class="dashboard-list-panel">
         <div class="dashboard-list-heading">
             <div>
                 <h3>Upcoming Confirmed Events</h3>
             </div>
-            <a asp-controller="Calendar" asp-action="Index">Open calendar</a>
+
+            <a asp-controller="Calendar" asp-action="Index">
+                Open calendar
+            </a>
         </div>
 
         @if (!Model.UpcomingEvents.Any())
@@ -100,21 +141,40 @@
         }
         else
         {
-            <!-- Added max-height and overflow-y for scrolling beyond ~3 items -->
-            <div class="dashboard-record-list" style="max-height: 285px; overflow-y: auto; padding-right: 4px;">
+            <div class="dashboard-record-list"
+                 style="max-height: 285px; overflow-y: auto; padding-right: 4px;">
+
                 @foreach (var booking in Model.UpcomingEvents)
                 {
-                    <a asp-controller="Bookings" asp-action="Details" asp-route-id="@booking.Id" class="dashboard-record-item">
+                    <a asp-controller="Bookings"
+                       asp-action="Details"
+                       asp-route-id="@booking.Id"
+                       class="dashboard-record-item">
+
                         <div class="dashboard-date-tile">
                             <span>@booking.EventDate.ToString("MMM")</span>
                             <strong>@booking.EventDate.Day</strong>
                         </div>
+
                         <div class="dashboard-record-copy">
-                            <strong>@(booking.Client?.FullName ?? "Unknown client")</strong>
-                            <span>@(booking.Service?.Name ?? booking.PackageName)</span>
-                            <small>@booking.PartyVenue</small>
+                            <strong>
+                                @(booking.Client?.FullName ?? "Unknown client")
+                            </strong>
+
+                            <span>
+                                @(booking.Service?.Name
+                                    ?? booking.PackageName
+                                    ?? "Package not available")
+                            </span>
+
+                            <small>
+                                @(booking.PartyVenue ?? "Venue not available")
+                            </small>
                         </div>
-                        <span class="dashboard-status-pill status-confirmed">Confirmed</span>
+
+                        <span class="dashboard-status-pill status-confirmed">
+                            Confirmed
+                        </span>
                     </a>
                 }
             </div>
