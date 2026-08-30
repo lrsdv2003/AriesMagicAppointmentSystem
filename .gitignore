@@ -6,3 +6,10 @@ obj/
 appsettings.Development.json
 Migrations/*.Designer.cs
 Migrations/*ModelSnapshot.cs
+# --- cleanup: generated / test data ---
+wwwroot/uploads/*
+!wwwroot/uploads/.gitkeep
+wwwroot/test-contract*.pdf
+tmp/
+.agents/
+.vscode/settings.json

@@ -79,15 +79,6 @@ namespace AriesMagicAppointmentSystem.Models
         public decimal RequiredDownpayment { get; set; } = 2000;
 
         public string? RemovedInclusionsJson { get; set; }
-        //public string? RemovedInclusions { get; set; }
-
-        //public decimal OriginalPackagePrice { get; set; }
-
-        //public decimal InclusionDiscountAmount { get; set; } = 2000m;
-
-        //public decimal TotalInclusionDiscount { get; set; }
-
-        //public decimal FinalPackagePrice { get; set; }
 
         public ICollection<Payment> Payments { get; set; } = new List<Payment>();
 
