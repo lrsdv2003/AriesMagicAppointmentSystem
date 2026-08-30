@@ -314,8 +314,13 @@
             let calendar = null;
             let pendingDelete = { action: null, id: null };
 
-            // Utility functions
-            const formatDateKey = (date) => date.toISOString().split('T')[0];
+            // Utility functions - use local date, not UTC (toISOString shifts by timezone)
+            const formatDateKey = (date) => {
+                const y = date.getFullYear();
+                const m = String(date.getMonth() + 1).padStart(2, '0');
+                const d = String(date.getDate()).padStart(2, '0');
+                return `${y}-${m}-${d}`;
+            };
             const formatDisplayDate = (date) => new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
             // Show toast/message
@@ -714,15 +719,15 @@
                     tab.addEventListener('shown.bs.tab', () => hideMessage());
                 });
 
-                // Reset block date form min date when opening
+                // Reset block date form min date when opening - use local date
                 document.getElementById('tab-block')?.addEventListener('shown.bs.tab', () => {
                     const input = document.getElementById('BlockDate');
-                    if (input) input.min = new Date().toISOString().split('T')[0];
+                    if (input) input.min = formatDateKey(new Date());
                 });
 
                 document.getElementById('tab-custom')?.addEventListener('shown.bs.tab', () => {
                     const input = document.getElementById('LimitDate');
-                    if (input) input.min = new Date().toISOString().split('T')[0];
+                    if (input) input.min = formatDateKey(new Date());
                 });
             });
         })();

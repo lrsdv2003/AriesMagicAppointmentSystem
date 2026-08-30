@@ -241,8 +241,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                 return Json(new { success = false, message = "Please select a valid date and maximum booking limit." });
             }
 
-            // Treat the date as local (not UTC) to avoid timezone shift
-            var limitDate = DateTime.SpecifyKind(model.LimitDate.Value.Date, DateTimeKind.Local);
+            var limitDate = model.LimitDate.Value.Date;
 
             if (limitDate.Date < DateTime.Today)
             {
@@ -319,12 +318,9 @@ namespace AriesMagicAppointmentSystem.Controllers
             }
 
 
-            var blockDate = DateTime.SpecifyKind(
-                model.BlockDate.Value.Date,
-                DateTimeKind.Local
-            );
+            var blockDate = model.BlockDate.Value.Date;
 
-            if (blockDate.Date < DateTime.Today.AddDays(1))
+            if (blockDate.Date < DateTime.Today)
             {
                 return Json(new
                 {
