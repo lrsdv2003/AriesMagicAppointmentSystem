@@ -1,43 +1,56 @@
 @model AriesMagicAppointmentSystem.ViewModels.RoleDashboardViewModel
 
 @{
-    ViewData["Title"] = "Dashboard";
+    ViewData["Title"] = "Staff Dashboard";
     Layout = "_DashboardLayout";
 }
 
+<div class="role-dashboard-hero">
+    <div>
+        <h2>Welcome back, Staff</h2>
+        <p>Review incoming requests, manage bookings, and handle reschedules.</p>
+    </div>
+    <a asp-controller="Bookings" asp-action="Index" class="btn btn-primary">
+        <i class="bi bi-journal-check me-1"></i>
+        View Bookings
+    </a>
+</div>
 
 <div class="dashboard-stat-grid">
-    <a asp-controller="Bookings"
-       asp-action="Index"
-       class="dashboard-stat-card stat-info">
+    <a asp-controller="Bookings" asp-action="Index" class="dashboard-stat-card stat-info">
         <span class="dashboard-stat-icon">
-            <i class="bi bi-people"></i>
+            <i class="bi bi-journal-text"></i>
         </span>
-        <span class="dashboard-stat-label">
-            Bookings
-        </span>
+        <span class="dashboard-stat-label">Pending Bookings</span>
+        <strong>@Model.PendingBookings</strong>
+        <small>Awaiting review</small>
     </a>
 
-    <a asp-controller="Calendar"
-       asp-action="Index"
-       class="dashboard-stat-card stat-success">
+    <a asp-controller="Calendar" asp-action="Index" class="dashboard-stat-card stat-success">
+        <span class="dashboard-stat-icon">
+            <i class="bi bi-calendar3"></i>
+        </span>
+        <span class="dashboard-stat-label">Upcoming Events</span>
+        <strong>@Model.UpcomingBookings</strong>
+        <small>Confirmed</small>
+    </a>
+
+    <a asp-controller="Services" asp-action="Index" class="dashboard-stat-card stat-warning">
         <span class="dashboard-stat-icon">
             <i class="bi bi-box-seam"></i>
         </span>
-        <span class="dashboard-stat-label">
-            Calendar 
-        </span>
+        <span class="dashboard-stat-label">Active Packages</span>
+        <strong>@Model.ActivePackages</strong>
+        <small>Available</small>
     </a>
 
-    <a asp-controller="Services"
-       asp-action="Index"
-       class="dashboard-stat-card stat-warning">
+    <a asp-controller="RescheduleRequests" asp-action="Index" class="dashboard-stat-card stat-danger">
         <span class="dashboard-stat-icon">
-            <i class="bi bi-calendar-x"></i>
+            <i class="bi bi-arrow-left-right"></i>
         </span>
-        <span class="dashboard-stat-label">
-            Packages
-        </span>
+        <span class="dashboard-stat-label">Reschedules</span>
+        <strong>@Model.PendingReschedules</strong>
+        <small>Pending</small>
     </a>
 </div>
 
@@ -61,7 +74,7 @@
         }
         else
         {
-            <div class="dashboard-record-list" style="max-height: 270px; overflow-y: auto; padding-right: 6px; display: flex; flex-direction: column; gap: 10px;">
+            <div class="dashboard-record-list">
                 @foreach (var booking in Model.RecentBookingRequests)
                 {
                     <div class="dashboard-activity-row p-3 border rounded-3 bg-light d-flex align-items-center justify-content-between">
@@ -104,7 +117,7 @@
         }
         else
         {
-            <div class="dashboard-record-list" style="max-height: 270px; overflow-y: auto; padding-right: 6px; display: flex; flex-direction: column; gap: 10px;">
+            <div class="dashboard-record-list">
                 @foreach (var request in Model.RecentRescheduleRequests)
                 {
                     <div class="dashboard-activity-row p-3 border rounded-3 bg-light d-flex align-items-center justify-content-between">

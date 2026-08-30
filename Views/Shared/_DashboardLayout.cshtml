@@ -33,25 +33,27 @@
                             </a>
                             <a asp-controller="Bookings" asp-action="Index"
                                class="sidebar-link @(currentController == "Bookings" ? "active" : "")">
+                                <i class="bi bi-journal-text"></i>
                                 Bookings
                             </a>
                             <a asp-controller="Calendar" asp-action="Index"
                                class="sidebar-link @(currentController == "Calendar" ? "active" : "")">
+                                <i class="bi bi-calendar3"></i>
                                 Calendar
                             </a>
-
                             <a asp-controller="Services" asp-action="Index"
-                            class="sidebar-link @(currentController == "Services" ? "active" : "")">
+                               class="sidebar-link @(currentController == "Services" ? "active" : "")">
+                                <i class="bi bi-box-seam"></i>
                                 Packages
                             </a>
-
                             <a asp-controller="RescheduleRequests" asp-action="Index"
                                class="sidebar-link @(currentController == "RescheduleRequests" ? "active" : "")">
+                                <i class="bi bi-arrow-left-right"></i>
                                 Reschedules
                             </a>
-
                             <a asp-controller="History" asp-action="Index"
                                class="sidebar-link @(currentController == "History" ? "active" : "")">
+                                <i class="bi bi-clock-history"></i>
                                 History
                             </a>
                         }

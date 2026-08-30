@@ -8,8 +8,13 @@
 
 <div class="role-dashboard-hero">
     <div>
-        <h2>Welcome back, Admin!</h2>
+        <h2>Welcome back, Admin</h2>
+        <p>Manage users, packages, calendar settings, and system activity.</p>
     </div>
+    <a asp-controller="UserManagement" asp-action="Index" class="btn btn-primary">
+        <i class="bi bi-people me-1"></i>
+        Manage Users
+    </a>
 </div>
 
 <div class="dashboard-stat-grid">
@@ -84,8 +89,7 @@
         }
         else
         {
-            <!-- UPDATED SCROLLABLE CONTAINER -->
-            <div class="dashboard-record-list" style="max-height: 255px; overflow-y: auto; padding-right: 6px; display: flex; flex-direction: column; gap: 10px;">
+            <div class="dashboard-record-list">
                 @foreach (var activity in recentActivity)
                 {
                     var iconClass = activity.Type switch
