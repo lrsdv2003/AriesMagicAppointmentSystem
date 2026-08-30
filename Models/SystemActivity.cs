@@ -13,6 +13,7 @@ namespace AriesMagicAppointmentSystem.Models
         SettingsChanged,
         BookingArchived,
         BookingDeleted,
+        BookingExpired,
         PaymentVerified,
         PaymentRejected,
         RefundApproved,

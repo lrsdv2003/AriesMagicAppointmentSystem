@@ -21,8 +21,10 @@ builder.Services.AddScoped<IEmailService, SmtpEmailService>();
 builder.Services.AddScoped<IHistoryService, HistoryService>();
 builder.Services.AddScoped<ISystemActivityService, SystemActivityService>();
 builder.Services.AddScoped<ITrashHistoryService, TrashHistoryService>();
+builder.Services.AddScoped<IBookingExpirationService, BookingExpirationService>();
 builder.Services.AddHostedService<BookingArchivingBackgroundService>();
 builder.Services.AddHostedService<InactiveAccountBackgroundService>();
+builder.Services.AddHostedService<BookingExpirationBackgroundService>();
 
 builder.Services
     .AddIdentity<ApplicationUser, IdentityRole>(options =>
