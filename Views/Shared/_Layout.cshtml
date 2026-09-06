@@ -48,18 +48,16 @@
                 <div class="collapse navbar-collapse" id="clientNavbar">
                     <ul class="navbar-nav mx-auto mb-2 mb-lg-0 client-nav-links">
                         <li class="nav-item">
-                            <a class="nav-link @(currentController == "Home" ? "active" : "")"
+                            <a class="nav-link @(currentController == "Home" && currentAction == "Index" ? "active" : "")"
                                asp-controller="Home" asp-action="Index">Home</a>
                         </li>
 
                         <li class="nav-item">
-                            <a class="nav-link @(currentController == "Home" && currentAction == "Index" ? "active" : "")"
-                               asp-controller="Home" asp-action="Index" asp-fragment="packages">Packages</a>
+                            <a class="nav-link" asp-controller="Home" asp-action="Index" asp-fragment="packages">Packages</a>
                         </li>
 
                         <li class="nav-item">
-                            <a class="nav-link @(currentController == "Home" && currentAction == "Index" ? "active" : "")"
-                               asp-controller="Home" asp-action="Index" asp-fragment="how-it-works">How It Works</a>
+                            <a class="nav-link" asp-controller="Home" asp-action="Index" asp-fragment="how-it-works">How It Works</a>
                         </li>
 
                         @if (User.Identity != null && User.Identity.IsAuthenticated && User.IsInRole("Client"))
@@ -100,9 +98,9 @@
                         }
                         else if (User.Identity != null && User.Identity.IsAuthenticated)
                         {
-                                var dashboardController = User.IsInRole("Owner") ? "Reports"
-                                    : User.IsInRole("Admin") ? "UserManagement"
-                                    : "Bookings";
+                            var dashboardController = User.IsInRole("Owner") ? "Reports"
+                                : User.IsInRole("Admin") ? "UserManagement"
+                                : "Bookings";
                             
                             <a asp-controller="@dashboardController" asp-action="Index" class="btn btn-primary">
                                 Go to Dashboard
@@ -216,6 +214,38 @@
         window.addEventListener("load", function () {
             var loader = document.getElementById("ariesPageLoader");
             if (loader) { loader.classList.add("am-loaded"); }
+        });
+
+        // Script to manage active states for navbar items including URL hashes/fragments
+        document.addEventListener("DOMContentLoaded", function () {
+            const navLinks = document.querySelectorAll('.client-nav-links .nav-link');
+            
+            function updateActiveLink() {
+                const currentHash = window.location.hash;
+
+                navLinks.forEach(link => {
+                    const href = link.getAttribute('href');
+                    if (!href) return;
+
+                    // If a hash exists in the URL (e.g. #packages or #how-it-works)
+                    if (currentHash && href.includes(currentHash)) {
+                        navLinks.forEach(l => l.classList.remove('active'));
+                        link.classList.add('active');
+                    }
+                });
+            }
+
+            // Run on load and hash change
+            updateActiveLink();
+            window.addEventListener('hashchange', updateActiveLink);
+
+            // Run when clicking links
+            navLinks.forEach(link => {
+                link.addEventListener('click', function () {
+                    navLinks.forEach(l => l.classList.remove('active'));
+                    this.classList.add('active');
+                });
+            });
         });
     </script>
     @await RenderSectionAsync("Scripts", required: false)

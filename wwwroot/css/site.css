@@ -1477,14 +1477,15 @@ h1, h2, h3, h4, h5 {
 }
 
 .package-card-badge {
-  display: inline-block;
-  margin-top: 0.55rem;
-  padding: 0.35rem 0.7rem;
-  border-radius: 999px;
-  font-size: 0.82rem;
-  font-weight: 600;
-  background: #ecfdf3;
-  color: #166534;
+  display: inline-block !important;
+  margin-top: 0.55rem !important;
+  padding: 0.35rem 0.7rem !important;
+  border-radius: 999px !important;
+  font-size: 0.82rem !important;
+  font-weight: 600 !important;
+  background: rgba(85, 65, 55, 0.6) !important; /* Forces warm brown background */
+  color: #fce7af !important; /* Forces light golden/cream text */
+  border: 1px solid rgba(242, 212, 145, 0.2) !important;
 }
 
 .package-card-price {
@@ -2086,14 +2087,16 @@ h1, h2, h3, h4, h5 {
   gap: 1.5rem;
 }
 
-.package-landing-card {
-  background: #fff;
-  border: 1px solid #e2e8f0;
-  border-radius: 26px;
-  padding: 1.6rem;
-  box-shadow: var(--shadow);
-  display: flex;
-  flex-direction: column;
+.package-card-badge {
+  display: inline-block !important;
+  margin-top: 0.55rem !important;
+  padding: 0.35rem 0.7rem !important;
+  border-radius: 999px !important;
+  font-size: 0.82rem !important;
+  font-weight: 600 !important;
+  background: rgba(85, 65, 55, 0.6) !important; /* Forces warm brown background */
+  color: #fce7af !important; /* Forces light golden/cream text */
+  border: 1px solid rgba(242, 212, 145, 0.2) !important;
 }
 
 .featured-package-card {
@@ -4714,16 +4717,15 @@ h1, h2, h3, h4, h5 {
 .notification-status-badge,
 .archived-badge,
 .package-card-badge {
-  display: inline-flex !important;
-  align-items: center;
-  gap: 0.35rem;
-  padding: 0.35rem 0.75rem !important;
+  display: inline-block !important;
+  margin-top: 0.55rem !important;
+  padding: 0.35rem 0.7rem !important;
   border-radius: 999px !important;
-  font-size: 0.8rem !important;
-  font-weight: 700 !important;
-  line-height: 1.2;
-  white-space: nowrap;
-  margin: 0;
+  font-size: 0.82rem !important;
+  font-weight: 600 !important;
+  background: rgba(85, 65, 55, 0.6) !important; /* Forces warm brown background */
+  color: #fce7af !important; /* Forces light golden/cream text */
+  border: 1px solid rgba(242, 212, 145, 0.2) !important;
 }
 
 .status-badge::before,
@@ -6536,3 +6538,87 @@ textarea.form-control { min-height: 100px; resize: vertical; }
     .dashboard-shell { flex-direction: column; }
 }
 
+/* Unified Package Card Styling - Dark Theme for All */
+.package-card {
+  background: linear-gradient(135deg, #2c121a 0%, #1a0a0f 100%);
+  border: 1px solid rgba(225, 29, 72, 0.25);
+  border-radius: 24px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  padding: 1.8rem;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  color: #ffffff;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+/* Floating Hover Effect for ALL Cards */
+.package-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.4);
+}
+
+.package-card-title {
+  color: #ffffff;
+  font-weight: 800;
+}
+
+.package-card-price {
+  color: #60a5fa; /* Vibrant blue price text */
+}
+
+.package-card-description {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+/* Badges styling */
+.package-card-badge {
+  background: rgba(252, 165, 165, 0.15);
+  color: #fca5a5;
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+/* Item separators or list lines inside the dark card */
+.package-card hr, 
+.package-card .list-group-item,
+.package-card .border-bottom {
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  background: transparent !important;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* Buttons inside the cards */
+.package-card .btn-primary {
+  background-color: #c92348;
+  border-color: #c92348;
+  color: #fff;
+  border-radius: 12px;
+  font-weight: 600;
+  transition: background-color 0.2s;
+}
+
+.package-card .btn-primary:hover {
+  background-color: #b01d3e;
+  border-color: #b01d3e;
+}
+
+.package-card-badge {
+  display: inline-block !important;
+  margin-top: 0.55rem !important;
+  padding: 0.35rem 0.7rem !important;
+  border-radius: 999px !important;
+  font-size: 0.82rem !important;
+  font-weight: 600 !important;
+  background: rgba(85, 65, 55, 0.6) !important; /* Forces warm brown background */
+  color: #fce7af !important; /* Forces light golden/cream text */
+  border: 1px solid rgba(242, 212, 145, 0.2) !important;
+}
+
+/* Fix for the blue background wrapper */
+.auth-page,
+.auth-shell {
+  background: transparent !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+}

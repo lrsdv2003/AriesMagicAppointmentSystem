@@ -671,14 +671,16 @@
   letter-spacing: 0.1em;
   padding: 0.35rem 0.8rem;
   border-radius: var(--am-radius-pill);
-  background: var(--am-surface-3);
-  color: var(--am-crimson);
+  background: rgba(85, 65, 55, 0.6); /* Warm brown background matching the badge */
+  color: #fce7af; /* Light golden/cream text color */
+  border: 1px solid rgba(242, 212, 145, 0.2);
   margin-bottom: 1rem;
 }
 
 .client-body .package-tag.featured-tag {
-  background: rgba(228, 201, 135, 0.18);
-  color: var(--am-gold-soft);
+  background: rgba(85, 65, 55, 0.75); /* Slightly richer warm brown for featured */
+  color: #fce7af;
+  border: 1px solid rgba(242, 212, 145, 0.3);
 }
 
 .client-body .package-landing-price {
@@ -2014,3 +2016,5 @@
   .client-body .large-gallery-card { grid-column: span 1; }
   .client-body .booking-steps { flex-direction: column; }
 }
+
+

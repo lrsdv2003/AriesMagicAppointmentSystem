@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace AriesMagicAppointmentSystem.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialIdentitySquashed : Migration
+    public partial class InitiaCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
