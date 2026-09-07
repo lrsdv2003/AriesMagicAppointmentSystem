@@ -1,0 +1,20 @@
+/* Design Tokens - Centralized Soft UI + Aries Brand */
+:root {
+  --bg: #E0E5EC;
+  --fg: #3D4852;
+  --muted: #6B7280;
+  --accent: #6C63FF;
+  --accent-light: #8B84FF;
+  --accent-secondary: #38B2AC;
+  --radius-card: 32px;
+  --radius-control: 16px;
+  --transition-ui: 300ms ease-out;
+  --shadow-extruded: 9px 9px 16px rgb(163,177,198,0.6), -9px -9px 16px rgba(255,255,255,0.5);
+  --shadow-extruded-hover: 12px 12px 20px rgb(163,177,198,0.7), -12px -12px 20px rgba(255,255,255,0.6);
+  --shadow-inset: inset 6px 6px 10px rgb(163,177,198,0.6), inset -6px -6px 10px rgba(255,255,255,0.5);
+  --shadow-inset-deep: inset 10px 10px 20px rgb(163,177,198,0.7), inset -10px -10px 20px rgba(255,255,255,0.6);
+}
+.client-body {
+  --bg: #fbf8f7;
+  --fg: #1c1015;
+}
