@@ -113,20 +113,19 @@
                         _ => "bi-calendar text-primary"
                     };
 
-                    <div class="dashboard-record-item p-3 border rounded-3 bg-light d-flex align-items-center gap-3">
-                        <div class="dashboard-record-icon p-2 rounded bg-white border d-flex align-items-center justify-content-center">
-                            <i class="bi @iconClass fs-5"></i>
+                    <div class="dashboard-activity-row">
+                        <div class="dashboard-record-icon">
+                            <i class="bi @iconClass"></i>
                         </div>
-                        <div class="dashboard-record-copy d-flex flex-column">
-                            <strong class="lh-sm">@activity.Description</strong>
-                            <small class="text-muted">
-                                @activity.PerformedByUserName @activity.CreatedAt.ToString("MMM dd, yyyy h:mm tt")
-                            </small>
-                            @if (!string.IsNullOrEmpty(activity.AffectedRecordType))
-                            {
-                                <small class="text-muted">@activity.AffectedRecordType @activity.AffectedRecordId</small>
-                            }
+                        <div class="dashboard-record-copy">
+                            <strong>@activity.Description</strong>
+                            <span>@activity.PerformedByUserName</span>
+                            <small>@activity.CreatedAt.ToString("MMM dd, yyyy • hh:mm tt")</small>
                         </div>
+                        @if (!string.IsNullOrEmpty(activity.AffectedRecordType))
+                        {
+                            <span class="dashboard-status-pill">@activity.AffectedRecordType</span>
+                        }
                     </div>
                 }
             </div>
