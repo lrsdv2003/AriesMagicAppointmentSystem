@@ -129,9 +129,12 @@ namespace AriesMagicAppointmentSystem.Controllers
         [HttpGet]
         public async Task<IActionResult> CreateStepOne()
         {
+            var user = await _userManager.GetUserAsync(User);
             var model = new BookingStepOneViewModel
             {
-                EventDate = DateTime.Today
+                EventDate = DateTime.Today,
+                ContactPerson = user?.FullName ?? string.Empty,
+                ContactNumber = user?.PhoneNumber ?? string.Empty
             };
 
             SetCreateStepOneViewBags();

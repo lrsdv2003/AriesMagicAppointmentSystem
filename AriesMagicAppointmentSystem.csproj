@@ -21,9 +21,6 @@
     <PackageReference Include="QuestPDF" Version="2026.5.0" />
   </ItemGroup>
 
-  <!-- Prevent ignored orphaned EF Designer files from breaking build: they are not tracked but remain on disk -->
-  <ItemGroup>
-    <Compile Remove="Migrations\*.Designer.cs" />
-  </ItemGroup>
+
 
 </Project>

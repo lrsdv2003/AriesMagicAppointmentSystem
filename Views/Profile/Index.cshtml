@@ -1,0 +1,340 @@
+@model AriesMagicAppointmentSystem.ViewModels.ProfileViewModel
+@{
+    ViewData["Title"] = "My Profile";
+    var completeness = Model.CompletionPercentage;
+    var initials = string.IsNullOrWhiteSpace(Model.FullName) ? "?" : string.Join("", Model.FullName.Split(' ', StringSplitOptions.RemoveEmptyEntries).Select(s => s[0])).Substring(0, Math.Min(2, Model.FullName.Split(' ').Length)).ToUpper();
+    if (initials.Length == 0) initials = Model.Email.Substring(0, 1).ToUpper();
+}
+
+@if (TempData["Success"] != null)
+{
+    <div class="client-success-banner mb-4">
+        <div class="client-success-icon">✓</div>
+        <div>
+            <div class="client-success-title">Success</div>
+            <div class="client-success-text">@TempData["Success"]</div>
+        </div>
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="client-error-banner mb-4">
+        <div class="client-error-icon">!</div>
+        <div>
+            <div class="client-error-title">Please check</div>
+            <div class="client-error-text">@TempData["Error"]</div>
+        </div>
+    </div>
+}
+
+<div class="client-profile-page">
+    <!-- Header -->
+    <div class="profile-hero">
+        <div class="profile-hero-main">
+            <div class="profile-avatar-wrap">
+                @if (!string.IsNullOrWhiteSpace(Model.ProfilePicturePath))
+                {
+                    <img src="@Model.ProfilePicturePath" alt="Profile photo of @Model.FullName" class="profile-avatar-img" />
+                }
+                else
+                {
+                    <div class="profile-avatar-fallback" aria-hidden="true">@initials</div>
+                }
+                <button type="button" class="profile-avatar-edit" data-bs-toggle="modal" data-bs-target="#photoModal" aria-label="Change profile photo">
+                    <i class="bi bi-camera-fill"></i>
+                </button>
+            </div>
+            <div class="profile-hero-copy">
+                <h1 class="profile-name">@Model.FullName</h1>
+                <p class="profile-email"><i class="bi bi-envelope me-1"></i>@Model.Email</p>
+                <div class="profile-meta">
+                    <span class="profile-badge"><i class="bi bi-patch-check me-1"></i>Verified Client</span>
+                    <span class="profile-joined">Member since @Model.CreatedAt.ToString("MMMM yyyy")</span>
+                </div>
+            </div>
+        </div>
+        <div class="profile-hero-actions">
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#editModal">
+                <i class="bi bi-pencil-square me-1"></i> Edit Profile
+            </button>
+            <a asp-controller="Bookings" asp-action="MyBookings" class="btn btn-outline-secondary">
+                <i class="bi bi-journal-text me-1"></i> My Bookings
+            </a>
+        </div>
+    </div>
+
+    <!-- Stats + Completeness -->
+    <div class="profile-stats-grid">
+        <div class="profile-stat-card">
+            <span class="profile-stat-icon"><i class="bi bi-journal-check"></i></span>
+            <div>
+                <strong>@Model.TotalBookings</strong>
+                <span>Total bookings</span>
+            </div>
+        </div>
+        <div class="profile-stat-card">
+            <span class="profile-stat-icon success"><i class="bi bi-check2-circle"></i></span>
+            <div>
+                <strong>@Model.CompletedBookings</strong>
+                <span>Completed events</span>
+            </div>
+        </div>
+        <div class="profile-stat-card">
+            <span class="profile-stat-icon warning"><i class="bi bi-hourglass-split"></i></span>
+            <div>
+                <strong>@Model.PendingBookings</strong>
+                <span>Pending / awaiting</span>
+            </div>
+        </div>
+        <div class="profile-stat-card completeness">
+            <div class="completeness-header">
+                <span>Profile completion</span>
+                <strong>@completeness%</strong>
+            </div>
+            <div class="progress profile-progress">
+                <div class="progress-bar" role="progressbar" style="width: @completeness%" aria-valuenow="@completeness" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+            @if (completeness < 100)
+            {
+                <small class="text-muted">Add @(string.IsNullOrWhiteSpace(Model.ProfilePicturePath) ? "a profile photo" : "") @(string.IsNullOrWhiteSpace(Model.PhoneNumber) ? (string.IsNullOrWhiteSpace(Model.ProfilePicturePath) ? "and phone number" : "phone number") : "") to reach 100%.</small>
+            }
+            else
+            {
+                <small class="text-success"><i class="bi bi-check-circle me-1"></i>Profile complete</small>
+            }
+        </div>
+    </div>
+
+    <div class="profile-grid">
+        <!-- Personal Information -->
+        <section class="dashboard-panel profile-panel">
+            <div class="profile-panel-header">
+                <h3><i class="bi bi-person me-2"></i>Personal Information</h3>
+                <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editModal">Edit</button>
+            </div>
+            <div class="profile-info-list">
+                <div class="profile-info-row">
+                    <span class="profile-info-label">Full name</span>
+                    <strong class="profile-info-value">@Model.FullName</strong>
+                </div>
+                <div class="profile-info-row">
+                    <span class="profile-info-label">Email address</span>
+                    <strong class="profile-info-value">@Model.Email</strong>
+                    <small class="profile-info-hint">Used for login and confirmations</small>
+                </div>
+                <div class="profile-info-row">
+                    <span class="profile-info-label">Phone number</span>
+                    <strong class="profile-info-value">@(string.IsNullOrWhiteSpace(Model.PhoneNumber) ? "Not set" : Model.PhoneNumber)</strong>
+                </div>
+                <div class="profile-info-row">
+                    <span class="profile-info-label">Member since</span>
+                    <strong class="profile-info-value">@Model.CreatedAt.ToString("MMMM dd, yyyy")</strong>
+                </div>
+                <div class="profile-info-row">
+                    <span class="profile-info-label">Last login</span>
+                    <strong class="profile-info-value">@(Model.LastLoginAt?.ToString("MMMM dd, yyyy hh:mm tt") ?? "—")</strong>
+                </div>
+            </div>
+            <div class="profile-panel-footer">
+                <small class="text-muted"><i class="bi bi-info-circle me-1"></i>Your name and phone are used to pre-fill booking forms.</small>
+            </div>
+        </section>
+
+        <!-- Photo + Security -->
+        <div class="profile-side">
+            <section class="dashboard-panel profile-panel">
+                <div class="profile-panel-header">
+                    <h3><i class="bi bi-image me-2"></i>Profile Photo</h3>
+                </div>
+                <div class="profile-photo-card">
+                    @if (!string.IsNullOrWhiteSpace(Model.ProfilePicturePath))
+                    {
+                        <img src="@Model.ProfilePicturePath" alt="Current profile photo" class="profile-photo-preview" />
+                    }
+                    else
+                    {
+                        <div class="profile-photo-placeholder">
+                            <i class="bi bi-person-circle"></i>
+                            <span>No photo yet</span>
+                        </div>
+                    }
+                    <div class="profile-photo-actions">
+                        <button type="button" class="btn btn-primary w-100" data-bs-toggle="modal" data-bs-target="#photoModal">
+                            <i class="bi bi-camera me-1"></i> @(string.IsNullOrWhiteSpace(Model.ProfilePicturePath) ? "Upload Photo" : "Change Photo")
+                        </button>
+                        @if (!string.IsNullOrWhiteSpace(Model.ProfilePicturePath))
+                        {
+                            <form asp-action="RemovePhoto" method="post" class="d-grid">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-outline-danger w-100" onclick="return confirm('Remove your profile photo?')">
+                                    <i class="bi bi-trash me-1"></i> Remove Photo
+                                </button>
+                            </form>
+                        }
+                    </div>
+                    <small class="text-muted text-center d-block mt-2">JPG, PNG or WEBP • Max 2 MB • Square works best</small>
+                </div>
+            </section>
+
+            <section class="dashboard-panel profile-panel">
+                <div class="profile-panel-header">
+                    <h3><i class="bi bi-shield-lock me-2"></i>Account Security</h3>
+                </div>
+                <div class="profile-security-list">
+                    <div class="profile-security-item">
+                        <div>
+                            <strong>Password</strong>
+                            <small>••••••••••••</small>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#passwordModal">Change</button>
+                    </div>
+                    <div class="profile-security-item">
+                        <div>
+                            <strong>Email</strong>
+                            <small>@Model.Email</small>
+                        </div>
+                        <span class="badge bg-success"><i class="bi bi-check2"></i> Verified</span>
+                    </div>
+                </div>
+                <div class="profile-panel-footer">
+                    <a asp-controller="Account" asp-action="Logout" class="btn btn-outline-secondary w-100" onclick="event.preventDefault(); document.getElementById('logoutForm').submit();">
+                        <i class="bi bi-box-arrow-right me-1"></i> Logout
+                    </a>
+                    <form id="logoutForm" asp-controller="Account" asp-action="Logout" method="post" class="d-none">@Html.AntiForgeryToken()</form>
+                </div>
+            </section>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal fade" id="editModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form asp-action="Edit" method="post" novalidate>
+                @Html.AntiForgeryToken()
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-pencil-square me-2"></i>Edit Profile</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    @{
+                        var editModel = (AriesMagicAppointmentSystem.ViewModels.EditProfileViewModel)ViewBag.EditModel;
+                    }
+                    <div class="mb-3">
+                        <label class="form-label">Full name <span class="text-danger">*</span></label>
+                        <input name="FullName" value="@editModel.FullName" class="form-control" required maxlength="100" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Email address</label>
+                        <input name="Email" value="@editModel.Email" type="email" class="form-control" />
+                        <div class="form-text">Changing email will require re-verification.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Phone number</label>
+                        <input name="PhoneNumber" value="@editModel.PhoneNumber" class="form-control" placeholder="09XXXXXXXXX" pattern="^09\d{9}$" />
+                        <div class="form-text">Used for booking confirmations.</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Photo Modal -->
+<div class="modal fade" id="photoModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form asp-action="UploadPhoto" method="post" enctype="multipart/form-data" id="photoForm">
+                @Html.AntiForgeryToken()
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-camera me-2"></i>Update Profile Photo</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="profile-upload-area" id="uploadArea">
+                        <img id="photoPreview" class="d-none profile-photo-preview" alt="Preview" />
+                        <div id="uploadPlaceholder" class="profile-photo-placeholder">
+                            <i class="bi bi-cloud-arrow-up"></i>
+                            <span>Choose an image</span>
+                            <small>JPG, PNG, WEBP • Max 2 MB</small>
+                        </div>
+                    </div>
+                    <input type="file" name="profileImage" id="profileImage" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" class="form-control mt-3" required />
+                    <div class="form-text">Square image (500×500) works best. Max 2 MB.</div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="photoSubmit" disabled>Save Photo</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Password Modal -->
+<div class="modal fade" id="passwordModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form asp-action="ChangePassword" method="post" novalidate>
+                @Html.AntiForgeryToken()
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-key me-2"></i>Change Password</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Current password <span class="text-danger">*</span></label>
+                        <input name="CurrentPassword" type="password" class="form-control" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">New password <span class="text-danger">*</span></label>
+                        <input name="NewPassword" type="password" class="form-control" required minlength="6" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Confirm new password <span class="text-danger">*</span></label>
+                        <input name="ConfirmPassword" type="password" class="form-control" required />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Update Password</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        const fileInput = document.getElementById('profileImage');
+        const preview = document.getElementById('photoPreview');
+        const placeholder = document.getElementById('uploadPlaceholder');
+        const submit = document.getElementById('photoSubmit');
+        if (fileInput) {
+            fileInput.addEventListener('change', function() {
+                const file = this.files[0];
+                if (!file) { preview.classList.add('d-none'); placeholder.classList.remove('d-none'); submit.disabled = true; return; }
+                if (file.size > 2 * 1024 * 1024) { alert('Image must be less than 2 MB.'); this.value = ''; return; }
+                const url = URL.createObjectURL(file);
+                preview.src = url;
+                preview.classList.remove('d-none');
+                placeholder.classList.add('d-none');
+                submit.disabled = false;
+            });
+        }
+        // unsaved changes guard for edit modal
+        let editDirty = false;
+        document.querySelectorAll('#editModal input').forEach(i => i.addEventListener('input', () => editDirty = true));
+        window.addEventListener('beforeunload', function(e) {
+            if (editDirty && document.getElementById('editModal').classList.contains('show')) {
+                e.preventDefault(); e.returnValue = '';
+            }
+        });
+    </script>
+}
