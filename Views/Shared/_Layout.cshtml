@@ -18,6 +18,7 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/aries-client-theme.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/soft-ui.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/client-neumorphism.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/AriesMagicAppointmentSystem.styles.css" asp-append-version="true" />
 </head>
 <body class="client-body">
@@ -25,7 +26,7 @@
         <span class="am-loader-sigil"></span>
     </div>
 
-    <header class="client-navbar-wrap">
+    <header class="client-navbar-wrap soft-nav">
         <nav class="navbar navbar-expand-lg client-navbar">
             <div class="container">
                 <a class="navbar-brand client-brand" asp-controller="Home" asp-action="Index">
@@ -147,7 +148,7 @@
         }
     </main>
 
-    <footer class="client-footer">
+    <footer class="client-footer soft-card" style="margin: 24px; border-radius: var(--radius-card);">
         <div class="container">
             <div class="footer-grid">
                 <div>
