@@ -1,429 +1,2551 @@
 @model AriesMagicAppointmentSystem.ViewModels.BookingStepOneViewModel
 
 @{
+
     ViewData["Title"] = "Create Booking - Step 1";
+
     var eventTypes = ViewBag.EventTypes as List<string> ?? new List<string>();
+
     var unavailableDates = ViewBag.UnavailableDates as List<string> ?? new List<string>();
+
     var unavailableDatesJson = System.Text.Json.JsonSerializer.Serialize(unavailableDates);
 
     ViewData["WizardPhysicalStep"] = 1;
+
     ViewData["WizardSubStep"] = 1;
+
 }
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
 
+<link rel="stylesheet"
+
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+
+      integrity="sha256-p4NxAoJBhIINfQ3HynfQ5q1e8bYJ1D1M7k7Y2o5s0="
+
+      crossorigin="" />
+
+<style>
+
+    #venueMap {
+
+        height: 220px;
+
+        width: 100%;
+
+        border-radius: 12px;
+
+        border: 1px solid #dee2e6;
+
+        overflow: hidden;
+
+        display: none;
+
+    }
+
+    #venueDistancePreview .venue-distance-card {
+
+        border: 1px solid #dee2e6;
+
+        border-radius: 12px;
+
+        padding: 15px;
+
+        background: #f8f9fa;
+
+    }
+
+    #venueDistancePreview .venue-distance-title {
+
+        font-weight: 600;
+
+        font-size: 1rem;
+
+        margin-bottom: 10px;
+
+    }
+
+    .venue-map-toggle {
+
+        margin-top: 10px;
+
+    }
+
+    .venue-map-container {
+
+        margin-top: 10px;
+
+    }
+
+    #venueMap {
+
+        height: 220px;
+
+        width: 100%;
+
+        border-radius: 12px;
+
+        overflow: hidden;
+
+        border: 1px solid #dee2e6;
+
+    }
+
+    #venueMapToggleIcon {
+
+        transition: transform 0.2s ease;
+
+    }
+
+    .venue-map-toggle[aria-expanded="true"] #venueMapToggleIcon {
+
+        transform: rotate(180deg);
+
+    }
+
+</style>
+
 <partial name="_BookingWizardTracker" />
 
 <div class="page-header">
+
     <div>
+
         <h1>Create Booking</h1>
-        <p class="page-subtitle">Tell us about your event, then choose a schedule and package.</p>
+
+        <p class="page-subtitle">
+
+            Tell us about your event, then choose a schedule and package.
+
+        </p>
+
     </div>
+
 </div>
 
 <div class="dashboard-panel">
+
     <form asp-action="CreateStepOne" method="post" id="stepOneForm">
+
         @Html.AntiForgeryToken()
 
         <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
 
         <!-- PANEL A: EVENT DETAILS -->
+
         <div class="am-panel" id="panelEventDetails" data-panel-index="1">
-            <div class="form-section-title mb-3">Event Details</div>
+
+            <div class="form-section-title mb-3">
+
+                Event Details
+
+            </div>
 
             <div class="row g-3">
+
                 <div class="col-md-6">
+
                     <label asp-for="EventType" class="form-label"></label>
-                    <select asp-for="EventType" class="form-select" id="EventType" required>
+
+                    <select asp-for="EventType"
+
+                            class="form-select"
+
+                            id="EventType"
+
+                            required>
+
                         <option value="">-- Select Event Type --</option>
+
                         @foreach (var eventType in eventTypes)
+
                         {
+
                             <option value="@eventType">@eventType</option>
+
                         }
+
                     </select>
-                    <span asp-validation-for="EventType" class="text-danger"></span>
+
+                    <span asp-validation-for="EventType"
+
+                          class="text-danger"></span>
+
                 </div>
 
                 <div class="col-md-6">
+
                     <label asp-for="Motif" class="form-label"></label>
-                    <input asp-for="Motif" class="form-control" placeholder="Enter event motif" required />
-                    <span asp-validation-for="Motif" class="text-danger"></span>
+
+                    <input asp-for="Motif"
+
+                           class="form-control"
+
+                           placeholder="Enter event motif"
+
+                           required />
+
+                    <span asp-validation-for="Motif"
+
+                          class="text-danger"></span>
+
                 </div>
 
                 <div class="col-md-6" id="partyThemeField">
+
                     <label asp-for="PartyTheme" class="form-label"></label>
-                    <input asp-for="PartyTheme" class="form-control" placeholder="Enter party theme" />
-                    <span asp-validation-for="PartyTheme" class="text-danger"></span>
+
+                    <input asp-for="PartyTheme"
+
+                           class="form-control"
+
+                           placeholder="Enter party theme" />
+
+                    <span asp-validation-for="PartyTheme"
+
+                          class="text-danger"></span>
+
                 </div>
+
+                <!-- VENUE -->
 
                 <div class="col-md-6">
+
                     <label asp-for="PartyVenue" class="form-label"></label>
-                    <input asp-for="PartyVenue" class="form-control" placeholder="Enter party venue" required />
-                    <span asp-validation-for="PartyVenue" class="text-danger"></span>
+
+                    <div class="input-group">
+
+                        <input asp-for="PartyVenue"
+
+                               class="form-control"
+
+                               id="PartyVenue"
+
+                               placeholder="Search venue or full address"
+
+                               required />
+
+                        <button type="button"
+
+                                class="btn btn-outline-primary"
+
+                                id="searchVenueBtn">
+
+                            Search
+
+                        </button>
+
+                    </div>
+
+                    <small class="text-muted">
+
+                        Search and select the exact venue so the system can
+
+                        calculate the service distance.
+
+                    </small>
+
+                    <div id="venueSearchResults"
+
+                         class="list-group mt-2">
+
+                    </div>
+
+                    <span asp-validation-for="PartyVenue"
+
+                          class="text-danger"></span>
+
+                    <!-- Hidden coordinates -->
+
+                    <input asp-for="VenueLatitude"
+
+                           type="hidden"
+
+                           id="VenueLatitude" />
+
+                    <input asp-for="VenueLongitude"
+
+                           type="hidden"
+
+                           id="VenueLongitude" />
+
+                    <div id="venueLocationStatus" class="mt-2"></div>
+
+                    <div id="venueMapSection" class="venue-map-container d-none">
+
+                        <button type="button"
+
+                                class="btn btn-outline-secondary btn-sm venue-map-toggle"
+
+                                id="venueMapToggle"
+
+                                aria-expanded="false"
+
+                                aria-controls="venueMapWrapper">
+
+                            <i class="bi bi-map"></i>
+
+                            <span id="venueMapToggleText">View Map</span>
+
+                            <i class="bi bi-chevron-down ms-1" id="venueMapToggleIcon"></i>
+
+                        </button>
+
+                        <div id="venueMapWrapper" class="mt-2 d-none">
+
+                            <div id="venueMap"></div>
+
+                        </div>
+
+                    </div>
+
+                    <div id="venueDistancePreview" class="mt-3"></div>
+
                 </div>
 
-                <div class="col-md-6" id="celebrantNameField">
-                    <label asp-for="CelebrantName" class="form-label"></label>
-                    <input asp-for="CelebrantName" class="form-control" placeholder="Enter celebrant name" />
-                    <span asp-validation-for="CelebrantName" class="text-danger"></span>
+                <div class="col-md-6"
+
+                     id="celebrantNameField">
+
+                    <label asp-for="CelebrantName"
+
+                           class="form-label"></label>
+
+                    <input asp-for="CelebrantName"
+
+                           class="form-control"
+
+                           placeholder="Enter celebrant name" />
+
+                    <span asp-validation-for="CelebrantName"
+
+                          class="text-danger"></span>
+
                 </div>
 
-                <div class="col-md-3" id="ageField">
-                    <label asp-for="Age" class="form-label"></label>
-                    <input asp-for="Age" class="form-control" placeholder="Age" />
-                    <span asp-validation-for="Age" class="text-danger"></span>
+                <div class="col-md-3"
+
+                     id="ageField">
+
+                    <label asp-for="Age"
+
+                           class="form-label"></label>
+
+                    <input asp-for="Age"
+
+                           class="form-control"
+
+                           placeholder="Age" />
+
+                    <span asp-validation-for="Age"
+
+                          class="text-danger"></span>
+
                 </div>
 
                 <div class="col-md-3">
-                    <label asp-for="PaxCount" class="form-label"></label>
-                    <input asp-for="PaxCount" class="form-control" placeholder="Number of guests" required />
-                    <span asp-validation-for="PaxCount" class="text-danger"></span>
+
+                    <label asp-for="PaxCount"
+
+                           class="form-label"></label>
+
+                    <input asp-for="PaxCount"
+
+                           class="form-control"
+
+                           placeholder="Number of guests"
+
+                           required />
+
+                    <span asp-validation-for="PaxCount"
+
+                          class="text-danger"></span>
+
                 </div>
+
             </div>
 
             <div class="am-panel-nav">
+
                 <span></span>
-                <button type="button" class="btn btn-primary" id="goToScheduleBtn">Continue to Schedule</button>
+
+                <button type="button"
+
+                        class="btn btn-primary"
+
+                        id="goToScheduleBtn"
+
+                        disabled
+
+                        aria-disabled="true">
+
+                    Continue to Schedule
+
+                </button>
+
             </div>
+
         </div>
 
         <!-- PANEL B: SCHEDULE & CONTACT -->
-        <div class="am-panel" id="panelSchedule" data-panel-index="2" hidden>
-            <div class="form-section-title mb-2">Availability Guide</div>
+
+        <div class="am-panel"
+
+             id="panelSchedule"
+
+             data-panel-index="2"
+
+             hidden>
+
+            <div class="form-section-title mb-2">
+
+                Availability Guide
+
+            </div>
+
             <p class="availability-help mb-3">
-                Some dates may be unavailable because they are already full or blocked by the admin.
-                All packages last <strong>3 hours</strong> and include a required <strong>1-hour buffer</strong> after the event.
+
+                Some dates may be unavailable because they are already full
+
+                or blocked by the admin.
+
+                All packages last
+
+                <strong>3 hours</strong>
+
+                and include a required
+
+                <strong>1-hour buffer</strong>
+
+                after the event.
+
             </p>
 
             <div class="availability-legend mb-4">
+
                 <div class="availability-legend-item">
+
                     <span class="availability-dot available"></span>
+
                     <span>Available date</span>
+
                 </div>
+
                 <div class="availability-legend-item">
+
                     <span class="availability-dot unavailable"></span>
+
                     <span>Unavailable date</span>
+
                 </div>
+
             </div>
 
-            <div id="dateAvailabilityAlert" class="alert alert-warning d-none mb-3">
-                This selected date is unavailable for booking because it is either blocked or already at full capacity.
+            <div id="dateAvailabilityAlert"
+
+                 class="alert alert-warning d-none mb-3">
+
+                This selected date is unavailable for booking because it is
+
+                either blocked or already at full capacity.
+
             </div>
 
-            <div id="dateSlotsInfo" class="alert alert-info d-none mb-3"></div>
+            <div id="dateSlotsInfo"
 
-            <div id="timeConflictAlert" class="alert alert-danger d-none mb-3">
-                The selected start time conflicts with an existing booking schedule.
+                 class="alert alert-info d-none mb-3">
+
             </div>
 
-            <div id="unavailableTimeRangesBox" class="dashboard-panel mt-3 d-none">
-                <div class="time-range-box-title">Unavailable Time Ranges</div>
+            <div id="timeConflictAlert"
+
+                 class="alert alert-danger d-none mb-3">
+
+                The selected start time conflicts with an existing booking
+
+                schedule.
+
+            </div>
+
+            <div id="unavailableTimeRangesBox"
+
+                 class="dashboard-panel mt-3 d-none">
+
+                <div class="time-range-box-title">
+
+                    Unavailable Time Ranges
+
+                </div>
+
                 <p class="availability-help mb-2">
-                    These time ranges are unavailable because of confirmed bookings and the required 1-hour buffer.
+
+                    These time ranges are unavailable because of confirmed
+
+                    bookings and the required 1-hour buffer.
+
                 </p>
-                <div id="unavailableTimeRangesList" class="time-range-chip-list"></div>
+
+                <div id="unavailableTimeRangesList"
+
+                     class="time-range-chip-list">
+
+                </div>
+
             </div>
 
             <div class="row g-3 mt-1">
+
                 <div class="col-md-6">
-                    <label asp-for="EventDate" class="form-label"></label>
-                    <input asp-for="EventDate" type="text" class="form-control" id="eventDateInput" autocomplete="off" required />
-                    <span asp-validation-for="EventDate" class="text-danger"></span>
+
+                    <label asp-for="EventDate"
+
+                           class="form-label"></label>
+
+                    <input asp-for="EventDate"
+
+                           type="text"
+
+                           class="form-control"
+
+                           id="eventDateInput"
+
+                           autocomplete="off"
+
+                           required />
+
+                    <span asp-validation-for="EventDate"
+
+                          class="text-danger"></span>
+
                 </div>
 
                 <div class="col-md-6">
-                    <label asp-for="StartTime" class="form-label"></label>
-                    <input asp-for="StartTime" type="time" class="form-control" id="startTimeInput" required />
-                    <span asp-validation-for="StartTime" class="text-danger"></span>
+
+                    <label asp-for="StartTime"
+
+                           class="form-label"></label>
+
+                    <input asp-for="StartTime"
+
+                           type="time"
+
+                           class="form-control"
+
+                           id="startTimeInput"
+
+                           required />
+
+                    <span asp-validation-for="StartTime"
+
+                          class="text-danger"></span>
+
                 </div>
 
                 <div class="col-md-6">
-                    <label asp-for="ContactPerson" class="form-label"></label>
-                    <input asp-for="ContactPerson" class="form-control" placeholder="Enter contact person" required />
-                    <span asp-validation-for="ContactPerson" class="text-danger"></span>
+
+                    <label asp-for="ContactPerson"
+
+                           class="form-label"></label>
+
+                    <input asp-for="ContactPerson"
+
+                           class="form-control"
+
+                           placeholder="Enter contact person"
+
+                           required />
+
+                    <span asp-validation-for="ContactPerson"
+
+                          class="text-danger"></span>
+
                 </div>
 
                 <div class="col-md-6">
-                    <label asp-for="ContactNumber" class="form-label"></label>
-                    <input asp-for="ContactNumber" class="form-control" placeholder="Enter contact number" required />
-                    <span asp-validation-for="ContactNumber" class="text-danger"></span>
+
+                    <label asp-for="ContactNumber"
+
+                           class="form-label"></label>
+
+                    <input asp-for="ContactNumber"
+
+                           class="form-control"
+
+                           placeholder="Enter contact number"
+
+                           required />
+
+                    <span asp-validation-for="ContactNumber"
+
+                          class="text-danger"></span>
+
                 </div>
+
             </div>
 
             <div class="am-panel-nav">
-                <button type="button" class="btn btn-outline-secondary" id="backToEventDetailsBtn">Back</button>
-                <button type="submit" class="btn btn-primary" id="nextStepBtn">Next Step</button>
+
+                <button type="button"
+
+                        class="btn btn-outline-secondary"
+
+                        id="backToEventDetailsBtn">
+
+                    Back
+
+                </button>
+
+                <button type="submit"
+
+                        class="btn btn-primary"
+
+                        id="nextStepBtn">
+
+                    Next Step
+
+                </button>
+
             </div>
+
         </div>
+
     </form>
+
 </div>
 
 @section Scripts {
-    <partial name="_ValidationScriptsPartial" />
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+    <!-- VENUE SEARCH + MAP -->
 
     <script>
+
         document.addEventListener("DOMContentLoaded", function () {
-            const unavailableDates = @Html.Raw(unavailableDatesJson);
 
-            const alertBox = document.getElementById("dateAvailabilityAlert");
-            const slotsInfo = document.getElementById("dateSlotsInfo");
-            const timeConflictAlert = document.getElementById("timeConflictAlert");
-            const nextBtn = document.getElementById("nextStepBtn");
-            const dateInput = document.getElementById("eventDateInput");
-            const startTimeInput = document.getElementById("startTimeInput");
-            const timeRangesBox = document.getElementById("unavailableTimeRangesBox");
-            const timeRangesList = document.getElementById("unavailableTimeRangesList");
+            const venueInput = document.getElementById("PartyVenue");
 
-            const eventTypeInput = document.getElementById("EventType");
-            const partyThemeField = document.getElementById("partyThemeField");
-            const celebrantNameField = document.getElementById("celebrantNameField");
-            const ageField = document.getElementById("ageField");
+            const searchBtn = document.getElementById("searchVenueBtn");
 
-            let currentUnavailableRanges = [];
+            const results = document.getElementById("venueSearchResults");
 
-            function showField(field) {
-                field.classList.remove("d-none");
+            const latInput = document.getElementById("VenueLatitude");
 
-                const input = field.querySelector("input, select, textarea");
-                if (input) {
-                    input.disabled = false;
-                }
-            }
+            const lonInput = document.getElementById("VenueLongitude");
 
-            function hideField(field) {
-                field.classList.add("d-none");
+            const status = document.getElementById("venueLocationStatus");
 
-                const input = field.querySelector("input, select, textarea");
-                if (input) {
-                    input.disabled = true;
-                    input.value = "";
-                }
-            }
+            const mapElement = document.getElementById("venueMap");
 
-            function updateEventSpecificFields() {
-                const selectedEvent = eventTypeInput.value;
+            const distancePreview = document.getElementById("venueDistancePreview");
 
-                showField(partyThemeField);
-                showField(celebrantNameField);
-                showField(ageField);
+            const venueMapSection = document.getElementById("venueMapSection");
 
-                if (selectedEvent === "Birthday") {
-                    showField(partyThemeField);
-                    showField(celebrantNameField);
-                    showField(ageField);
-                }
-                else if (selectedEvent === "Bridal Shower") {
-                    showField(partyThemeField);
-                    showField(celebrantNameField);
-                    hideField(ageField);
-                }
-                else if (selectedEvent === "Company Events" || selectedEvent === "School Events") {
-                    hideField(partyThemeField);
-                    hideField(celebrantNameField);
-                    hideField(ageField);
-                }
-                else if (
-                    selectedEvent === "Gender Reveal" ||
-                    selectedEvent === "Halloween" ||
-                    selectedEvent === "Christmas Parties" ||
-                    selectedEvent === "Easter Events"
-                ) {
-                    showField(partyThemeField);
-                    hideField(celebrantNameField);
-                    hideField(ageField);
-                }
-            }
+            const venueMapWrapper = document.getElementById("venueMapWrapper");
 
-            function timeToMinutes(timeStr) {
-                if (!timeStr) return -1;
-                const [hours, minutes] = timeStr.split(":").map(Number);
-                return (hours * 60) + minutes;
-            }
+            const venueMapToggle = document.getElementById("venueMapToggle");
 
-            function checkTimeConflict() {
-                const selectedTime = startTimeInput.value;
+            const venueMapToggleText = document.getElementById("venueMapToggleText");
 
-                if (!selectedTime || currentUnavailableRanges.length === 0) {
-                    timeConflictAlert.classList.add("d-none");
-                    nextBtn.disabled = false;
-                    return;
-                }
+            if (venueMapToggle) {
 
-                const selectedMinutes = timeToMinutes(selectedTime);
+                venueMapToggle.addEventListener("click", function () {
 
-                const hasConflict = currentUnavailableRanges.some(range => {
-                    const start = timeToMinutes(range.start);
-                    const end = timeToMinutes(range.end);
-                    return selectedMinutes >= start && selectedMinutes < end;
+                    const isHidden = venueMapWrapper.classList.contains("d-none");
+
+                    venueMapWrapper.classList.toggle("d-none");
+
+                    venueMapToggle.setAttribute("aria-expanded", isHidden ? "true" : "false");
+
+                    venueMapToggleText.textContent = isHidden
+
+                        ? "Hide Map"
+
+                        : "View Map";
+
+                    // Helps Leaflet recalculate its dimensions after expanding.
+
+                    if (isHidden) {
+
+                        setTimeout(function () {
+
+                            window.dispatchEvent(new Event("resize"));
+
+                        }, 100);
+
+                    }
+
                 });
 
-                if (hasConflict) {
-                    timeConflictAlert.classList.remove("d-none");
-                    nextBtn.disabled = true;
+            }
+
+            if (!searchBtn || !venueInput)
+
+                return;
+
+            /*
+
+             * TEMPORARY ARIES MAGIC BASE LOCATION
+
+             *
+
+             * STI Academic Center
+
+             * Ortigas Avenue Extension
+
+             * Cainta, Rizal
+
+             *
+
+             * Change ONLY these two values when the
+
+             * actual Aries Magic base location is known.
+
+             */
+
+            const baseLatitude = 14.58125;
+
+            const baseLongitude = 121.1258;
+
+            let venueMap = null;
+
+            let baseMarker = null;
+
+            let venueMarker = null;
+
+            let distanceLine = null;
+            let venueServiceabilityState = "NO_LOCATION";
+            window.venueServiceabilityState = venueServiceabilityState;
+            let venueCheckSequence = 0;
+
+            const goToScheduleBtn = document.getElementById("goToScheduleBtn");
+            const serviceabilityUrl = '@Url.Action("CheckVenueServiceability", "Bookings")';
+
+            function setVenueGateState(state) {
+                venueServiceabilityState = state;
+                window.venueServiceabilityState = state;
+
+                if (!goToScheduleBtn) return;
+
+                const canProceed =
+                    state === "SERVICEABLE" ||
+                    state === "FOR_STAFF_REVIEW";
+
+                goToScheduleBtn.disabled = !canProceed;
+                goToScheduleBtn.setAttribute("aria-disabled", canProceed ? "false" : "true");
+            }
+
+            function clearVenueSelection(message) {
+                latInput.value = "";
+                lonInput.value = "";
+                venueServiceabilityState = "NO_LOCATION";
+                setVenueGateState("NO_LOCATION");
+                distancePreview.innerHTML = "";
+                status.innerHTML = "";
+                if (message) {
+                    status.innerHTML = `<div class="alert alert-warning py-2 mb-0">${message}</div>`;
+                }
+            }
+
+            function showCheckingState() {
+                setVenueGateState("CHECKING");
+                status.innerHTML = '<div class="alert alert-info py-2 mb-0">Checking venue serviceability...</div>';
+                distancePreview.innerHTML = '';
+            }
+
+            function showServerServiceability(result) {
+                const distance = Number(result.distanceKm);
+                const fee = Number(result.travelFee || 0);
+                const maxDistance = Number(result.maximumServiceDistanceKm || 80);
+                const formattedDistance = distance.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                const formattedFee = fee.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+                let state = result.status;
+                if (state === "SERVICEABLE") {
+                    setVenueGateState("SERVICEABLE");
+                    status.innerHTML = '<div class="alert alert-success py-2 mb-0">✓ Venue is serviceable.</div>';
+                } else if (state === "FOR_STAFF_REVIEW") {
+                    setVenueGateState("FOR_STAFF_REVIEW");
+                    status.innerHTML = '<div class="alert alert-warning py-2 mb-0">⚠ Venue requires staff review. You may continue, but the booking must be reviewed before approval.</div>';
                 } else {
-                    timeConflictAlert.classList.add("d-none");
-                    nextBtn.disabled = false;
+                    setVenueGateState("NOT_SERVICEABLE");
+                    status.innerHTML = '<div class="alert alert-danger py-2 mb-0">✕ Venue is outside the maximum service area.</div>';
                 }
+
+                distancePreview.innerHTML = `
+                    <div class="venue-distance-card">
+                        <div class="venue-distance-title">Venue Serviceability</div>
+                        <div class="mb-1"><strong>Distance:</strong> ${formattedDistance} KM</div>
+                        <div class="mb-1"><strong>Service Zone:</strong> ${result.serviceZone || "Not Available"}</div>
+                        <div class="mb-1"><strong>Status:</strong> ${state === "FOR_STAFF_REVIEW" ? "FOR STAFF REVIEW" : state === "SERVICEABLE" ? "SERVICEABLE" : "NOT SERVICEABLE"}</div>
+                        <div><strong>Travel Fee:</strong> ₱${formattedFee}</div>
+                        ${state === "FOR_STAFF_REVIEW" ? '<div class="alert alert-warning mt-2 mb-0 py-2">This location is outside the standard service area and requires staff review before approval.</div>' : ""}
+                        ${state === "NOT_SERVICEABLE" ? `<div class="alert alert-danger mt-2 mb-0 py-2">This venue is outside the maximum service distance of ${maxDistance} KM. Please select another venue.</div>` : ""}
+                    </div>`;
             }
 
-            async function loadUnavailableTimeRanges(selectedDate) {
-                timeRangesList.innerHTML = "";
-                currentUnavailableRanges = [];
-                timeRangesBox.classList.add("d-none");
-                timeConflictAlert.classList.add("d-none");
-
-                if (!selectedDate) return;
+            async function verifySelectedVenue(displayName) {
+                const sequence = ++venueCheckSequence;
+                showCheckingState();
 
                 try {
-                    const response = await fetch(`/Bookings/GetUnavailableTimeRanges?date=${selectedDate}`);
-                    const data = await response.json();
+                    const token = document.querySelector('#stepOneForm input[name="__RequestVerificationToken"]')?.value;
+                    const body = new URLSearchParams();
+                    body.append("partyVenue", displayName);
 
-                    currentUnavailableRanges = data || [];
+                    const response = await fetch(serviceabilityUrl, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+                            "RequestVerificationToken": token || ""
+                        },
+                        body
+                    });
 
-                    if (currentUnavailableRanges.length > 0) {
-                        currentUnavailableRanges.forEach(range => {
-                            const chip = document.createElement("div");
-                            chip.className = "time-range-chip";
-                            chip.textContent = range.display;
-                            timeRangesList.appendChild(chip);
-                        });
+                    const result = await response.json();
+                    if (sequence !== venueCheckSequence) return;
 
-                        timeRangesBox.classList.remove("d-none");
-                    }
-
-                    checkTimeConflict();
-                } catch (error) {
-                    timeRangesBox.classList.add("d-none");
-                }
-            }
-
-            async function loadDateAvailability(selectedDate) {
-                if (!selectedDate) {
-                    alertBox.classList.add("d-none");
-                    slotsInfo.classList.add("d-none");
-                    timeRangesBox.classList.add("d-none");
-                    timeConflictAlert.classList.add("d-none");
-                    nextBtn.disabled = false;
-                    return;
-                }
-
-                try {
-                    const response = await fetch(`/Bookings/CheckDateAvailability?date=${selectedDate}`);
-                    const data = await response.json();
-
-                    if (data.isBlocked) {
-                        const reasonText = data.blockReason ? ` Reason: ${data.blockReason}` : "";
-                        alertBox.textContent = `This selected date is blocked by the admin.${reasonText}`;
-                        alertBox.classList.remove("d-none");
-                        slotsInfo.classList.add("d-none");
-                        timeRangesBox.classList.add("d-none");
-                        timeConflictAlert.classList.add("d-none");
-                        nextBtn.disabled = true;
+                    if (!response.ok || !result.success) {
+                        setVenueGateState("NOT_VERIFIED");
+                        status.innerHTML = `<div class="alert alert-danger py-2 mb-0">${result.message || "Unable to verify this venue location. Please select another location or try again."}</div>`;
+                        distancePreview.innerHTML = "";
+                        latInput.value = "";
+                        lonInput.value = "";
                         return;
                     }
 
-                    if (data.isFull) {
-                        alertBox.textContent = "This selected date is fully booked.";
-                        alertBox.classList.remove("d-none");
-                        slotsInfo.classList.add("d-none");
-                        timeRangesBox.classList.add("d-none");
-                        timeConflictAlert.classList.add("d-none");
-                        nextBtn.disabled = true;
-                        return;
-                    }
-
-                    alertBox.classList.add("d-none");
-                    slotsInfo.classList.remove("slots-alert-good", "slots-alert-warning", "slots-alert-danger");
-
-                    if (data.remainingSlots <= 0) {
-                        slotsInfo.textContent = "No slots left for this date.";
-                        slotsInfo.classList.add("slots-alert-danger");
-                    } else if (data.remainingSlots === 1) {
-                        slotsInfo.textContent = "Only 1 slot remains for this date.";
-                        slotsInfo.classList.add("slots-alert-warning");
-                    } else {
-                        slotsInfo.textContent = `${data.remainingSlots} slots are still available out of ${data.maxPerDay}.`;
-                        slotsInfo.classList.add("slots-alert-good");
-                    }
-
-                    slotsInfo.classList.remove("d-none");
-
-                    await loadUnavailableTimeRanges(selectedDate);
+                    // Replace client values with the server-resolved coordinates/result.
+                    venueInput.value = result.displayName;
+                    latInput.value = result.latitude;
+                    lonInput.value = result.longitude;
+                    showServerServiceability(result);
                 } catch (error) {
-                    slotsInfo.classList.add("d-none");
-                    timeRangesBox.classList.add("d-none");
+                    if (sequence !== venueCheckSequence) return;
+                    console.error(error);
+                    setVenueGateState("NOT_VERIFIED");
+                    status.innerHTML = '<div class="alert alert-danger py-2 mb-0">Unable to verify this venue location. Please select another location or try again.</div>';
+                    distancePreview.innerHTML = "";
                 }
             }
 
-            flatpickr("#eventDateInput", {
-                dateFormat: "Y-m-d",
-                minDate: new Date().fp_incr(3),
-                disable: unavailableDates,
-                defaultDate: dateInput.value || null,
-                onChange: async function (selectedDates, dateStr) {
-                    await loadDateAvailability(dateStr);
-                },
-                onReady: async function (selectedDates, dateStr) {
-                    await loadDateAvailability(dateStr);
+            setVenueGateState("NO_LOCATION");
+            status.innerHTML = '<div class="alert alert-warning py-2 mb-0">Please select an event venue to continue.</div>';
+
+            /*
+
+             * INITIALIZE MAP
+
+             */
+
+            function initializeMap(latitude, longitude) {
+
+                mapElement.style.display = "block";
+
+                if (!venueMap) {
+
+                    venueMap =
+
+                        L.map("venueMap")
+
+                         .setView(
+
+                             [latitude, longitude],
+
+                             14
+
+                         );
+
+                    L.tileLayer(
+
+                        "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+
+                        {
+
+                            maxZoom: 19,
+
+                            attribution:
+
+                                '&copy; OpenStreetMap contributors'
+
+                        }
+
+                    ).addTo(venueMap);
+
+                    /*
+
+                     * ARIES MAGIC BASE MARKER
+
+                     */
+
+                    baseMarker =
+
+                        L.marker([
+
+                            baseLatitude,
+
+                            baseLongitude
+
+                        ])
+
+                        .addTo(venueMap)
+
+                        .bindPopup(
+
+                            "<strong>Aries Magic Base</strong><br>" +
+
+                            "STI Academic Center, Cainta, Rizal"
+
+                        );
+
                 }
+
+                else {
+
+                    venueMap.setView(
+
+                        [latitude, longitude],
+
+                        14
+
+                    );
+
+                    venueMap.invalidateSize();
+
+                }
+
+                /*
+
+                 * REMOVE OLD VENUE MARKER
+
+                 */
+
+                if (venueMarker) {
+
+                    venueMap.removeLayer(
+
+                        venueMarker
+
+                    );
+
+                }
+
+                /*
+
+                 * REMOVE OLD DISTANCE LINE
+
+                 */
+
+                if (distanceLine) {
+
+                    venueMap.removeLayer(
+
+                        distanceLine
+
+                    );
+
+                }
+
+                /*
+
+                 * SELECTED VENUE MARKER
+
+                 */
+
+                venueMarker =
+
+                    L.marker([
+
+                        latitude,
+
+                        longitude
+
+                    ])
+
+                    .addTo(venueMap)
+
+                    .bindPopup(
+
+                        "<strong>Selected Venue</strong>"
+
+                    )
+
+                    .openPopup();
+
+                /*
+
+                 * LINE BETWEEN BASE AND VENUE
+
+                 */
+
+                distanceLine =
+
+                    L.polyline(
+
+                        [
+
+                            [
+
+                                baseLatitude,
+
+                                baseLongitude
+
+                            ],
+
+                            [
+
+                                latitude,
+
+                                longitude
+
+                            ]
+
+                        ],
+
+                        {
+
+                            weight: 3,
+
+                            dashArray: "8, 8"
+
+                        }
+
+                    )
+
+                    .addTo(venueMap);
+
+                /*
+
+                 * FIT BOTH LOCATIONS
+
+                 */
+
+                const bounds =
+
+                    L.latLngBounds([
+
+                        [
+
+                            baseLatitude,
+
+                            baseLongitude
+
+                        ],
+
+                        [
+
+                            latitude,
+
+                            longitude
+
+                        ]
+
+                    ]);
+
+                venueMap.fitBounds(
+
+                    bounds,
+
+                    {
+
+                        padding: [40, 40]
+
+                    }
+
+                );
+
+            }
+
+            // Any manual edit invalidates the previous venue validation immediately.
+            venueInput.addEventListener("input", function () {
+                venueCheckSequence++;
+                clearVenueSelection();
+                results.innerHTML = "";
             });
 
-            eventTypeInput.addEventListener("change", updateEventSpecificFields);
-            startTimeInput.addEventListener("change", checkTimeConflict);
+            /*
 
-            updateEventSpecificFields();
+             * VENUE SEARCH
 
-            // ---- internal 2-panel mini-wizard for this physical step ----
-            const panelEventDetails = document.getElementById("panelEventDetails");
-            const panelSchedule = document.getElementById("panelSchedule");
-            const goToScheduleBtn = document.getElementById("goToScheduleBtn");
-            const backToEventDetailsBtn = document.getElementById("backToEventDetailsBtn");
-            const tracker = document.getElementById("ariesWizardTracker");
+             */
 
-            function setTrackerActive(nodeIndex) {
-                if (!tracker) return;
-                tracker.querySelectorAll(".am-wizard-node").forEach(function (node) {
-                    const idx = parseInt(node.getAttribute("data-node"), 10);
-                    node.classList.remove("is-active", "is-done", "is-upcoming");
-                    if (idx < nodeIndex) node.classList.add("is-done");
-                    else if (idx === nodeIndex) node.classList.add("is-active");
-                    else node.classList.add("is-upcoming");
+            searchBtn.addEventListener(
 
-                    const dot = node.querySelector(".am-wizard-node-dot");
-                    if (dot) dot.innerHTML = idx < nodeIndex ? '<i class="bi bi-check-lg"></i>' : idx;
-                });
-            }
+                "click",
 
-            function panelFieldsValid(panel) {
-                const fields = panel.querySelectorAll("input:not([disabled]), select:not([disabled]), textarea:not([disabled])");
-                for (const field of fields) {
-                    if (!field.checkValidity()) {
-                        field.reportValidity();
-                        return false;
+                async function () {
+
+                    const query =
+
+                        venueInput.value.trim();
+
+                    if (!query)
+
+                        return;
+
+                    searchBtn.disabled = true;
+
+                    searchBtn.textContent =
+
+                        "Searching...";
+
+                    results.innerHTML = "";
+
+                    clearVenueSelection();
+                    status.innerHTML = "";
+                    distancePreview.innerHTML = "";
+
+                    try {
+
+                        const response =
+
+                            await fetch(
+
+                                `@Url.Action("SearchVenue", "Bookings")?query=${encodeURIComponent(query)}`
+
+                            );
+
+                        if (!response.ok)
+
+                            throw new Error(
+
+                                "Search failed"
+
+                            );
+
+                        const items =
+
+                            await response.json();
+
+                        if (!items.length) {
+
+                            results.innerHTML = `
+
+                                <div class="alert alert-warning mb-0">
+
+                                    No matching venue was found.
+
+                                    Try a more complete address.
+
+                                </div>
+
+                            `;
+
+                            return;
+
+                        }
+
+                        /*
+
+                         * DISPLAY SEARCH RESULTS
+
+                         */
+
+                        items.forEach(
+
+                            item => {
+
+                                const button =
+
+                                    document.createElement(
+
+                                        "button"
+
+                                    );
+
+                                button.type =
+
+                                    "button";
+
+                                button.className =
+
+                                    "list-group-item list-group-item-action";
+
+                                button.textContent =
+
+                                    item.displayName;
+                                button.addEventListener("click", function () {
+
+                                    venueInput.value = item.displayName;
+
+                                    latInput.value = item.latitude;
+
+                                    lonInput.value = item.longitude;
+
+                                    results.innerHTML = "";
+
+                                    status.innerHTML =
+
+                                        '<div class="alert alert-success py-2 mb-0">' +
+
+                                        '✓ Venue location selected and coordinates captured.' +
+
+                                        '</div>';
+
+                                    if (venueMapSection) {
+
+                                        venueMapSection.classList.remove("d-none");
+
+                                    }
+
+                                    // The client only shows the map immediately.
+                                    // Serviceability itself is determined by the server.
+                                    initializeMap(
+
+                                        item.latitude,
+
+                                        item.longitude
+
+                                    );
+
+                                    verifySelectedVenue(item.displayName);
+
+                                });
+
+                                results.appendChild(button);
+
+                            }
+
+                        );
+
                     }
+
+                    catch (error) {
+
+                        console.error(error);
+
+                        results.innerHTML = `
+
+                            <div class="alert alert-danger mb-0">
+
+                                Venue search is temporarily unavailable.
+
+                                You can try again.
+
+                            </div>
+
+                        `;
+
+                    }
+
+                    finally {
+
+                        searchBtn.disabled =
+
+                            false;
+
+                        searchBtn.textContent =
+
+                            "Search";
+
+                    }
+
                 }
-                return true;
-            }
 
-            if (goToScheduleBtn) {
-                goToScheduleBtn.addEventListener("click", function () {
-                    if (!panelFieldsValid(panelEventDetails)) return;
-                    panelEventDetails.hidden = true;
-                    panelSchedule.hidden = false;
-                    setTrackerActive(2);
-                    panelSchedule.scrollIntoView({ behavior: "smooth", block: "start" });
-                });
-            }
+            );
 
-            if (backToEventDetailsBtn) {
-                backToEventDetailsBtn.addEventListener("click", function () {
-                    panelSchedule.hidden = true;
-                    panelEventDetails.hidden = false;
-                    setTrackerActive(1);
-                    panelEventDetails.scrollIntoView({ behavior: "smooth", block: "start" });
-                });
-            }
         });
+
     </script>
+
+    <partial name="_ValidationScriptsPartial" />
+
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+
+            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+
+            crossorigin="">
+
+    </script>
+
+    <!-- EXISTING DATE / AVAILABILITY / WIZARD LOGIC -->
+
+    <script>
+
+        document.addEventListener(
+
+            "DOMContentLoaded",
+
+            function () {
+
+                const unavailableDates =
+
+                    @Html.Raw(unavailableDatesJson);
+
+                const alertBox =
+
+                    document.getElementById(
+
+                        "dateAvailabilityAlert"
+
+                    );
+
+                const slotsInfo =
+
+                    document.getElementById(
+
+                        "dateSlotsInfo"
+
+                    );
+
+                const timeConflictAlert =
+
+                    document.getElementById(
+
+                        "timeConflictAlert"
+
+                    );
+
+                const nextBtn =
+
+                    document.getElementById(
+
+                        "nextStepBtn"
+
+                    );
+
+                const dateInput =
+
+                    document.getElementById(
+
+                        "eventDateInput"
+
+                    );
+
+                const startTimeInput =
+
+                    document.getElementById(
+
+                        "startTimeInput"
+
+                    );
+
+                const timeRangesBox =
+
+                    document.getElementById(
+
+                        "unavailableTimeRangesBox"
+
+                    );
+
+                const timeRangesList =
+
+                    document.getElementById(
+
+                        "unavailableTimeRangesList"
+
+                    );
+
+                const eventTypeInput =
+
+                    document.getElementById(
+
+                        "EventType"
+
+                    );
+
+                const partyThemeField =
+
+                    document.getElementById(
+
+                        "partyThemeField"
+
+                    );
+
+                const celebrantNameField =
+
+                    document.getElementById(
+
+                        "celebrantNameField"
+
+                    );
+
+                const ageField =
+
+                    document.getElementById(
+
+                        "ageField"
+
+                    );
+
+                let currentUnavailableRanges =
+
+                    [];
+
+                /*
+
+                 * SHOW FIELD
+
+                 */
+
+                function showField(field) {
+
+                    field.classList.remove(
+
+                        "d-none"
+
+                    );
+
+                    const input =
+
+                        field.querySelector(
+
+                            "input, select, textarea"
+
+                        );
+
+                    if (input) {
+
+                        input.disabled =
+
+                            false;
+
+                    }
+
+                }
+
+                /*
+
+                 * HIDE FIELD
+
+                 */
+
+                function hideField(field) {
+
+                    field.classList.add(
+
+                        "d-none"
+
+                    );
+
+                    const input =
+
+                        field.querySelector(
+
+                            "input, select, textarea"
+
+                        );
+
+                    if (input) {
+
+                        input.disabled =
+
+                            true;
+
+                        input.value =
+
+                            "";
+
+                    }
+
+                }
+
+                /*
+
+                 * EVENT-SPECIFIC FIELDS
+
+                 */
+
+                function updateEventSpecificFields() {
+
+                    const selectedEvent =
+
+                        eventTypeInput.value;
+
+                    showField(
+
+                        partyThemeField
+
+                    );
+
+                    showField(
+
+                        celebrantNameField
+
+                    );
+
+                    showField(
+
+                        ageField
+
+                    );
+
+                    if (
+
+                        selectedEvent ===
+
+                        "Birthday"
+
+                    ) {
+
+                        showField(
+
+                            partyThemeField
+
+                        );
+
+                        showField(
+
+                            celebrantNameField
+
+                        );
+
+                        showField(
+
+                            ageField
+
+                        );
+
+                    }
+
+                    else if (
+
+                        selectedEvent ===
+
+                        "Bridal Shower"
+
+                    ) {
+
+                        showField(
+
+                            partyThemeField
+
+                        );
+
+                        showField(
+
+                            celebrantNameField
+
+                        );
+
+                        hideField(
+
+                            ageField
+
+                        );
+
+                    }
+
+                    else if (
+
+                        selectedEvent ===
+
+                        "Company Events"
+
+                        ||
+
+                        selectedEvent ===
+
+                        "School Events"
+
+                    ) {
+
+                        hideField(
+
+                            partyThemeField
+
+                        );
+
+                        hideField(
+
+                            celebrantNameField
+
+                        );
+
+                        hideField(
+
+                            ageField
+
+                        );
+
+                    }
+
+                    else if (
+
+                        selectedEvent ===
+
+                        "Gender Reveal"
+
+                        ||
+
+                        selectedEvent ===
+
+                        "Halloween"
+
+                        ||
+
+                        selectedEvent ===
+
+                        "Christmas Parties"
+
+                        ||
+
+                        selectedEvent ===
+
+                        "Easter Events"
+
+                    ) {
+
+                        showField(
+
+                            partyThemeField
+
+                        );
+
+                        hideField(
+
+                            celebrantNameField
+
+                        );
+
+                        hideField(
+
+                            ageField
+
+                        );
+
+                    }
+
+                }
+
+                /*
+
+                 * TIME TO MINUTES
+
+                 */
+
+                function timeToMinutes(timeStr) {
+
+                    if (!timeStr)
+
+                        return -1;
+
+                    const [
+
+                        hours,
+
+                        minutes
+
+                    ] =
+
+                        timeStr
+
+                            .split(":")
+
+                            .map(Number);
+
+                    return (
+
+                        hours * 60
+
+                    ) + minutes;
+
+                }
+
+                /*
+
+                 * TIME CONFLICT
+
+                 */
+
+                function checkTimeConflict() {
+
+                    const selectedTime =
+
+                        startTimeInput.value;
+
+                    if (
+
+                        !selectedTime
+
+                        ||
+
+                        currentUnavailableRanges.length === 0
+
+                    ) {
+
+                        timeConflictAlert.classList.add(
+
+                            "d-none"
+
+                        );
+
+                        nextBtn.disabled =
+
+                            false;
+
+                        return;
+
+                    }
+
+                    const selectedMinutes =
+
+                        timeToMinutes(
+
+                            selectedTime
+
+                        );
+
+                    const hasConflict =
+
+                        currentUnavailableRanges.some(
+
+                            range => {
+
+                                const start =
+
+                                    timeToMinutes(
+
+                                        range.start
+
+                                    );
+
+                                const end =
+
+                                    timeToMinutes(
+
+                                        range.end
+
+                                    );
+
+                                return (
+
+                                    selectedMinutes >= start
+
+                                    &&
+
+                                    selectedMinutes < end
+
+                                );
+
+                            }
+
+                        );
+
+                    if (hasConflict) {
+
+                        timeConflictAlert.classList.remove(
+
+                            "d-none"
+
+                        );
+
+                        nextBtn.disabled =
+
+                            true;
+
+                    }
+
+                    else {
+
+                        timeConflictAlert.classList.add(
+
+                            "d-none"
+
+                        );
+
+                        nextBtn.disabled =
+
+                            false;
+
+                    }
+
+                }
+
+                /*
+
+                 * LOAD UNAVAILABLE TIME RANGES
+
+                 */
+
+                async function loadUnavailableTimeRanges(
+
+                    selectedDate
+
+                ) {
+
+                    timeRangesList.innerHTML =
+
+                        "";
+
+                    currentUnavailableRanges =
+
+                        [];
+
+                    timeRangesBox.classList.add(
+
+                        "d-none"
+
+                    );
+
+                    timeConflictAlert.classList.add(
+
+                        "d-none"
+
+                    );
+
+                    if (!selectedDate)
+
+                        return;
+
+                    try {
+
+                        const response =
+
+                            await fetch(
+
+                                `/Bookings/GetUnavailableTimeRanges?date=${selectedDate}`
+
+                            );
+
+                        const data =
+
+                            await response.json();
+
+                        currentUnavailableRanges =
+
+                            data || [];
+
+                        if (
+
+                            currentUnavailableRanges.length > 0
+
+                        ) {
+
+                            currentUnavailableRanges.forEach(
+
+                                range => {
+
+                                    const chip =
+
+                                        document.createElement(
+
+                                            "div"
+
+                                        );
+
+                                    chip.className =
+
+                                        "time-range-chip";
+
+                                    chip.textContent =
+
+                                        range.display;
+
+                                    timeRangesList.appendChild(
+
+                                        chip
+
+                                    );
+
+                                }
+
+                            );
+
+                            timeRangesBox.classList.remove(
+
+                                "d-none"
+
+                            );
+
+                        }
+
+                        checkTimeConflict();
+
+                    }
+
+                    catch (error) {
+
+                        timeRangesBox.classList.add(
+
+                            "d-none"
+
+                        );
+
+                    }
+
+                }
+
+                /*
+
+                 * LOAD DATE AVAILABILITY
+
+                 */
+
+                async function loadDateAvailability(
+
+                    selectedDate
+
+                ) {
+
+                    if (!selectedDate) {
+
+                        alertBox.classList.add(
+
+                            "d-none"
+
+                        );
+
+                        slotsInfo.classList.add(
+
+                            "d-none"
+
+                        );
+
+                        timeRangesBox.classList.add(
+
+                            "d-none"
+
+                        );
+
+                        timeConflictAlert.classList.add(
+
+                            "d-none"
+
+                        );
+
+                        nextBtn.disabled =
+
+                            false;
+
+                        return;
+
+                    }
+
+                    try {
+
+                        const response =
+
+                            await fetch(
+
+                                `/Bookings/CheckDateAvailability?date=${selectedDate}`
+
+                            );
+
+                        const data =
+
+                            await response.json();
+
+                        if (data.isBlocked) {
+
+                            const reasonText =
+
+                                data.blockReason
+
+                                    ? ` Reason: ${data.blockReason}`
+
+                                    : "";
+
+                            alertBox.textContent =
+
+                                `This selected date is blocked by the admin.${reasonText}`;
+
+                            alertBox.classList.remove(
+
+                                "d-none"
+
+                            );
+
+                            slotsInfo.classList.add(
+
+                                "d-none"
+
+                            );
+
+                            timeRangesBox.classList.add(
+
+                                "d-none"
+
+                            );
+
+                            timeConflictAlert.classList.add(
+
+                                "d-none"
+
+                            );
+
+                            nextBtn.disabled =
+
+                                true;
+
+                            return;
+
+                        }
+
+                        if (data.isFull) {
+
+                            alertBox.textContent =
+
+                                "This selected date is fully booked.";
+
+                            alertBox.classList.remove(
+
+                                "d-none"
+
+                            );
+
+                            slotsInfo.classList.add(
+
+                                "d-none"
+
+                            );
+
+                            timeRangesBox.classList.add(
+
+                                "d-none"
+
+                            );
+
+                            timeConflictAlert.classList.add(
+
+                                "d-none"
+
+                            );
+
+                            nextBtn.disabled =
+
+                                true;
+
+                            return;
+
+                        }
+
+                        alertBox.classList.add(
+
+                            "d-none"
+
+                        );
+
+                        slotsInfo.classList.remove(
+
+                            "slots-alert-good",
+
+                            "slots-alert-warning",
+
+                            "slots-alert-danger"
+
+                        );
+
+                        if (
+
+                            data.remainingSlots <= 0
+
+                        ) {
+
+                            slotsInfo.textContent =
+
+                                "No slots left for this date.";
+
+                            slotsInfo.classList.add(
+
+                                "slots-alert-danger"
+
+                            );
+
+                        }
+
+                        else if (
+
+                            data.remainingSlots === 1
+
+                        ) {
+
+                            slotsInfo.textContent =
+
+                                "Only 1 slot remains for this date.";
+
+                            slotsInfo.classList.add(
+
+                                "slots-alert-warning"
+
+                            );
+
+                        }
+
+                        else {
+
+                            slotsInfo.textContent =
+
+                                `${data.remainingSlots} slots are still available out of ${data.maxPerDay}.`;
+
+                            slotsInfo.classList.add(
+
+                                "slots-alert-good"
+
+                            );
+
+                        }
+
+                        slotsInfo.classList.remove(
+
+                            "d-none"
+
+                        );
+
+                        await loadUnavailableTimeRanges(
+
+                            selectedDate
+
+                        );
+
+                    }
+
+                    catch (error) {
+
+                        slotsInfo.classList.add(
+
+                            "d-none"
+
+                        );
+
+                        timeRangesBox.classList.add(
+
+                            "d-none"
+
+                        );
+
+                    }
+
+                }
+
+                /*
+
+                 * FLATPICKR
+
+                 */
+
+                flatpickr(
+
+                    "#eventDateInput",
+
+                    {
+
+                        dateFormat: "Y-m-d",
+
+                        minDate:
+
+                            new Date().fp_incr(3),
+
+                        disable:
+
+                            unavailableDates,
+
+                        defaultDate:
+
+                            dateInput.value || null,
+
+                        onChange:
+
+                            async function (
+
+                                selectedDates,
+
+                                dateStr
+
+                            ) {
+
+                                await loadDateAvailability(
+
+                                    dateStr
+
+                                );
+
+                            },
+
+                        onReady:
+
+                            async function (
+
+                                selectedDates,
+
+                                dateStr
+
+                            ) {
+
+                                await loadDateAvailability(
+
+                                    dateStr
+
+                                );
+
+                            }
+
+                    }
+
+                );
+
+                /*
+
+                 * EVENT TYPE
+
+                 */
+
+                eventTypeInput.addEventListener(
+
+                    "change",
+
+                    updateEventSpecificFields
+
+                );
+
+                /*
+
+                 * START TIME
+
+                 */
+
+                startTimeInput.addEventListener(
+
+                    "change",
+
+                    checkTimeConflict
+
+                );
+
+                updateEventSpecificFields();
+
+                /*
+
+                 * INTERNAL 2-PANEL MINI-WIZARD
+
+                 */
+
+                const panelEventDetails =
+
+                    document.getElementById(
+
+                        "panelEventDetails"
+
+                    );
+
+                const panelSchedule =
+
+                    document.getElementById(
+
+                        "panelSchedule"
+
+                    );
+
+                const goToScheduleBtn =
+
+                    document.getElementById(
+
+                        "goToScheduleBtn"
+
+                    );
+
+                const backToEventDetailsBtn =
+
+                    document.getElementById(
+
+                        "backToEventDetailsBtn"
+
+                    );
+
+                const tracker =
+
+                    document.getElementById(
+
+                        "ariesWizardTracker"
+
+                    );
+
+                /*
+
+                 * SET TRACKER
+
+                 */
+
+                function setTrackerActive(
+
+                    nodeIndex
+
+                ) {
+
+                    if (!tracker)
+
+                        return;
+
+                    tracker
+
+                         .querySelectorAll(
+
+                            ".am-wizard-node"
+
+                        )
+
+                        .forEach(
+
+                            function (node) {
+
+                                const idx =
+
+                                    parseInt(
+
+                                        node.getAttribute(
+
+                                            "data-node"
+
+                                        ),
+
+                                        10
+
+                                    );
+
+                                node.classList.remove(
+
+                                    "is-active",
+
+                                    "is-done",
+
+                                    "is-upcoming"
+
+                                );
+
+                                if (
+
+                                    idx <
+
+                                    nodeIndex
+
+                                ) {
+
+                                    node.classList.add(
+
+                                        "is-done"
+
+                                    );
+
+                                }
+
+                                else if (
+
+                                    idx ===
+
+                                    nodeIndex
+
+                                ) {
+
+                                    node.classList.add(
+
+                                        "is-active"
+
+                                    );
+
+                                }
+
+                                else {
+
+                                    node.classList.add(
+
+                                        "is-upcoming"
+
+                                    );
+
+                                }
+
+                                const dot =
+
+                                    node.querySelector(
+
+                                        ".am-wizard-node-dot"
+
+                                    );
+
+                                if (dot) {
+
+                                    dot.innerHTML =
+
+                                        idx < nodeIndex
+
+                                            ? '<i class="bi bi-check-lg"></i>'
+
+                                            : idx;
+
+                                }
+
+                            }
+
+                        );
+
+                }
+
+                /*
+
+                 * PANEL VALIDATION
+
+                 */
+
+                function panelFieldsValid(
+
+                    panel
+
+                ) {
+
+                    const fields =
+
+                        panel.querySelectorAll(
+
+                            "input:not([disabled]), select:not([disabled]), textarea:not([disabled])"
+
+                        );
+
+                    for (
+
+                        const field
+
+                        of fields
+
+                    ) {
+
+                        if (
+
+                            !field.checkValidity()
+
+                        ) {
+
+                            field.reportValidity();
+
+                            return false;
+
+                        }
+
+                    }
+
+                    return true;
+
+                }
+
+                /*
+
+                 * CONTINUE TO SCHEDULE
+
+                 */
+
+                if (goToScheduleBtn) {
+
+                    goToScheduleBtn.addEventListener(
+
+                        "click",
+
+                        function () {
+
+                            if (
+
+                                !panelFieldsValid(
+
+                                    panelEventDetails
+
+                                )
+
+                            )
+
+                                return;
+
+                            const currentVenueState = window.venueServiceabilityState;
+                            if (currentVenueState !== "SERVICEABLE" && currentVenueState !== "FOR_STAFF_REVIEW") {
+                                const gateMessage = currentVenueState === "CHECKING"
+                                    ? "Please wait while the venue location is being verified."
+                                    : currentVenueState === "NOT_SERVICEABLE"
+                                        ? "This venue is outside the serviceable area. Please select another venue."
+                                        : "Please select a venue and wait for its serviceability check to finish before continuing.";
+                                const gateStatus = document.getElementById("venueLocationStatus");
+                                if (gateStatus) {
+                                    gateStatus.innerHTML = `<div class="alert alert-danger py-2 mb-0">${gateMessage}</div>`;
+                                }
+                                return;
+                            }
+
+                            panelEventDetails.hidden =
+
+                                true;
+
+                            panelSchedule.hidden =
+
+                                false;
+
+                            setTrackerActive(
+
+                                2
+
+                            );
+
+                            panelSchedule.scrollIntoView(
+
+                                {
+
+                                    behavior:
+
+                                        "smooth",
+
+                                    block:
+
+                                        "start"
+
+                                }
+
+                            );
+
+                        }
+
+                    );
+
+                }
+
+                /*
+
+                 * BACK TO EVENT DETAILS
+
+                 */
+
+                if (backToEventDetailsBtn) {
+
+                    backToEventDetailsBtn.addEventListener(
+
+                        "click",
+
+                        function () {
+
+                            panelSchedule.hidden =
+
+                                true;
+
+                            panelEventDetails.hidden =
+
+                                false;
+
+                            setTrackerActive(
+
+                                1
+
+                            );
+
+                            panelEventDetails.scrollIntoView(
+
+                                {
+
+                                    behavior:
+
+                                        "smooth",
+
+                                    block:
+
+                                        "start"
+
+                                }
+
+                            );
+
+                        }
+
+                    );
+
+                }
+
+            }
+
+        );
+
+    </script>
+
 }

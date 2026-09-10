@@ -171,6 +171,64 @@
                 </div>
             }
 
+           @if (Model.DistanceKm.HasValue)
+            {
+                <div class="col-md-3">
+                    <div class="package-meta-box h-100">
+                        <span class="package-meta-label">Approximate Distance</span>
+                        <span class="package-meta-value">
+                            @Model.DistanceKm.Value.ToString("N2") KM
+                        </span>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="package-meta-box h-100">
+                        <span class="package-meta-label">Service Zone</span>
+                        <span class="package-meta-value">
+                            @(string.IsNullOrWhiteSpace(Model.ServiceZone) ? "Not Available" : Model.ServiceZone)
+                        </span>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="package-meta-box h-100">
+                        <span class="package-meta-label">Serviceability</span>
+                        <span class="package-meta-value">
+                            @if (Model.RequiresManualReview)
+                            {
+                                <span class="text-warning">
+                                    <i class="bi bi-exclamation-triangle-fill"></i>
+                                    MANUAL REVIEW
+                                </span>
+                            }
+                            else if (Model.IsServiceable)
+                            {
+                                <span class="text-success">
+                                    <i class="bi bi-check-circle-fill"></i>
+                                    SERVICEABLE
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="text-danger">
+                                    <i class="bi bi-x-circle-fill"></i>
+                                    OUTSIDE SERVICE AREA
+                                </span>
+                            }
+                        </span>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="package-meta-box h-100">
+                        <span class="package-meta-label">Travel Fee</span>
+                        <span class="package-meta-value">
+                            ₱@Model.TravelFee.ToString("N2")
+                        </span>
+                    </div>
+                </div>
+            }
             @if (!string.IsNullOrWhiteSpace(Model.CelebrantName))
             {
                 <div class="col-md-3">
@@ -286,6 +344,11 @@
         <div class="booking-price-row">
             <span>Base Price</span>
             <strong>₱@Model.BasePrice.ToString("N2")</strong>
+        </div>
+
+        <div class="booking-price-row">
+            <span>Travel Fee</span>
+            <strong>₱@Model.TravelFee.ToString("N2")</strong>
         </div>
 
         <div class="booking-price-row booking-total-row">

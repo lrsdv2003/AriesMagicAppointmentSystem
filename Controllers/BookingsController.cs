@@ -16,6 +16,8 @@ namespace AriesMagicAppointmentSystem.Controllers
         private readonly ApplicationDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IHistoryService _historyService;
+        private readonly IVenueDistanceService _venueDistanceService;
+        private readonly IGeocodingService _geocodingService;
         private const int MaxRemovedInclusions = 2;
         private const decimal FixedInclusionDeduction = 2000m;
         private const decimal FixedRequiredDownpayment = 2000m;
@@ -23,11 +25,15 @@ namespace AriesMagicAppointmentSystem.Controllers
         public BookingsController(
             ApplicationDbContext context,
             UserManager<ApplicationUser> userManager,
-            IHistoryService historyService)
+            IHistoryService historyService,
+            IVenueDistanceService venueDistanceService,
+            IGeocodingService geocodingService)
         {
             _context = context;
             _userManager = userManager;
             _historyService = historyService;
+            _venueDistanceService = venueDistanceService;
+            _geocodingService = geocodingService;
         }
 
         [Authorize(Roles = "Staff,Owner")]
@@ -98,7 +104,11 @@ namespace AriesMagicAppointmentSystem.Controllers
                     EventDate = b.EventDate,
                     BookingStatus = b.Status,
                     PaymentStatus = latestPaymentStatus,
-                    InternalNotes = b.InternalNotes
+                    InternalNotes = b.InternalNotes,
+                    DistanceKm = b.DistanceKm,
+                    ServiceZone = b.ServiceZone,
+                    TravelFee = b.TravelFee,
+                    RequiresManualReview = b.RequiresManualReview
                 };
             }).ToList();
 
@@ -123,6 +133,92 @@ namespace AriesMagicAppointmentSystem.Controllers
             };
 
             return View(viewModel);
+        }
+
+        [Authorize(Roles = "Client")]
+        [HttpGet]
+        public async Task<IActionResult> SearchVenue(string query)
+        {
+            if (string.IsNullOrWhiteSpace(query))
+                return Json(Array.Empty<object>());
+
+            try
+            {
+                var results = await _geocodingService.SearchAsync(query);
+                return Json(results.Select(r => new
+                {
+                    displayName = r.DisplayName,
+                    latitude = r.Latitude,
+                    longitude = r.Longitude
+                }));
+            }
+            catch
+            {
+                return StatusCode(503, new { message = "Venue search is temporarily unavailable." });
+            }
+        }
+
+        [Authorize(Roles = "Client")]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CheckVenueServiceability(string partyVenue)
+        {
+            if (string.IsNullOrWhiteSpace(partyVenue))
+            {
+                return BadRequest(new
+                {
+                    success = false,
+                    message = "Please select a venue before continuing."
+                });
+            }
+
+            try
+            {
+                // Resolve the venue again on the server. Client-posted coordinates,
+                // distance, travel fee, and serviceability are never trusted.
+                var matches = await _geocodingService.SearchAsync(partyVenue);
+                var selected = matches.FirstOrDefault();
+
+                if (selected == null || !_venueDistanceService.IsValidCoordinate(selected.Latitude, selected.Longitude))
+                {
+                    return UnprocessableEntity(new
+                    {
+                        success = false,
+                        status = "NOT_VERIFIED",
+                        message = "Unable to verify this venue location. Please select another location or try again."
+                    });
+                }
+
+                var distance = _venueDistanceService.Calculate(selected.Latitude, selected.Longitude);
+
+                return Json(new
+                {
+                    success = true,
+                    status = distance.RequiresManualReview
+                        ? "FOR_STAFF_REVIEW"
+                        : distance.IsServiceable
+                            ? "SERVICEABLE"
+                            : "NOT_SERVICEABLE",
+                    displayName = selected.DisplayName,
+                    latitude = selected.Latitude,
+                    longitude = selected.Longitude,
+                    distanceKm = distance.DistanceKm,
+                    travelFee = distance.TravelFee,
+                    serviceZone = distance.ServiceZone,
+                    isServiceable = distance.IsServiceable,
+                    requiresManualReview = distance.RequiresManualReview,
+                    maximumServiceDistanceKm = distance.MaximumServiceDistanceKm
+                });
+            }
+            catch
+            {
+                return StatusCode(503, new
+                {
+                    success = false,
+                    status = "NOT_VERIFIED",
+                    message = "Unable to verify this venue location. Please select another location or try again."
+                });
+            }
         }
 
         [Authorize(Roles = "Client")]
@@ -184,6 +280,40 @@ namespace AriesMagicAppointmentSystem.Controllers
 
             ValidateEventSpecificFields(model);
 
+            if (!string.IsNullOrWhiteSpace(model.PartyVenue))
+            {
+                try
+                {
+                    var matches = await _geocodingService.SearchAsync(model.PartyVenue);
+                    var selected = matches.FirstOrDefault();
+                    if (selected == null || !_venueDistanceService.IsValidCoordinate(selected.Latitude, selected.Longitude))
+                    {
+                        ModelState.AddModelError(nameof(model.PartyVenue), "We could not find valid coordinates for this venue. Please enter a more complete address.");
+                    }
+                    else
+                    {
+                        model.PartyVenue = selected.DisplayName;
+                        model.VenueLatitude = selected.Latitude;
+                        model.VenueLongitude = selected.Longitude;
+                        var distance = _venueDistanceService.Calculate(selected.Latitude, selected.Longitude);
+                        model.DistanceKm = distance.DistanceKm;
+                        model.TravelFee = distance.TravelFee;
+                        model.IsServiceable = distance.IsServiceable;
+                        model.ServiceZone = distance.ServiceZone;
+                        model.RequiresManualReview = distance.RequiresManualReview;
+
+                        if (!distance.IsServiceable)
+                        {
+                            ModelState.AddModelError(nameof(model.PartyVenue), $"This venue is outside the maximum service distance of {distance.MaximumServiceDistanceKm:0.##} KM. Please select another venue or contact Aries Magic for assistance.");
+                        }
+                    }
+                }
+                catch (Exception)
+                {
+                    ModelState.AddModelError(nameof(model.PartyVenue), "The venue could not be verified right now. Please try again.");
+                }
+            }
+
             if (!ModelState.IsValid)
             {
                 return View(model);
@@ -243,6 +373,13 @@ namespace AriesMagicAppointmentSystem.Controllers
                 StartTime = stepOneModel.StartTime,
                 PartyTheme = stepOneModel.PartyTheme,
                 PartyVenue = stepOneModel.PartyVenue,
+                VenueLatitude = stepOneModel.VenueLatitude,
+                VenueLongitude = stepOneModel.VenueLongitude,
+                DistanceKm = stepOneModel.DistanceKm,
+                TravelFee = stepOneModel.TravelFee,
+                IsServiceable = stepOneModel.IsServiceable,
+                ServiceZone = stepOneModel.ServiceZone,
+                RequiresManualReview = stepOneModel.RequiresManualReview,
                 CelebrantName = stepOneModel.CelebrantName,
                 Age = stepOneModel.Age,
                 PaxCount = stepOneModel.PaxCount,
@@ -252,7 +389,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                 ServiceId = selectedPackage.Id,
                 PackageName = selectedPackage.Name,
                 BasePrice = selectedPackage.Price,
-                FinalPrice = selectedPackage.Price,
+                FinalPrice = selectedPackage.Price + stepOneModel.TravelFee,
                 RequiredDownpayment = 2000,
 
                 AvailablePackages = packages.Select(p => new ServiceOptionViewModel
@@ -302,6 +439,40 @@ namespace AriesMagicAppointmentSystem.Controllers
                 return View("CreateStepTwo", model);
             }
 
+            // Never trust client-posted coordinates, distance, or travel fee. Re-geocode and recalculate on the server.
+            VenueDistanceResult venueDistance;
+            try
+            {
+                var matches = await _geocodingService.SearchAsync(model.PartyVenue);
+                var selectedVenue = matches.FirstOrDefault();
+                if (selectedVenue == null || !_venueDistanceService.IsValidCoordinate(selectedVenue.Latitude, selectedVenue.Longitude))
+                {
+                    ModelState.AddModelError(nameof(model.PartyVenue), "The venue could not be verified. Please return to Step 1 and select a valid venue.");
+                    return View("CreateStepTwo", model);
+                }
+
+                model.PartyVenue = selectedVenue.DisplayName;
+                model.VenueLatitude = selectedVenue.Latitude;
+                model.VenueLongitude = selectedVenue.Longitude;
+                venueDistance = _venueDistanceService.Calculate(selectedVenue.Latitude, selectedVenue.Longitude);
+                model.DistanceKm = venueDistance.DistanceKm;
+                model.TravelFee = venueDistance.TravelFee;
+                model.IsServiceable = venueDistance.IsServiceable;
+                model.ServiceZone = venueDistance.ServiceZone;
+                model.RequiresManualReview = venueDistance.RequiresManualReview;
+
+                if (!venueDistance.IsServiceable)
+                {
+                    ModelState.AddModelError(nameof(model.PartyVenue), $"This venue is outside the maximum service distance of {venueDistance.MaximumServiceDistanceKm:0.##} KM. Please select another venue or contact Aries Magic for assistance.");
+                    return View("CreateStepTwo", model);
+                }
+            }
+            catch (Exception)
+            {
+                ModelState.AddModelError(nameof(model.PartyVenue), "The venue could not be verified right now. Please try again.");
+                return View("CreateStepTwo", model);
+            }
+
             var isBlocked = await _context.BlockedDates
                 .AnyAsync(x => x.Date.Date == model.EventDate.Date);
 
@@ -340,7 +511,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                 ? FixedInclusionDeduction
                 : 0m;
 
-            var finalPrice = selectedPackage.Price - totalDeduction;
+            var finalPrice = selectedPackage.Price - totalDeduction + venueDistance.TravelFee;
 
             if (finalPrice < 0)
             {
@@ -447,6 +618,13 @@ namespace AriesMagicAppointmentSystem.Controllers
                 Motif = model.Motif,
                 PartyTheme = model.PartyTheme,
                 PartyVenue = model.PartyVenue,
+                VenueLatitude = model.VenueLatitude,
+                VenueLongitude = model.VenueLongitude,
+                DistanceKm = venueDistance.DistanceKm,
+                TravelFee = venueDistance.TravelFee,
+                IsServiceable = venueDistance.IsServiceable,
+                ServiceZone = venueDistance.ServiceZone,
+                RequiresManualReview = venueDistance.RequiresManualReview,
                 CelebrantName = model.CelebrantName,
                 Age = model.Age,
                 PaxCount = model.PaxCount,
@@ -467,7 +645,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             {
                 BookingId = booking.Id,
                 EventType = TimelineEventType.BookingCreated,
-                Notes = $"Booking was created by client using the new 2-step booking flow. Removed inclusions: {removedInclusionNames.Count}. Fixed total deduction: ₱{totalDeduction:N2}.",                CreatedAt = DateTime.Now
+                Notes = $"Booking was created by client using the new 2-step booking flow. Venue distance: {venueDistance.DistanceKm:N2} KM, zone: {venueDistance.ServiceZone}, travel fee: ₱{venueDistance.TravelFee:N2}, manual review: {venueDistance.RequiresManualReview}. Removed inclusions: {removedInclusionNames.Count}. Fixed total deduction: ₱{totalDeduction:N2}.",                CreatedAt = DateTime.Now
             });
 
             var staffUsers = await _userManager.GetUsersInRoleAsync("Staff");

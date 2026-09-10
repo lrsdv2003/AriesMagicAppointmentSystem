@@ -167,6 +167,9 @@ namespace AriesMagicAppointmentSystem.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<double?>("DistanceKm")
+                        .HasColumnType("float");
+
                     b.Property<DateTime>("EndTime")
                         .HasColumnType("datetime2");
 
@@ -185,6 +188,9 @@ namespace AriesMagicAppointmentSystem.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("IsCompletedLocked")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsServiceable")
                         .HasColumnType("bit");
 
                     b.Property<string>("Motif")
@@ -218,8 +224,14 @@ namespace AriesMagicAppointmentSystem.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<bool>("RequiresManualReview")
+                        .HasColumnType("bit");
+
                     b.Property<int>("ServiceId")
                         .HasColumnType("int");
+
+                    b.Property<string>("ServiceZone")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("StartTime")
                         .HasColumnType("datetime2");
@@ -233,6 +245,16 @@ namespace AriesMagicAppointmentSystem.Migrations
 
                     b.Property<int?>("TrashReason")
                         .HasColumnType("int");
+
+                    b.Property<decimal>("TravelFee")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<double?>("VenueLatitude")
+                        .HasColumnType("float");
+
+                    b.Property<double?>("VenueLongitude")
+                        .HasColumnType("float");
 
                     b.HasKey("Id");
 

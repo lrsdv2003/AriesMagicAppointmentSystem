@@ -13,6 +13,13 @@ namespace AriesMagicAppointmentSystem.ViewModels
         public string? PartyTheme { get; set; }
 
         public string PartyVenue { get; set; } = string.Empty;
+        public double? VenueLatitude { get; set; }
+        public double? VenueLongitude { get; set; }
+        public double? DistanceKm { get; set; }
+        public decimal TravelFee { get; set; }
+        public bool IsServiceable { get; set; }
+        public string? ServiceZone { get; set; }
+        public bool RequiresManualReview { get; set; }
 
         public string? CelebrantName { get; set; }
 
