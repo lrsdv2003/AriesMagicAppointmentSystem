@@ -1,0 +1,330 @@
+﻿@model AriesMagicAppointmentSystem.ViewModels.CommunicationCenterViewModel
+@using AriesMagicAppointmentSystem.Models
+@{
+    var isClient = User.IsInRole("Client");
+    Layout = isClient ? "_Layout" : "_DashboardLayout";
+    ViewData["Title"] = "Messages";
+    var selected = Model.SelectedConversation;
+    var lastMessageId = selected?.Messages.LastOrDefault()?.Id ?? 0;
+    var canCompleteRequests = User.IsInRole("Admin") || User.IsInRole("Owner");
+}
+
+<div id="communicationCenter"
+     class="comm-page @(isClient ? "comm-page-client" : "comm-page-dashboard")"
+     data-conversation-id="@(selected?.Id ?? 0)"
+     data-last-message-id="@lastMessageId"
+     data-messages-url="@Url.Action("MessagesSince", "Communications")"
+     data-unread-url="@Url.Action("UnreadCount", "Communications")">
+
+    <div class="comm-page-header">
+        <div>
+            <span class="comm-kicker"><i class="bi bi-chat-heart"></i> Communication Center</span>
+            <h1>Messages & Coordination</h1>
+            <p>@(isClient ? "Keep every booking question and update connected to your event." : "Coordinate client concerns, bookings, schedules, and team operations in one place.")</p>
+        </div>
+        @if (Model.IsInternalUser)
+        {
+            <button class="btn comm-primary-btn" type="button" data-bs-toggle="modal" data-bs-target="#newConversationModal">
+                <i class="bi bi-plus-lg"></i> New Conversation
+            </button>
+        }
+    </div>
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger comm-alert">@TempData["Error"]</div>
+    }
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success comm-alert">@TempData["Success"]</div>
+    }
+
+    <div class="comm-workspace">
+        <aside class="comm-conversation-panel" aria-label="Conversation list">
+            <div class="comm-panel-top">
+                <div class="comm-panel-title-row">
+                    <div>
+                        <span class="comm-eyebrow">Inbox</span>
+                        <h2>Conversations</h2>
+                    </div>
+                    @if (Model.UnreadConversationCount > 0)
+                    {
+                        <span class="comm-count-pill">@Model.UnreadConversationCount unread</span>
+                    }
+                </div>
+
+                <form method="get" asp-action="Index" class="comm-search-form">
+                    <input type="hidden" name="filter" value="@Model.Filter" />
+                    <div class="comm-search-box">
+                        <i class="bi bi-search"></i>
+                        <input type="search" name="q" value="@Model.Search" placeholder="Search messages, names, booking #..." aria-label="Search conversations" />
+                        @if (!string.IsNullOrWhiteSpace(Model.Search))
+                        {
+                            <a asp-action="Index" asp-route-filter="@Model.Filter" class="comm-search-clear" title="Clear search"><i class="bi bi-x-lg"></i></a>
+                        }
+                    </div>
+                </form>
+
+                <div class="comm-filter-strip" aria-label="Conversation filters">
+                    <a asp-action="Index" asp-route-filter="all" asp-route-q="@Model.Search" class="@(Model.Filter == "all" ? "active" : "")">All</a>
+                    <a asp-action="Index" asp-route-filter="unread" asp-route-q="@Model.Search" class="@(Model.Filter == "unread" ? "active" : "")">Unread</a>
+                    @if (Model.IsInternalUser)
+                    {
+                        <a asp-action="Index" asp-route-filter="client" asp-route-q="@Model.Search" class="@(Model.Filter == "client" ? "active" : "")">Clients</a>
+                        <a asp-action="Index" asp-route-filter="internal" asp-route-q="@Model.Search" class="@(Model.Filter == "internal" ? "active" : "")">Team</a>
+                        <a asp-action="Index" asp-route-filter="requests" asp-route-q="@Model.Search" class="@(Model.Filter == "requests" ? "active" : "")">Requests</a>
+                    }
+                    else
+                    {
+                        <a asp-action="Index" asp-route-filter="booking" asp-route-q="@Model.Search" class="@(Model.Filter == "booking" ? "active" : "")">Bookings</a>
+                        <a asp-action="Index" asp-route-filter="support" asp-route-q="@Model.Search" class="@(Model.Filter == "support" ? "active" : "")">Support</a>
+                    }
+                </div>
+
+                @if (isClient)
+                {
+                    <form asp-action="StartSupport" method="post" class="comm-support-form">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="comm-support-btn"><i class="bi bi-headset"></i><span><strong>Aries Magic Support</strong><small>Start or continue a general inquiry</small></span></button>
+                    </form>
+                }
+            </div>
+
+            <div class="comm-conversation-list">
+                @if (Model.Conversations.Count == 0)
+                {
+                    <div class="comm-list-empty">
+                        <i class="bi bi-stars"></i>
+                        <strong>No conversations found</strong>
+                        <span>@(string.IsNullOrWhiteSpace(Model.Search) ? "Your conversations will appear here." : "Try another search or filter.")</span>
+                    </div>
+                }
+                else
+                {
+                    foreach (var item in Model.Conversations)
+                    {
+                        var isSelected = selected?.Id == item.Id;
+                        <a asp-action="Index" asp-route-id="@item.Id" asp-route-filter="@Model.Filter" asp-route-q="@Model.Search" class="comm-conversation-item @(isSelected ? "active" : "") @(item.UnreadCount > 0 ? "unread" : "")">
+                            <span class="comm-avatar">@item.Initials</span>
+                            <span class="comm-item-copy">
+                                <span class="comm-item-heading">
+                                    <strong>@item.Title</strong>
+                                    <time>@item.LastActivityAt.ToLocalTime().ToString("MMM d")</time>
+                                </span>
+                                <span class="comm-item-subtitle">@item.Subtitle</span>
+                                <span class="comm-item-preview">@item.LatestMessage</span>
+                            </span>
+                            <span class="comm-item-signals">
+                                @if (item.HasOpenRequest)
+                                {
+                                    <span class="comm-request-dot" title="Open operational request"><i class="bi bi-lightning-charge-fill"></i></span>
+                                }
+                                @if (item.UnreadCount > 0)
+                                {
+                                    <span class="comm-unread-pill">@(item.UnreadCount > 99 ? "99+" : item.UnreadCount)</span>
+                                }
+                            </span>
+                        </a>
+                    }
+                }
+            </div>
+        </aside>
+
+        <section class="comm-chat-panel" aria-label="Selected conversation">
+            @if (selected == null)
+            {
+                <div class="comm-chat-empty">
+                    <div class="comm-empty-orbit"><i class="bi bi-chat-dots"></i></div>
+                    <span class="comm-eyebrow">Your conversations</span>
+                    <h2>Select a conversation</h2>
+                    <p>Choose a message thread from the left to view its history and continue the discussion.</p>
+                    @if (isClient)
+                    {
+                        <p class="comm-empty-hint"><i class="bi bi-calendar2-event"></i> Booking-specific chats can also be opened directly from <strong>My Bookings</strong>.</p>
+                    }
+                </div>
+            }
+            else
+            {
+                <header class="comm-chat-header">
+                    <div class="comm-chat-title">
+                        <span class="comm-avatar comm-avatar-lg">@(selected.Participants.FirstOrDefault(p => p.UserId != User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value)?.Initials ?? "AM")</span>
+                        <div>
+                            <div class="comm-title-line">
+                                <h2>@selected.Title</h2>
+                                <span class="comm-type-chip">@selected.ConversationType.Replace("Internal", "Team ").Replace("ClientSupport", "Support").Replace("OperationalRequest", "Request")</span>
+                            </div>
+                            <p>@(string.IsNullOrWhiteSpace(selected.ParticipantSummary) ? "Aries Magic conversation" : selected.ParticipantSummary)</p>
+                        </div>
+                    </div>
+                    @if (selected.BookingId.HasValue)
+                    {
+                        <a class="btn comm-secondary-btn" asp-controller="Bookings" asp-action="@(isClient ? "MyBookings" : "Details")" asp-route-id="@(isClient ? null : selected.BookingId)">
+                            <i class="bi bi-box-arrow-up-right"></i> View Booking
+                        </a>
+                    }
+                </header>
+
+                @if (selected.Booking != null)
+                {
+                    <div class="comm-booking-context">
+                        <span class="comm-context-icon"><i class="bi bi-ticket-perforated"></i></span>
+                        <div class="comm-context-main">
+                            <strong>Conversation regarding Booking #@selected.Booking.Id</strong>
+                            <span>@selected.Booking.ClientName - @selected.Booking.PackageName</span>
+                        </div>
+                        <div class="comm-context-meta"><span>@selected.Booking.EventDate.ToString("MMM d, yyyy")</span><span>@selected.Booking.StartTime.ToString("h:mm tt")</span><span class="comm-booking-status">@selected.Booking.Status</span></div>
+                    </div>
+                }
+
+                <div class="comm-message-history" id="commMessageHistory" aria-live="polite">
+                    <div class="comm-history-start"><span>Conversation started</span></div>
+                    @foreach (var message in selected.Messages)
+                    {
+                        <article class="comm-message @(message.IsMine ? "mine" : "theirs")" data-message-id="@message.Id">
+                            <div class="comm-message-meta"><strong>@(message.IsMine ? "You" : message.SenderName)</strong><span>@message.SenderRole</span><time>@message.SentAt.ToLocalTime().ToString("MMM d, h:mm tt")</time></div>
+                            @if (message.MessageType == MessageTypes.ActionRequest)
+                            {
+                                <div class="comm-action-card @(message.RequestStatus == MessageRequestStatuses.Completed ? "completed" : "")">
+                                    <div class="comm-action-card-top"><span><i class="bi bi-lightning-charge-fill"></i> @(message.RequestType ?? "Operational Request")</span><span class="comm-request-status">@(message.RequestStatus ?? "Open")</span></div>
+                                    <p>@message.Content</p>
+                                    <div class="comm-action-actions">
+                                        @if (!string.IsNullOrWhiteSpace(message.ActionLink))
+                                        {
+                                            <a href="@message.ActionLink" class="btn btn-sm comm-secondary-btn"><i class="bi bi-box-arrow-up-right"></i> Open Related Page</a>
+                                        }
+                                        @if (canCompleteRequests && message.RequestStatus != MessageRequestStatuses.Completed)
+                                        {
+                                            <form asp-action="CompleteRequest" method="post">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="messageId" value="@message.Id" />
+                                                <button class="btn btn-sm comm-primary-btn" type="submit"><i class="bi bi-check2-circle"></i> Mark Completed</button>
+                                            </form>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="comm-bubble">@message.Content</div>
+                            }
+                            @if (message.IsMine)
+                            {
+                                <span class="comm-delivery-state"><i class="bi @(message.IsReadByOthers ? "bi-check2-all" : "bi-check2")"></i> @(message.IsReadByOthers ? "Read" : "Sent")</span>
+                            }
+                        </article>
+                    }
+                </div>
+
+                @if (selected.CanSend)
+                {
+                    <form asp-action="SendMessage" method="post" id="commComposer" class="comm-composer">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="conversationId" value="@selected.Id" />
+                        @if (Model.IsInternalUser)
+                        {
+                            <details class="comm-request-tools">
+                                <summary><i class="bi bi-lightning-charge"></i> Add operational request</summary>
+                                <div class="comm-request-tool-grid">
+                                    <select name="requestType" class="form-select">
+                                        <option value="">Normal message</option>
+                                        <option>Calendar Change Request</option>
+                                        <option>Booking Review Request</option>
+                                        <option>Schedule Modification</option>
+                                        <option>Client Request</option>
+                                        <option>Availability Update</option>
+                                        <option>Payment Concern</option>
+                                    </select>
+                                    <input type="text" name="actionLink" class="form-control" placeholder="Optional local link, e.g. /Calendar" />
+                                </div>
+                            </details>
+                        }
+                        <div class="comm-composer-row">
+                            <textarea name="messageContent" id="commMessageInput" rows="1" maxlength="4000" placeholder="Write a message..." required></textarea>
+                            <button class="comm-send-btn" type="submit" aria-label="Send message"><i class="bi bi-send-fill"></i></button>
+                        </div>
+                        <div class="comm-composer-note"><span id="commComposerStatus">Messages are saved to this conversation history.</span><span><kbd>Enter</kbd> send - <kbd>Shift</kbd>+<kbd>Enter</kbd> new line</span></div>
+                    </form>
+                }
+            }
+        </section>
+
+        <aside class="comm-info-panel" aria-label="Conversation information">
+            @if (selected != null)
+            {
+                <div class="comm-info-section">
+                    <span class="comm-eyebrow">Participants</span>
+                    <h3>People in this chat</h3>
+                    <div class="comm-participant-list">
+                        @foreach (var participant in selected.Participants)
+                        {
+                            var recentlyActive = participant.LastLoginAt.HasValue && participant.LastLoginAt.Value > DateTime.UtcNow.AddMinutes(-15);
+                            <div class="comm-participant">
+                                <span class="comm-avatar">@participant.Initials</span>
+                                <span><strong>@participant.Name</strong><small>@participant.Role - @(recentlyActive ? "Active recently" : participant.LastLoginAt.HasValue ? $"Last active {participant.LastLoginAt.Value.ToLocalTime():MMM d}" : "Activity unavailable")</small></span>
+                            </div>
+                        }
+                    </div>
+                </div>
+                @if (selected.Booking != null)
+                {
+                    <div class="comm-info-section">
+                        <span class="comm-eyebrow">Booking context</span>
+                        <h3>Booking #@selected.Booking.Id</h3>
+                        <dl class="comm-info-list">
+                            <div><dt>Client</dt><dd>@selected.Booking.ClientName</dd></div>
+                            <div><dt>Service</dt><dd>@selected.Booking.ServiceName</dd></div>
+                            <div><dt>Package</dt><dd>@selected.Booking.PackageName</dd></div>
+                            <div><dt>Date</dt><dd>@selected.Booking.EventDate.ToString("MMM d, yyyy")</dd></div>
+                            <div><dt>Time</dt><dd>@selected.Booking.StartTime.ToString("h:mm tt")</dd></div>
+                            <div><dt>Status</dt><dd>@selected.Booking.Status</dd></div>
+                        </dl>
+                    </div>
+                }
+                <div class="comm-info-section comm-history-note"><i class="bi bi-shield-check"></i><div><strong>Conversation record</strong><p>This history stays available to authorized participants for booking and operational reference.</p></div></div>
+            }
+            else
+            {
+                <div class="comm-info-empty"><i class="bi bi-stars"></i><span>Booking context and participants appear here.</span></div>
+            }
+        </aside>
+    </div>
+</div>
+
+@if (Model.IsInternalUser)
+{
+    <div class="modal fade" id="newConversationModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content comm-modal">
+                <form asp-action="CreateInternal" method="post">
+                    @Html.AntiForgeryToken()
+                    <div class="modal-header">
+                        <div><span class="comm-eyebrow">Team communication</span><h2 class="modal-title">New Conversation</h2></div>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <label class="form-label">Participants</label>
+                        <div class="comm-user-picker">
+                            @foreach (var person in Model.InternalUsers)
+                            {
+                                <label class="comm-user-option"><input type="checkbox" name="participantIds" value="@person.UserId" /><span class="comm-avatar">@(person.Name.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Aggregate("", (a, x) => a + char.ToUpperInvariant(x[0])))</span><span><strong>@person.Name</strong><small>@person.Role</small></span><i class="bi bi-check-circle-fill"></i></label>
+                            }
+                        </div>
+                        <div class="row g-3 mt-1">
+                            <div class="col-md-7"><label class="form-label">Conversation title <span class="text-secondary">(optional for direct message)</span></label><input class="form-control" type="text" name="title" maxlength="200" placeholder="e.g. October 21 Wedding Event" /></div>
+                            <div class="col-md-5"><label class="form-label">Related Booking ID <span class="text-secondary">(optional)</span></label><input class="form-control" type="number" min="1" name="relatedBookingId" placeholder="e.g. 1025" /></div>
+                            <div class="col-12"><label class="form-label">First message</label><textarea class="form-control" name="initialMessage" rows="3" maxlength="4000" placeholder="What do you need to coordinate?"></textarea></div>
+                            <div class="col-md-6"><label class="form-label">Operational request <span class="text-secondary">(optional)</span></label><select class="form-select" name="requestType"><option value="">Normal conversation</option><option>Calendar Change Request</option><option>Booking Review Request</option><option>Schedule Modification</option><option>Client Request</option><option>Availability Update</option><option>Payment Concern</option></select></div>
+                            <div class="col-md-6"><label class="form-label">Related system link <span class="text-secondary">(optional)</span></label><input class="form-control" type="text" name="actionLink" placeholder="/Calendar or /Bookings/Details/1025" /></div>
+                        </div>
+                    </div>
+                    <div class="modal-footer"><button type="button" class="btn comm-secondary-btn" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn comm-primary-btn"><i class="bi bi-chat-square-text"></i> Create Conversation</button></div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script src="~/js/communication-center.js" asp-append-version="true"></script>
+}

@@ -1,6 +1,16 @@
+﻿@using System.Security.Claims
+@inject AriesMagicAppointmentSystem.Data.ApplicationDbContext _context
 @{
     var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
     var currentAction = ViewContext.RouteData.Values["action"]?.ToString();
+    var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+    var unreadMessageCount = 0;
+    if (!string.IsNullOrEmpty(currentUserId))
+    {
+        unreadMessageCount = _context.ConversationParticipants
+            .Count(p => p.UserId == currentUserId && p.Conversation!.Messages.Any(m =>
+                m.SenderId != currentUserId && (!p.LastReadAt.HasValue || m.SentAt > p.LastReadAt.Value)));
+    }
 }
 
 <!DOCTYPE html>
@@ -16,6 +26,7 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/soft-ui.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/AriesMagicAppointmentSystem.styles.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/communication-center.css" asp-append-version="true" />
 </head>
 <body class="dashboard-body">
     <div class="dashboard-shell">
@@ -138,6 +149,13 @@
                                 Reports
                             </a>
                         }
+
+                        <a asp-controller="Communications" asp-action="Index"
+                           class="sidebar-link communication-nav-link @(currentController == "Communications" ? "active" : "")">
+                            <i class="bi bi-chat-dots-fill"></i>
+                            Messages
+                            <span class="communication-unread-badge" @(unreadMessageCount == 0 ? "hidden" : null)>@(unreadMessageCount > 99 ? "99+" : unreadMessageCount)</span>
+                        </a>
                     }
                 </nav>
             </div>
@@ -150,10 +168,7 @@
                 </div>
 
                 <div class="topbar-right">
-                    @inject AriesMagicAppointmentSystem.Data.ApplicationDbContext _context
-                    @using System.Security.Claims
                     @{
-                        var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
                         var unreadNotificationCount = 0;
                         if (!string.IsNullOrEmpty(currentUserId))
                         {
@@ -161,6 +176,10 @@
                             .Count(n => n.UserId == currentUserId && !n.IsRead);
                         }
                     }
+                   <a asp-controller="Communications" asp-action="Index" class="topbar-icon topbar-message-link" title="Messages" aria-label="Messages">
+                        <i class="bi bi-chat-dots-fill"></i>
+                        <span class="communication-unread-badge" @(unreadMessageCount == 0 ? "hidden" : null)>@(unreadMessageCount > 99 ? "99+" : unreadMessageCount)</span>
+                    </a>
                    <a asp-controller="Notifications"
                         asp-action="Index"
                         class="topbar-icon topbar-bell"
@@ -243,6 +262,7 @@
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/communication-global.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

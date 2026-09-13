@@ -1,4 +1,4 @@
-@model IEnumerable<AriesMagicAppointmentSystem.Models.Booking>
+﻿@model IEnumerable<AriesMagicAppointmentSystem.Models.Booking>
 @using AriesMagicAppointmentSystem.Models
 
 @{
@@ -350,6 +350,14 @@ else
                     }
 
                     <div class="client-booking-footer-actions">
+                        <form asp-controller="Communications" asp-action="StartBookingConversation" method="post" class="d-inline">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="bookingId" value="@item.Id" />
+                            <button type="submit" class="btn btn-outline-secondary comm-booking-message-btn">
+                                <i class="bi bi-chat-dots"></i> Message Staff
+                            </button>
+                        </form>
+
                         @if (item.Status == BookingStatus.AwaitingDownpayment)
                         {
                             if (isUnavailable)

@@ -1,4 +1,4 @@
-@using System.Security.Claims
+﻿@using System.Security.Claims
 @{
     var currentController = ViewContext.RouteData.Values["controller"]?.ToString() ?? "Home";
     var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? "Index";
@@ -6,6 +6,7 @@
     var isClient = User.Identity?.IsAuthenticated == true && User.IsInRole("Client");
     var pageClass = $"client-{currentController.ToLowerInvariant()} client-{currentController.ToLowerInvariant()}-{currentAction.ToLowerInvariant()}";
     var clientUnreadCount = 0;
+    var clientMessageUnreadCount = 0;
     if (isClient)
     {
         var clientUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -13,6 +14,9 @@
         {
             clientUnreadCount = _clientDbContext.Notifications
                 .Count(n => n.UserId == clientUserId && !n.IsRead);
+            clientMessageUnreadCount = _clientDbContext.ConversationParticipants
+                .Count(p => p.UserId == clientUserId && p.Conversation!.Messages.Any(m =>
+                    m.SenderId != clientUserId && (!p.LastReadAt.HasValue || m.SentAt > p.LastReadAt.Value)));
         }
     }
 }
@@ -36,6 +40,7 @@
     <link rel="stylesheet" href="~/AriesMagicAppointmentSystem.styles.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/magic-client-v2.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/magic-client-consistency.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/communication-center.css" asp-append-version="true" />
 </head>
 <body class="client-body @pageClass @(isHome ? "client-home-page" : "client-inner-page")">
     <a class="magic-skip-link" href="#mainContent">Skip to content</a>
@@ -91,6 +96,9 @@
                                 <a class="nav-link @(currentController == "Payments" ? "active" : "")" asp-controller="Payments" asp-action="MyUploads">Payments</a>
                             </li>
                             <li class="nav-item d-lg-none">
+                                <a class="nav-link communication-nav-link @(currentController == "Communications" ? "active" : "")" asp-controller="Communications" asp-action="Index">Messages <span class="communication-unread-badge" @(clientMessageUnreadCount == 0 ? "hidden" : null)>@(clientMessageUnreadCount > 99 ? "99+" : clientMessageUnreadCount)</span></a>
+                            </li>
+                            <li class="nav-item d-lg-none">
                                 <a class="nav-link @(currentController == "Profile" ? "active" : "")" asp-controller="Profile" asp-action="Index">Profile</a>
                             </li>
                             <li class="nav-item d-lg-none">
@@ -102,6 +110,11 @@
                     <div class="client-nav-actions">
                         @if (isClient)
                         {
+                            <a asp-controller="Communications" asp-action="Index" class="magic-icon-btn magic-message-btn d-none d-lg-inline-flex position-relative @(currentController == "Communications" ? "active" : "")" aria-label="Messages@(clientMessageUnreadCount > 0 ? $", {clientMessageUnreadCount} unread conversations" : "")" title="Messages">
+                                <i class="bi bi-chat-dots" aria-hidden="true"></i>
+                                <span class="communication-unread-badge" @(clientMessageUnreadCount == 0 ? "hidden" : null)>@(clientMessageUnreadCount > 99 ? "99+" : clientMessageUnreadCount)</span>
+                            </a>
+
                             <a asp-controller="Notifications" asp-action="Index" class="magic-icon-btn d-none d-lg-inline-flex position-relative @(currentController == "Notifications" ? "active" : "")" aria-label="Notifications@(clientUnreadCount > 0 ? $", {clientUnreadCount} unread" : "")" title="Notifications">
                                 <i class="bi bi-bell" aria-hidden="true"></i>
                                 @if (clientUnreadCount > 0)
@@ -119,6 +132,7 @@
                                 </button>
                                 <ul class="dropdown-menu dropdown-menu-end magic-account-menu">
                                     <li><a class="dropdown-item" asp-controller="Bookings" asp-action="MyBookings"><i class="bi bi-calendar2-event"></i> My Bookings</a></li>
+                                    <li><a class="dropdown-item" asp-controller="Communications" asp-action="Index"><i class="bi bi-chat-dots"></i> Messages @if (clientMessageUnreadCount > 0) { <span class="communication-unread-badge ms-auto">@(clientMessageUnreadCount > 99 ? "99+" : clientMessageUnreadCount)</span> }</a></li>
                                     <li><a class="dropdown-item" asp-controller="Payments" asp-action="MyUploads"><i class="bi bi-wallet2"></i> My Payments</a></li>
                                     <li><a class="dropdown-item" asp-controller="Payments" asp-action="MyRefundRequests"><i class="bi bi-arrow-counterclockwise"></i> Refund Requests</a></li>
                                     <li><a class="dropdown-item" asp-controller="RescheduleRequests" asp-action="MyRequests"><i class="bi bi-calendar2-week"></i> Reschedules</a></li>
@@ -163,7 +177,7 @@
     </header>
 
     <main id="mainContent" class="client-main">
-        @if (isHome)
+        @if (isHome || currentController == "Communications")
         {
             @RenderBody()
         }
@@ -198,6 +212,7 @@
                         @if (isClient)
                         {
                             <a asp-controller="Bookings" asp-action="MyBookings">My Bookings</a>
+                            <a asp-controller="Communications" asp-action="Index">Messages</a>
                             <a asp-controller="Payments" asp-action="MyUploads">Payments</a>
                             <a asp-controller="Profile" asp-action="Index">Profile</a>
                         }
@@ -221,6 +236,10 @@
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/aries-client.js" asp-append-version="true"></script>
     <script src="~/js/magic-client-v2.js" asp-append-version="true"></script>
+    @if (User.Identity?.IsAuthenticated == true)
+    {
+        <script src="~/js/communication-global.js" asp-append-version="true"></script>
+    }
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

@@ -1,4 +1,4 @@
-using AriesMagicAppointmentSystem.Models;
+﻿using AriesMagicAppointmentSystem.Models;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
@@ -25,6 +25,9 @@ namespace AriesMagicAppointmentSystem.Data
         public DbSet<RefundRequest> RefundRequests { get; set; }
         public DbSet<SystemActivity> SystemActivities { get; set; }
         public DbSet<TrashHistory> TrashHistories { get; set; }
+        public DbSet<Conversation> Conversations { get; set; }
+        public DbSet<ConversationParticipant> ConversationParticipants { get; set; }
+        public DbSet<Message> Messages { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -38,6 +41,40 @@ namespace AriesMagicAppointmentSystem.Data
                 .WithMany()
                 .HasForeignKey(n => n.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<Conversation>()
+                .HasOne(c => c.Booking)
+                .WithMany()
+                .HasForeignKey(c => c.BookingId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            builder.Entity<Conversation>()
+                .HasOne(c => c.CreatedByUser)
+                .WithMany()
+                .HasForeignKey(c => c.CreatedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<ConversationParticipant>()
+                .HasIndex(p => new { p.ConversationId, p.UserId })
+                .IsUnique();
+
+            builder.Entity<ConversationParticipant>()
+                .HasOne(p => p.User)
+                .WithMany()
+                .HasForeignKey(p => p.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<Message>()
+                .HasOne(m => m.Sender)
+                .WithMany()
+                .HasForeignKey(m => m.SenderId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<Message>()
+                .HasIndex(m => new { m.ConversationId, m.SentAt });
+
+            builder.Entity<Conversation>()
+                .HasIndex(c => c.UpdatedAt);
 
             builder.Entity<Payment>().Property(p => p.Amount).HasPrecision(18, 2);
             builder.Entity<RefundRequest>().Property(r => r.Amount).HasPrecision(18, 2);
