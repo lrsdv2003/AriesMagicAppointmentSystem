@@ -1,133 +1,160 @@
-﻿@{
-    var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
-    var currentAction = ViewContext.RouteData.Values["action"]?.ToString();
+@using System.Security.Claims
+@{
+    var currentController = ViewContext.RouteData.Values["controller"]?.ToString() ?? "Home";
+    var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? "Index";
+    var isHome = currentController == "Home" && currentAction == "Index";
+    var isClient = User.Identity?.IsAuthenticated == true && User.IsInRole("Client");
+    var pageClass = $"client-{currentController.ToLowerInvariant()} client-{currentController.ToLowerInvariant()}-{currentAction.ToLowerInvariant()}";
+    var clientUnreadCount = 0;
+    if (isClient)
+    {
+        var clientUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!string.IsNullOrEmpty(clientUserId))
+        {
+            clientUnreadCount = _clientDbContext.Notifications
+                .Count(n => n.UserId == clientUserId && !n.IsRead);
+        }
+    }
 }
+@inject AriesMagicAppointmentSystem.Data.ApplicationDbContext _clientDbContext
 
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#090712" />
     <title>@ViewData["Title"] - Aries Magic</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=DM+Sans:wght@400;500;700&family=Fraunces:opsz,wght@9..144,600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="~/css/tokens.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/tokens.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/aries-client-theme.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/css/soft-ui.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/css/client-neumorphism.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/AriesMagicAppointmentSystem.styles.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/magic-client-v2.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/magic-client-consistency.css" asp-append-version="true" />
 </head>
-<body class="client-body">
+<body class="client-body @pageClass @(isHome ? "client-home-page" : "client-inner-page")">
+    <a class="magic-skip-link" href="#mainContent">Skip to content</a>
+
     <div class="am-page-loader" id="ariesPageLoader" aria-hidden="true">
         <span class="am-loader-sigil"></span>
     </div>
 
-    <header class="client-navbar-wrap soft-nav">
-        <nav class="navbar navbar-expand-lg client-navbar">
-            <div class="container">
-                <a class="navbar-brand client-brand" asp-controller="Home" asp-action="Index">
+    <div class="magic-ambient magic-ambient-one" aria-hidden="true"></div>
+    <div class="magic-ambient magic-ambient-two" aria-hidden="true"></div>
+
+    <header class="client-navbar-wrap" id="siteHeader">
+        <nav class="navbar navbar-expand-lg client-navbar" aria-label="Main navigation">
+            <div class="container magic-nav-container">
+                <a class="navbar-brand client-brand" asp-controller="Home" asp-action="Index" aria-label="Aries Magic home">
                     <span class="brand-mark" aria-hidden="true">
-                        <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M16 1 L19 12 L30 15 L19 18 L16 30 L13 18 L2 15 L13 12 Z"
-                                  fill="url(#ariesSigilGradient)" />
-                            <defs>
-                                <linearGradient id="ariesSigilGradient" x1="2" y1="1" x2="30" y2="30" gradientUnits="userSpaceOnUse">
-                                    <stop offset="0" stop-color="#c92348" />
-                                    <stop offset="1" stop-color="#e4c987" />
-                                </linearGradient>
-                            </defs>
+                        <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="20" cy="20" r="18" stroke="currentColor" stroke-opacity=".28" />
+                            <path d="M20 5.5 22.6 16l10.6 3L22.6 22 20 34.5 17.4 22 6.8 19l10.6-3L20 5.5Z" fill="currentColor" />
                         </svg>
                     </span>
-                    <span>Aries Magic</span>
+                    <span class="brand-copy">
+                        <strong>Aries Magic</strong>
+                        <small>Magic Artist & Event Entertainment</small>
+                    </span>
                 </a>
 
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#clientNavbar">
-                    <span class="navbar-toggler-icon"></span>
+                <button class="navbar-toggler magic-navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#clientNavbar" aria-controls="clientNavbar" aria-expanded="false" aria-label="Toggle navigation">
+                    <i class="bi bi-list"></i>
                 </button>
 
                 <div class="collapse navbar-collapse" id="clientNavbar">
-                    <ul class="navbar-nav mx-auto mb-2 mb-lg-0 client-nav-links">
+                    <ul class="navbar-nav mx-auto client-nav-links">
                         <li class="nav-item">
-                            <a class="nav-link @(currentController == "Home" && currentAction == "Index" ? "active" : "")"
-                               asp-controller="Home" asp-action="Index">Home</a>
+                            <a class="nav-link @(isHome ? "active" : "")" asp-controller="Home" asp-action="Index">Home</a>
                         </li>
-
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Home" asp-action="Index" asp-fragment="experiences">Experiences</a>
+                        </li>
                         <li class="nav-item">
                             <a class="nav-link" asp-controller="Home" asp-action="Index" asp-fragment="packages">Packages</a>
                         </li>
-
                         <li class="nav-item">
-                            <a class="nav-link" asp-controller="Home" asp-action="Index" asp-fragment="how-it-works">How It Works</a>
+                            <a class="nav-link" asp-controller="Home" asp-action="Index" asp-fragment="how-it-works">Booking Journey</a>
                         </li>
 
-                        @if (User.Identity != null && User.Identity.IsAuthenticated && User.IsInRole("Client"))
+                        @if (isClient)
                         {
-                            <li class="nav-item">
-                                <a class="nav-link @(currentController == "Bookings" && currentAction == "MyBookings" ? "active" : "")"
-                                   asp-controller="Bookings" asp-action="MyBookings">My Bookings</a>
+                            <li class="nav-item d-lg-none">
+                                <a class="nav-link @(currentController == "Bookings" && currentAction == "MyBookings" ? "active" : "")" asp-controller="Bookings" asp-action="MyBookings">My Bookings</a>
                             </li>
-
-                            <li class="nav-item">
-                                <a class="nav-link @(currentController == "Payments" && currentAction == "MyUploads" ? "active" : "")"
-                                   asp-controller="Payments" asp-action="MyUploads">My Payments</a>
+                            <li class="nav-item d-lg-none">
+                                <a class="nav-link @(currentController == "Payments" ? "active" : "")" asp-controller="Payments" asp-action="MyUploads">Payments</a>
                             </li>
-
-                            <li class="nav-item">
-                                <a class="nav-link @(currentController == "RescheduleRequests" && currentAction == "MyRequests" ? "active" : "")"
-                                   asp-controller="RescheduleRequests" asp-action="MyRequests">My Reschedules</a>
+                            <li class="nav-item d-lg-none">
+                                <a class="nav-link @(currentController == "Profile" ? "active" : "")" asp-controller="Profile" asp-action="Index">Profile</a>
                             </li>
-
-                            <li class="nav-item">
-                                <a class="nav-link @(currentController == "Notifications" ? "active" : "")"
-                                   asp-controller="Notifications" asp-action="Index">Notifications</a>
-                            </li>
-
-                            <li class="nav-item">
-                                <a class="nav-link @(currentController == "Profile" ? "active" : "")"
-                                   asp-controller="Profile" asp-action="Index">Profile</a>
+                            <li class="nav-item d-lg-none">
+                                <a class="nav-link @(currentController == "Notifications" ? "active" : "")" asp-controller="Notifications" asp-action="Index">Notifications</a>
                             </li>
                         }
                     </ul>
 
-                    <div class="client-nav-actions d-flex align-items-center gap-2">
-                        @if (User.Identity != null && User.Identity.IsAuthenticated && User.IsInRole("Client"))
+                    <div class="client-nav-actions">
+                        @if (isClient)
                         {
-                            <a asp-controller="Bookings" asp-action="CreateStepOne" class="btn btn-primary">
-                                Book Now
+                            <a asp-controller="Notifications" asp-action="Index" class="magic-icon-btn d-none d-lg-inline-flex position-relative @(currentController == "Notifications" ? "active" : "")" aria-label="Notifications@(clientUnreadCount > 0 ? $", {clientUnreadCount} unread" : "")" title="Notifications">
+                                <i class="bi bi-bell" aria-hidden="true"></i>
+                                @if (clientUnreadCount > 0)
+                                {
+                                    <span class="notification-badge" aria-hidden="true">
+                                        @(clientUnreadCount > 99 ? "99+" : clientUnreadCount.ToString())
+                                    </span>
+                                }
                             </a>
 
-                            <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
+                            <div class="dropdown d-none d-lg-block">
+                                <button class="magic-account-btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <span class="magic-account-avatar"><i class="bi bi-person"></i></span>
+                                    <span>My Portal</span>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end magic-account-menu">
+                                    <li><a class="dropdown-item" asp-controller="Bookings" asp-action="MyBookings"><i class="bi bi-calendar2-event"></i> My Bookings</a></li>
+                                    <li><a class="dropdown-item" asp-controller="Payments" asp-action="MyUploads"><i class="bi bi-wallet2"></i> My Payments</a></li>
+                                    <li><a class="dropdown-item" asp-controller="Payments" asp-action="MyRefundRequests"><i class="bi bi-arrow-counterclockwise"></i> Refund Requests</a></li>
+                                    <li><a class="dropdown-item" asp-controller="RescheduleRequests" asp-action="MyRequests"><i class="bi bi-calendar2-week"></i> Reschedules</a></li>
+                                    <li><a class="dropdown-item" asp-controller="Profile" asp-action="Index"><i class="bi bi-person-circle"></i> Profile</a></li>
+                                    <li><hr class="dropdown-divider" /></li>
+                                    <li>
+                                        <form asp-controller="Account" asp-action="Logout" method="post">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="dropdown-item"><i class="bi bi-box-arrow-right"></i> Logout</button>
+                                        </form>
+                                    </li>
+                                </ul>
+                            </div>
+
+                            <a asp-controller="Bookings" asp-action="CreateStepOne" class="btn magic-primary-cta">
+                                <i class="bi bi-stars"></i><span>Book a Show</span>
+                            </a>
+
+                            <form asp-controller="Account" asp-action="Logout" method="post" class="d-lg-none w-100 mt-2">
                                 @Html.AntiForgeryToken()
-                                <button type="submit" class="btn btn-outline-secondary">Logout</button>
+                                <button type="submit" class="btn btn-outline-light w-100">Logout</button>
                             </form>
                         }
-                        else if (User.Identity != null && User.Identity.IsAuthenticated)
+                        else if (User.Identity?.IsAuthenticated == true)
                         {
-                            var dashboardController = User.IsInRole("Owner") ? "Reports"
-                                : User.IsInRole("Admin") ? "UserManagement"
-                                : "Bookings";
-                            
-                            <a asp-controller="@dashboardController" asp-action="Index" class="btn btn-primary">
-                                Go to Dashboard
-                            </a>
-
+                            var dashboardController = User.IsInRole("Owner") ? "Reports" : User.IsInRole("Admin") ? "UserManagement" : "Bookings";
+                            <a asp-controller="@dashboardController" asp-action="Index" class="btn magic-primary-cta">Go to Dashboard</a>
                             <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
                                 @Html.AntiForgeryToken()
-                                <button type="submit" class="btn btn-outline-secondary">Logout</button>
+                                <button type="submit" class="magic-text-btn">Logout</button>
                             </form>
                         }
                         else
                         {
-                            <a asp-controller="Account" asp-action="Login" class="btn btn-outline-secondary">
-                                Login
-                            </a>
-                            <a asp-controller="Account" asp-action="Register" class="btn btn-primary">
-                                Create Account
-                            </a>
+                            <a asp-controller="Account" asp-action="Login" class="magic-text-btn">Sign in</a>
+                            <a asp-controller="Account" asp-action="Register" class="btn magic-primary-cta">Plan Your Event</a>
                         }
                     </div>
                 </div>
@@ -135,8 +162,8 @@
         </nav>
     </header>
 
-    <main class="client-main">
-        @if (currentController == "Home" && currentAction == "Index")
+    <main id="mainContent" class="client-main">
+        @if (isHome)
         {
             @RenderBody()
         }
@@ -148,115 +175,52 @@
         }
     </main>
 
-    <footer class="client-footer soft-card" style="margin: 24px; border-radius: var(--radius-card);">
+    <footer class="client-footer">
         <div class="container">
-            <div class="footer-grid">
-                <div>
-                    <div class="footer-brand">
-                        <span class="brand-mark" aria-hidden="true">
-                            <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M16 1 L19 12 L30 15 L19 18 L16 30 L13 18 L2 15 L13 12 Z"
-                                      fill="url(#ariesSigilGradientFooter)" />
-                                <defs>
-                                    <linearGradient id="ariesSigilGradientFooter" x1="2" y1="1" x2="30" y2="30" gradientUnits="userSpaceOnUse">
-                                        <stop offset="0" stop-color="#c92348" />
-                                        <stop offset="1" stop-color="#e4c987" />
-                                    </linearGradient>
-                                </defs>
-                            </svg>
-                        </span>
-                        <span>Aries Magic</span>
+            <div class="magic-footer-top">
+                <div class="magic-footer-brand">
+                    <a class="client-brand" asp-controller="Home" asp-action="Index">
+                        <span class="brand-mark" aria-hidden="true"><i class="bi bi-stars"></i></span>
+                        <span class="brand-copy"><strong>Aries Magic</strong><small>Moments become memories.</small></span>
+                    </a>
+                    <p>Professional magic, interactive entertainment, and a smoother way to plan the show your celebration deserves.</p>
+                </div>
+
+                <div class="magic-footer-links">
+                    <div>
+                        <h5>Explore</h5>
+                        <a asp-controller="Home" asp-action="Index" asp-fragment="experiences">Experiences</a>
+                        <a asp-controller="Home" asp-action="Index" asp-fragment="packages">Packages</a>
+                        <a asp-controller="Home" asp-action="Index" asp-fragment="how-it-works">Booking Journey</a>
                     </div>
-                    <p class="footer-text">
-                        Bringing fun, wonder, and memorable entertainment experiences to birthdays,
-                        school events, company gatherings, and special celebrations.
-                    </p>
-                </div>
-
-                <div>
-                    <h5>Quick Links</h5>
-                    <ul class="footer-links">
-                        <li><a asp-controller="Home" asp-action="Index">Home</a></li>
-                        <li><a asp-controller="Home" asp-action="Index" asp-fragment="packages">Packages</a></li>
-                        @if (User.Identity == null || !User.Identity.IsAuthenticated || User.IsInRole("Client"))
+                    <div>
+                        <h5>Client</h5>
+                        @if (isClient)
                         {
-                            <li><a asp-controller="Bookings" asp-action="CreateStepOne">Book Now</a></li>
+                            <a asp-controller="Bookings" asp-action="MyBookings">My Bookings</a>
+                            <a asp-controller="Payments" asp-action="MyUploads">Payments</a>
+                            <a asp-controller="Profile" asp-action="Index">Profile</a>
                         }
-                        @if (User.Identity == null || !User.Identity.IsAuthenticated)
+                        else
                         {
-                            <li><a asp-controller="Account" asp-action="Register">Create Account</a></li>
+                            <a asp-controller="Account" asp-action="Login">Sign In</a>
+                            <a asp-controller="Account" asp-action="Register">Create Account</a>
                         }
-                    </ul>
-                </div>
-
-                <div>
-                    <h5>Booking Process</h5>
-                    <p class="footer-text">
-                        Create an account, fill out your event details, choose your package,
-                        upload your payment proof, and monitor your booking updates online.
-                    </p>
-                </div>
-
-                <div>
-                    <h5>Events We Cater</h5>
-                    <ul class="footer-links">
-                        <li>Birthday</li>
-                        <li>Company Events</li>
-                        <li>School Events</li>
-                        <li>Christmas Parties</li>
-                    </ul>
+                    </div>
                 </div>
             </div>
 
             <div class="footer-bottom">
-                <span>&copy; 2026 Aries Magic Appointment System. All rights reserved.</span>
-                <span>Designed for a smooth and modern client booking experience.</span>
+                <span>&copy; 2026 Aries Magic. All rights reserved.</span>
+                <span>Magic Artist Scheduling & Booking</span>
             </div>
         </div>
     </footer>
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
     <script src="~/js/aries-client.js" asp-append-version="true"></script>
-    <script>
-        window.addEventListener("load", function () {
-            var loader = document.getElementById("ariesPageLoader");
-            if (loader) { loader.classList.add("am-loaded"); }
-        });
-
-        // Script to manage active states for navbar items including URL hashes/fragments
-        document.addEventListener("DOMContentLoaded", function () {
-            const navLinks = document.querySelectorAll('.client-nav-links .nav-link');
-            
-            function updateActiveLink() {
-                const currentHash = window.location.hash;
-
-                navLinks.forEach(link => {
-                    const href = link.getAttribute('href');
-                    if (!href) return;
-
-                    // If a hash exists in the URL (e.g. #packages or #how-it-works)
-                    if (currentHash && href.includes(currentHash)) {
-                        navLinks.forEach(l => l.classList.remove('active'));
-                        link.classList.add('active');
-                    }
-                });
-            }
-
-            // Run on load and hash change
-            updateActiveLink();
-            window.addEventListener('hashchange', updateActiveLink);
-
-            // Run when clicking links
-            navLinks.forEach(link => {
-                link.addEventListener('click', function () {
-                    navLinks.forEach(l => l.classList.remove('active'));
-                    this.classList.add('active');
-                });
-            });
-        });
-    </script>
+    <script src="~/js/magic-client-v2.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

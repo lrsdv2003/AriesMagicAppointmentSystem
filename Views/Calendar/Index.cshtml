@@ -411,6 +411,10 @@
                 try {
                     const formData = new FormData();
                     formData.append('id', id);
+                    const tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
+                    if (tokenInput) {
+                        formData.append('__RequestVerificationToken', tokenInput.value);
+                    }
 
                     const response = await fetch(config.url, {
                         method: 'POST',

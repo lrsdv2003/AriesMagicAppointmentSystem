@@ -130,9 +130,23 @@ namespace AriesMagicAppointmentSystem.Controllers
         [Authorize(Roles = "Staff")]
         public async Task<IActionResult> Staff()
         {
+            var today = DateTime.Today;
+
             var model = new RoleDashboardViewModel
             {
                 RoleName = "Staff",
+                PendingBookings = await _context.Bookings
+                    .AsNoTracking()
+                    .CountAsync(b => b.Status == BookingStatus.Pending),
+                UpcomingBookings = await _context.Bookings
+                    .AsNoTracking()
+                    .CountAsync(b => b.EventDate >= today && b.Status == BookingStatus.Confirmed),
+                ActivePackages = await _context.Services
+                    .AsNoTracking()
+                    .CountAsync(s => !s.IsArchived),
+                PendingReschedules = await _context.RescheduleRequests
+                    .AsNoTracking()
+                    .CountAsync(r => r.Status == RescheduleRequestStatus.Pending),
                 RecentBookingRequests = await _context.Bookings
                     .AsNoTracking()
                     .Include(b => b.Client)

@@ -24,12 +24,13 @@ namespace AriesMagicAppointmentSystem.Controllers
 
         private static readonly string[] AllowedExtensions =
         {
-            ".jpg", ".jpeg", ".png"
+            ".jpg", ".jpeg", ".png", ".webp"
         };
         private static readonly string[] AllowedContentTypes =
         {
             "image/jpeg",
-            "image/png"
+            "image/png",
+            "image/webp"
         };
 
         public PaymentsController(
@@ -105,7 +106,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             }
             if (model.ProofImage == null || model.ProofImage.Length == 0)
             {
-                ModelState.AddModelError("", "This slot has already been secured by another confirmed booking. If you already sent your downpayment, please submit a refund request.");
+                ModelState.AddModelError("", "Please upload a proof image.");
                 model.Bookings = await GetAwaitingDownpaymentBookingsAsync(appUserId);
                 return View(model);
             }
@@ -245,6 +246,12 @@ namespace AriesMagicAppointmentSystem.Controllers
 
             if (payment == null) return NotFound();
 
+            if (payment.Status != PaymentStatus.Pending)
+            {
+                TempData["Error"] = "Only pending payments can be verified.";
+                return RedirectToAction(nameof(PendingVerification));
+            }
+
             payment.Status = PaymentStatus.Verified;
             payment.VerifiedAt = DateTime.Now;
 
@@ -293,12 +300,6 @@ namespace AriesMagicAppointmentSystem.Controllers
                 {
                     var contractPdf =
                         _contractPdfService.GenerateContractPdf(bookingWithClient);
-                        var testPath = Path.Combine(
-                        Directory.GetCurrentDirectory(),
-                        "wwwroot",
-                        $"test-contract-BK-{bookingWithClient.CreatedAt.Year}-{bookingWithClient.Id:D3}.pdf");
-
-                    await System.IO.File.WriteAllBytesAsync(testPath, contractPdf);
 
                     await _emailService.SendEmailWithAttachmentAsync(
                         bookingWithClient.Client.Email,
@@ -345,6 +346,12 @@ namespace AriesMagicAppointmentSystem.Controllers
 
             if (payment == null) return NotFound();
 
+            if (payment.Status != PaymentStatus.Pending)
+            {
+                TempData["Error"] = "Only pending payments can be rejected.";
+                return RedirectToAction(nameof(PendingVerification));
+            }
+
             payment.Status = PaymentStatus.Rejected;
             payment.RejectionReason = rejectionReason;
             payment.VerifiedAt = DateTime.Now;
@@ -383,8 +390,8 @@ namespace AriesMagicAppointmentSystem.Controllers
                         <p>Please upload a new proof of downpayment.</p>");
                 }
             }
-            TempData["Error"] = "Your payment proof was rejected. Please review the remarks and upload a new payment proof.";
-            return RedirectToAction(nameof(MyUploads));
+            TempData["Success"] = "Payment rejected and booking returned to downpayment.";
+            return RedirectToAction(nameof(PendingVerification));
         }
 
         [Authorize(Roles = "Client")]
@@ -554,6 +561,12 @@ namespace AriesMagicAppointmentSystem.Controllers
 
             if (refund == null) return NotFound();
 
+            if (refund.Status != RefundStatus.Pending)
+            {
+                TempData["Error"] = "Only pending refunds can be approved.";
+                return RedirectToAction(nameof(RefundRequests));
+            }
+
             refund.Status = RefundStatus.Approved;
             refund.AdminRemarks = adminRemarks;
             refund.ProcessedAt = DateTime.Now;
@@ -584,6 +597,12 @@ namespace AriesMagicAppointmentSystem.Controllers
 
             if (refund == null) return NotFound();
 
+            if (refund.Status != RefundStatus.Approved)
+            {
+                TempData["Error"] = "Only approved refunds can be marked as refunded.";
+                return RedirectToAction(nameof(RefundRequests));
+            }
+
             refund.Status = RefundStatus.Refunded;
             refund.AdminRemarks = adminRemarks;
             refund.ProcessedAt = DateTime.Now;
@@ -613,6 +632,12 @@ namespace AriesMagicAppointmentSystem.Controllers
                 .FirstOrDefaultAsync(r => r.Id == id);
 
             if (refund == null) return NotFound();
+
+            if (refund.Status != RefundStatus.Pending)
+            {
+                TempData["Error"] = "Only pending refunds can be rejected.";
+                return RedirectToAction(nameof(RefundRequests));
+            }
 
             refund.Status = RefundStatus.Rejected;
             refund.AdminRemarks = adminRemarks;

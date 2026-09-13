@@ -24,6 +24,9 @@ namespace AriesMagicAppointmentSystem.Controllers
             DateTime? toDate = null,
             string? search = null)
         {
+            page = Math.Max(page, 1);
+            pageSize = Math.Clamp(pageSize, 1, 100);
+
             var (items, totalCount) = await _activityService.GetPagedAsync(
                 page, pageSize, type, fromDate, toDate, search);
 

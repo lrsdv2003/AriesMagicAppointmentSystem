@@ -185,7 +185,8 @@ namespace AriesMagicAppointmentSystem.Controllers
             {
                 var settings = await _context.SystemSettings.FirstOrDefaultAsync();
 
-                if (settings == null)
+                var isNew = settings == null;
+                if (isNew)
                 {
                     settings = new SystemSetting
                     {
@@ -195,14 +196,16 @@ namespace AriesMagicAppointmentSystem.Controllers
                     _context.SystemSettings.Add(settings);
                 }
 
-                var oldMax = settings.MaxBookingsPerDay;
-                settings.MaxBookingsPerDay = model.MaxBookingsPerDay;
+                var oldMax = isNew ? (int?)null : settings!.MaxBookingsPerDay;
+                settings!.MaxBookingsPerDay = model.MaxBookingsPerDay;
 
                 await _context.SaveChangesAsync();
 
                 await _activityService.LogAsync(
                     SystemActivityType.SettingsChanged,
-                    $"Updated default daily booking limit from {oldMax} to {model.MaxBookingsPerDay}",
+                    isNew
+                        ? $"Set default daily booking limit to {model.MaxBookingsPerDay}"
+                        : $"Updated default daily booking limit from {oldMax} to {model.MaxBookingsPerDay}",
                     User.FindFirst(
                         System.Security.Claims.ClaimTypes.NameIdentifier
                     )?.Value ?? "Unknown",

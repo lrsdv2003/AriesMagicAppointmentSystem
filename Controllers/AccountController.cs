@@ -105,7 +105,16 @@ namespace AriesMagicAppointmentSystem.Controllers
             TempData["ErrorMessage"] = "User not found.";
             return RedirectToAction(nameof(Login));
         }
-        var decodedToken = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(token));
+        string decodedToken;
+        try
+        {
+            decodedToken = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(token));
+        }
+        catch (FormatException)
+        {
+            TempData["ErrorMessage"] = "Invalid email confirmation request.";
+            return RedirectToAction(nameof(Login));
+        }
         var result = await _userManager.ConfirmEmailAsync(user, decodedToken);
         if (!result.Succeeded)
         {
@@ -190,14 +199,6 @@ namespace AriesMagicAppointmentSystem.Controllers
                 if (await _userManager.IsInRoleAsync(user, "Admin"))
                 {
                     return RedirectToAction("Admin", "Dashboard");
-                }
-                if (await _userManager.IsInRoleAsync(user, "Owner"))
-                {
-                    return RedirectToAction("Index", "Reports");
-                }
-                if (await _userManager.IsInRoleAsync(user, "Admin"))
-                {
-                    return RedirectToAction("Index", "UserManagement");
                 }
 
                 if (await _userManager.IsInRoleAsync(user, "Staff"))
@@ -336,7 +337,16 @@ namespace AriesMagicAppointmentSystem.Controllers
                 return RedirectToAction(nameof(Login));
             }
 
-            var decodedToken = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(model.Token));
+            string decodedToken;
+            try
+            {
+                decodedToken = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(model.Token));
+            }
+            catch (FormatException)
+            {
+                ModelState.AddModelError(string.Empty, "Invalid password reset request.");
+                return View(model);
+            }
 
             var result = await _userManager.ResetPasswordAsync(user, decodedToken, model.NewPassword);
 

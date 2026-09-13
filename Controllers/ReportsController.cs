@@ -231,8 +231,9 @@ namespace AriesMagicAppointmentSystem.Controllers
                 .ToList();
         }
 
-        private static string EscapeCsv(string value)
+        private static string EscapeCsv(string? value)
         {
+            if (string.IsNullOrEmpty(value)) return string.Empty;
             if (value.Contains(',') || value.Contains('"') || value.Contains('\n'))
             {
                 return $"\"{value.Replace("\"", "\"\"")}\"";

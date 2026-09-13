@@ -1,6 +1,6 @@
-/* Design Tokens - Centralized Soft UI + Aries Brand */
+/* Design Tokens - Centralized Soft UI + Aries Brand - scoped, dashboards keep #f8fafc */
 :root {
-  --bg: #E0E5EC;
+  --bg: #f8fafc;
   --fg: #3D4852;
   --muted: #6B7280;
   --accent: #6C63FF;
@@ -17,4 +17,5 @@
 .client-body {
   --bg: #fbf8f7;
   --fg: #1c1015;
+  --client-soft-bg: #E0E5EC; /* soft surface for cards, not page */
 }

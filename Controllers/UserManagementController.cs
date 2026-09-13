@@ -4,6 +4,7 @@ using AriesMagicAppointmentSystem.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
 namespace AriesMagicAppointmentSystem.Controllers
@@ -24,7 +25,7 @@ namespace AriesMagicAppointmentSystem.Controllers
         {
             var staffUsers = new List<ApplicationUser>();
 
-            foreach (var user in _userManager.Users.ToList())
+            foreach (var user in await _userManager.Users.ToListAsync())
             {
                 if (await _userManager.IsInRoleAsync(user, "Staff"))
                 {
@@ -116,6 +117,12 @@ namespace AriesMagicAppointmentSystem.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> EditStaff(StaffUserViewModel model)
         {
+            if (!ModelState.IsValid)
+            {
+                TempData["ErrorMessage"] = "Please check the staff account fields.";
+                return RedirectToAction(nameof(Index));
+            }
+
             if (string.IsNullOrEmpty(model.Id))
             {
                 TempData["ErrorMessage"] = "Invalid staff account.";

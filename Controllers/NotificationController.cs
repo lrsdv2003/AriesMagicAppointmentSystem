@@ -49,7 +49,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             notification.ReadAt = DateTime.Now;
             await _context.SaveChangesAsync();
 
-            if (!string.IsNullOrWhiteSpace(notification.Link))
+            if (!string.IsNullOrWhiteSpace(notification.Link) && Url.IsLocalUrl(notification.Link))
             {
                 return Redirect(notification.Link);
             }

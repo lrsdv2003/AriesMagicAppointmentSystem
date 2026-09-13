@@ -155,7 +155,10 @@
     }
 
     function draw() {
-      if (!running) return;
+      if (!running) {
+        raf = null;
+        return;
+      }
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       particles.forEach(function (p) {
@@ -186,8 +189,16 @@
     if ("IntersectionObserver" in window) {
       var io = new IntersectionObserver(function (entries) {
         entries.forEach(function (entry) {
-          running = entry.isIntersecting;
-          if (running && !raf) draw();
+          if (entry.isIntersecting) {
+            if (!running) running = true;
+            if (!raf) draw();
+          } else {
+            running = false;
+            if (raf) {
+              window.cancelAnimationFrame(raf);
+              raf = null;
+            }
+          }
         });
       });
       io.observe(hero);
@@ -200,8 +211,6 @@
   // ---------------------------------------------------------------------
   function initFormShake() {
     document.querySelectorAll("form").forEach(function (form) {
-      form.addEventListener("invalid-form-am", function () {}); // reserved hook
-
       form.addEventListener("submit", function () {
         setTimeout(function () {
           var invalidField = form.querySelector(".input-validation-error");
@@ -237,15 +246,24 @@
   // Smooth-scroll for in-page anchors (Packages / How It Works)
   // ---------------------------------------------------------------------
   function initSmoothAnchors() {
-    document.querySelectorAll('a[href^="#"]').forEach(function (link) {
+    document.querySelectorAll('a[href*="#"]').forEach(function (link) {
       link.addEventListener("click", function (event) {
-        var id = link.getAttribute("href");
-        if (!id || id === "#") return;
-        var target = document.querySelector(id);
+        var href = link.getAttribute("href") || "";
+        var hashIndex = href.indexOf("#");
+        if (hashIndex < 0) return;
+
+        var hash = href.substring(hashIndex);
+        if (!hash || hash === "#") return;
+
+        var target = document.querySelector(hash);
         if (!target) return;
+
+        var samePage = href.charAt(0) === "#" || link.pathname === window.location.pathname;
+        if (!samePage) return;
 
         event.preventDefault();
         target.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
+        if (window.location.hash !== hash) history.pushState(null, "", hash);
       });
     });
   }

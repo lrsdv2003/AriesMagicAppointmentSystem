@@ -211,6 +211,12 @@ namespace AriesMagicAppointmentSystem.Controllers
 
             if (request == null || request.Booking == null) return NotFound();
 
+            if (request.Status != RescheduleRequestStatus.Pending)
+            {
+                TempData["Error"] = "Only pending reschedule requests can be approved.";
+                return RedirectToAction(nameof(Index));
+            }
+
             bool conflict = await HasBookingConflictExcludingCurrentBooking(
                 request.Booking.Id,
                 request.RequestedStartTime,
@@ -219,7 +225,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             if (conflict)
             {
                 TempData["Error"] = "Requested schedule conflicts with an existing confirmed booking.";
-                return RedirectToAction(nameof(MyRequests));
+                return RedirectToAction(nameof(Index));
             }
             var isBlocked = await _context.BlockedDates
                 .AnyAsync(x => x.Date.Date == request.RequestedDate.Date);
@@ -227,7 +233,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             if (isBlocked)
             {
                 TempData["Error"] = "The requested date is blocked and unavailable.";
-                return RedirectToAction(nameof(MyRequests));
+                return RedirectToAction(nameof(Index));
             }
 
             request.Status = RescheduleRequestStatus.Approved;
@@ -272,7 +278,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                     <p>Please log in to view the updated booking details.</p>");
             }
 
-            return RedirectToAction(nameof(MyRequests));
+            return RedirectToAction(nameof(Index));
         }
 
         [Authorize(Roles = "Owner")]
@@ -302,6 +308,12 @@ namespace AriesMagicAppointmentSystem.Controllers
                 .FirstOrDefaultAsync(r => r.Id == id);
 
             if (request == null || request.Booking == null) return NotFound();
+
+            if (request.Status != RescheduleRequestStatus.Pending)
+            {
+                TempData["Error"] = "Only pending reschedule requests can be rejected.";
+                return RedirectToAction(nameof(Index));
+            }
 
             request.Status = RescheduleRequestStatus.Rejected;
             request.ReviewedAt = DateTime.Now;
@@ -340,8 +352,8 @@ namespace AriesMagicAppointmentSystem.Controllers
                     <p>Your reschedule request was not approved.</p>
                     <p>Remarks: {adminRemarks}</p>");
             }
-            TempData["Error"] = "Your reschedule request was rejected. Please review the owner remarks and submit a new request if needed.";
-            return RedirectToAction(nameof(MyRequests));
+            TempData["Success"] = "Reschedule request rejected.";
+            return RedirectToAction(nameof(Index));
         }
 
         private async Task<List<SelectListItem>> GetEligibleClientBookingsAsync(string? appUserId)

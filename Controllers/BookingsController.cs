@@ -589,6 +589,27 @@ namespace AriesMagicAppointmentSystem.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
+            return View(booking);
+        }
+
+        [HttpPost, ActionName("Approve")]
+        [Authorize(Roles = "Staff,Owner")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ApproveConfirmed(int id)
+        {
+            var booking = await _context.Bookings
+                .Include(b => b.Client)
+                .Include(b => b.Service)
+                .FirstOrDefaultAsync(b => b.Id == id);
+
+            if (booking == null) return NotFound();
+
+            if (booking.Status != BookingStatus.Pending)
+            {
+                TempData["Error"] = "Only pending bookings can be approved.";
+                return RedirectToAction(nameof(Index));
+            }
+
             booking.Status = BookingStatus.AwaitingDownpayment;
 
             _context.BookingTimelines.Add(new BookingTimeline
@@ -635,7 +656,31 @@ namespace AriesMagicAppointmentSystem.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
+            return View(booking);
+        }
+
+        [HttpPost, ActionName("Decline")]
+        [Authorize(Roles = "Staff,Owner")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeclineConfirmed(int id)
+        {
+            var booking = await _context.Bookings
+                .Include(b => b.Client)
+                .Include(b => b.Service)
+                .FirstOrDefaultAsync(b => b.Id == id);
+
+            if (booking == null) return NotFound();
+
+            if (booking.Status != BookingStatus.Pending)
+            {
+                TempData["Error"] = "Only pending bookings can be declined.";
+                return RedirectToAction(nameof(Index));
+            }
+
             booking.Status = BookingStatus.Declined;
+            booking.TrashReason = TrashReason.RejectedByAdmin;
+            booking.TrashNotes = "Booking was declined by staff/owner.";
+            booking.ArchivedAt = DateTime.UtcNow;
 
             _context.BookingTimelines.Add(new BookingTimeline
             {
@@ -660,9 +705,8 @@ namespace AriesMagicAppointmentSystem.Controllers
 
             await _context.SaveChangesAsync();
 
-            TempData["Error"] = "Your booking request was declined. Please review the remarks below or contact the administrator for clarification.";
-
-            return RedirectToAction(nameof(MyBookings));
+            TempData["Success"] = "Booking declined.";
+            return RedirectToAction(nameof(Index));
         }
 
         [Authorize(Roles = "Staff,Owner")]

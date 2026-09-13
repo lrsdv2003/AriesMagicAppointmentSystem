@@ -240,7 +240,7 @@
 </div>
 
 @section Scripts {
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script>
         const monthlyLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.MonthlyLabels));
         const monthlyBookingCounts = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.MonthlyBookingCounts));

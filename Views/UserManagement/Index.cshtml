@@ -347,13 +347,17 @@ else
 <script>
     let searchTimer;
 
-    document.getElementById("searchInput").addEventListener("keyup", function () {
-        clearTimeout(searchTimer);
+    var searchInput = document.getElementById("searchInput");
+    var filterForm = document.getElementById("filterForm");
+    if (searchInput && filterForm) {
+        searchInput.addEventListener("keyup", function () {
+            clearTimeout(searchTimer);
 
-        searchTimer = setTimeout(() => {
-            document.getElementById("filterForm").submit();
-        }, 400);
-    });
+            searchTimer = setTimeout(() => {
+                filterForm.submit();
+            }, 400);
+        });
+    }
 
     // Initialize tooltips
     document.addEventListener('DOMContentLoaded', function() {

@@ -109,13 +109,13 @@
                             </a>
 
                             <a asp-controller="Payments" asp-action="PendingVerification"
-                               class="sidebar-link @(currentController == "Payment" && currentAction == "PendingVerification" ? "active" : "")">
+                               class="sidebar-link @(currentController == "Payments" && currentAction == "PendingVerification" ? "active" : "")">
                                 <i class="bi bi-credit-card-2-front"></i>
                                 Verify Payments
                             </a>
 
                             <a asp-controller="Payments" asp-action="RefundRequests"
-                               class="sidebar-link @(currentController == "Payment" && currentAction == "RefundRequests" ? "active" : "")">
+                               class="sidebar-link @(currentController == "Payments" && currentAction == "RefundRequests" ? "active" : "")">
                                 <i class="bi bi-arrow-counterclockwise"></i>
                                 Refund Requests
                             </a>
@@ -243,29 +243,6 @@
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
-
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            const toggle = document.getElementById("userMenuToggle");
-            const menu = document.getElementById("userMenu");
-
-            if (toggle && menu) {
-                toggle.addEventListener("click", function (e) {
-                    e.stopPropagation();
-                    menu.classList.toggle("show");
-                });
-
-                document.addEventListener("click", function () {
-                    menu.classList.remove("show");
-                });
-
-                menu.addEventListener("click", function (e) {
-                    e.stopPropagation();
-                });
-            }
-        });
-    </script>
 </body>
 </html>
