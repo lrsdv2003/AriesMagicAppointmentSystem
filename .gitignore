@@ -4,8 +4,6 @@ obj/
 *.user
 *.suo
 appsettings.Development.json
-Migrations/*.Designer.cs
-Migrations/*ModelSnapshot.cs
 # --- cleanup: generated / test data ---
 wwwroot/uploads/*
 !wwwroot/uploads/.gitkeep

@@ -23,5 +23,9 @@ namespace AriesMagicAppointmentSystem.ViewModels
         public string BookingStatus { get; set; } = string.Empty;
         public string PaymentStatus { get; set; } = "No Payment";
         public string? InternalNotes { get; set; }
+        public double? DistanceKm { get; set; }
+        public string? ServiceZone { get; set; }
+        public decimal TravelFee { get; set; }
+        public bool RequiresManualReview { get; set; }
     }
 }

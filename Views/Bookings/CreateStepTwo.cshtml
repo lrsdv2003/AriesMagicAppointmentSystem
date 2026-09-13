@@ -92,6 +92,22 @@
                     <span class="package-meta-value">@Model.PartyVenue</span>
                 </div>
             </div>
+            <div class="col-md-4">
+                <div class="package-meta-box h-100">
+                    <span class="package-meta-label">Approximate Distance</span>
+                    <span class="package-meta-value">@Model.DistanceKm?.ToString("N2") KM</span>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="package-meta-box h-100">
+                    <span class="package-meta-label">Serviceability</span>
+                    <span class="package-meta-value">
+                        @if (Model.RequiresManualReview) { <span class="text-warning">⚠ MANUAL REVIEW</span> }
+                        else if (Model.IsServiceable) { <span class="text-success">✓ SERVICEABLE</span> }
+                        else { <span class="text-danger">✕ OUTSIDE SERVICE AREA</span> }
+                    </span>
+                </div>
+            </div>
         }
 
         @if (!string.IsNullOrWhiteSpace(Model.CelebrantName))
@@ -155,6 +171,13 @@
     <input asp-for="StartTime" type="hidden" />
     <input asp-for="PartyTheme" type="hidden" />
     <input asp-for="PartyVenue" type="hidden" />
+    <input asp-for="VenueLatitude" type="hidden" />
+    <input asp-for="VenueLongitude" type="hidden" />
+    <input asp-for="DistanceKm" type="hidden" />
+    <input asp-for="TravelFee" type="hidden" />
+    <input asp-for="ServiceZone" type="hidden" />
+    <input asp-for="IsServiceable" type="hidden" />
+    <input asp-for="RequiresManualReview" type="hidden" />
     <input asp-for="CelebrantName" type="hidden" />
     <input asp-for="Age" type="hidden" />
     <input asp-for="PaxCount" type="hidden" />
@@ -205,6 +228,11 @@
                     <div class="package-meta-box">
                         <span class="package-meta-label">Base Price</span>
                         <span class="package-meta-value">&#8369;@Model.BasePrice.ToString("N2")</span>
+                    </div>
+
+                    <div class="package-meta-box">
+                        <span class="package-meta-label">Travel Fee</span>
+                        <span class="package-meta-value">&#8369;@Model.TravelFee.ToString("N2")</span>
                     </div>
 
                     <div class="package-meta-box">
@@ -310,7 +338,12 @@
 
                 <div class="booking-price-row">
                     <span>Total Deduction</span>
-                    <strong>&#8369;<span id="deductionText">0.00</span></strong>
+                    <strong>₱<span id="reviewDeductionText">0.00</span></strong>
+                </div>
+
+                <div class="booking-price-row">
+                    <span>Travel Fee</span>
+                    <strong>₱   <span id="reviewTravelFeeText">@Model.TravelFee.ToString("N2")</span></strong>
                 </div>
 
                 <div class="booking-price-row booking-total-row">
@@ -359,6 +392,10 @@
             <div class="booking-price-row">
                 <span>Total Deduction</span>
                 <strong>&#8369;<span id="reviewDeductionText">0.00</span></strong>
+            </div>
+            <div class="booking-price-row">
+                <span>Travel Fee</span>
+                <strong>&#8369;@Model.TravelFee.ToString("N2")</strong>
             </div>
             <div class="booking-price-row booking-total-row">
                 <span>Final Price</span>
@@ -594,7 +631,8 @@
             const finalPriceText = document.getElementById("finalPriceText");
 
             const basePrice = parseFloat(basePriceInput?.value || "0");
-            const finalPrice = Math.max(basePrice - totalDeduction, 0);
+            const travelFee = parseFloat(document.getElementById("TravelFee")?.value || "0");
+            const finalPrice = Math.max(basePrice - totalDeduction + travelFee, 0);
 
             if (deductionText) {
                 deductionText.textContent = totalDeduction.toLocaleString(undefined, {
@@ -716,9 +754,15 @@
                     document.querySelector(".package-preview-title")?.textContent.trim() || "";
 
                 document.getElementById("reviewBasePriceText").textContent =
-                    document.getElementById("basePriceText")?.textContent || "0.00";
-                document.getElementById("reviewDeductionText").textContent =
+                                    document.getElementById("basePriceText")?.textContent || "0.00";
+                            document.getElementById("reviewDeductionText").textContent =
                     document.getElementById("deductionText")?.textContent || "0.00";
+
+                document.getElementById("reviewTravelFeeText").textContent =
+                    document.querySelector(
+                        "#panelPackage .booking-price-row:nth-of-type(3) strong"
+                    )?.textContent.replace("₱", "").trim() || "0.00";
+
                 document.getElementById("reviewFinalPriceText").textContent =
                     document.getElementById("finalPriceText")?.textContent || "0.00";
 

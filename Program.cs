@@ -9,6 +9,9 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
 builder.Services.AddScoped<ContractPdfService>();
+builder.Services.Configure<VenueDistanceOptions>(builder.Configuration.GetSection("VenueDistance"));
+builder.Services.AddScoped<IVenueDistanceService, VenueDistanceService>();
+builder.Services.AddHttpClient<IGeocodingService, NominatimGeocodingService>();
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));

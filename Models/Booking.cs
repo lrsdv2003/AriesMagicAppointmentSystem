@@ -56,6 +56,15 @@ namespace AriesMagicAppointmentSystem.Models
 
         public string? CelebrantName { get; set; }
 
+        // Smart Venue Distance & Serviceability
+        public double? VenueLatitude { get; set; }
+        public double? VenueLongitude { get; set; }
+        public double? DistanceKm { get; set; }
+        public decimal TravelFee { get; set; }
+        public bool IsServiceable { get; set; } = true;
+        public string? ServiceZone { get; set; }
+        public bool RequiresManualReview { get; set; }
+
         [Range(1, 120)]
         public int? Age { get; set; }
 

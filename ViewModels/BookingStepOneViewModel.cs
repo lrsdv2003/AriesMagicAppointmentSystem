@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace AriesMagicAppointmentSystem.ViewModels
 {
@@ -27,6 +27,14 @@ namespace AriesMagicAppointmentSystem.ViewModels
         [Required]
         [Display(Name = "Party Venue")]
         public string PartyVenue { get; set; } = string.Empty;
+
+        public double? VenueLatitude { get; set; }
+        public double? VenueLongitude { get; set; }
+        public double? DistanceKm { get; set; }
+        public decimal TravelFee { get; set; }
+        public bool IsServiceable { get; set; }
+        public string? ServiceZone { get; set; }
+        public bool RequiresManualReview { get; set; }
 
         [Display(Name = "Celebrant Name")]
         public string? CelebrantName { get; set; }

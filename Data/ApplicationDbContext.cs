@@ -44,6 +44,7 @@ namespace AriesMagicAppointmentSystem.Data
             builder.Entity<Booking>().Property(b => b.BasePrice).HasPrecision(18, 2);
             builder.Entity<Booking>().Property(b => b.FinalPrice).HasPrecision(18, 2);
             builder.Entity<Booking>().Property(b => b.RequiredDownpayment).HasPrecision(18, 2);
+            builder.Entity<Booking>().Property(b => b.TravelFee).HasPrecision(18, 2);
             builder.Entity<Service>().Property(s => s.Price).HasPrecision(18, 2);
             builder.Entity<ServiceInclusion>().Property(s => s.DeductionAmount).HasPrecision(18, 2);
             builder.Entity<TrashHistory>().Property(t => t.BasePrice).HasPrecision(18, 2);
