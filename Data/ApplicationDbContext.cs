@@ -1,4 +1,4 @@
-﻿using AriesMagicAppointmentSystem.Models;
+using AriesMagicAppointmentSystem.Models;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
@@ -23,6 +23,7 @@ namespace AriesMagicAppointmentSystem.Data
         public DbSet<DateBookingLimit> DateBookingLimits { get; set; }
         public DbSet<ServiceInclusion> ServiceInclusions { get; set; }
         public DbSet<RefundRequest> RefundRequests { get; set; }
+        public DbSet<OcrVerification> OcrVerifications { get; set; }
         public DbSet<SystemActivity> SystemActivities { get; set; }
         public DbSet<TrashHistory> TrashHistories { get; set; }
         public DbSet<Conversation> Conversations { get; set; }
@@ -78,6 +79,30 @@ namespace AriesMagicAppointmentSystem.Data
 
             builder.Entity<Payment>().Property(p => p.Amount).HasPrecision(18, 2);
             builder.Entity<RefundRequest>().Property(r => r.Amount).HasPrecision(18, 2);
+            builder.Entity<RefundRequest>().Property(r => r.ApprovedAmount).HasPrecision(18, 2);
+            builder.Entity<OcrVerification>().Property(o => o.ExtractedAmount).HasPrecision(18, 2);
+            builder.Entity<OcrVerification>().Property(o => o.OcrConfidence).HasPrecision(5, 1);
+
+            builder.Entity<RefundRequest>()
+                .HasOne(r => r.OriginalPayment)
+                .WithMany()
+                .HasForeignKey(r => r.OriginalPaymentId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            builder.Entity<OcrVerification>()
+                .HasOne(o => o.Payment)
+                .WithMany(p => p.OcrVerifications)
+                .HasForeignKey(o => o.PaymentId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            builder.Entity<OcrVerification>()
+                .HasOne(o => o.RefundRequest)
+                .WithMany(r => r.OcrVerifications)
+                .HasForeignKey(o => o.RefundRequestId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            builder.Entity<OcrVerification>()
+                .HasIndex(o => o.ExtractedReferenceNumber);
             builder.Entity<Booking>().Property(b => b.BasePrice).HasPrecision(18, 2);
             builder.Entity<Booking>().Property(b => b.FinalPrice).HasPrecision(18, 2);
             builder.Entity<Booking>().Property(b => b.RequiredDownpayment).HasPrecision(18, 2);

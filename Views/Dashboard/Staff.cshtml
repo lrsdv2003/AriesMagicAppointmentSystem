@@ -54,6 +54,12 @@
     </a>
 </div>
 
+
+<div class="dashboard-stat-grid mt-3">
+    <a asp-controller="Payments" asp-action="PendingVerification" class="dashboard-stat-card stat-warning"><span class="dashboard-stat-icon"><i class="bi bi-shield-check"></i></span><span class="dashboard-stat-label">Payments Awaiting Verification</span><strong>@Model.PendingPayments</strong><small>@Model.PaymentsAdditionalEvidence need more evidence</small></a>
+    <a asp-controller="Payments" asp-action="RefundRequests" class="dashboard-stat-card stat-danger"><span class="dashboard-stat-icon"><i class="bi bi-arrow-counterclockwise"></i></span><span class="dashboard-stat-label">Refunds Under Review</span><strong>@Model.PendingRefunds</strong><small>Open verification cases</small></a>
+</div>
+
 <div class="dashboard-two-column staff-activity-grid">
     <!-- SECTION 1: INCOMING BOOKING REQUESTS -->
     <section class="dashboard-list-panel">

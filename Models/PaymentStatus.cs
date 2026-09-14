@@ -5,5 +5,6 @@ namespace AriesMagicAppointmentSystem.Models
         public const string Pending = "Pending";
         public const string Verified = "Verified";
         public const string Rejected = "Rejected";
+        public const string AdditionalEvidenceRequired = "AdditionalEvidenceRequired";
     }
 }

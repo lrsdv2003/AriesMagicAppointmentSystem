@@ -14,6 +14,7 @@ namespace AriesMagicAppointmentSystem.ViewModels
 
         public int PendingPayments { get; set; }
         public int PendingRefunds { get; set; }
+        public int PaymentsAdditionalEvidence { get; set; }
         public int PendingReschedules { get; set; }
 
         public int ActiveClients { get; set; }

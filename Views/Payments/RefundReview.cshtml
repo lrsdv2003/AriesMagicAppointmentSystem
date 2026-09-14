@@ -1,0 +1,53 @@
+@model AriesMagicAppointmentSystem.Models.RefundRequest
+@using AriesMagicAppointmentSystem.Models
+@{
+    Layout = "_DashboardLayout";
+    ViewData["Title"] = "Refund Verification";
+    var supportOcr = Model.OcrVerifications.Where(x => x.VerificationPurpose == OcrVerificationPurposes.RefundSupport).OrderByDescending(x => x.ProcessedAt).FirstOrDefault();
+    var confirmationOcr = Model.OcrVerifications.Where(x => x.VerificationPurpose == OcrVerificationPurposes.RefundConfirmation).OrderByDescending(x => x.ProcessedAt).FirstOrDefault();
+    var canDecide = User.IsInRole("Admin") || User.IsInRole("Owner");
+    string Badge(string? result) => result switch { OcrVerificationResults.LikelyMatch => "ocr-likely", OcrVerificationResults.PartialMatch => "ocr-partial", OcrVerificationResults.MismatchDetected => "ocr-mismatch", OcrVerificationResults.OcrFailed => "ocr-failed", _ => "ocr-manual" };
+    string Match(decimal expected, decimal? actual) => actual.HasValue && Math.Abs(expected - actual.Value) <= .01m ? "Match" : actual.HasValue ? "Review" : "Not detected";
+}
+<div class="page-header"><div><h1>Refund Verification RF-@Model.Id.ToString("D4")</h1><p class="page-subtitle">OCR assists the review. An authorized reviewer makes the final decision.</p></div><a asp-action="RefundRequests" class="btn btn-outline-secondary">Back to Refunds</a></div>
+@if (TempData["Success"] != null){<div class="alert alert-success">@TempData["Success"]</div>}
+@if (TempData["Error"] != null){<div class="alert alert-danger">@TempData["Error"]</div>}
+<div class="ocr-workspace">
+<section class="ocr-panel">
+<div class="d-flex justify-content-between align-items-start"><div><div class="ocr-kicker">Client evidence</div><h3>Booking #@Model.BookingId</h3></div><span class="status-badge status-pending">@Model.Status</span></div>
+<div class="ocr-proof-frame"><img src="@Url.Action("RefundProof", "Payments", new { id = Model.Id })" alt="Protected refund supporting proof" /></div>
+<div class="ocr-summary-grid"><div class="ocr-metric"><small>Original payment</small><strong>₱@((Model.OriginalPayment?.Amount ?? 0).ToString("N2"))</strong></div><div class="ocr-metric"><small>Requested refund</small><strong>₱@Model.Amount.ToString("N2")</strong></div><div class="ocr-metric"><small>Approved amount</small><strong>₱@((Model.ApprovedAmount ?? 0).ToString("N2"))</strong></div></div>
+<div class="ocr-client-note"><strong>@Model.Booking?.Client?.FullName</strong><br/>Refund account: @Model.GCashAccountName · @Model.GCashNumber<br/>Reason: @Model.ClientReason</div>
+</section>
+<section class="ocr-panel"><div class="d-flex justify-content-between align-items-start"><div><div class="ocr-kicker">OCR-assisted comparison</div><h3>Supporting Screenshot</h3></div><span class="ocr-badge @Badge(supportOcr?.VerificationResult)">@(supportOcr?.VerificationResult ?? "Manual Review Required")</span></div>
+@if (supportOcr == null){<div class="ocr-empty">No OCR result is available. Continue with manual review.</div>}
+else {
+<div class="ocr-confidence"><span>OCR confidence</span><strong>@(supportOcr.OcrConfidence?.ToString("0.0") ?? "N/A")%</strong></div>
+<table class="ocr-compare-table"><thead><tr><th>Information</th><th>Expected</th><th>OCR Detected</th><th>Result</th></tr></thead><tbody>
+<tr><td>Amount</td><td>₱@((Model.OriginalPayment?.Amount ?? Model.Amount).ToString("N2"))</td><td>@(supportOcr.ExtractedAmount.HasValue ? $"₱{supportOcr.ExtractedAmount:N2}" : "Not detected")</td><td>@Match(Model.OriginalPayment?.Amount ?? Model.Amount, supportOcr.ExtractedAmount)</td></tr>
+<tr><td>Payment Method</td><td>@(Model.OriginalPayment?.PaymentMethod ?? "GCash")</td><td>@(supportOcr.ExtractedPaymentMethod ?? "Not detected")</td><td>Review</td></tr>
+<tr><td>Reference</td><td>@(Model.OriginalPayment?.TransactionReference ?? "Original payment record")</td><td>@(supportOcr.ExtractedReferenceNumber ?? "Not detected")</td><td>@(supportOcr.IsDuplicateReference ? "Duplicate detected" : "Review")</td></tr>
+<tr><td>Status</td><td>Successful / Completed</td><td>@(supportOcr.ExtractedStatus ?? "Not detected")</td><td>Review</td></tr>
+</tbody></table>
+@if (!string.IsNullOrWhiteSpace(supportOcr.WarningSummary)){<div class="ocr-warning"><i class="bi bi-exclamation-triangle"></i><div><strong>Items requiring attention</strong><div>@supportOcr.WarningSummary</div></div></div>}
+<details class="ocr-raw"><summary>View extracted OCR text</summary><pre>@(supportOcr.RawText ?? supportOcr.ProcessingError ?? "No readable text extracted.")</pre></details>
+}
+<div class="ocr-manual-note"><i class="bi bi-person-check"></i><span>OCR cannot determine whether a screenshot is authentic. Verify the transaction manually before approving or rejecting.</span></div>
+</section>
+</div>
+<div class="ocr-panel mt-4"><div class="d-flex justify-content-between align-items-center flex-wrap gap-2"><div><div class="ocr-kicker">Reviewer actions</div><h3 class="mb-0">Refund Decision</h3></div><form asp-controller="Communications" asp-action="StartBookingConversation" method="post">@Html.AntiForgeryToken()<input type="hidden" name="bookingId" value="@Model.BookingId"/><button class="btn btn-outline-primary" type="submit"><i class="bi bi-chat-dots"></i> Message Client</button></form></div>
+@if (canDecide && (Model.Status == RefundStatus.Pending || Model.Status == RefundStatus.UnderReview)) {
+<div class="ocr-action-grid mt-3"><form asp-action="ApproveRefund" method="post">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@Model.Id"/><textarea name="adminRemarks" class="form-control mb-2" rows="2" placeholder="Optional approval note"></textarea><button class="btn btn-success w-100">Approve Refund</button></form>
+<form asp-action="RejectRefund" method="post">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@Model.Id"/><textarea name="adminRemarks" class="form-control mb-2" rows="2" required placeholder="Reason for rejection"></textarea><button class="btn btn-danger w-100">Reject Refund</button></form></div>
+} else if (!canDecide && (Model.Status == RefundStatus.Pending || Model.Status == RefundStatus.UnderReview)) {<div class="alert alert-info mt-3 mb-0">Staff can review OCR findings and message the client. Final refund approval or rejection is limited to Admin/Owner.</div>}
+</div>@if (canDecide && (Model.Status == RefundStatus.Approved || Model.Status == RefundStatus.RefundProcessing)) {
+<div class="ocr-panel mt-4"><div class="ocr-kicker">Refund confirmation</div><h3>Upload proof of the processed refund</h3><p class="text-muted">OCR will compare the refund proof with the approved amount and recipient. You must still confirm it manually.</p>
+@if (!string.IsNullOrWhiteSpace(Model.RefundProofImagePath)) {<div class="ocr-workspace ocr-workspace-compact"><div class="ocr-proof-frame"><img src="@Url.Action("RefundProof", "Payments", new { id = Model.Id, confirmation = true })" alt="Protected refund confirmation proof" /></div><div>
+<span class="ocr-badge @Badge(confirmationOcr?.VerificationResult)">@(confirmationOcr?.VerificationResult ?? "Awaiting OCR")</span>
+@if (confirmationOcr != null){<div class="ocr-confidence mt-3"><span>OCR confidence</span><strong>@(confirmationOcr.OcrConfidence?.ToString("0.0") ?? "N/A")%</strong></div><dl class="ocr-mini-list"><div><dt>Approved refund</dt><dd>₱@((Model.ApprovedAmount ?? Model.Amount).ToString("N2"))</dd></div><div><dt>OCR amount</dt><dd>@(confirmationOcr.ExtractedAmount.HasValue ? $"₱{confirmationOcr.ExtractedAmount:N2}" : "Not detected")</dd></div><div><dt>Recipient</dt><dd>@(confirmationOcr.ExtractedReceiver ?? "Not detected")</dd></div><div><dt>Reference</dt><dd>@(confirmationOcr.ExtractedReferenceNumber ?? "Not detected")</dd></div><div><dt>Status</dt><dd>@(confirmationOcr.ExtractedStatus ?? "Not detected")</dd></div></dl>}
+</div></div>}
+<form asp-action="UploadRefundProof" method="post" enctype="multipart/form-data" class="row g-3 mt-1">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@Model.Id"/><div class="col-md-6"><label class="form-label">Refund confirmation screenshot</label><input class="form-control" type="file" name="refundProofImage" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" required /></div><div class="col-md-6"><label class="form-label">Reviewer note</label><input class="form-control" name="adminRemarks" value="@Model.AdminRemarks" placeholder="Optional processing note"/></div><div class="col-12"><button class="btn btn-primary"><i class="bi bi-cloud-arrow-up"></i> @(string.IsNullOrWhiteSpace(Model.RefundProofImagePath) ? "Upload & Analyze Refund Proof" : "Replace & Re-analyze Proof")</button></div></form>
+@if (Model.Status == RefundStatus.RefundProcessing && confirmationOcr != null) {<form asp-action="MarkAsRefunded" method="post" class="mt-3">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@Model.Id"/><input type="hidden" name="adminRemarks" value="@Model.AdminRemarks"/><button class="btn btn-success"><i class="bi bi-check2-circle"></i> Manually Confirm Refund Completed</button></form>}
+</div>
+}
+@if (Model.Status == RefundStatus.Refunded){<div class="ocr-panel mt-4"><div class="alert alert-success mb-0"><i class="bi bi-check-circle-fill me-2"></i>Refund completed after authorized manual review. Completed @Model.RefundCompletedAt?.ToString("MMM dd, yyyy hh:mm tt").</div></div>}

@@ -15,6 +15,10 @@ namespace AriesMagicAppointmentSystem.ViewModels
         public string GCashQrPath { get; set; } = "/images/gcash-qr.jpeg";
 
         [Required]
+        [Display(Name = "Payment Method")]
+        public string PaymentMethod { get; set; } = "GCash";
+
+        [Required]
         [Display(Name = "Proof Image")]
         public IFormFile ProofImage { get; set; } = default!;
 

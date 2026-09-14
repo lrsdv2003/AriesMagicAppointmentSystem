@@ -23,7 +23,12 @@ namespace AriesMagicAppointmentSystem.Models
         NotificationSent,
         LoginFailed,
         RoleAssigned,
-        RoleRemoved
+        RoleRemoved,
+        PaymentProofSubmitted,
+        OcrAnalysisCompleted,
+        PaymentAdditionalEvidenceRequested,
+        RefundRequested,
+        RefundProcessed
     }
 
     public class SystemActivity

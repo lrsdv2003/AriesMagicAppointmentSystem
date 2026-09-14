@@ -54,9 +54,13 @@
                 </div>
 
                 <div class="col-md-6">
+                    <label asp-for="PaymentMethod" class="form-label">Payment Method</label>
+                    <select asp-for="PaymentMethod" class="form-select"><option>GCash</option><option>Maya</option><option>Bank Transfer</option><option>Online Banking</option><option>Other</option></select>
+                </div>
+                <div class="col-md-6">
                     <label asp-for="ProofImage" class="form-label">Payment Proof</label>
-                    <input asp-for="ProofImage" type="file" class="form-control" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" />
-                    <span asp-validation-for="ProofImage" class="text-danger"></span>
+                    <input asp-for="ProofImage" type="file" class="form-control" data-proof-input accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" />
+                    <span asp-validation-for="ProofImage" class="text-danger"></span><div class="proof-preview-shell" data-proof-preview hidden><img alt="Payment proof preview"/><div><button type="button" class="btn btn-sm btn-outline-secondary" data-proof-replace>Replace Image</button><button type="button" class="btn btn-sm btn-outline-danger" data-proof-remove>Remove Image</button></div></div>
                     <div class="form-text mt-2">Accepted formats: JPG, JPEG, PNG, WEBP. Max size: 5MB.</div>
                 </div>
             </div>
@@ -125,4 +129,5 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/proof-preview.js" asp-append-version="true"></script>
 }

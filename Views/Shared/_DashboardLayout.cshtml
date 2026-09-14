@@ -1,4 +1,4 @@
-﻿@using System.Security.Claims
+@using System.Security.Claims
 @inject AriesMagicAppointmentSystem.Data.ApplicationDbContext _context
 @{
     var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
@@ -27,6 +27,7 @@
     <link rel="stylesheet" href="~/css/soft-ui.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/AriesMagicAppointmentSystem.styles.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/communication-center.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/ocr-verification.css" asp-append-version="true" />
 </head>
 <body class="dashboard-body">
     <div class="dashboard-shell">
@@ -60,6 +61,8 @@
                                 <i class="bi bi-box-seam"></i>
                                 Packages
                             </a>
+                            <a asp-controller="Payments" asp-action="PendingVerification" class="sidebar-link @(currentController == "Payments" && currentAction == "PendingVerification" ? "active" : "")"><i class="bi bi-shield-check"></i>Verify Payments</a>
+                            <a asp-controller="Payments" asp-action="RefundRequests" class="sidebar-link @(currentController == "Payments" && (currentAction == "RefundRequests" || currentAction == "RefundReview") ? "active" : "")"><i class="bi bi-arrow-counterclockwise"></i>Refund Reviews</a>
                             <a asp-controller="RescheduleRequests" asp-action="Index"
                                class="sidebar-link @(currentController == "RescheduleRequests" ? "active" : "")">
                                 <i class="bi bi-arrow-left-right"></i>
@@ -98,6 +101,8 @@
                                 Packages
                             </a>
 
+                            <a asp-controller="Payments" asp-action="PendingVerification" class="sidebar-link @(currentController == "Payments" && currentAction == "PendingVerification" ? "active" : "")"><i class="bi bi-shield-check"></i>Verify Payments</a>
+                            <a asp-controller="Payments" asp-action="RefundRequests" class="sidebar-link @(currentController == "Payments" && (currentAction == "RefundRequests" || currentAction == "RefundReview") ? "active" : "")"><i class="bi bi-arrow-counterclockwise"></i>Refund Reviews</a>
                             <a asp-controller="TrashHistory" asp-action="Index"
                                class="sidebar-link @(currentController == "TrashHistory" ? "active" : "")">
                                 <i class="bi bi-trash"></i>

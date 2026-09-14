@@ -1,99 +1,15 @@
 @model IEnumerable<AriesMagicAppointmentSystem.Models.Payment>
-
+@using AriesMagicAppointmentSystem.Models
 @{
-    Layout = "_DashboardLayout";
-    ViewData["Title"] = "Verify Payments";
-
-    var payments = Model.ToList();
-    var totalPending = payments.Count;
-    var todayCount = payments.Count(x => x.UploadedAt.Date == DateTime.Today);
+    Layout = "_DashboardLayout"; ViewData["Title"] = "Payment Verification"; var payments = Model.ToList();
+    string Badge(string? result) => result switch { OcrVerificationResults.LikelyMatch => "ocr-likely", OcrVerificationResults.PartialMatch => "ocr-partial", OcrVerificationResults.MismatchDetected => "ocr-mismatch", OcrVerificationResults.OcrFailed => "ocr-failed", _ => "ocr-manual" };
 }
-
-<div class="page-header">
-    
-</div>
-
-<div class="dashboard-stats mb-4">
-    <div class="stat-card">
-        <div class="stat-label">Pending Payments</div>
-        <div class="stat-value">@totalPending</div>
-        
-    </div>
-    <div class="stat-card">
-        <div class="stat-label">Uploaded Today</div>
-        <div class="stat-value">@todayCount</div>
-       
-    </div>
-
-</div>
-
-<div class="dashboard-panel">
-    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
-        <div>
-            <h3 class="mb-1">Payment Verification Queue</h3>
-            
-        </div>
-    </div>
-
-    @if (!payments.Any())
-    {
-        <div class="empty-state">
-            <h3>No pending payments</h3>
-           
-        </div>
-    }
-    else
-    {
-        <div class="table-clean payment-verification-table-wrap">
-            <table class="table align-middle payment-verification-table">
-                <thead>
-                    <tr>
-                        <th>Client</th>
-                        <th>Service</th>
-                        <th>Amount</th>
-                        <th>Proof</th>
-                        <th>Uploaded</th>
-                        <th>Status</th>
-                        <th class="text-end">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-@foreach (var item in payments)
-{
-    var paymentClass = item.Status switch
-    {
-        "Pending" => "status-pending",
-        "Verified" => "status-verified",
-        "Rejected" => "status-rejected",
-        _ => "status-read"
-    };
-
-                    <tr>
-                        <td>
-                            <div class="fw-semibold">@item.Booking?.Client?.FullName</div>
-                            <div class="text-muted small">@item.Booking?.Client?.Email</div>
-                        </td>
-                        <td>@item.Booking?.Service?.Name</td>
-                        <td class="fw-semibold">₱@item.Amount.ToString("N2")</td>
-                        <td>
-                            <img src="@item.ProofImagePath"
-                                 alt="Payment Proof"
-                                 class="payment-proof-thumb" />
-                        </td>
-                        <td>@item.UploadedAt.ToString("MMM dd, yyyy hh:mm tt")</td>
-                        <td>
-                            <span class="status-badge @paymentClass">@item.Status</span>
-                        </td>
-                        <td class="text-end">
-                            <div class="payment-action-group">
-                                <a asp-action="Verify" asp-route-id="@item.Id" class="btn btn-sm btn-success">Verify</a>
-                                <a asp-action="Reject" asp-route-id="@item.Id" class="btn btn-sm btn-danger">Reject</a>
-                            </div>
-                        </td>
-                    </tr>
-}
-                </tbody>
-            </table>
-        </div>
-    }
+<div class="page-header"><div><h1>Payment Verification</h1><p class="page-subtitle">Review OCR findings beside the original booking and payment information. OCR is advisory only.</p></div></div>
+<div class="ocr-queue-stats"><div><small>Results shown</small><strong>@payments.Count</strong></div><div><small>Uploaded today</small><strong>@payments.Count(x=>x.UploadedAt.Date==DateTime.Today)</strong></div><div><small>OCR attention</small><strong>@payments.Count(x=>x.OcrVerifications.Any(o=>o.VerificationResult==OcrVerificationResults.MismatchDetected || o.VerificationResult==OcrVerificationResults.OcrFailed))</strong></div></div>
+<form method="get" class="ocr-filterbar"><select name="filter" class="form-select"><option value="awaiting" selected="@(ViewBag.Filter == "awaiting")">Awaiting Verification</option><option value="verified" selected="@(ViewBag.Filter == "verified")">Verified</option><option value="rejected" selected="@(ViewBag.Filter == "rejected")">Rejected</option><option value="evidence" selected="@(ViewBag.Filter == "evidence")">Additional Evidence</option><option value="mismatch" selected="@(ViewBag.Filter == "mismatch")">OCR Mismatch</option><option value="ocrfailed" selected="@(ViewBag.Filter == "ocrfailed")">OCR Failed</option></select><input name="q" value="@ViewBag.Search" class="form-control" placeholder="Booking, client, payment ID, reference..."/><select name="paymentMethod" class="form-select"><option value="">All methods</option><option selected="@(ViewBag.PaymentMethod == "GCash")">GCash</option><option selected="@(ViewBag.PaymentMethod == "Maya")">Maya</option><option selected="@(ViewBag.PaymentMethod == "Bank Transfer")">Bank Transfer</option><option selected="@(ViewBag.PaymentMethod == "Online Banking")">Online Banking</option></select><input type="date" name="date" value="@ViewBag.Date" class="form-control"/><button class="btn btn-primary">Filter</button></form>
+<div class="dashboard-panel ocr-queue-panel">
+@if (!payments.Any()){<div class="empty-state"><h3>No matching payment submissions</h3><p>Try another filter or search term.</p></div>}
+else {<div class="table-responsive"><table class="table align-middle ocr-queue-table"><thead><tr><th>Client / Booking</th><th>Amount</th><th>Method</th><th>Proof</th><th>OCR Result</th><th>Status</th><th>Submitted</th><th></th></tr></thead><tbody>
+@foreach(var item in payments){var ocr=item.OcrVerifications.OrderByDescending(o=>o.ProcessedAt).FirstOrDefault();<tr><td><strong>@item.Booking?.Client?.FullName</strong><small>Booking #@item.BookingId · Payment #@item.Id</small></td><td>₱@item.Amount.ToString("N2")</td><td>@item.PaymentMethod</td><td><img src="@Url.Action("PaymentProof","Payments",new{id=item.Id})" class="payment-proof-thumb" alt="Protected payment proof"/></td><td><span class="ocr-badge @Badge(ocr?.VerificationResult)">@(ocr?.VerificationResult ?? "Manual Review")</span>@if(ocr?.IsDuplicateReference==true){<small class="text-danger d-block mt-1">Duplicate reference</small>}</td><td><span class="status-badge status-pending">@item.Status</span></td><td><small>@item.UploadedAt.ToString("MMM dd, yyyy")<br/>@item.UploadedAt.ToString("hh:mm tt")</small></td><td class="text-end"><a asp-action="Verify" asp-route-id="@item.Id" class="btn btn-sm btn-primary">Open Review</a></td></tr>}
+</tbody></table></div>}
 </div>

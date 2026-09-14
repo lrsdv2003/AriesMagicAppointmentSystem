@@ -1,4 +1,4 @@
-﻿@using System.Security.Claims
+@using System.Security.Claims
 @{
     var currentController = ViewContext.RouteData.Values["controller"]?.ToString() ?? "Home";
     var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? "Index";
@@ -41,6 +41,7 @@
     <link rel="stylesheet" href="~/css/magic-client-v2.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/magic-client-consistency.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/communication-center.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/ocr-verification.css" asp-append-version="true" />
 </head>
 <body class="client-body @pageClass @(isHome ? "client-home-page" : "client-inner-page")">
     <a class="magic-skip-link" href="#mainContent">Skip to content</a>

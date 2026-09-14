@@ -9,6 +9,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
 builder.Services.AddScoped<ContractPdfService>();
+builder.Services.AddScoped<IOcrVerificationService, OcrVerificationService>();
 builder.Services.Configure<VenueDistanceOptions>(builder.Configuration.GetSection("VenueDistance"));
 builder.Services.AddScoped<IVenueDistanceService, VenueDistanceService>();
 builder.Services.AddHttpClient<IGeocodingService, NominatimGeocodingService>();

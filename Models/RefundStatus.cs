@@ -6,5 +6,8 @@ namespace AriesMagicAppointmentSystem.Models
         public const string Approved = "Approved";
         public const string Rejected = "Rejected";
         public const string Refunded = "Refunded";
+        public const string UnderReview = "UnderReview";
+        public const string RefundProcessing = "RefundProcessing";
+        public const string RefundVerified = "RefundVerified";
     }
 }

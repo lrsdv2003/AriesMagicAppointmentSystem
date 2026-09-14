@@ -48,8 +48,8 @@
 
             <div class="col-md-6">
                 <label asp-for="PaymentProofImage" class="form-label"></label>
-                <input asp-for="PaymentProofImage" type="file" class="form-control" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" />
-                <span asp-validation-for="PaymentProofImage" class="text-danger"></span>
+                <input asp-for="PaymentProofImage" type="file" class="form-control" data-proof-input accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" />
+                <span asp-validation-for="PaymentProofImage" class="text-danger"></span><div class="proof-preview-shell" data-proof-preview hidden><img alt="Refund supporting screenshot preview"/><div><button type="button" class="btn btn-sm btn-outline-secondary" data-proof-replace>Replace Image</button><button type="button" class="btn btn-sm btn-outline-danger" data-proof-remove>Remove Image</button></div></div>
                 <div class="form-text">Upload proof that you already sent the downpayment.</div>
             </div>
 
@@ -70,4 +70,5 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/proof-preview.js" asp-append-version="true"></script>
 }

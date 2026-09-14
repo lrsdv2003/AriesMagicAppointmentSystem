@@ -1103,6 +1103,32 @@ a.dashboard-stat-card:hover {
   background: var(--surface-soft);
 }
 
+/* Keep client readonly fields dark without changing dashboard fields. */
+.client-body .form-control[readonly] {
+  background: #181520;
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #f5f1e8;
+  opacity: 1;
+}
+
+/* Browser autofill paints its own background; inset fill covers that layer.
+   Important is needed because the base form-control shadow is important. */
+.client-body input.form-control:-webkit-autofill,
+.client-body input.form-control:-webkit-autofill:hover,
+.client-body input.form-control:-webkit-autofill:focus {
+  -webkit-text-fill-color: #f5f1e8;
+  caret-color: #f5f1e8;
+  -webkit-box-shadow: 0 0 0 1000px #181520 inset !important;
+  box-shadow: 0 0 0 1000px #181520 inset !important;
+}
+
+.client-body input.form-control:autofill {
+  background-color: #181520;
+  color: #f5f1e8;
+  caret-color: #f5f1e8;
+  box-shadow: 0 0 0 1000px #181520 inset !important;
+}
+
 textarea.form-control {
   min-height: 100px;
   resize: vertical;
@@ -2414,6 +2440,46 @@ textarea.form-control {
   padding: 0.9rem 1rem;
   font-size: 0.92rem;
   line-height: 1.5;
+}
+
+/* Client booking venue result, including dynamically inserted messages. */
+.client-body .venue-distance-card {
+  margin-top: 1rem;
+  padding: 1.25rem;
+  background: #181520;
+  border: 1px solid rgba(232, 197, 112, 0.25);
+  border-radius: 16px;
+  color: #f5f1e8;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.18);
+}
+
+.client-body .venue-distance-card > div:not(.alert) {
+  color: #f5f1e8;
+  line-height: 1.6;
+}
+
+.client-body .venue-distance-card > .venue-distance-title {
+  margin-bottom: 0.85rem;
+  color: #e8c570;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.client-body .venue-distance-card strong {
+  color: #e8c570;
+  font-weight: 600;
+}
+
+.client-body .venue-distance-card .alert-warning {
+  background: rgba(255, 193, 7, 0.12);
+  border: 1px solid rgba(255, 193, 7, 0.35);
+  color: #f5d77a;
+}
+
+.client-body .venue-distance-card .alert-danger {
+  background: rgba(220, 53, 69, 0.12);
+  border: 1px solid rgba(220, 53, 69, 0.35);
+  color: #ff9ca6;
 }
 
 .booking-details-layout {

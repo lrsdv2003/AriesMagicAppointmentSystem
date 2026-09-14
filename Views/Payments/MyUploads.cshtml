@@ -79,6 +79,7 @@ else
                 "Pending" => "status-pending",
                 "Verified" => "status-verified",
                 "Rejected" => "status-rejected",
+                "AdditionalEvidenceRequired" => "status-pending",
                 _ => "status-read"
             };
 
@@ -112,7 +113,7 @@ else
                 </div>
 
                 <div class="payment-proof-preview mt-2">
-                    <img src="@item.ProofImagePath" alt="Payment Proof" class="payment-proof-image" />
+                    <img src="@Url.Action("PaymentProof", "Payments", new { id = item.Id })" alt="Payment Proof" class="payment-proof-image" />
                 </div>
 
                 <div class="client-booking-details">
@@ -160,14 +161,13 @@ else
 
                 <div class="client-booking-footer">
                     <div class="client-booking-footer-actions">
-                        @if (item.Status == AriesMagicAppointmentSystem.Models.PaymentStatus.Rejected)
+                        @if (item.Status == AriesMagicAppointmentSystem.Models.PaymentStatus.AdditionalEvidenceRequired)
                         {
-                            <a asp-action="Upload" class="btn btn-primary">Upload Again</a>
+                            <form asp-action="ReplaceProof" method="post" enctype="multipart/form-data" class="w-100">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@item.Id"/><div class="small text-warning mb-2">@(item.ReviewerNote ?? "A clearer screenshot is required.")</div><input class="form-control form-control-sm mb-2" type="file" name="proofImage" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" required/><button class="btn btn-primary w-100">Submit New Screenshot</button></form>
                         }
-                        else
-                        {
-                            <button type="button" class="btn btn-outline-secondary" disabled>No Action Needed</button>
-                        }
+                        else if (item.Status == AriesMagicAppointmentSystem.Models.PaymentStatus.Rejected)
+                        { <a asp-action="Upload" class="btn btn-primary">Upload Again</a> }
+                        else { <button type="button" class="btn btn-outline-secondary" disabled>No Action Needed</button> }
                     </div>
                 </div>
             </div>
