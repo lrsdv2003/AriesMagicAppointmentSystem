@@ -11,3 +11,5 @@ wwwroot/test-contract*.pdf
 tmp/
 .agents/
 .vscode/settings.json
+# --- private runtime financial proofs ---
+App_Data/financial-proofs/
