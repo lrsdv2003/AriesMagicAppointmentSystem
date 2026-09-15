@@ -1,8 +1,10 @@
 @model IEnumerable<AriesMagicAppointmentSystem.Models.Payment>
+@using AriesMagicAppointmentSystem.ViewModels
 
 @{
     ViewData["Title"] = "My Payments";
     var payments = Model.OrderByDescending(x => x.UploadedAt).ToList();
+    var financials = ViewBag.FinancialSummaries as Dictionary<int, BookingFinancialSummaryViewModel> ?? new();
 }
 
 <div class="client-portal-header">
@@ -74,6 +76,8 @@ else
     <div class="client-booking-grid">
         @foreach (var item in payments)
         {
+            financials.TryGetValue(item.BookingId, out var finance);
+            var statusLabel = item.Status == AriesMagicAppointmentSystem.Models.PaymentStatus.AdditionalEvidenceRequired ? "Additional Evidence Required" : item.Status;
             var statusClass = item.Status switch
             {
                 "Pending" => "status-pending",
@@ -95,7 +99,7 @@ else
                         </div>
                     </div>
 
-                    <span class="status-badge @statusClass">@item.Status</span>
+                    <span class="status-badge @statusClass">@statusLabel</span>
                 </div>
 
                 <div class="client-booking-meta">
@@ -123,8 +127,14 @@ else
                     </div>
                     <div class="client-booking-detail-row">
                         <span>Review Status</span>
-                        <strong>@item.Status</strong>
+                        <strong>@statusLabel</strong>
                     </div>
+                    @if (finance != null) {
+                    <div class="client-booking-detail-row"><span>Booking Total</span><strong>₱@finance.BookingTotal.ToString("N2")</strong></div>
+                    <div class="client-booking-detail-row"><span>Total Verified</span><strong>₱@finance.TotalVerifiedPayments.ToString("N2")</strong></div>
+                    <div class="client-booking-detail-row"><span>Remaining Balance</span><strong>₱@finance.RemainingBalance.ToString("N2")</strong></div>
+                    <div class="client-booking-detail-row"><span>Payment Status</span><strong>@finance.PaymentStatus</strong></div>
+                    }
                     <div class="client-booking-detail-row">
                         <span>Booking Reference</span>
                         <strong>

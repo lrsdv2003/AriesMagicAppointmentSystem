@@ -18,11 +18,13 @@ namespace AriesMagicAppointmentSystem.Services
     {
         private readonly ApplicationDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly IPaymentFinancialService _financialService;
 
-        public HistoryService(ApplicationDbContext context, UserManager<ApplicationUser> userManager)
+        public HistoryService(ApplicationDbContext context, UserManager<ApplicationUser> userManager, IPaymentFinancialService financialService)
         {
             _context = context;
             _userManager = userManager;
+            _financialService = financialService;
         }
 
         public async Task<int> ArchiveDueBookingsAsync()
@@ -47,6 +49,16 @@ namespace AriesMagicAppointmentSystem.Services
                     Notes = "Automatically marked as completed because the event date and time has passed.",
                     CreatedAt = now
                 });
+
+                var financial = await _financialService.GetSummaryAsync(booking.Id);
+                if (financial.RemainingBalance > 0)
+                {
+                    if (!string.IsNullOrWhiteSpace(booking.ApplicationUserId))
+                        _context.Notifications.Add(new Notification { UserId = booking.ApplicationUserId, Title = "Remaining Balance Due", Message = $"Your event has been completed. Your remaining balance is PHP {financial.RemainingBalance:N2}.", Link = "/Bookings/MyBookings", IsRead = false, CreatedAt = now });
+                    var internalIds = new HashSet<string>();
+                    foreach (var role in new[] { "Staff", "Admin", "Owner" }) foreach (var user in await _userManager.GetUsersInRoleAsync(role)) if (user.IsActive) internalIds.Add(user.Id);
+                    foreach (var uid in internalIds) _context.Notifications.Add(new Notification { UserId = uid, Title = "Completed Event - Balance Outstanding", Message = $"Booking BK-{booking.Id} completed with PHP {financial.RemainingBalance:N2} outstanding.", Link = $"/Bookings/Details/{booking.Id}", IsRead = false, CreatedAt = now });
+                }
             }
 
             // 2) Any Completed booking (auto or manually completed by staff) that doesn't yet

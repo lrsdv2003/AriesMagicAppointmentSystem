@@ -1,5 +1,6 @@
 using AriesMagicAppointmentSystem.Data;
 using AriesMagicAppointmentSystem.Models;
+using AriesMagicAppointmentSystem.Services;
 using AriesMagicAppointmentSystem.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -12,10 +13,12 @@ namespace AriesMagicAppointmentSystem.Controllers
     public class ReportsController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly IPaymentFinancialService _financialService;
 
-        public ReportsController(ApplicationDbContext context)
+        public ReportsController(ApplicationDbContext context, IPaymentFinancialService financialService)
         {
             _context = context;
+            _financialService = financialService;
         }
 
         public async Task<IActionResult> Index(DateTime? startDate, DateTime? endDate)
@@ -63,6 +66,12 @@ namespace AriesMagicAppointmentSystem.Controllers
                 .Where(p => p.Status == PaymentStatus.Verified)
                 .ToList();
 
+            var financials = await _financialService.GetSummariesAsync(bookings.Select(b => b.Id));
+            var reportBookings = bookings.Where(b => b.Status != BookingStatus.Cancelled && b.Status != BookingStatus.Declined && b.Status != BookingStatus.Expired).ToList();
+            var reportFinancials = reportBookings.Where(b => financials.ContainsKey(b.Id)).Select(b => financials[b.Id]).ToList();
+            var completedBookings = reportBookings.Where(b => b.Status == BookingStatus.Completed).ToList();
+            var completedFinancials = completedBookings.Where(b => financials.ContainsKey(b.Id)).Select(b => financials[b.Id]).ToList();
+
             var model = new ReportDashboardViewModel
             {
                 StartDate = startDate,
@@ -74,7 +83,20 @@ namespace AriesMagicAppointmentSystem.Controllers
                     b.Status == BookingStatus.Cancelled ||
                     b.Status == BookingStatus.Declined),
                 ExpiredBookings = bookings.Count(b => b.Status == BookingStatus.Expired),
-                TotalRevenue = verifiedPayments.Sum(p => p.Amount),
+                TotalRevenue = reportFinancials.Sum(f => f.TotalVerifiedPayments),
+                TotalBookingValue = reportFinancials.Sum(f => f.BookingTotal),
+                TotalCollectedRevenue = reportFinancials.Sum(f => f.TotalVerifiedPayments),
+                TotalDownPaymentsCollected = reportFinancials.Sum(f => f.DownPaymentCollected),
+                OutstandingReceivables = reportFinancials.Sum(f => f.RemainingBalance),
+                CompletedBookingValue = completedFinancials.Sum(f => f.BookingTotal),
+                CompletedCollectedRevenue = completedFinancials.Sum(f => f.TotalVerifiedPayments),
+                CompletedOutstandingReceivables = completedFinancials.Sum(f => f.RemainingBalance),
+                RefundsIssued = reportFinancials.Sum(f => f.CompletedRefunds),
+                NetCollectedRevenue = reportFinancials.Sum(f => f.NetCollected),
+                FullyPaidBookings = reportFinancials.Count(f => f.IsFullyPaid),
+                PartiallyPaidBookings = reportFinancials.Count(f => f.TotalVerifiedPayments > 0 && !f.IsFullyPaid),
+                UnpaidBookings = reportFinancials.Count(f => f.TotalVerifiedPayments <= 0),
+                BookingFinancials = financials,
                 PendingCount = payments.Count(p => p.Status == PaymentStatus.Pending),
                 VerifiedCount = verifiedPayments.Count,
                 RejectedCount = payments.Count(p => p.Status == PaymentStatus.Rejected),
@@ -92,7 +114,7 @@ namespace AriesMagicAppointmentSystem.Controllers
 
             model.AverageBookingValue = successfulBookingCount == 0
                 ? 0
-                : Math.Round(model.TotalRevenue / successfulBookingCount, 2);
+                : Math.Round(model.TotalBookingValue / successfulBookingCount, 2);
 
             var paymentsWithProcessingTime = verifiedPayments
                 .Where(p => p.VerifiedAt.HasValue)
@@ -150,12 +172,14 @@ namespace AriesMagicAppointmentSystem.Controllers
                 .ThenByDescending(b => b.StartTime)
                 .ToListAsync();
 
+            var financials = await _financialService.GetSummariesAsync(bookings.Select(b => b.Id));
             var csv = new StringBuilder();
             csv.AppendLine(
-                "Booking ID,Client,Package,Event Type,Event Date,Start Time,Venue,Final Price,Status");
+                "Booking ID,Client,Package,Event Type,Event Date,Start Time,Venue,Booking Value,Collected,Outstanding,Payment Status,Completed Refunds,Net Collected,Booking Status");
 
             foreach (var booking in bookings)
             {
+                financials.TryGetValue(booking.Id, out var finance);
                 csv.AppendLine(string.Join(",",
                     EscapeCsv(booking.Id.ToString()),
                     EscapeCsv(booking.Client?.FullName ?? "Unknown"),
@@ -164,7 +188,12 @@ namespace AriesMagicAppointmentSystem.Controllers
                     EscapeCsv(booking.EventDate.ToString("yyyy-MM-dd")),
                     EscapeCsv(booking.StartTime.ToString("hh:mm tt")),
                     EscapeCsv(booking.PartyVenue),
-                    EscapeCsv(booking.FinalPrice.ToString("0.00")),
+                    EscapeCsv((finance?.BookingTotal ?? booking.FinalPrice).ToString("0.00")),
+                    EscapeCsv((finance?.TotalVerifiedPayments ?? 0m).ToString("0.00")),
+                    EscapeCsv((finance?.RemainingBalance ?? booking.FinalPrice).ToString("0.00")),
+                    EscapeCsv(finance?.PaymentStatus ?? BookingPaymentState.Unpaid),
+                    EscapeCsv((finance?.CompletedRefunds ?? 0m).ToString("0.00")),
+                    EscapeCsv((finance?.NetCollected ?? 0m).ToString("0.00")),
                     EscapeCsv(booking.Status)));
             }
 

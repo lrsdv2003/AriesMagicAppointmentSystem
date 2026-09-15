@@ -1,5 +1,6 @@
 using AriesMagicAppointmentSystem.Data;
 using AriesMagicAppointmentSystem.Models;
+using AriesMagicAppointmentSystem.Services;
 using AriesMagicAppointmentSystem.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -13,13 +14,16 @@ namespace AriesMagicAppointmentSystem.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly IPaymentFinancialService _financialService;
 
         public DashboardController(
             ApplicationDbContext context,
-            UserManager<ApplicationUser> userManager)
+            UserManager<ApplicationUser> userManager,
+            IPaymentFinancialService financialService)
         {
             _context = context;
             _userManager = userManager;
+            _financialService = financialService;
         }
 
         public IActionResult Index()
@@ -80,6 +84,18 @@ namespace AriesMagicAppointmentSystem.Controllers
                     .Take(5)
                     .ToListAsync()
             };
+
+            var financialBookingIds = await _context.Bookings.AsNoTracking()
+                .Where(b => b.Status != BookingStatus.Cancelled && b.Status != BookingStatus.Declined && b.Status != BookingStatus.Expired)
+                .Select(b => b.Id).ToListAsync();
+            var financials = await _financialService.GetSummariesAsync(financialBookingIds);
+            model.VerifiedRevenue = financials.Values.Sum(f => f.TotalVerifiedPayments);
+            model.OutstandingReceivables = financials.Values.Sum(f => f.RemainingBalance);
+            model.NetCollectedRevenue = financials.Values.Sum(f => f.NetCollected);
+            var completedRefundsThisMonth = await _context.RefundRequests.AsNoTracking()
+                .Where(r => r.Status == RefundStatus.Refunded && r.RefundCompletedAt >= monthStart)
+                .SumAsync(r => (decimal?)(r.ApprovedAmount ?? r.Amount)) ?? 0m;
+            model.CurrentMonthRevenue = Math.Max(0m, model.CurrentMonthRevenue - completedRefundsThisMonth);
 
             return View(model);
         }

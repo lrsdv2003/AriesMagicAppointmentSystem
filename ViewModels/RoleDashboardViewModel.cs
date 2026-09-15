@@ -25,6 +25,8 @@ namespace AriesMagicAppointmentSystem.ViewModels
 
         public decimal VerifiedRevenue { get; set; }
         public decimal CurrentMonthRevenue { get; set; }
+        public decimal OutstandingReceivables { get; set; }
+        public decimal NetCollectedRevenue { get; set; }
 
         public int TotalUsers { get; set; }
         public int TrashedBookingsCount { get; set; }

@@ -18,6 +18,7 @@ namespace AriesMagicAppointmentSystem.Controllers
         private readonly IHistoryService _historyService;
         private readonly IVenueDistanceService _venueDistanceService;
         private readonly IGeocodingService _geocodingService;
+        private readonly IPaymentFinancialService _financialService;
         private const int MaxRemovedInclusions = 2;
         private const decimal FixedInclusionDeduction = 2000m;
         private const decimal FixedRequiredDownpayment = 2000m;
@@ -27,13 +28,15 @@ namespace AriesMagicAppointmentSystem.Controllers
             UserManager<ApplicationUser> userManager,
             IHistoryService historyService,
             IVenueDistanceService venueDistanceService,
-            IGeocodingService geocodingService)
+            IGeocodingService geocodingService,
+            IPaymentFinancialService financialService)
         {
             _context = context;
             _userManager = userManager;
             _historyService = historyService;
             _venueDistanceService = venueDistanceService;
             _geocodingService = geocodingService;
+            _financialService = financialService;
         }
 
         [Authorize(Roles = "Staff,Owner")]
@@ -87,13 +90,12 @@ namespace AriesMagicAppointmentSystem.Controllers
                 ).ToList();
             }
 
+            var bookingFinancials = await _financialService.GetSummariesAsync(bookings.Select(b => b.Id));
             var rows = bookings.Select(b =>
             {
-                var latestPayment = b.Payments
-                    .OrderByDescending(p => p.UploadedAt)
-                    .FirstOrDefault();
-
-                var latestPaymentStatus = latestPayment?.Status ?? "No Payment";
+                var latestPaymentStatus = bookingFinancials.TryGetValue(b.Id, out var financial)
+                    ? financial.PaymentStatus
+                    : BookingPaymentState.Unpaid;
 
                 return new BookingManagementRowViewModel
                 {
@@ -729,10 +731,11 @@ namespace AriesMagicAppointmentSystem.Controllers
             }
 
             ViewBag.UnavailableBookingIds = unavailableBookingIds;
+            ViewBag.FinancialSummaries = await _financialService.GetSummariesAsync(bookings.Select(b => b.Id));
 
             return View(bookings);
         }
-        [Authorize(Roles = "Staff,Owner")]
+        [Authorize(Roles = "Staff,Admin,Owner")]
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null) return NotFound();
@@ -745,6 +748,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                 .FirstOrDefaultAsync(b => b.Id == id);
 
             if (booking == null) return NotFound();
+            ViewBag.FinancialSummary = await _financialService.GetSummaryAsync(booking.Id);
 
             return View(booking);
         }
@@ -980,7 +984,20 @@ namespace AriesMagicAppointmentSystem.Controllers
 
             await _context.SaveChangesAsync();
 
-            TempData["Success"] = "Booking marked as completed.";
+            var financial = await _financialService.GetSummaryAsync(booking.Id);
+            if (financial.RemainingBalance > 0)
+            {
+                if (!string.IsNullOrWhiteSpace(booking.ApplicationUserId))
+                    _context.Notifications.Add(new Notification { UserId = booking.ApplicationUserId, Title = "Remaining Balance Due", Message = $"Your event has been completed. Your remaining balance is ₱{financial.RemainingBalance:N2}.", Link = "/Bookings/MyBookings", IsRead = false, CreatedAt = DateTime.Now });
+                var internalIds = new HashSet<string>();
+                foreach (var role in new[] { "Staff", "Admin", "Owner" })
+                    foreach (var user in await _userManager.GetUsersInRoleAsync(role)) if (user.IsActive) internalIds.Add(user.Id);
+                foreach (var uid in internalIds)
+                    _context.Notifications.Add(new Notification { UserId = uid, Title = "Completed Event — Balance Outstanding", Message = $"Booking BK-{booking.Id} is completed with ₱{financial.RemainingBalance:N2} still outstanding.", Link = $"/Bookings/Details/{booking.Id}", IsRead = false, CreatedAt = DateTime.Now });
+                await _context.SaveChangesAsync();
+            }
+
+            TempData["Success"] = financial.RemainingBalance > 0 ? $"Booking marked as completed. Outstanding balance: ₱{financial.RemainingBalance:N2}." : "Booking marked as completed and fully paid.";
             return RedirectToAction(nameof(Index));
         }
 

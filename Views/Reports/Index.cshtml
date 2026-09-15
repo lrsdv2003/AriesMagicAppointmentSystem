@@ -97,6 +97,25 @@
     </div>
 </div>
 
+<!-- Financial Collection Metrics -->
+<div class="dashboard-panel mb-4">
+    <div class="dashboard-list-heading"><h3>Financial Overview</h3><span class="badge bg-primary">Verified payments only</span></div>
+    <div class="dashboard-stat-grid">
+        <div class="dashboard-stat-card stat-info"><span class="dashboard-stat-label">Total Booking Value</span><strong>₱@Model.TotalBookingValue.ToString("N2")</strong><small>Value of active bookings</small></div>
+        <div class="dashboard-stat-card stat-success"><span class="dashboard-stat-label">Collected Revenue</span><strong>₱@Model.TotalCollectedRevenue.ToString("N2")</strong><small>Verified payments only</small></div>
+        <div class="dashboard-stat-card stat-warning"><span class="dashboard-stat-label">Outstanding Receivables</span><strong>₱@Model.OutstandingReceivables.ToString("N2")</strong><small>Still owed</small></div>
+        <div class="dashboard-stat-card"><span class="dashboard-stat-label">Down Payments Collected</span><strong>₱@Model.TotalDownPaymentsCollected.ToString("N2")</strong></div>
+        <div class="dashboard-stat-card stat-danger"><span class="dashboard-stat-label">Completed Refunds</span><strong>₱@Model.RefundsIssued.ToString("N2")</strong></div>
+        <div class="dashboard-stat-card stat-success"><span class="dashboard-stat-label">Net Collected Revenue</span><strong>₱@Model.NetCollectedRevenue.ToString("N2")</strong><small>Verified payments less completed refunds</small></div>
+    </div>
+    <div class="dashboard-stat-grid mt-3">
+        <div class="dashboard-stat-card"><span class="dashboard-stat-label">Completed Booking Value</span><strong>₱@Model.CompletedBookingValue.ToString("N2")</strong></div>
+        <div class="dashboard-stat-card"><span class="dashboard-stat-label">Completed Events Collected</span><strong>₱@Model.CompletedCollectedRevenue.ToString("N2")</strong></div>
+        <div class="dashboard-stat-card stat-warning"><span class="dashboard-stat-label">Completed Events Outstanding</span><strong>₱@Model.CompletedOutstandingReceivables.ToString("N2")</strong></div>
+        <div class="dashboard-stat-card"><span class="dashboard-stat-label">Fully Paid / Partial / Unpaid</span><strong>@Model.FullyPaidBookings / @Model.PartiallyPaidBookings / @Model.UnpaidBookings</strong></div>
+    </div>
+</div>
+
 <!-- Charts Section -->
 <div class="row g-4 mb-4">
     <div class="col-lg-6">
@@ -215,7 +234,10 @@
                         <th>Event</th>
                         <th>Date</th>
                         <th>Venue</th>
-                        <th>Amount</th>
+                        <th>Booking Value</th>
+                        <th>Collected</th>
+                        <th>Outstanding</th>
+                        <th>Payment Status</th>
                         <th>Status</th>
                     </tr>
                 </thead>
@@ -229,7 +251,11 @@
                             <td>@booking.EventType</td>
                             <td>@booking.EventDate.ToString("MMM dd, yyyy")</td>
                             <td>@booking.PartyVenue</td>
+                            @{ Model.BookingFinancials.TryGetValue(booking.Id, out var finance); }
                             <td>₱@booking.FinalPrice.ToString("N2")</td>
+                            <td>₱@((finance?.TotalVerifiedPayments ?? 0m).ToString("N2"))</td>
+                            <td>₱@((finance?.RemainingBalance ?? booking.FinalPrice).ToString("N2"))</td>
+                            <td><span class="badge bg-secondary">@(finance?.PaymentStatus ?? "Unpaid")</span></td>
                             <td><span class="badge bg-secondary">@booking.Status</span></td>
                         </tr>
                     }

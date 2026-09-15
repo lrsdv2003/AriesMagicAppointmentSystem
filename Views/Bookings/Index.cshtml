@@ -107,10 +107,13 @@
                             <label class="form-label">Payment Status</label>
                             <select name="paymentStatus" class="form-select rounded-3">
                                 <option value="All" selected="@(Model.PaymentStatus == "All")">All Statuses</option>
-                                <option value="No Payment" selected="@(Model.PaymentStatus == "No Payment")">No Payment</option>
-                                <option value="Pending" selected="@(Model.PaymentStatus == "Pending")">Pending</option>
-                                <option value="Verified" selected="@(Model.PaymentStatus == "Verified")">Verified</option>
-                                <option value="Rejected" selected="@(Model.PaymentStatus == "Rejected")">Rejected</option>
+                                <option value="Unpaid" selected="@(Model.PaymentStatus == "Unpaid")">Unpaid</option>
+                                <option value="Payment Verification Pending" selected="@(Model.PaymentStatus == "Payment Verification Pending")">Verification Pending</option>
+                                <option value="Down Payment Paid" selected="@(Model.PaymentStatus == "Down Payment Paid")">Down Payment Paid</option>
+                                <option value="Partially Paid" selected="@(Model.PaymentStatus == "Partially Paid")">Partially Paid</option>
+                                <option value="Fully Paid" selected="@(Model.PaymentStatus == "Fully Paid")">Fully Paid</option>
+                                <option value="Payment Rejected" selected="@(Model.PaymentStatus == "Payment Rejected")">Payment Rejected</option>
+                                <option value="Additional Evidence Required" selected="@(Model.PaymentStatus == "Additional Evidence Required")">Additional Evidence Required</option>
                             </select>
                         </div>
                     }

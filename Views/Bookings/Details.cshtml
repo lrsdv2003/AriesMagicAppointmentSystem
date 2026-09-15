@@ -1,5 +1,6 @@
-﻿@model AriesMagicAppointmentSystem.Models.Booking
+@model AriesMagicAppointmentSystem.Models.Booking
 @using System.Text.Json
+@using AriesMagicAppointmentSystem.ViewModels
 
 @{
     Layout = "_DashboardLayout";
@@ -22,6 +23,7 @@
     var latestPayment = Model.Payments?
         .OrderByDescending(p => p.UploadedAt)
         .FirstOrDefault();
+    var finance = ViewBag.FinancialSummary as BookingFinancialSummaryViewModel;
 
     var bookingStatusClass = Model.Status switch
     {
@@ -87,6 +89,20 @@
         <div class="stat-subtext">Most recent payment verification result.</div>
     </div>
 </div>
+
+@if (finance != null)
+{
+<div class="dashboard-panel mb-4">
+    <div class="dashboard-list-heading"><h3>Payment & Balance Summary</h3><span class="status-badge status-read">@finance.PaymentStatus</span></div>
+    <div class="dashboard-stat-grid">
+        <div class="dashboard-stat-card"><span class="dashboard-stat-label">Booking Total</span><strong>₱@finance.BookingTotal.ToString("N2")</strong></div>
+        <div class="dashboard-stat-card stat-success"><span class="dashboard-stat-label">Total Paid</span><strong>₱@finance.TotalVerifiedPayments.ToString("N2")</strong></div>
+        <div class="dashboard-stat-card @(finance.RemainingBalance > 0 ? "stat-warning" : "stat-success")"><span class="dashboard-stat-label">Balance Due</span><strong>₱@finance.RemainingBalance.ToString("N2")</strong><small>@(Model.Status == "Completed" && finance.RemainingBalance > 0 ? "Completed — Balance Outstanding" : "Verified payments only")</small></div>
+        <div class="dashboard-stat-card"><span class="dashboard-stat-label">Net Collected</span><strong>₱@finance.NetCollected.ToString("N2")</strong><small>After completed refunds</small></div>
+    </div>
+    @if (finance.Ledger.Any()) { <div class="table-responsive mt-3"><table class="table align-middle"><thead><tr><th>Date</th><th>Transaction</th><th>Amount</th><th>Status</th><th>Method</th></tr></thead><tbody>@foreach(var tx in finance.Ledger){<tr><td>@tx.Date.ToString("MMM dd, yyyy")</td><td>@tx.TransactionType</td><td>₱@tx.Amount.ToString("N2")</td><td>@tx.Status</td><td>@tx.PaymentMethod</td></tr>}</tbody></table></div> }
+</div>
+}
 
 <div class="booking-details-layout">
     <div class="dashboard-panel">

@@ -14,6 +14,18 @@ namespace AriesMagicAppointmentSystem.ViewModels
         public int ExpiredBookings { get; set; }
 
         public decimal TotalRevenue { get; set; }
+        public decimal TotalBookingValue { get; set; }
+        public decimal TotalCollectedRevenue { get; set; }
+        public decimal TotalDownPaymentsCollected { get; set; }
+        public decimal OutstandingReceivables { get; set; }
+        public decimal CompletedBookingValue { get; set; }
+        public decimal CompletedCollectedRevenue { get; set; }
+        public decimal CompletedOutstandingReceivables { get; set; }
+        public decimal RefundsIssued { get; set; }
+        public decimal NetCollectedRevenue { get; set; }
+        public int FullyPaidBookings { get; set; }
+        public int PartiallyPaidBookings { get; set; }
+        public int UnpaidBookings { get; set; }
 
         public int PendingCount { get; set; }
         public int VerifiedCount { get; set; }
@@ -32,5 +44,6 @@ namespace AriesMagicAppointmentSystem.ViewModels
         public List<int> PackageBookingCounts { get; set; } = new();
 
         public List<Booking> BookingRecords { get; set; } = new();
+        public Dictionary<int, BookingFinancialSummaryViewModel> BookingFinancials { get; set; } = new();
     }
 }

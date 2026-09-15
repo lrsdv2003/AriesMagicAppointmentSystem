@@ -1,5 +1,6 @@
-﻿@model IEnumerable<AriesMagicAppointmentSystem.Models.Booking>
+@model IEnumerable<AriesMagicAppointmentSystem.Models.Booking>
 @using AriesMagicAppointmentSystem.Models
+@using AriesMagicAppointmentSystem.ViewModels
 
 @{
     ViewData["Title"] = "My Bookings";
@@ -8,6 +9,7 @@
 
     var unavailableBookingIds =
         ViewBag.UnavailableBookingIds as List<int> ?? new List<int>();
+    var financials = ViewBag.FinancialSummaries as Dictionary<int, BookingFinancialSummaryViewModel> ?? new();
 
     // The "spotlight" is computed here in the view from data the controller
     // already returns -- no controller/model changes needed. It surfaces the
@@ -174,6 +176,17 @@ else
         @foreach (var item in bookings)
         {
             var isUnavailable = unavailableBookingIds.Contains(item.Id);
+            financials.TryGetValue(item.Id, out var finance);
+            var paymentStatusClass = finance?.PaymentStatus switch
+            {
+                BookingPaymentState.FullyPaid => "status-verified",
+                BookingPaymentState.DownPaymentPaid => "status-verified",
+                BookingPaymentState.PartiallyPaid => "status-pending",
+                BookingPaymentState.VerificationPending => "status-pending",
+                BookingPaymentState.PaymentRejected => "status-rejected",
+                BookingPaymentState.AdditionalEvidenceRequired => "status-pending",
+                _ => "status-read"
+            };
 
             var statusClass = item.Status switch
             {
@@ -217,6 +230,7 @@ else
                         </div>
                     </div>
 
+                    <div class="d-flex flex-column align-items-end gap-2">
                     <span class="status-badge @statusClass">
                         @if (isUnavailable)
                         {
@@ -235,6 +249,8 @@ else
                             @item.Status
                         }
                     </span>
+                    @if (finance != null) { <span class="status-badge @paymentStatusClass"><i class="bi bi-wallet2"></i> @finance.PaymentStatus</span> }
+                    </div>
                 </div>
 
                 <div class="am-mini-timeline">
@@ -291,6 +307,19 @@ else
                             <span>Required Downpayment</span>
                             <strong>&#8369;@item.RequiredDownpayment.ToString("N2")</strong>
                         </div>
+                        @if (finance != null)
+                        {
+                            <div class="client-booking-detail-row"><span>Total Paid</span><strong>&#8369;@finance.TotalVerifiedPayments.ToString("N2")</strong></div>
+                            <div class="client-booking-detail-row"><span>Remaining Balance</span><strong class="@(finance.RemainingBalance > 0 ? "text-warning" : "text-success")">&#8369;@finance.RemainingBalance.ToString("N2")</strong></div>
+                            <div class="client-booking-detail-row"><span>Payment Status</span><strong>@finance.PaymentStatus</strong></div>
+                            @if (finance.Ledger.Any())
+                            {
+                                <div class="mt-3"><strong>Payment History</strong>
+                                <div class="table-responsive mt-2"><table class="table table-sm"><thead><tr><th>Date</th><th>Type</th><th>Amount</th><th>Status</th></tr></thead><tbody>
+                                @foreach (var tx in finance.Ledger) { <tr><td>@tx.Date.ToString("MMM dd, yyyy")</td><td>@tx.TransactionType</td><td>&#8369;@tx.Amount.ToString("N2")</td><td>@tx.Status</td></tr> }
+                                </tbody></table></div></div>
+                            }
+                        }
                     </div>
 
                     <div class="client-booking-note mt-3">
@@ -312,11 +341,11 @@ else
                         }
                         else if (item.Status == BookingStatus.Confirmed)
                         {
-                            <span>Your booking is confirmed and scheduled.</span>
+                            <span>Your booking is confirmed and scheduled. @(finance != null && finance.RemainingBalance > 0 ? $"Balance due on event date: ₱{finance.RemainingBalance:N2}." : "Your booking is fully paid.")</span>
                         }
                         else if (item.Status == BookingStatus.Completed)
                         {
-                            <span>This booking has already been completed.</span>
+                            <span>@(finance != null && finance.RemainingBalance > 0 ? $"Completed — Balance Outstanding: ₱{finance.RemainingBalance:N2}." : "This booking has been completed and is fully paid.")</span>
                         }
                         else if (item.Status == BookingStatus.Declined)
                         {
@@ -358,7 +387,7 @@ else
                             </button>
                         </form>
 
-                        @if (item.Status == BookingStatus.AwaitingDownpayment)
+                        @if (finance != null && finance.RemainingBalance > 0 && !finance.HasPendingVerification && !finance.HasAdditionalEvidenceRequired && (item.Status == BookingStatus.AwaitingDownpayment || item.Status == BookingStatus.Confirmed || item.Status == BookingStatus.Completed))
                         {
                             if (isUnavailable)
                             {

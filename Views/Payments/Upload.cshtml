@@ -9,7 +9,7 @@
         <div class="section-kicker">Client Portal</div>
         <h1 class="client-portal-title">Upload Payment</h1>
         <p class="client-portal-text">
-            Pay the fixed downpayment, scan the GCash QR code, then upload your payment proof for admin verification.
+            Pay the minimum down payment or any additional balance amount, then upload your payment proof for OCR-assisted manual verification.
         </p>
     </div>
 </div>
@@ -32,7 +32,7 @@
 <div class="upload-payment-layout">
     <div class="dashboard-panel">
         <div class="form-section-title mb-1">Payment Information</div>
-        <p class="page-subtitle mb-4">The required downpayment is fixed at ₱2,000.00.</p>
+        <p class="page-subtitle mb-4">Minimum initial down payment is ₱2,000. You may pay more, or pay the exact final balance when it is below ₱2,000.</p>
 
         <form asp-action="Upload" method="post" enctype="multipart/form-data">
             @Html.AntiForgeryToken()
@@ -48,9 +48,10 @@
                 </div>
 
                 <div class="col-md-6">
-                    <label class="form-label">Required Downpayment</label>
-                    <input value="₱@Model.FixedDownpaymentAmount.ToString("N2")" class="form-control" readonly />
-                    <div class="form-text">This amount is fixed and cannot be changed by the client.</div>
+                    <label asp-for="Amount" class="form-label">Payment Amount</label>
+                    <input asp-for="Amount" type="number" step="0.01" min="0.01" class="form-control" />
+                    <span asp-validation-for="Amount" class="text-danger"></span>
+                    <div class="form-text">Minimum initial down payment is ₱@Model.FixedDownpaymentAmount.ToString("N2"). The booking selector shows the current outstanding balance.</div>
                 </div>
 
                 <div class="col-md-6">
@@ -88,7 +89,7 @@
         </div>
 
         <div class="payment-guide-note mt-4">
-            Required downpayment: <strong>₱@Model.FixedDownpaymentAmount.ToString("N2")</strong>
+            Minimum initial down payment: <strong>₱@Model.FixedDownpaymentAmount.ToString("N2")</strong>
         </div>
 
         <div class="payment-guide-list mt-4">
@@ -96,7 +97,7 @@
                 <div class="payment-guide-icon">1</div>
                 <div>
                     <strong>Scan the GCash QR</strong>
-                    <p>Use GCash to send the fixed downpayment amount.</p>
+                    <p>Send at least ₱2,000 for the initial payment, or the exact remaining balance if it is already below ₱2,000.</p>
                 </div>
             </div>
 
