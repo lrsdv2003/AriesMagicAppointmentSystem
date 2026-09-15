@@ -6,7 +6,7 @@ namespace AriesMagicAppointmentSystem.ViewModels
         public const string DownPaymentPaid = "Down Payment Paid";
         public const string PartiallyPaid = "Partially Paid";
         public const string FullyPaid = "Fully Paid";
-        public const string VerificationPending = "Payment Verification Pending";
+        public const string VerificationPending = "Awaiting Owner Verification";
         public const string AdditionalEvidenceRequired = "Additional Evidence Required";
         public const string PaymentRejected = "Payment Rejected";
     }

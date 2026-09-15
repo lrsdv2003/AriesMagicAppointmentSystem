@@ -202,7 +202,7 @@ namespace AriesMagicAppointmentSystem.Controllers
 
             TempData["Success"] = model.Amount > financialBefore.RemainingBalance
                 ? $"Payment amount exceeds the remaining balance of ₱{financialBefore.RemainingBalance:N2}. Manual review required; the balance will not change unless an authorized reviewer resolves the discrepancy."
-                : "Payment proof successfully submitted. Your payment is currently being verified. Your balance will update only after approval.";
+                : "Payment proof successfully submitted. Your payment is awaiting Owner verification. Your balance will update only after Owner approval.";
             return RedirectToAction(nameof(MyUploads));
         }
 
@@ -230,7 +230,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             var payment = await _context.Payments.AsNoTracking().Include(p => p.Booking).FirstOrDefaultAsync(p => p.Id == id);
             if (payment == null) return NotFound();
             var uid = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var internalUser = User.IsInRole("Staff") || User.IsInRole("Admin") || User.IsInRole("Owner");
+            var internalUser = User.IsInRole("Admin") || User.IsInRole("Owner");
             if (!internalUser && (!User.IsInRole("Client") || payment.Booking?.ApplicationUserId != uid)) return Forbid();
             return ServeFinancialProof(payment.ProofImagePath);
         }
@@ -241,7 +241,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             var refund = await _context.RefundRequests.AsNoTracking().Include(r => r.Booking).FirstOrDefaultAsync(r => r.Id == id);
             if (refund == null) return NotFound();
             var uid = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var internalUser = User.IsInRole("Staff") || User.IsInRole("Admin") || User.IsInRole("Owner");
+            var internalUser = User.IsInRole("Admin") || User.IsInRole("Owner");
             if (!internalUser && (!User.IsInRole("Client") || refund.Booking?.ApplicationUserId != uid)) return Forbid();
             var path = confirmation ? refund.RefundProofImagePath : refund.PaymentProofImagePath;
             if (string.IsNullOrWhiteSpace(path)) return NotFound();
@@ -249,7 +249,7 @@ namespace AriesMagicAppointmentSystem.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "Staff,Admin,Owner")]
+        [Authorize(Roles = "Owner")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RequestAdditionalEvidence(int id, string? reason)
         {
@@ -257,6 +257,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             if (payment == null) return NotFound();
             if (payment.Status is PaymentStatus.Verified or PaymentStatus.Rejected)
                 return RedirectToAction(nameof(Verify), new { id });
+            var previousStatus = payment.Status;
             payment.Status = PaymentStatus.AdditionalEvidenceRequired;
             payment.ReviewerNote = string.IsNullOrWhiteSpace(reason) ? "Please upload a clearer screenshot showing the full transaction details." : reason.Trim();
             payment.VerifiedByUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -264,7 +265,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             await _context.SaveChangesAsync();
             if (!string.IsNullOrWhiteSpace(payment.Booking?.ApplicationUserId))
                 await CreateNotificationAsync(payment.Booking.ApplicationUserId, "Additional Payment Proof Required", "We were unable to fully verify your payment proof. Please upload a clearer screenshot or provide additional payment information.", "/Payments/MyUploads");
-            await LogActivityAsync(SystemActivityType.PaymentAdditionalEvidenceRequested, $"Additional evidence requested for payment #{id}.", id.ToString(), "Payment", new { reason = payment.ReviewerNote });
+            await LogActivityAsync(SystemActivityType.PaymentAdditionalEvidenceRequested, $"Owner requested additional evidence for payment #{id}.", id.ToString(), "Payment", new { PreviousStatus = previousStatus, NewStatus = payment.Status, OwnerUserId = payment.VerifiedByUserId, OwnerName = payment.VerifiedByUserName, ReviewNotes = payment.ReviewerNote });
             TempData["Success"] = "Client was asked to submit additional payment evidence.";
             return RedirectToAction(nameof(Verify), new { id });
         }
@@ -293,11 +294,11 @@ namespace AriesMagicAppointmentSystem.Controllers
             await _context.SaveChangesAsync();
             await NotifyInternalReviewersAsync("Updated Payment Proof Submitted", $"Replacement evidence for Booking #BK-{payment.BookingId}. OCR result: {ocr.VerificationResult}.", "/Payments/PendingVerification");
             await LogActivityAsync(SystemActivityType.PaymentProofSubmitted, $"Replacement payment proof submitted for payment #{id}.", id.ToString(), "Payment");
-            TempData["Success"] = "Your new payment proof was submitted and is under verification.";
+            TempData["Success"] = "Your new payment proof was submitted and is awaiting Owner verification.";
             return RedirectToAction(nameof(MyUploads));
         }
 
-        [Authorize(Roles = "Staff,Admin,Owner")]
+        [Authorize(Roles = "Admin,Owner")]
         public async Task<IActionResult> PendingVerification(string filter = "awaiting", string? q = null, string? paymentMethod = null, DateTime? date = null)
         {
             var query = _context.Payments
@@ -332,7 +333,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             return View(payments);
         }
 
-        [Authorize(Roles = "Staff,Admin,Owner")]
+        [Authorize(Roles = "Admin,Owner")]
         public async Task<IActionResult> Verify(int? id)
         {
             if (id == null) return NotFound();
@@ -351,9 +352,9 @@ namespace AriesMagicAppointmentSystem.Controllers
         }
 
         [HttpPost, ActionName("Verify")]
-        [Authorize(Roles = "Staff,Admin,Owner")]
+        [Authorize(Roles = "Owner")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> VerifyConfirmed(int id)
+        public async Task<IActionResult> VerifyConfirmed(int id, string? reviewerNote)
         {
             var payment = await _context.Payments
                 .Include(p => p.Booking)
@@ -383,7 +384,9 @@ namespace AriesMagicAppointmentSystem.Controllers
                 return RedirectToAction(nameof(Verify), new { id });
             }
 
+            var previousStatus = payment.Status;
             payment.Status = PaymentStatus.Verified;
+            payment.ReviewerNote = string.IsNullOrWhiteSpace(reviewerNote) ? payment.ReviewerNote : reviewerNote.Trim();
             payment.VerifiedAt = DateTime.Now;
             payment.VerifiedByUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             payment.VerifiedByUserName = User.Identity?.Name;
@@ -455,11 +458,11 @@ namespace AriesMagicAppointmentSystem.Controllers
                 }
             }
 
-            await LogActivityAsync(SystemActivityType.PaymentVerified, $"Payment #{payment.Id} manually verified after OCR-assisted review.", payment.Id.ToString(), "Payment");
+            await LogActivityAsync(SystemActivityType.PaymentVerified, $"Payment #{payment.Id} approved by Owner after OCR-assisted review.", payment.Id.ToString(), "Payment", new { PreviousStatus = previousStatus, NewStatus = payment.Status, OwnerUserId = payment.VerifiedByUserId, OwnerName = payment.VerifiedByUserName, ReviewNotes = payment.ReviewerNote, payment.Amount });
             return RedirectToAction(nameof(PendingVerification));
         }
 
-        [Authorize(Roles = "Staff,Admin,Owner")]
+        [Authorize(Roles = "Owner")]
         public async Task<IActionResult> Reject(int? id)
         {
             if (id == null) return NotFound();
@@ -478,7 +481,7 @@ namespace AriesMagicAppointmentSystem.Controllers
         }
 
         [HttpPost, ActionName("Reject")]
-        [Authorize(Roles = "Staff,Admin,Owner")]
+        [Authorize(Roles = "Owner")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RejectConfirmed(int id, string? rejectionReason)
         {
@@ -494,8 +497,10 @@ namespace AriesMagicAppointmentSystem.Controllers
                 return RedirectToAction(nameof(PendingVerification));
             }
 
+            var previousStatus = payment.Status;
             payment.Status = PaymentStatus.Rejected;
             payment.RejectionReason = rejectionReason;
+            payment.ReviewerNote = rejectionReason;
             payment.VerifiedAt = DateTime.Now;
             payment.VerifiedByUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             payment.VerifiedByUserName = User.Identity?.Name;
@@ -535,7 +540,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                         <p>Please upload a new proof of downpayment.</p>");
                 }
             }
-            await LogActivityAsync(SystemActivityType.PaymentRejected, $"Payment #{payment.Id} rejected after manual review.", payment.Id.ToString(), "Payment", new { rejectionReason });
+            await LogActivityAsync(SystemActivityType.PaymentRejected, $"Payment #{payment.Id} rejected by Owner after manual review.", payment.Id.ToString(), "Payment", new { PreviousStatus = previousStatus, NewStatus = payment.Status, OwnerUserId = payment.VerifiedByUserId, OwnerName = payment.VerifiedByUserName, ReviewNotes = rejectionReason, payment.Amount });
             TempData["Success"] = rejectionFinancial.TotalVerifiedPayments <= 0 ? "Payment rejected and booking returned to downpayment." : "Additional payment rejected. Existing verified balance was not changed.";
             return RedirectToAction(nameof(PendingVerification));
         }
@@ -656,7 +661,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             await _context.SaveChangesAsync();
             await NotifyInternalReviewersAsync("New Refund Request", $"Refund request RF-{refundRequest.Id:D4} for Booking #BK-{booking.Id} requires review. OCR result: {refundOcr.VerificationResult}.", "/Payments/RefundRequests");
             await LogActivityAsync(SystemActivityType.RefundRequested, $"Refund request #{refundRequest.Id} submitted for booking #{booking.Id}.", refundRequest.Id.ToString(), "RefundRequest", new { refundOcr.VerificationResult });
-            TempData["Success"] = "Your refund request has been submitted and is under review.";
+            TempData["Success"] = "Your refund request has been submitted and is awaiting Owner review.";
             return RedirectToAction(nameof(MyRefundRequests));
         }
 
@@ -675,7 +680,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             return View(requests);
         }
 
-        [Authorize(Roles = "Staff,Admin,Owner")]
+        [Authorize(Roles = "Admin,Owner")]
         public async Task<IActionResult> RefundRequests(string filter = "all", string? q = null)
         {
             var query = _context.RefundRequests.AsNoTracking()
@@ -692,7 +697,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             return View(await query.OrderByDescending(r => r.RequestedAt).Take(250).ToListAsync());
         }
 
-        [Authorize(Roles = "Staff,Admin,Owner")]
+        [Authorize(Roles = "Admin,Owner")]
         public async Task<IActionResult> RefundReview(int id)
         {
             var refund = await _context.RefundRequests.Include(r => r.Booking).ThenInclude(b => b!.Client).Include(r => r.Booking).ThenInclude(b => b!.Service).Include(r => r.OriginalPayment).Include(r => r.OcrVerifications).FirstOrDefaultAsync(r => r.Id == id);
@@ -702,7 +707,7 @@ namespace AriesMagicAppointmentSystem.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "Admin,Owner")]
+        [Authorize(Roles = "Owner")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ApproveRefund(int id, string? adminRemarks)
         {
@@ -718,6 +723,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                 return RedirectToAction(nameof(RefundRequests));
             }
 
+            var previousStatus = refund.Status;
             refund.Status = RefundStatus.Approved;
             refund.ApprovedAmount = Math.Min(refund.Amount, refund.OriginalPayment?.Amount ?? refund.Amount);
             refund.AdminRemarks = adminRemarks;
@@ -736,12 +742,13 @@ namespace AriesMagicAppointmentSystem.Controllers
                     "/Payments/MyRefundRequests");
             }
 
-            TempData["Success"] = "Refund request approved.";
+            await LogActivityAsync(SystemActivityType.RefundApproved, $"Refund #{refund.Id} approved by Owner.", refund.Id.ToString(), "RefundRequest", new { PreviousStatus = previousStatus, NewStatus = refund.Status, OwnerUserId = refund.ReviewedByUserId, OwnerName = refund.ReviewedByUserName, ReviewNotes = refund.AdminRemarks, ApprovedAmount = refund.ApprovedAmount });
+            TempData["Success"] = "Refund request approved by Owner.";
             return RedirectToAction(nameof(RefundRequests));
         }
 
         [HttpPost]
-        [Authorize(Roles = "Admin,Owner")]
+        [Authorize(Roles = "Owner")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> UploadRefundProof(int id, IFormFile refundProofImage, string? adminRemarks)
         {
@@ -762,18 +769,21 @@ namespace AriesMagicAppointmentSystem.Controllers
                 return RedirectToAction(nameof(RefundReview), new { id });
             }
             var saved = await SavePrivateProofAsync(refundProofImage, "refund-confirmations");
+            var previousStatus = refund.Status;
             refund.RefundProofImagePath = saved.StoredPath;
             refund.Status = RefundStatus.RefundProcessing;
             refund.AdminRemarks = adminRemarks;
+            refund.ReviewedByUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            refund.ReviewedByUserName = User.Identity?.Name;
             await _context.SaveChangesAsync();
             await AnalyzeRefundProofAsync(refund, saved.PhysicalPath, OcrVerificationPurposes.RefundConfirmation);
-            await LogActivityAsync(SystemActivityType.OcrAnalysisCompleted, $"Refund confirmation OCR completed for refund #{refund.Id}.", refund.Id.ToString(), "RefundRequest");
+            await LogActivityAsync(SystemActivityType.OcrAnalysisCompleted, $"Refund confirmation OCR completed for refund #{refund.Id} by Owner.", refund.Id.ToString(), "RefundRequest", new { PreviousStatus = previousStatus, NewStatus = refund.Status, OwnerUserId = refund.ReviewedByUserId, OwnerName = refund.ReviewedByUserName, ReviewNotes = refund.AdminRemarks });
             TempData["Success"] = "Refund proof uploaded and analyzed. Review the OCR result before completing the refund.";
             return RedirectToAction(nameof(RefundReview), new { id });
         }
 
         [HttpPost]
-        [Authorize(Roles = "Admin,Owner")]
+        [Authorize(Roles = "Owner")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> MarkAsRefunded(int id, string? adminRemarks)
         {
@@ -792,6 +802,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                 TempData["Error"] = "Refund confirmation OCR analysis is required before completion.";
                 return RedirectToAction(nameof(RefundReview), new { id });
             }
+            var previousStatus = refund.Status;
             refund.Status = RefundStatus.Refunded;
             refund.AdminRemarks = adminRemarks;
             refund.ProcessedAt = DateTime.Now;
@@ -801,13 +812,13 @@ namespace AriesMagicAppointmentSystem.Controllers
             await _context.SaveChangesAsync();
             if (refund.Booking != null && !string.IsNullOrWhiteSpace(refund.Booking.ApplicationUserId))
                 await CreateNotificationAsync(refund.Booking.ApplicationUserId, "Refund Completed", "Your refund has been completed after manual verification of the refund proof.", "/Payments/MyRefundRequests");
-            await LogActivityAsync(SystemActivityType.RefundProcessed, $"Refund #{refund.Id} completed after manual OCR-assisted verification.", refund.Id.ToString(), "RefundRequest");
+            await LogActivityAsync(SystemActivityType.RefundProcessed, $"Refund #{refund.Id} completed by Owner after manual OCR-assisted verification.", refund.Id.ToString(), "RefundRequest", new { PreviousStatus = previousStatus, NewStatus = refund.Status, OwnerUserId = refund.ReviewedByUserId, OwnerName = refund.ReviewedByUserName, ReviewNotes = refund.AdminRemarks, CompletedAmount = refund.ApprovedAmount ?? refund.Amount });
             TempData["Success"] = "Refund marked as completed.";
             return RedirectToAction(nameof(RefundReview), new { id });
         }
 
         [HttpPost]
-        [Authorize(Roles = "Admin,Owner")]
+        [Authorize(Roles = "Owner")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RejectRefund(int id, string? adminRemarks)
         {
@@ -823,6 +834,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                 return RedirectToAction(nameof(RefundRequests));
             }
 
+            var previousStatus = refund.Status;
             refund.Status = RefundStatus.Rejected;
             refund.AdminRemarks = adminRemarks;
             refund.ProcessedAt = DateTime.Now;
@@ -840,7 +852,8 @@ namespace AriesMagicAppointmentSystem.Controllers
                     "/Payments/MyRefundRequests");
             }
 
-            TempData["Success"] = "Refund request rejected.";
+            await LogActivityAsync(SystemActivityType.RefundRejected, $"Refund #{refund.Id} rejected by Owner.", refund.Id.ToString(), "RefundRequest", new { PreviousStatus = previousStatus, NewStatus = refund.Status, OwnerUserId = refund.ReviewedByUserId, OwnerName = refund.ReviewedByUserName, ReviewNotes = refund.AdminRemarks });
+            TempData["Success"] = "Refund request rejected by Owner.";
             return RedirectToAction(nameof(RefundRequests));
         }
         private async Task<bool> IsSlotTakenByAnotherConfirmedBookingAsync(Booking booking)
@@ -1044,7 +1057,7 @@ namespace AriesMagicAppointmentSystem.Controllers
         private async Task NotifyInternalReviewersAsync(string title, string message, string link)
         {
             var ids = new HashSet<string>();
-            foreach (var role in new[] { "Staff", "Admin", "Owner" })
+            foreach (var role in new[] { "Owner" })
                 foreach (var user in await _userManager.GetUsersInRoleAsync(role))
                     if (user.IsActive) ids.Add(user.Id);
             foreach (var id in ids)

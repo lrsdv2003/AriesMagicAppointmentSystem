@@ -21,7 +21,7 @@
         <span class="dashboard-stat-icon">
             <i class="bi bi-credit-card-2-front"></i>
         </span>
-        <span class="dashboard-stat-label">Payments to Verify</span>
+        <span class="dashboard-stat-label">Payments Awaiting Owner Verification</span>
         <strong>@Model.PendingPayments</strong>
     </a>
 
@@ -30,8 +30,14 @@
         <span class="dashboard-stat-icon">
             <i class="bi bi-arrow-counterclockwise"></i>
         </span>
-        <span class="dashboard-stat-label">Refund Requests</span>
+        <span class="dashboard-stat-label">Refund Requests Awaiting Owner Review</span>
         <strong>@Model.PendingRefunds</strong>
+    </a>
+
+    <a asp-controller="Payments" asp-action="RefundRequests" asp-route-filter="RefundProcessing" class="dashboard-stat-card stat-warning">
+        <span class="dashboard-stat-icon"><i class="bi bi-receipt-cutoff"></i></span>
+        <span class="dashboard-stat-label">Refund Proofs Awaiting Owner Verification</span>
+        <strong>@Model.RefundProofsAwaitingVerification</strong>
     </a>
 
     <a asp-controller="Calendar" asp-action="Index"
@@ -60,7 +66,7 @@
     <section class="dashboard-list-panel">
         <div class="dashboard-list-heading">
             <div>
-                <h3>Payments to Verify Activity</h3>
+                <h3>Payments Awaiting Owner Verification</h3>
             </div>
 
             <a asp-controller="Payments"
@@ -73,7 +79,7 @@
         {
             <div class="dashboard-empty-state">
                 <i class="bi bi-check2-circle"></i>
-                <p>No payments are currently waiting for verification.</p>
+                <p>No payments are currently awaiting Owner verification.</p>
             </div>
         }
         else

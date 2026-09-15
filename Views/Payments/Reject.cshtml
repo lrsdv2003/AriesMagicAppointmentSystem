@@ -35,7 +35,7 @@
 
                 <dt class="col-sm-4">Current Status</dt>
                 <dd class="col-sm-8">
-                    <span class="status-badge status-pending">@Model.Status</span>
+                    <span class="status-badge status-pending">@(Model.Status == AriesMagicAppointmentSystem.Models.PaymentStatus.Pending ? "Awaiting Owner Verification" : Model.Status)</span>
                 </dd>
             </dl>
         </div>
@@ -43,7 +43,7 @@
         <div class="col-lg-5">
             <div class="form-section-title mb-3">Proof of Payment</div>
             <div class="payment-proof-preview">
-                <img src="@Model.ProofImagePath" alt="Payment Proof" class="img-fluid rounded-4 border" />
+                <img src="@Url.Action("PaymentProof", "Payments", new { id = Model.Id })" alt="Payment Proof" class="img-fluid rounded-4 border" />
             </div>
         </div>
     </div>

@@ -52,10 +52,13 @@ namespace AriesMagicAppointmentSystem.Controllers
                 RoleName = "Owner",
                 PendingPayments = await _context.Payments
                     .AsNoTracking()
-                    .CountAsync(p => p.Status == PaymentStatus.Pending || p.Status == PaymentStatus.AdditionalEvidenceRequired),
+                    .CountAsync(p => p.Status == PaymentStatus.Pending),
                 PendingRefunds = await _context.RefundRequests
                     .AsNoTracking()
-                    .CountAsync(r => r.Status == RefundStatus.Pending || r.Status == RefundStatus.UnderReview || r.Status == RefundStatus.Approved || r.Status == RefundStatus.RefundProcessing),
+                    .CountAsync(r => r.Status == RefundStatus.Pending || r.Status == RefundStatus.UnderReview),
+                RefundProofsAwaitingVerification = await _context.RefundRequests
+                    .AsNoTracking()
+                    .CountAsync(r => r.Status == RefundStatus.RefundProcessing),
                 PaymentsAdditionalEvidence = await _context.Payments.AsNoTracking().CountAsync(p => p.Status == PaymentStatus.AdditionalEvidenceRequired),
                 UpcomingBookings = await _context.Bookings
                     .AsNoTracking()
@@ -208,9 +211,10 @@ namespace AriesMagicAppointmentSystem.Controllers
                     .CountAsync(b =>
                         b.Status == BookingStatus.Completed),
 
-                PendingPayments = await _context.Payments.CountAsync(p => p.Status == PaymentStatus.Pending || p.Status == PaymentStatus.AdditionalEvidenceRequired),
+                PendingPayments = await _context.Payments.CountAsync(p => p.Status == PaymentStatus.Pending),
                 PaymentsAdditionalEvidence = await _context.Payments.CountAsync(p => p.Status == PaymentStatus.AdditionalEvidenceRequired),
-                PendingRefunds = await _context.RefundRequests.CountAsync(r => r.Status == RefundStatus.Pending || r.Status == RefundStatus.UnderReview || r.Status == RefundStatus.Approved || r.Status == RefundStatus.RefundProcessing),
+                PendingRefunds = await _context.RefundRequests.CountAsync(r => r.Status == RefundStatus.Pending || r.Status == RefundStatus.UnderReview),
+                RefundProofsAwaitingVerification = await _context.RefundRequests.CountAsync(r => r.Status == RefundStatus.RefundProcessing),
 
                 UpcomingBookings = await _context.Bookings
                     .CountAsync(b =>

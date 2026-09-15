@@ -180,6 +180,45 @@ namespace AriesMagicAppointmentSystem.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Admin")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RequestOwnerFinancialReview(int? paymentId, int? refundId)
+        {
+            var userId = CurrentUserId();
+            if (userId == null) return Challenge();
+
+            int bookingId; string title; string messageText; string actionLink;
+            if (paymentId.HasValue)
+            {
+                var payment = await _context.Payments.AsNoTracking().Include(p => p.Booking).ThenInclude(b => b!.Client).FirstOrDefaultAsync(p => p.Id == paymentId.Value);
+                if (payment == null) return NotFound();
+                bookingId = payment.BookingId; title = "Payment Review Request"; actionLink = $"/Payments/Verify/{payment.Id}";
+                messageText = $"Payment Review Request\nBooking: BK-{bookingId}\nPayment: #{payment.Id}\nClient: {payment.Booking?.Client?.FullName ?? "Client"}\nSubmitted Amount: ₱{payment.Amount:N2}\nStatus: Awaiting Owner Verification";
+            }
+            else if (refundId.HasValue)
+            {
+                var refund = await _context.RefundRequests.AsNoTracking().Include(r => r.Booking).ThenInclude(b => b!.Client).FirstOrDefaultAsync(r => r.Id == refundId.Value);
+                if (refund == null) return NotFound();
+                bookingId = refund.BookingId; title = "Refund Review Request"; actionLink = $"/Payments/RefundReview/{refund.Id}";
+                messageText = $"Refund Review Request\nBooking: BK-{bookingId}\nRefund: RF-{refund.Id:D4}\nClient: {refund.Booking?.Client?.FullName ?? "Client"}\nRequested Amount: ₱{refund.Amount:N2}\nStatus: Awaiting Owner Review";
+            }
+            else return BadRequest();
+
+            var ownerRoleId = await _context.Roles.Where(r => r.Name == "Owner").Select(r => r.Id).FirstOrDefaultAsync();
+            var ownerIds = await _context.UserRoles.Where(ur => ur.RoleId == ownerRoleId).Select(ur => ur.UserId).Distinct().ToListAsync();
+            ownerIds = await _context.Users.Where(u => u.IsActive && ownerIds.Contains(u.Id)).Select(u => u.Id).ToListAsync();
+            if (ownerIds.Count == 0) { TempData["Error"] = "No active Owner account is available."; return RedirectToAction(nameof(Index)); }
+
+            var conversation = new Conversation { ConversationType = ConversationTypes.OperationalRequest, Title = title, BookingId = bookingId, CreatedByUserId = userId, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
+            _context.Conversations.Add(conversation); await _context.SaveChangesAsync();
+            await AddParticipantsAsync(conversation.Id, ownerIds.Append(userId));
+            var message = new Message { ConversationId = conversation.Id, SenderId = userId, MessageContent = messageText, SentAt = DateTime.UtcNow, MessageType = MessageTypes.ActionRequest, RequestType = "Financial Review Request", RequestStatus = MessageRequestStatuses.Open, ActionLink = actionLink };
+            _context.Messages.Add(message); conversation.UpdatedAt = message.SentAt;
+            await AddMessageNotificationsAsync(conversation, message, ownerIds); await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Index), new { id = conversation.Id });
+        }
+
+        [HttpPost]
         [Authorize(Roles = "Staff,Admin,Owner")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateInternal(

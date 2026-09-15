@@ -40,6 +40,7 @@ else
     <div class="client-booking-grid">
         @foreach (var item in requests)
         {
+            var statusLabel = item.Status switch { "UnderReview" => "Awaiting Owner Review", "RefundProcessing" => "Awaiting Owner Final Verification", "Approved" => "Approved - Refund Processing", "Refunded" => "Completed", _ => item.Status };
             var statusClass = item.Status switch
             {
                 "Pending" => "status-pending",
@@ -63,7 +64,7 @@ else
                         </div>
                     </div>
 
-                    <span class="status-badge @statusClass">@item.Status</span>
+                    <span class="status-badge @statusClass">@statusLabel</span>
                 </div>
 
                 <div class="client-booking-meta">
