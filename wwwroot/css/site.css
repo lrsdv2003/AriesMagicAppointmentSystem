@@ -5050,3 +5050,157 @@ textarea.form-control {
         transform: translateY(0);
     }
 }
+
+/* Create Booking Step 1: venue serviceability result (scoped for readability). */
+.client-body #venueDistancePreview .venue-distance-card {
+  margin-top: 1rem;
+  padding: 1.25rem;
+  background: linear-gradient(145deg, #151221 0%, #0f0d18 100%);
+  border: 1px solid rgba(232, 197, 112, 0.3);
+  border-radius: 18px;
+  color: #f8f7fb;
+  box-shadow: 0 12px 30px rgba(7, 5, 13, 0.22);
+  overflow: hidden;
+}
+
+.client-body #venueDistancePreview .venue-distance-title {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin: 0 0 1rem;
+  color: #f3d98d;
+  font-size: 1.08rem;
+  font-weight: 750;
+  letter-spacing: 0.01em;
+}
+
+.client-body #venueDistancePreview .venue-distance-title i {
+  color: #a78bfa;
+  font-size: 1.1rem;
+}
+
+.client-body #venueDistancePreview .venue-distance-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.client-body #venueDistancePreview .venue-distance-row {
+  min-width: 0;
+  padding: 0.85rem 0.9rem;
+  background: rgba(255, 255, 255, 0.055);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 13px;
+}
+
+.client-body #venueDistancePreview .venue-distance-label {
+  display: block;
+  margin-bottom: 0.28rem;
+  color: #c5c0cf;
+  font-size: 0.78rem;
+  font-weight: 650;
+  line-height: 1.25;
+  text-transform: uppercase;
+  letter-spacing: 0.065em;
+}
+
+.client-body #venueDistancePreview .venue-distance-value {
+  display: block;
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 750;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.client-body #venueDistancePreview .venue-status-badge {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  padding: 0.38rem 0.62rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: 0.035em;
+  white-space: normal;
+}
+
+.client-body #venueDistancePreview .venue-status-serviceable {
+  background: #dcfce7;
+  border: 1px solid #86efac;
+  color: #14532d;
+}
+
+.client-body #venueDistancePreview .venue-status-review {
+  background: #fef3c7;
+  border: 1px solid #fcd34d;
+  color: #78350f;
+}
+
+.client-body #venueDistancePreview .venue-status-unavailable {
+  background: #fee2e2;
+  border: 1px solid #fca5a5;
+  color: #7f1d1d;
+}
+
+.client-body #venueDistancePreview .venue-travel-fee-row {
+  border-color: rgba(232, 197, 112, 0.2);
+}
+
+.client-body #venueDistancePreview .venue-travel-fee {
+  color: #f3d98d;
+  font-size: 1.08rem;
+}
+
+.client-body #venueDistancePreview .venue-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  margin-top: 0.9rem;
+  padding: 0.85rem 0.95rem;
+  background: #3a2d0d;
+  border: 1px solid #a77916;
+  border-radius: 13px;
+  color: #fff4cc;
+  font-size: 0.9rem;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.client-body #venueDistancePreview .venue-warning i {
+  flex: 0 0 auto;
+  margin-top: 0.12rem;
+  color: #f8cf64;
+}
+
+.client-body #venueDistancePreview .venue-warning-danger {
+  background: #3b171b;
+  border-color: #a83d48;
+  color: #ffe4e7;
+}
+
+.client-body #venueDistancePreview .venue-warning-danger i {
+  color: #ff9aa5;
+}
+
+@media (max-width: 767.98px) {
+  .client-body #venueDistancePreview .venue-distance-card {
+    padding: 1rem;
+    border-radius: 15px;
+  }
+
+  .client-body #venueDistancePreview .venue-distance-grid {
+    grid-template-columns: 1fr;
+    gap: 0.65rem;
+  }
+
+  .client-body #venueDistancePreview .venue-distance-title {
+    font-size: 1rem;
+  }
+
+  .client-body #venueDistancePreview .venue-distance-value,
+  .client-body #venueDistancePreview .venue-travel-fee {
+    font-size: 0.98rem;
+  }
+}

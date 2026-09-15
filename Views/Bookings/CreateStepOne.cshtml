@@ -43,30 +43,7 @@
         display: none;
 
     }
-
-    #venueDistancePreview .venue-distance-card {
-
-        border: 1px solid #dee2e6;
-
-        border-radius: 12px;
-
-        padding: 15px;
-
-        background: #f8f9fa;
-
-    }
-
-    #venueDistancePreview .venue-distance-title {
-
-        font-weight: 600;
-
-        font-size: 1rem;
-
-        margin-bottom: 10px;
-
-    }
-
-    .venue-map-toggle {
+.venue-map-toggle {
 
         margin-top: 10px;
 
@@ -760,6 +737,9 @@
                 const formattedFee = fee.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
                 let state = result.status;
+                const statusLabel = state === "FOR_STAFF_REVIEW" ? "FOR STAFF REVIEW" : state === "SERVICEABLE" ? "SERVICEABLE" : "NOT SERVICEABLE";
+                const statusClass = state === "FOR_STAFF_REVIEW" ? "venue-status-review" : state === "SERVICEABLE" ? "venue-status-serviceable" : "venue-status-unavailable";
+                const feeDisplay = fee > 0 ? `₱${formattedFee}` : "No Additional Travel Fee";
                 if (state === "SERVICEABLE") {
                     setVenueGateState("SERVICEABLE");
                     status.innerHTML = '<div class="alert alert-success py-2 mb-0">✓ Venue is serviceable.</div>';
@@ -773,13 +753,15 @@
 
                 distancePreview.innerHTML = `
                     <div class="venue-distance-card">
-                        <div class="venue-distance-title">Venue Serviceability</div>
-                        <div class="mb-1"><strong>Distance:</strong> ${formattedDistance} KM</div>
-                        <div class="mb-1"><strong>Service Zone:</strong> ${result.serviceZone || "Not Available"}</div>
-                        <div class="mb-1"><strong>Status:</strong> ${state === "FOR_STAFF_REVIEW" ? "FOR STAFF REVIEW" : state === "SERVICEABLE" ? "SERVICEABLE" : "NOT SERVICEABLE"}</div>
-                        <div><strong>Travel Fee:</strong> ₱${formattedFee}</div>
-                        ${state === "FOR_STAFF_REVIEW" ? '<div class="alert alert-warning mt-2 mb-0 py-2">This location is outside the standard service area and requires staff review before approval.</div>' : ""}
-                        ${state === "NOT_SERVICEABLE" ? `<div class="alert alert-danger mt-2 mb-0 py-2">This venue is outside the maximum service distance of ${maxDistance} KM. Please select another venue.</div>` : ""}
+                        <div class="venue-distance-title"><i class="bi bi-geo-alt-fill" aria-hidden="true"></i><span>Venue Serviceability</span></div>
+                        <div class="venue-distance-grid">
+                            <div class="venue-distance-row"><span class="venue-distance-label">Distance</span><strong class="venue-distance-value">${formattedDistance} KM</strong></div>
+                            <div class="venue-distance-row"><span class="venue-distance-label">Service Zone</span><strong class="venue-distance-value">${result.serviceZone || "Not Available"}</strong></div>
+                            <div class="venue-distance-row"><span class="venue-distance-label">Status</span><span class="venue-status-badge ${statusClass}">${statusLabel}</span></div>
+                            <div class="venue-distance-row venue-travel-fee-row"><span class="venue-distance-label">Travel Fee</span><strong class="venue-distance-value venue-travel-fee">${feeDisplay}</strong></div>
+                        </div>
+                        ${state === "FOR_STAFF_REVIEW" ? '<div class="venue-warning"><i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i><span>This location is outside the standard service area and requires staff review before approval.</span></div>' : ""}
+                        ${state === "NOT_SERVICEABLE" ? `<div class="venue-warning venue-warning-danger"><i class="bi bi-x-circle-fill" aria-hidden="true"></i><span>This venue is outside the maximum service distance of ${maxDistance} KM. Please select another venue.</span></div>` : ""}
                     </div>`;
             }
 
