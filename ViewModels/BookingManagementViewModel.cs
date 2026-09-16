@@ -20,6 +20,10 @@ namespace AriesMagicAppointmentSystem.ViewModels
         public string ClientName { get; set; } = string.Empty;
         public string ServiceName { get; set; } = string.Empty;
         public DateTime EventDate { get; set; }
+        public DateTime StartTime { get; set; }
+        public DateTime EndTime { get; set; }
+        public string VenueAddress { get; set; } = string.Empty;
+        public bool IsServiceable { get; set; }
         public string BookingStatus { get; set; } = string.Empty;
         public string PaymentStatus { get; set; } = "No Payment";
         public string? InternalNotes { get; set; }

@@ -66,6 +66,33 @@
         </div>
     </section>
 
+    @if (!isAdmin)
+    {
+        <section class="upcoming-events-panel" aria-labelledby="upcomingEventsTitle">
+            <div class="upcoming-events-heading">
+                <div><h2 id="upcomingEventsTitle">Upcoming Events</h2><p>Confirmed bookings ready for Staff operational coordination.</p></div>
+            </div>
+            @if (!Model.Bookings.Any(b => b.Status == BookingStatus.Confirmed))
+            {
+                <div class="upcoming-events-empty"><i class="bi bi-calendar-check"></i><span>No upcoming events scheduled.</span></div>
+            }
+            else
+            {
+                <div class="upcoming-events-grid">
+                    @foreach (var booking in Model.Bookings.Where(b => b.Status == BookingStatus.Confirmed).OrderBy(b => b.EventDate).ThenBy(b => b.StartTime))
+                    {
+                        <article class="upcoming-event-card">
+                            <div class="upcoming-event-card-head"><div><strong>BK-@booking.CreatedAt.Year-@booking.Id.ToString("D3")</strong><span>@(booking.Client?.FullName ?? "Unknown client")</span></div><span class="status-badge status-confirmed">Confirmed</span></div>
+                            <div class="upcoming-event-meta"><span><i class="bi bi-calendar-event"></i>@booking.EventDate.ToString("MMM dd, yyyy")</span><span><i class="bi bi-clock"></i>@booking.StartTime.ToString("hh:mm tt") – @booking.EndTime.ToString("hh:mm tt")</span><span><i class="bi bi-geo-alt"></i>@booking.PartyVenue</span><span><i class="bi bi-signpost-2"></i>@(booking.DistanceKm.HasValue ? $"{booking.DistanceKm.Value:N1} KM" : "Distance unavailable")</span><span><i class="bi bi-box-seam"></i>@(booking.Service?.Name ?? booking.PackageName) · @booking.PackageName</span><span><i class="bi bi-people"></i>@(string.IsNullOrWhiteSpace(booking.AssignedStaffName) ? "Staff not assigned" : booking.AssignedStaffName)</span></div>
+                            <div class="upcoming-event-instructions"><strong>Special Instructions</strong><span>No special instructions provided.</span></div>
+                            <a asp-controller="Bookings" asp-action="Details" asp-route-id="@booking.Id" class="btn btn-sm btn-outline-primary">View Event Details</a>
+                        </article>
+                    }
+                </div>
+            }
+        </section>
+    }
+
     <!-- Calendar Visualization -->
     <section class="admin-calendar-section" aria-label="Calendar view">
         <div class="calendar-header-bar">
@@ -128,9 +155,12 @@
                                             <time class="list-item-date" datetime="@item.Date.ToString("yyyy-MM-dd")">@item.Date.ToString("MMM dd, yyyy")</time>
                                             <span class="list-item-reason">@item.Reason</span>
                                         </div>
-                                        <button type="button" class="btn btn-icon btn-ghost btn-sm delete-item" data-action="unblock" data-id="@item.Id" aria-label="Unblock @item.Date.ToString("MMM dd, yyyy")">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
+                                        @if (isAdmin)
+                                        {
+                                            <button type="button" class="btn btn-icon btn-ghost btn-sm delete-item" data-action="unblock" data-id="@item.Id" aria-label="Unblock @item.Date.ToString("MMM dd, yyyy")">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        }
                                     </li>
                                 }
                             </ul>
@@ -163,9 +193,12 @@
                                             <time class="list-item-date" datetime="@item.Date.ToString("yyyy-MM-dd")">@item.Date.ToString("MMM dd, yyyy")</time>
                                             <span class="list-item-limit">Max: @item.MaxBookings @(item.MaxBookings == 1 ? "booking" : "bookings")</span>
                                         </div>
-                                        <button type="button" class="btn btn-icon btn-ghost btn-sm delete-item" data-action="removelimit" data-id="@item.Id" aria-label="Remove limit for @item.Date.ToString("MMM dd, yyyy")">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
+                                        @if (isAdmin)
+                                        {
+                                            <button type="button" class="btn btn-icon btn-ghost btn-sm delete-item" data-action="removelimit" data-id="@item.Id" aria-label="Remove limit for @item.Date.ToString("MMM dd, yyyy")">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        }
                                     </li>
                                 }
                             </ul>
@@ -458,11 +491,15 @@
                                 eventDate = b.EventDate.ToString("MMMM dd, yyyy"),
                                 eventTime = $"{b.StartTime:hh:mm tt} - {b.EndTime:hh:mm tt}",
                                 venue = b.PartyVenue ?? "N/A",
+                                distance = b.DistanceKm.HasValue ? $"{b.DistanceKm.Value:N1} KM" : "Distance unavailable",
+                                serviceZone = string.IsNullOrWhiteSpace(b.ServiceZone) ? "N/A" : b.ServiceZone,
                                 eventType = b.EventType ?? "N/A",
                                 theme = b.PartyTheme ?? "N/A",
+                                packageName = b.PackageName ?? "N/A",
+                                assignedStaff = string.IsNullOrWhiteSpace(b.AssignedStaffName) ? "Not assigned" : b.AssignedStaffName,
+                                specialInstructions = "None provided",
                                 status = b.Status.ToString(),
                                 statusKey = (b.Status == BookingStatus.Confirmed || b.Status == BookingStatus.Completed) ? "confirmed" : "pending",
-                                paymentStatus = (b.Payments?.OrderByDescending(p => p.UploadedAt).FirstOrDefault()?.Status ?? "No Payment"),
                                 detailsUrl = Url.Action("Details", "Bookings", new { id = b.Id })
                             }
                         })
@@ -498,8 +535,11 @@
                                 <div class="cal-tooltip-row"><i class="bi bi-box-seam"></i> ${props.serviceName}</div>
                                 <div class="cal-tooltip-row"><i class="bi bi-calendar-event"></i> ${props.eventDate}</div>
                                 <div class="cal-tooltip-row"><i class="bi bi-clock"></i> ${props.eventTime}</div>
+                                <div class="cal-tooltip-row"><i class="bi bi-geo-alt"></i> ${props.venue}</div>
+                                <div class="cal-tooltip-row"><i class="bi bi-signpost-2"></i> ${props.distance} · ${props.serviceZone}</div>
+                                <div class="cal-tooltip-row"><i class="bi bi-box-seam"></i> ${props.packageName}</div>
+                                <div class="cal-tooltip-row"><i class="bi bi-people"></i> Staff: ${props.assignedStaff}</div>
                                 <div class="cal-tooltip-row"><i class="bi bi-flag"></i> Status: ${props.status}</div>
-                                <div class="cal-tooltip-row"><i class="bi bi-credit-card"></i> Payment: ${props.paymentStatus}</div>
                             </div>
                         `;
                         info.el.setAttribute('data-bs-toggle', 'tooltip');

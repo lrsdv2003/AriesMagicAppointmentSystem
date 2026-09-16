@@ -28,7 +28,9 @@ namespace AriesMagicAppointmentSystem.Models
         OcrAnalysisCompleted,
         PaymentAdditionalEvidenceRequested,
         RefundRequested,
-        RefundProcessed
+        RefundProcessed,
+        BookingApproved,
+        BookingDeclined
     }
 
     public class SystemActivity

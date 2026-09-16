@@ -19,6 +19,7 @@ namespace AriesMagicAppointmentSystem.Controllers
         private readonly IVenueDistanceService _venueDistanceService;
         private readonly IGeocodingService _geocodingService;
         private readonly IPaymentFinancialService _financialService;
+        private readonly ISystemActivityService _activityService;
         private const int MaxRemovedInclusions = 2;
         private const decimal FixedInclusionDeduction = 2000m;
         private const decimal FixedRequiredDownpayment = 2000m;
@@ -29,7 +30,8 @@ namespace AriesMagicAppointmentSystem.Controllers
             IHistoryService historyService,
             IVenueDistanceService venueDistanceService,
             IGeocodingService geocodingService,
-            IPaymentFinancialService financialService)
+            IPaymentFinancialService financialService,
+            ISystemActivityService activityService)
         {
             _context = context;
             _userManager = userManager;
@@ -37,6 +39,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             _venueDistanceService = venueDistanceService;
             _geocodingService = geocodingService;
             _financialService = financialService;
+            _activityService = activityService;
         }
 
         [Authorize(Roles = "Staff,Owner")]
@@ -51,15 +54,33 @@ namespace AriesMagicAppointmentSystem.Controllers
             // Lazily flip any bookings whose event has already ended into Completed/archived
             // before we build this list, so nothing that has already happened lingers here.
             await _historyService.ArchiveDueBookingsAsync();
+            var isStaff = User.IsInRole("Staff");
 
             var bookingsQuery = _context.Bookings
                 .Include(b => b.Client)
                 .Include(b => b.Service)
-                .Include(b => b.Payments)
                 .Where(b => b.Status != BookingStatus.Completed)
                 .AsQueryable();
 
-            if (!string.IsNullOrWhiteSpace(bookingStatus) && bookingStatus != "All")
+            if (isStaff)
+            {
+                bookingsQuery = bookingsQuery.Where(b =>
+                    b.Status == BookingStatus.Pending ||
+                    b.Status == BookingStatus.AwaitingDownpayment ||
+                    b.Status == BookingStatus.AwaitingVerification ||
+                    b.Status == BookingStatus.Declined);
+
+                bookingStatus = string.IsNullOrWhiteSpace(bookingStatus) ? "AllRequests" : bookingStatus;
+                bookingsQuery = bookingStatus switch
+                {
+                    "Pending" => bookingsQuery.Where(b => b.Status == BookingStatus.Pending),
+                    "ApprovedAwaitingPayment" => bookingsQuery.Where(b => b.Status == BookingStatus.AwaitingDownpayment || b.Status == BookingStatus.AwaitingVerification),
+                    "Declined" => bookingsQuery.Where(b => b.Status == BookingStatus.Declined),
+                    "RequiresReview" => bookingsQuery.Where(b => b.RequiresManualReview),
+                    _ => bookingsQuery
+                };
+            }
+            else if (!string.IsNullOrWhiteSpace(bookingStatus) && bookingStatus != "All")
             {
                 bookingsQuery = bookingsQuery.Where(b => b.Status == bookingStatus);
             }
@@ -104,6 +125,10 @@ namespace AriesMagicAppointmentSystem.Controllers
                     ClientName = b.Client?.FullName ?? "N/A",
                     ServiceName = b.Service?.Name ?? "N/A",
                     EventDate = b.EventDate,
+                    StartTime = b.StartTime,
+                    EndTime = b.EndTime,
+                    VenueAddress = b.PartyVenue,
+                    IsServiceable = b.IsServiceable,
                     BookingStatus = b.Status,
                     PaymentStatus = latestPaymentStatus,
                     InternalNotes = b.InternalNotes,
@@ -114,7 +139,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                 };
             }).ToList();
 
-            if (!string.IsNullOrWhiteSpace(paymentStatus) && paymentStatus != "All")
+            if (!isStaff && !string.IsNullOrWhiteSpace(paymentStatus) && paymentStatus != "All")
             {
                 rows = rows.Where(r => r.PaymentStatus == paymentStatus).ToList();
             }
@@ -134,7 +159,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                 Bookings = rows
             };
 
-            return View(viewModel);
+            return isStaff ? View("StaffIndex", viewModel) : View(viewModel);
         }
 
         [Authorize(Roles = "Client")]
@@ -739,6 +764,7 @@ namespace AriesMagicAppointmentSystem.Controllers
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null) return NotFound();
+            await _historyService.ArchiveDueBookingsAsync();
 
             var booking = await _context.Bookings
                 .Include(b => b.Client)
@@ -748,12 +774,15 @@ namespace AriesMagicAppointmentSystem.Controllers
                 .FirstOrDefaultAsync(b => b.Id == id);
 
             if (booking == null) return NotFound();
-            ViewBag.FinancialSummary = await _financialService.GetSummaryAsync(booking.Id);
 
+            if (User.IsInRole("Staff"))
+                return View("StaffDetails", booking);
+
+            ViewBag.FinancialSummary = await _financialService.GetSummaryAsync(booking.Id);
             return View(booking);
         }
 
-        [Authorize(Roles = "Staff,Owner")]
+        [Authorize(Roles = "Owner")]
         public async Task<IActionResult> Approve(int? id)
         {
             if (id == null) return NotFound();
@@ -777,7 +806,7 @@ namespace AriesMagicAppointmentSystem.Controllers
         [HttpPost, ActionName("Approve")]
         [Authorize(Roles = "Staff,Owner")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ApproveConfirmed(int id)
+        public async Task<IActionResult> ApproveConfirmed(int id, string? internalNote)
         {
             var booking = await _context.Bookings
                 .Include(b => b.Client)
@@ -790,6 +819,17 @@ namespace AriesMagicAppointmentSystem.Controllers
             {
                 TempData["Error"] = "Only pending bookings can be approved.";
                 return RedirectToAction(nameof(Index));
+            }
+
+            var now = DateTime.Now;
+            var staffUserId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "Unknown";
+            var staffAccount = await _userManager.GetUserAsync(User);
+            var staffName = staffAccount?.FullName ?? User.Identity?.Name ?? "Unknown";
+            var cleanNote = string.IsNullOrWhiteSpace(internalNote) ? null : internalNote.Trim();
+            if (cleanNote != null)
+            {
+                var noteEntry = $"[{now:yyyy-MM-dd hh:mm tt}] Approved by {staffName}: {cleanNote}";
+                booking.InternalNotes = string.IsNullOrWhiteSpace(booking.InternalNotes) ? noteEntry : $"{booking.InternalNotes}\n{noteEntry}";
             }
 
             booking.Status = BookingStatus.AwaitingDownpayment;
@@ -816,11 +856,15 @@ namespace AriesMagicAppointmentSystem.Controllers
             }
 
             await _context.SaveChangesAsync();
+            await _activityService.LogAsync(SystemActivityType.BookingApproved,
+                $"Booking #{booking.Id} approved during Staff review.", staffUserId, staffName,
+                booking.Id.ToString(), "Booking", new { BookingId = booking.Id, Note = cleanNote, StaffUserId = staffUserId, StaffName = staffName, ActionTaken = "Approved", Timestamp = now });
 
+            TempData["Success"] = "Booking approved. The client can now proceed to payment.";
             return RedirectToAction(nameof(Index));
         }
 
-        [Authorize(Roles = "Staff,Owner")]
+        [Authorize(Roles = "Owner")]
         public async Task<IActionResult> Decline(int? id)
         {
             if (id == null) return NotFound();
@@ -844,7 +888,7 @@ namespace AriesMagicAppointmentSystem.Controllers
         [HttpPost, ActionName("Decline")]
         [Authorize(Roles = "Staff,Owner")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeclineConfirmed(int id)
+        public async Task<IActionResult> DeclineConfirmed(int id, string? internalNote)
         {
             var booking = await _context.Bookings
                 .Include(b => b.Client)
@@ -859,9 +903,20 @@ namespace AriesMagicAppointmentSystem.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
+            var now = DateTime.Now;
+            var staffUserId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "Unknown";
+            var staffAccount = await _userManager.GetUserAsync(User);
+            var staffName = staffAccount?.FullName ?? User.Identity?.Name ?? "Unknown";
+            var cleanNote = string.IsNullOrWhiteSpace(internalNote) ? null : internalNote.Trim();
+            if (cleanNote != null)
+            {
+                var noteEntry = $"[{now:yyyy-MM-dd hh:mm tt}] Declined by {staffName}: {cleanNote}";
+                booking.InternalNotes = string.IsNullOrWhiteSpace(booking.InternalNotes) ? noteEntry : $"{booking.InternalNotes}\n{noteEntry}";
+            }
+
             booking.Status = BookingStatus.Declined;
             booking.TrashReason = TrashReason.RejectedByAdmin;
-            booking.TrashNotes = "Booking was declined by staff/owner.";
+            booking.TrashNotes = "Booking was declined during Staff review.";
             booking.ArchivedAt = DateTime.UtcNow;
 
             _context.BookingTimelines.Add(new BookingTimeline
@@ -886,12 +941,15 @@ namespace AriesMagicAppointmentSystem.Controllers
             }
 
             await _context.SaveChangesAsync();
+            await _activityService.LogAsync(SystemActivityType.BookingDeclined,
+                $"Booking #{booking.Id} declined during Staff review.", staffUserId, staffName,
+                booking.Id.ToString(), "Booking", new { BookingId = booking.Id, Note = cleanNote, StaffUserId = staffUserId, StaffName = staffName, ActionTaken = "Declined", Timestamp = now });
 
             TempData["Success"] = "Booking declined.";
             return RedirectToAction(nameof(Index));
         }
 
-        [Authorize(Roles = "Staff,Owner")]
+        [Authorize(Roles = "Owner")]
         public async Task<IActionResult> AddNote(int? id)
         {
             if (id == null) return NotFound();
@@ -907,7 +965,7 @@ namespace AriesMagicAppointmentSystem.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "Staff,Owner")]
+        [Authorize(Roles = "Owner")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> AddNote(int id, string? internalNotes)
         {
@@ -922,84 +980,6 @@ namespace AriesMagicAppointmentSystem.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        [Authorize(Roles = "Staff")]
-        public async Task<IActionResult> Complete(int? id)
-        {
-            if (id == null) return NotFound();
-
-            var booking = await _context.Bookings
-                .Include(b => b.Client)
-                .Include(b => b.Service)
-                .FirstOrDefaultAsync(b => b.Id == id);
-
-            if (booking == null) return NotFound();
-
-            if (booking.Status != BookingStatus.Confirmed)
-            {
-                TempData["Error"] = "Only confirmed bookings can be marked as completed.";
-                return RedirectToAction(nameof(Index));
-            }
-
-            return View(booking);
-        }
-
-        [HttpPost, ActionName("Complete")]
-        [Authorize(Roles = "Staff")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CompleteConfirmed(int id)
-        {
-            var booking = await _context.Bookings.FirstOrDefaultAsync(b => b.Id == id);
-
-            if (booking == null) return NotFound();
-
-            if (booking.Status != BookingStatus.Confirmed)
-            {
-                TempData["Error"] = "Only confirmed bookings can be marked as completed.";
-                return RedirectToAction(nameof(Index));
-            }
-
-            booking.Status = BookingStatus.Completed;
-            booking.IsCompletedLocked = true;
-
-            _context.BookingTimelines.Add(new BookingTimeline
-            {
-                BookingId = booking.Id,
-                EventType = TimelineEventType.BookingCompleted,
-                Notes = "Staff marked the booking as completed.",
-                CreatedAt = DateTime.Now
-            });
-
-            if (!string.IsNullOrWhiteSpace(booking.ApplicationUserId))
-            {
-                _context.Notifications.Add(new Notification
-                {
-                    UserId = booking.ApplicationUserId,
-                    Title = "Booking Completed",
-                    Message = $"Your event on {booking.EventDate:MMMM dd, yyyy} has been marked as completed. Thank you for choosing Aries Magic!",
-                    Link = "/Bookings/MyBookings",
-                    IsRead = false,
-                    CreatedAt = DateTime.Now
-                });
-            }
-
-            await _context.SaveChangesAsync();
-
-            var financial = await _financialService.GetSummaryAsync(booking.Id);
-            if (financial.RemainingBalance > 0)
-            {
-                if (!string.IsNullOrWhiteSpace(booking.ApplicationUserId))
-                    _context.Notifications.Add(new Notification { UserId = booking.ApplicationUserId, Title = "Remaining Balance Due", Message = $"Your event has been completed. Your remaining balance is ₱{financial.RemainingBalance:N2}.", Link = "/Bookings/MyBookings", IsRead = false, CreatedAt = DateTime.Now });
-                var internalIds = new HashSet<string>();
-                foreach (var role in new[] { "Staff", "Admin", "Owner" })
-                    foreach (var user in await _userManager.GetUsersInRoleAsync(role)) if (user.IsActive) internalIds.Add(user.Id);
-                foreach (var uid in internalIds)
-                    _context.Notifications.Add(new Notification { UserId = uid, Title = "Completed Event — Balance Outstanding", Message = $"Booking BK-{booking.Id} is completed with ₱{financial.RemainingBalance:N2} still outstanding.", Link = $"/Bookings/Details/{booking.Id}", IsRead = false, CreatedAt = DateTime.Now });
-                await _context.SaveChangesAsync();
-            }
-
-            TempData["Success"] = financial.RemainingBalance > 0 ? $"Booking marked as completed. Outstanding balance: ₱{financial.RemainingBalance:N2}." : "Booking marked as completed and fully paid.";
-            return RedirectToAction(nameof(Index));
-        }
 
         [Authorize(Roles = "Client")]
         public IActionResult Create()

@@ -444,9 +444,7 @@
 
 @{
     var isPending = Model.Status == AriesMagicAppointmentSystem.Models.BookingStatus.Pending;
-    var isConfirmed = Model.Status == AriesMagicAppointmentSystem.Models.BookingStatus.Confirmed;
-    var canComplete = isConfirmed && User.CanCompleteBookings();
-    var hasPrimaryAction = isPending || canComplete;
+    var hasPrimaryAction = isPending;
 }
 
 @if (User.CanManageBookingRecords())
@@ -466,13 +464,6 @@
                     </a>
                     <a asp-action="Approve" asp-route-id="@Model.Id" class="btn btn-success">
                         <i class="bi bi-check-lg"></i> Approve Booking
-                    </a>
-                }
-
-                @if (canComplete)
-                {
-                    <a asp-action="Complete" asp-route-id="@Model.Id" class="btn btn-primary">
-                        <i class="bi bi-flag-fill"></i> Mark as Completed
                     </a>
                 }
 

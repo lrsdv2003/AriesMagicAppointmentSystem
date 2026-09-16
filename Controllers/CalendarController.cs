@@ -45,7 +45,6 @@ namespace AriesMagicAppointmentSystem.Controllers
             var bookings = await _context.Bookings
                 .Include(b => b.Client)
                 .Include(b => b.Service)
-                .Include(b => b.Payments)
                 .Where(b => statusesToShow.Contains(b.Status))
                 .OrderBy(b => b.EventDate)
                 .ThenBy(b => b.StartTime)
@@ -157,8 +156,13 @@ namespace AriesMagicAppointmentSystem.Controllers
                     endTime = b.EndTime.ToString("hh:mm tt"),
                     eventTime = b.StartTime.ToString("hh:mm tt") + " - " + b.EndTime.ToString("hh:mm tt"),
                     venue = b.PartyVenue ?? "N/A",
+                    distanceKm = b.DistanceKm,
+                    serviceZone = b.ServiceZone ?? "N/A",
                     eventType = b.EventType ?? "N/A",
                     theme = b.PartyTheme ?? "N/A",
+                    packageName = b.PackageName ?? "N/A",
+                    assignedStaff = b.AssignedStaffName ?? "Not assigned",
+                    specialInstructions = "None provided",
                     detailsUrl = Url.Action("Details", "Bookings", new { id = b.Id })
                 })
                 .ToListAsync();

@@ -198,10 +198,6 @@
                                         <a asp-action="Decline" asp-route-id="@item.Id" class="btn btn-sm btn-danger">Decline</a>
                                     }
                                     <a asp-action="AddNote" asp-route-id="@item.Id" class="btn btn-sm btn-secondary">Note</a>
-                                    @if (item.BookingStatus == "Confirmed" && User.CanCompleteBookings())
-                                    {
-                                        <a asp-action="Complete" asp-route-id="@item.Id" class="btn btn-sm btn-primary">Complete</a>
-                                    }
                                 }
                             </div>
                         </td>

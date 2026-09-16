@@ -1,0 +1,208 @@
+@model AriesMagicAppointmentSystem.Models.Booking
+@using AriesMagicAppointmentSystem.Models
+@using System.Text.Json
+@{
+    Layout = "_DashboardLayout";
+    ViewData["Title"] = "Booking Details";
+    var isPending = Model.Status == BookingStatus.Pending;
+    var duration = Model.EndTime > Model.StartTime ? Model.EndTime - Model.StartTime : TimeSpan.Zero;
+    List<string> removedInclusions = new();
+    if (!string.IsNullOrWhiteSpace(Model.RemovedInclusionsJson))
+    {
+        try { removedInclusions = JsonSerializer.Deserialize<List<string>>(Model.RemovedInclusionsJson) ?? new(); } catch { }
+    }
+    string StatusClass(string status) => status switch {
+        BookingStatus.Pending => "status-pending",
+        BookingStatus.AwaitingDownpayment => "status-confirmed",
+        BookingStatus.AwaitingVerification => "status-confirmed",
+        BookingStatus.Confirmed => "status-confirmed",
+        BookingStatus.Completed => "status-completed",
+        BookingStatus.Declined => "status-declined",
+        BookingStatus.Cancelled => "status-declined",
+        _ => "status-read"
+    };
+    string StatusLabel(string status) => status switch {
+        BookingStatus.AwaitingDownpayment => "Approved · Awaiting Payment",
+        BookingStatus.AwaitingVerification => "Approved · Awaiting Owner Verification",
+        _ => status
+    };
+}
+<div class="staff-booking-page staff-booking-details-page">
+    <div class="page-header staff-booking-header">
+        <div>
+            <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                <h1 class="mb-0">Booking Details</h1>
+                <span class="status-badge staff-status-badge @StatusClass(Model.Status)">@StatusLabel(Model.Status)</span>
+            </div>
+            <p class="page-subtitle mb-0">BK-@Model.CreatedAt.Year-@Model.Id.ToString("D3") · Review the operational details needed to approve or decline this request.</p>
+        </div>
+        <div class="d-flex gap-2 flex-wrap">
+            <form asp-controller="Communications" asp-action="StartBookingConversation" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="bookingId" value="@Model.Id" />
+                <button type="submit" class="btn btn-outline-primary"><i class="bi bi-chat-dots"></i> Message Client</button>
+            </form>
+            <a asp-action="Index" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Back to Requests</a>
+        </div>
+    </div>
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger" role="alert">@TempData["Error"]</div>
+    }
+
+    <div class="staff-detail-grid">
+        <section class="dashboard-panel staff-detail-section" aria-labelledby="clientInfoTitle">
+            <h2 id="clientInfoTitle"><i class="bi bi-person"></i> Client Information</h2>
+            <div class="staff-detail-list">
+                <div><span>Client Name</span><strong>@(Model.Client?.FullName ?? "Not available")</strong></div>
+                <div><span>Contact Number</span><strong>@(string.IsNullOrWhiteSpace(Model.ContactNumber) ? "Not provided" : Model.ContactNumber)</strong></div>
+                <div><span>Email</span><strong>@(Model.Client?.Email ?? "Not available")</strong></div>
+            </div>
+        </section>
+        <section class="dashboard-panel staff-detail-section" aria-labelledby="eventInfoTitle">
+            <h2 id="eventInfoTitle"><i class="bi bi-calendar-event"></i> Event Information</h2>
+            <div class="staff-detail-list staff-detail-list-2col">
+                <div><span>Event Type</span><strong>@Model.EventType</strong></div>
+                <div><span>Event Date</span><strong>@Model.EventDate.ToString("MMMM dd, yyyy")</strong></div>
+                <div><span>Start Time</span><strong>@Model.StartTime.ToString("hh:mm tt")</strong></div>
+                <div><span>Estimated End Time</span><strong>@Model.EndTime.ToString("hh:mm tt")</strong></div>
+                <div><span>Duration</span><strong>@(duration.TotalMinutes > 0 ? $"{duration.TotalHours:0.#} hour(s)" : "Not available")</strong></div>
+                <div><span>Guests / Pax</span><strong>@Model.PaxCount</strong></div>
+                <div><span>Motif</span><strong>@(string.IsNullOrWhiteSpace(Model.Motif) ? "Not provided" : Model.Motif)</strong></div>
+                <div><span>Party Theme</span><strong>@(string.IsNullOrWhiteSpace(Model.PartyTheme) ? "Not provided" : Model.PartyTheme)</strong></div>
+            </div>
+        </section>
+
+        <section class="dashboard-panel staff-detail-section staff-detail-wide" aria-labelledby="venueInfoTitle">
+            <h2 id="venueInfoTitle"><i class="bi bi-geo-alt"></i> Venue Information</h2>
+            <div class="staff-detail-list staff-detail-list-2col">
+                <div class="staff-detail-span-2"><span>Full Address</span><strong>@(string.IsNullOrWhiteSpace(Model.PartyVenue) ? "Not provided" : Model.PartyVenue)</strong></div>
+                <div><span>Distance</span><strong>@(Model.DistanceKm.HasValue ? $"{Model.DistanceKm.Value:N1} KM" : "Not available")</strong></div>
+                <div><span>Service Zone</span><strong>@(string.IsNullOrWhiteSpace(Model.ServiceZone) ? "Not available" : Model.ServiceZone)</strong></div>
+                <div><span>Serviceability</span><strong><span class="status-badge staff-status-badge @(Model.RequiresManualReview ? "status-pending" : Model.IsServiceable ? "status-confirmed" : "status-declined")">@(Model.RequiresManualReview ? "For Staff Review" : Model.IsServiceable ? "Serviceable" : "Not Serviceable")</span></strong></div>
+                <div><span>Travel Information</span><strong>@(Model.TravelFee > 0 ? $"Travel fee: ₱{Model.TravelFee:N2}" : "No additional travel fee")</strong></div>
+            </div>
+        </section>
+        <section class="dashboard-panel staff-detail-section" aria-labelledby="packageInfoTitle">
+            <h2 id="packageInfoTitle"><i class="bi bi-box-seam"></i> Booking / Package Information</h2>
+            <div class="staff-detail-list">
+                <div><span>Selected Service</span><strong>@(Model.Service?.Name ?? "Not available")</strong></div>
+                <div><span>Selected Package</span><strong>@Model.PackageName</strong></div>
+                <div><span>Package Price</span><strong>₱@Model.FinalPrice.ToString("N2")</strong></div>
+                <div>
+                    <span>Package Adjustments</span>
+                    <strong>@(removedInclusions.Any() ? string.Join(", ", removedInclusions.Select(x => $"Removed: {x}")) : "No package adjustments")</strong>
+                </div>
+            </div>
+        </section>
+
+        <section class="dashboard-panel staff-detail-section" aria-labelledby="requestInfoTitle">
+            <h2 id="requestInfoTitle"><i class="bi bi-card-text"></i> Client Notes / Special Requests</h2>
+            <div class="staff-note-block staff-note-block-empty">
+                <i class="bi bi-info-circle"></i>
+                <span>No special requests provided.</span>
+            </div>
+        </section>
+
+        @if (!string.IsNullOrWhiteSpace(Model.InternalNotes))
+        {
+            <section class="dashboard-panel staff-detail-section staff-detail-wide" aria-labelledby="internalNotesTitle">
+                <h2 id="internalNotesTitle"><i class="bi bi-journal-text"></i> Staff Review Notes</h2>
+                <div class="staff-note-block"><pre>@Model.InternalNotes</pre></div>
+            </section>
+        }
+    </div>
+    <section class="dashboard-panel staff-decision-panel" aria-labelledby="staffDecisionTitle">
+        @if (isPending)
+        {
+            <div>
+                <h2 id="staffDecisionTitle">Booking Decision</h2>
+                <p>Review the request, then approve or decline. Internal notes are optional and remain hidden from the client.</p>
+            </div>
+            <div class="staff-decision-actions">
+                <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#declineBookingModal">
+                    <i class="bi bi-x-lg"></i> Decline Booking
+                </button>
+                <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#approveBookingModal">
+                    <i class="bi bi-check-lg"></i> Approve Booking
+                </button>
+            </div>
+        }
+        else
+        {
+            <div class="staff-review-complete">
+                <i class="bi bi-check2-circle"></i>
+                <div>
+                    <h2 id="staffDecisionTitle">Staff Review Completed</h2>
+                    <p class="mb-0">
+                        @if (Model.Status == BookingStatus.Confirmed)
+                        {
+                            <span>This booking is confirmed and is now managed through Calendar → Upcoming Events.</span>
+                        }
+                        else if (Model.Status == BookingStatus.AwaitingDownpayment || Model.Status == BookingStatus.AwaitingVerification)
+                        {
+                            <span>Staff review is complete. The booking is continuing through the client payment and Owner verification workflow.</span>
+                        }
+                        else
+                        {
+                            <span>No further Staff booking decision is required for this record.</span>
+                        }
+                    </p>
+                </div>
+            </div>
+        }
+    </section>
+</div>
+@if (isPending)
+{
+    <div class="modal fade staff-booking-modal" id="approveBookingModal" tabindex="-1" aria-labelledby="approveBookingModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form asp-action="Approve" method="post" class="js-booking-decision-form">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@Model.Id" />
+                    <div class="modal-header"><h2 class="modal-title fs-5" id="approveBookingModalLabel">Approve Booking</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+                    <div class="modal-body">
+                        <p>Are you sure you want to approve this booking?</p>
+                        <label for="approveInternalNote" class="form-label">Internal Note <span class="text-muted">— Optional</span></label>
+                        <textarea id="approveInternalNote" name="internalNote" class="form-control" rows="4" maxlength="1000" placeholder="Add an internal operational note if needed."></textarea>
+                        <div class="form-text">Internal notes are not shown to the client.</div>
+                    </div>
+                    <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-success js-decision-submit" data-loading-text="Approving...">Approve Booking</button></div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade staff-booking-modal" id="declineBookingModal" tabindex="-1" aria-labelledby="declineBookingModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form asp-action="Decline" method="post" class="js-booking-decision-form">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@Model.Id" />
+                    <div class="modal-header"><h2 class="modal-title fs-5" id="declineBookingModalLabel">Decline Booking</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+                    <div class="modal-body">
+                        <p>Are you sure you want to decline this booking?</p>
+                        <label for="declineInternalNote" class="form-label">Reason / Internal Note <span class="text-muted">— Optional</span></label>
+                        <textarea id="declineInternalNote" name="internalNote" class="form-control" rows="4" maxlength="1000" placeholder="Add an internal reason or operational note if needed."></textarea>
+                        <div class="form-text">This note remains internal and is not automatically shown to the client.</div>
+                    </div>
+                    <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-danger js-decision-submit" data-loading-text="Declining...">Decline Booking</button></div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+<script>
+    document.querySelectorAll('.js-booking-decision-form').forEach(form => form.addEventListener('submit', () => {
+        const submit = form.querySelector('.js-decision-submit');
+        if (!submit || submit.disabled) return;
+        submit.disabled = true;
+        submit.setAttribute('aria-disabled', 'true');
+        submit.textContent = submit.dataset.loadingText || 'Processing...';
+    }));
+</script>
+}

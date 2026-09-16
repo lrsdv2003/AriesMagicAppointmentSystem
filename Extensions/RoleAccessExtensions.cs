@@ -14,9 +14,6 @@ namespace AriesMagicAppointmentSystem.Extensions
         public static bool CanManageBookingRecords(this ClaimsPrincipal user) =>
             user.IsInRole("Staff") || user.IsInRole("Owner");
 
-        public static bool CanCompleteBookings(this ClaimsPrincipal user) =>
-            user.IsInRole("Staff");
-
         // Packages / Services
         public static bool CanViewPackages(this ClaimsPrincipal user) =>
             user.IsInRole("Staff") || user.IsInRole("Admin") || user.IsInRole("Owner");

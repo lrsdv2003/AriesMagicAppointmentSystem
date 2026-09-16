@@ -1,0 +1,243 @@
+@model AriesMagicAppointmentSystem.ViewModels.BookingManagementViewModel
+@using AriesMagicAppointmentSystem.Models
+@{
+    Layout = "_DashboardLayout";
+    ViewData["Title"] = "Booking Requests";
+    var requests = Model.Bookings.ToList();
+    var pendingCount = requests.Count(x => x.BookingStatus == BookingStatus.Pending);
+    var approvedCount = requests.Count(x => x.BookingStatus == BookingStatus.AwaitingDownpayment || x.BookingStatus == BookingStatus.AwaitingVerification);
+    var reviewCount = requests.Count(x => x.RequiresManualReview);
+    string StatusClass(string status) => status switch {
+        BookingStatus.Pending => "status-pending",
+        BookingStatus.AwaitingDownpayment => "status-confirmed",
+        BookingStatus.AwaitingVerification => "status-confirmed",
+        BookingStatus.Declined => "status-declined",
+        BookingStatus.Cancelled => "status-declined",
+        BookingStatus.Completed => "status-completed",
+        BookingStatus.Confirmed => "status-confirmed",
+        _ => "status-read"
+    };
+    string StatusLabel(string status) => status switch {
+        BookingStatus.AwaitingDownpayment => "Approved · Awaiting Payment",
+        BookingStatus.AwaitingVerification => "Approved · Awaiting Owner Verification",
+        _ => status
+    };
+}
+<div class="staff-booking-page">
+    <div class="page-header staff-booking-header">
+        <div>
+            <h1>Booking Requests</h1>
+            <p class="page-subtitle">Review requests that still need Staff attention. Confirmed events move automatically to Calendar → Upcoming Events.</p>
+        </div>
+        <a asp-controller="Calendar" asp-action="Index" class="btn btn-outline-primary">
+            <i class="bi bi-calendar3"></i> Upcoming Events
+        </a>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success" role="status">@TempData["Success"]</div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger" role="alert">@TempData["Error"]</div>
+    }
+
+    <div class="staff-booking-stats" aria-label="Booking request summary">
+        <div class="staff-booking-stat"><span>Requests Shown</span><strong>@requests.Count</strong></div>
+        <div class="staff-booking-stat"><span>Pending Staff Review</span><strong>@pendingCount</strong></div>
+        <div class="staff-booking-stat"><span>Approved / Awaiting Payment</span><strong>@approvedCount</strong></div>
+        <div class="staff-booking-stat"><span>Venue Review Needed</span><strong>@reviewCount</strong></div>
+    </div>
+    <div class="dashboard-panel staff-booking-filter-panel">
+        <form method="get" asp-action="Index" class="staff-booking-filters">
+            <div class="staff-filter-search">
+                <label class="visually-hidden" for="staffBookingSearch">Search bookings</label>
+                <input id="staffBookingSearch" type="search" name="search" value="@Model.Search" class="form-control" placeholder="Booking ID, client, email, or package" />
+            </div>
+            <div>
+                <label class="visually-hidden" for="staffBookingStatus">Booking status</label>
+                <select id="staffBookingStatus" name="bookingStatus" class="form-select">
+                    <option value="AllRequests" selected="@(Model.BookingStatus == "AllRequests")">All Requests</option>
+                    <option value="Pending" selected="@(Model.BookingStatus == "Pending")">Pending</option>
+                    <option value="ApprovedAwaitingPayment" selected="@(Model.BookingStatus == "ApprovedAwaitingPayment")">Approved / Awaiting Payment</option>
+                    <option value="Declined" selected="@(Model.BookingStatus == "Declined")">Declined</option>
+                    <option value="RequiresReview" selected="@(Model.BookingStatus == "RequiresReview")">Requires Review</option>
+                </select>
+            </div>
+            <div>
+                <label class="visually-hidden" for="staffEventDate">Event date</label>
+                <input id="staffEventDate" type="date" name="eventDate" value="@(Model.EventDate?.ToString("yyyy-MM-dd"))" class="form-control" />
+            </div>
+            <div>
+                <label class="visually-hidden" for="staffService">Package</label>
+                <select id="staffService" name="serviceId" class="form-select">
+                    <option value="">All Packages</option>
+                    @foreach (var service in Model.AvailableServices)
+                    {
+                        <option value="@service.Id" selected="@(Model.ServiceId == service.Id)">@service.Name</option>
+                    }
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary"><i class="bi bi-funnel"></i> Apply</button>
+            <a asp-action="Index" class="btn btn-outline-secondary">Reset</a>
+        </form>
+    </div>
+    <div class="dashboard-panel staff-booking-table-panel">
+        <div class="staff-booking-panel-heading">
+            <div>
+                <h2>Requests Requiring Attention</h2>
+                <p>Operational booking review only. Payment verification is handled by the Owner.</p>
+            </div>
+        </div>
+
+        @if (!requests.Any())
+        {
+            <div class="empty-state staff-booking-empty">
+                <i class="bi bi-check2-circle"></i>
+                <h3>No booking requests currently require your attention.</h3>
+                <p>Confirmed events can be managed from the Calendar.</p>
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive staff-booking-table-wrap">
+                <table class="table align-middle staff-booking-table">
+                    <thead>
+                        <tr>
+                            <th>Booking</th>
+                            <th>Client</th>
+                            <th>Event Date &amp; Time</th>
+                            <th>Venue</th>
+                            <th>Booking Status</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    @foreach (var item in requests)
+                    {
+                        var venueText = string.IsNullOrWhiteSpace(item.VenueAddress) ? "Venue not provided" : item.VenueAddress;
+                        var shortVenue = venueText.Length > 58 ? venueText[..55] + "..." : venueText;
+                        <tr>
+                            <td>
+                                <strong class="staff-booking-code">@item.BookingCode</strong>
+                                <span class="staff-booking-subtext">@item.ServiceName</span>
+                            </td>
+                            <td><strong>@item.ClientName</strong></td>
+                            <td>
+                                <div class="staff-date-stack">
+                                    <strong>@item.EventDate.ToString("MMM dd, yyyy")</strong>
+                                    <span>@item.StartTime.ToString("hh:mm tt") – @item.EndTime.ToString("hh:mm tt")</span>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="staff-venue-cell" title="@venueText">
+                                    <strong>@shortVenue</strong>
+                                    <span>@(item.DistanceKm.HasValue ? $"{item.DistanceKm.Value:N1} KM" : "Distance unavailable")</span>
+                                    @if (!string.IsNullOrWhiteSpace(item.ServiceZone))
+                                    {
+                                        <small>@item.ServiceZone</small>
+                                    }
+                                </div>
+                            </td>
+                            <td>
+                                <span class="status-badge staff-status-badge @StatusClass(item.BookingStatus)">@StatusLabel(item.BookingStatus)</span>
+                                @if (item.RequiresManualReview)
+                                {
+                                    <span class="status-badge staff-status-badge status-pending mt-1"><i class="bi bi-exclamation-triangle"></i> Venue Review</span>
+                                }
+                            </td>
+                            <td class="text-end">
+                                <div class="staff-booking-actions">
+                                    @if (item.BookingStatus == BookingStatus.Pending)
+                                    {
+                                        <button type="button" class="btn btn-sm btn-success js-approve-booking" data-booking-id="@item.Id" data-booking-code="@item.BookingCode" data-bs-toggle="modal" data-bs-target="#approveBookingModal">
+                                            <i class="bi bi-check-lg"></i> Approve
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-danger js-decline-booking" data-booking-id="@item.Id" data-booking-code="@item.BookingCode" data-bs-toggle="modal" data-bs-target="#declineBookingModal">
+                                            <i class="bi bi-x-lg"></i> Decline
+                                        </button>
+                                    }
+                                    <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-outline-secondary">
+                                        <i class="bi bi-eye"></i> Details
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>
+
+<div class="modal fade staff-booking-modal" id="approveBookingModal" tabindex="-1" aria-labelledby="approveBookingModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form asp-action="Approve" method="post" class="js-booking-decision-form">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" id="approveBookingId" />
+                <div class="modal-header">
+                    <h2 class="modal-title fs-5" id="approveBookingModalLabel">Approve Booking</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-3">Approve <strong id="approveBookingCode">this booking</strong>? The client will be allowed to proceed to payment.</p>
+                    <label for="approveInternalNote" class="form-label">Internal Note <span class="text-muted">— Optional</span></label>
+                    <textarea id="approveInternalNote" name="internalNote" class="form-control" rows="4" maxlength="1000" placeholder="Add an internal operational note if needed."></textarea>
+                    <div class="form-text">Internal notes are not shown to the client.</div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success js-decision-submit" data-loading-text="Approving...">Approve Booking</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade staff-booking-modal" id="declineBookingModal" tabindex="-1" aria-labelledby="declineBookingModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form asp-action="Decline" method="post" class="js-booking-decision-form">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" id="declineBookingId" />
+                <div class="modal-header">
+                    <h2 class="modal-title fs-5" id="declineBookingModalLabel">Decline Booking</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-3">Decline <strong id="declineBookingCode">this booking</strong>?</p>
+                    <label for="declineInternalNote" class="form-label">Reason / Internal Note <span class="text-muted">— Optional</span></label>
+                    <textarea id="declineInternalNote" name="internalNote" class="form-control" rows="4" maxlength="1000" placeholder="Add an internal reason or operational note if needed."></textarea>
+                    <div class="form-text">This note remains internal and is not automatically shown to the client.</div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger js-decision-submit" data-loading-text="Declining...">Decline Booking</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    document.querySelectorAll('.js-approve-booking').forEach(button => button.addEventListener('click', () => {
+        document.getElementById('approveBookingId').value = button.dataset.bookingId;
+        document.getElementById('approveBookingCode').textContent = button.dataset.bookingCode;
+    }));
+    document.querySelectorAll('.js-decline-booking').forEach(button => button.addEventListener('click', () => {
+        document.getElementById('declineBookingId').value = button.dataset.bookingId;
+        document.getElementById('declineBookingCode').textContent = button.dataset.bookingCode;
+    }));
+    document.querySelectorAll('.js-booking-decision-form').forEach(form => form.addEventListener('submit', () => {
+        const submit = form.querySelector('.js-decision-submit');
+        if (!submit || submit.disabled) return;
+        submit.disabled = true;
+        submit.setAttribute('aria-disabled', 'true');
+        submit.textContent = submit.dataset.loadingText || 'Processing...';
+    }));
+</script>
+}

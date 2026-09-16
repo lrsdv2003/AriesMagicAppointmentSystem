@@ -3,16 +3,28 @@
 @{
     ViewData["Title"] = "Staff Dashboard";
     Layout = "_DashboardLayout";
+    string StaffStatusClass(string status) => status switch {
+        "Pending" => "status-pending",
+        "AwaitingDownpayment" => "status-confirmed",
+        "AwaitingVerification" => "status-confirmed",
+        "Declined" => "status-declined",
+        _ => "status-read"
+    };
+    string StaffStatusLabel(string status) => status switch {
+        "AwaitingDownpayment" => "Approved · Awaiting Payment",
+        "AwaitingVerification" => "Approved · Awaiting Owner Verification",
+        _ => status
+    };
 }
 
 <div class="role-dashboard-hero">
     <div>
         <h2>Welcome back, Staff</h2>
-        <p>Review incoming requests, manage bookings, and handle reschedules.</p>
+        <p>Review booking requests, coordinate upcoming events, and handle reschedules.</p>
     </div>
     <a asp-controller="Bookings" asp-action="Index" class="btn btn-primary">
         <i class="bi bi-journal-check me-1"></i>
-        View Bookings
+        View Booking Requests
     </a>
 </div>
 
@@ -21,7 +33,7 @@
         <span class="dashboard-stat-icon">
             <i class="bi bi-journal-text"></i>
         </span>
-        <span class="dashboard-stat-label">Pending Bookings</span>
+        <span class="dashboard-stat-label">Pending Requests</span>
         <strong>@Model.PendingBookings</strong>
         <small>Awaiting review</small>
     </a>
@@ -70,7 +82,7 @@
         {
             <div class="dashboard-empty-state">
                 <i class="bi bi-inbox"></i>
-                <p>No booking requests available.</p>
+                <p>No booking requests currently require your attention.</p>
             </div>
         }
         else
@@ -86,11 +98,11 @@
                             <div class="dashboard-record-copy d-flex flex-column">
                                 <strong class="lh-sm">@(booking.Client?.FullName ?? "Unknown client")</strong>
                                 <span class="text-secondary small">@(booking.Service?.Name ?? booking.PackageName)</span>
-                                <small class="text-muted">Event @booking.EventDate.ToString("MMM dd, yyyy") • Submitted @booking.CreatedAt.ToString("MMM dd, yyyy")</small>
+                                <small class="text-muted">Event @booking.EventDate.ToString("MMM dd, yyyy") · @booking.StartTime.ToString("hh:mm tt") • Submitted @booking.CreatedAt.ToString("MMM dd, yyyy")</small>
                             </div>
                         </div>
                         <div class="d-flex align-items-center gap-2">
-                            <span class="dashboard-status-pill">@booking.Status</span>
+                            <span class="status-badge staff-status-badge @StaffStatusClass(booking.Status)">@StaffStatusLabel(booking.Status)</span>
                             <a asp-controller="Bookings" asp-action="Details" asp-route-id="@booking.Id" class="btn btn-sm btn-outline-primary">View Details</a>
                         </div>
                     </div>

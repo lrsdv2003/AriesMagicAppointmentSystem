@@ -171,6 +171,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                     .AsNoTracking()
                     .Include(b => b.Client)
                     .Include(b => b.Service)
+                    .Where(b => b.Status == BookingStatus.Pending || b.Status == BookingStatus.AwaitingDownpayment || b.Status == BookingStatus.AwaitingVerification)
                     .OrderByDescending(b => b.CreatedAt)
                     .Take(5)
                     .ToListAsync(),
