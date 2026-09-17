@@ -176,6 +176,15 @@
                             <small>
                                 @(booking.PartyVenue ?? "Venue not available")
                             </small>
+                            @if (booking.DistanceKm.HasValue)
+                            {
+                                <div class="dashboard-venue-travel">
+                                    <i class="bi bi-signpost-split" aria-hidden="true"></i>
+                                    <strong>@booking.DistanceKm.Value.ToString("N1") km</strong>
+                                    <span>@(booking.ServiceZone ?? "Zone unavailable") · @(booking.TravelFee > 0 ? $"₱{booking.TravelFee:N2}" : "No travel fee")</span>
+                                    <em class="@(booking.RequiresManualReview ? "venue-awareness-review" : booking.IsServiceable ? "venue-awareness-serviceable" : "venue-awareness-unavailable")">@(booking.RequiresManualReview ? "Venue review" : booking.IsServiceable ? "Serviceable" : "Not serviceable")</em>
+                                </div>
+                            }
                         </div>
 
                         <span class="dashboard-status-pill status-confirmed">

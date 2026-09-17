@@ -133,19 +133,28 @@
                             <td>
                                 <div class="staff-venue-cell" title="@venueText">
                                     <strong>@shortVenue</strong>
-                                    <span>@(item.DistanceKm.HasValue ? $"{item.DistanceKm.Value:N1} KM" : "Distance unavailable")</span>
-                                    @if (!string.IsNullOrWhiteSpace(item.ServiceZone))
+                                    @if (item.DistanceKm.HasValue)
                                     {
-                                        <small>@item.ServiceZone</small>
+                                        <span class="staff-venue-distance"><i class="bi bi-signpost-split" aria-hidden="true"></i>@item.DistanceKm.Value.ToString("N1") km</span>
+                                        <small>@(string.IsNullOrWhiteSpace(item.ServiceZone) ? "Service zone unavailable" : item.ServiceZone) · @(item.TravelFee > 0 ? $"₱{item.TravelFee:N2}" : "No travel fee")</small>
+                                        @if (item.RequiresManualReview)
+                                        {
+                                            <span class="venue-awareness-pill venue-awareness-review"><i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>Venue review</span>
+                                        }
+                                        else if (!item.IsServiceable)
+                                        {
+                                            <span class="venue-awareness-pill venue-awareness-unavailable"><i class="bi bi-x-circle-fill" aria-hidden="true"></i>Not serviceable</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="venue-awareness-pill venue-awareness-serviceable"><i class="bi bi-check-circle-fill" aria-hidden="true"></i>Serviceable</span>
+                                        }
                                     }
+                                    else { <span>Distance unavailable</span> }
                                 </div>
                             </td>
                             <td>
                                 <span class="status-badge staff-status-badge @StatusClass(item.BookingStatus)">@StatusLabel(item.BookingStatus)</span>
-                                @if (item.RequiresManualReview)
-                                {
-                                    <span class="status-badge staff-status-badge status-pending mt-1"><i class="bi bi-exclamation-triangle"></i> Venue Review</span>
-                                }
                             </td>
                             <td class="text-end">
                                 <div class="staff-booking-actions">

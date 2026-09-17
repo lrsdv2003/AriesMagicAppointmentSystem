@@ -97,9 +97,18 @@
                             </div>
                             <div class="dashboard-record-copy d-flex flex-column">
                                 <strong class="lh-sm">@(booking.Client?.FullName ?? "Unknown client")</strong>
-                                <span class="text-secondary small">@(booking.Service?.Name ?? booking.PackageName)</span>
-                                <small class="text-muted">Event @booking.EventDate.ToString("MMM dd, yyyy") · @booking.StartTime.ToString("hh:mm tt") • Submitted @booking.CreatedAt.ToString("MMM dd, yyyy")</small>
-                            </div>
+                                 <span class="text-secondary small">@(booking.Service?.Name ?? booking.PackageName)</span>
+                                 <small class="text-muted">Event @booking.EventDate.ToString("MMM dd, yyyy") · @booking.StartTime.ToString("hh:mm tt") • Submitted @booking.CreatedAt.ToString("MMM dd, yyyy")</small>
+                                 @if (booking.DistanceKm.HasValue)
+                                 {
+                                     <div class="dashboard-venue-travel">
+                                         <i class="bi bi-signpost-split" aria-hidden="true"></i>
+                                         <strong>@booking.DistanceKm.Value.ToString("N1") km</strong>
+                                         <span>@(booking.ServiceZone ?? "Zone unavailable") · @(booking.TravelFee > 0 ? $"₱{booking.TravelFee:N2}" : "No travel fee")</span>
+                                         <em class="@(booking.RequiresManualReview ? "venue-awareness-review" : booking.IsServiceable ? "venue-awareness-serviceable" : "venue-awareness-unavailable")">@(booking.RequiresManualReview ? "Venue review" : booking.IsServiceable ? "Serviceable" : "Not serviceable")</em>
+                                     </div>
+                                 }
+                             </div>
                         </div>
                         <div class="d-flex align-items-center gap-2">
                             <span class="status-badge staff-status-badge @StaffStatusClass(booking.Status)">@StaffStatusLabel(booking.Status)</span>
