@@ -51,6 +51,11 @@ namespace AriesMagicAppointmentSystem.Controllers
                 .ToListAsync();
 
             ViewBag.ShowHistorical = showHistorical;
+            ViewBag.PackageColors = bookings
+                .Select(GetPackageName)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(x => x)
+                .ToDictionary(x => x, GetPackageColorKey, StringComparer.OrdinalIgnoreCase);
 
             var blockedDates = await _context.BlockedDates
                 .Select(x => new
@@ -101,7 +106,21 @@ namespace AriesMagicAppointmentSystem.Controllers
             ViewBag.DailyCounts = dailyCounts;
             ViewBag.DateLimits = dateLimitsForCalendar;
 
-            return View(model);
+            return View("StaffIndex", model);
+        }
+
+        private static string GetPackageName(Booking booking) =>
+            !string.IsNullOrWhiteSpace(booking.PackageName)
+                ? booking.PackageName
+                : booking.Service?.Name ?? "Package";
+
+        private static string GetPackageColorKey(string packageName)
+        {
+            if (packageName.Contains("Premium", StringComparison.OrdinalIgnoreCase)) return "purple";
+            if (packageName.Contains("Deluxe", StringComparison.OrdinalIgnoreCase)) return "gold";
+            if (packageName.Contains("All In", StringComparison.OrdinalIgnoreCase)) return "blue";
+            var stable = packageName.Aggregate(17, (hash, ch) => unchecked(hash * 31 + char.ToUpperInvariant(ch)));
+            return new[] { "purple", "gold", "blue", "pink" }[(int)((uint)stable % 4)];
         }
 
         private async Task<IActionResult> AdminIndexAsync()
@@ -160,7 +179,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                     serviceZone = b.ServiceZone ?? "N/A",
                     eventType = b.EventType ?? "N/A",
                     theme = b.PartyTheme ?? "N/A",
-                    packageName = b.PackageName ?? "N/A",
+                    packageName = !string.IsNullOrWhiteSpace(b.PackageName) ? b.PackageName : (b.Service != null ? b.Service.Name : "Package"),
                     assignedStaff = b.AssignedStaffName ?? "Not assigned",
                     specialInstructions = "None provided",
                     detailsUrl = Url.Action("Details", "Bookings", new { id = b.Id })

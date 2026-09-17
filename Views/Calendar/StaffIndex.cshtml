@@ -1,0 +1,383 @@
+@model AriesMagicAppointmentSystem.ViewModels.CalendarIndexViewModel
+@using AriesMagicAppointmentSystem.Models
+@using System.Text.Json
+
+@{
+    Layout = "_DashboardLayout";
+    ViewData["Title"] = "Event Calendar";
+    var packageColors = ViewBag.PackageColors as IDictionary<string, string> ?? new Dictionary<string, string>();
+    string PackageName(Booking b) => !string.IsNullOrWhiteSpace(b.PackageName) ? b.PackageName : b.Service?.Name ?? "Package";
+    string PackageKey(string name) => packageColors.TryGetValue(name, out var key) ? key : "pink";
+    var now = DateTime.Now;
+    var confirmed = Model.Bookings.Where(b => b.Status == BookingStatus.Confirmed).ToList();
+    var upcoming = confirmed
+        .Where(b => b.EventDate.Date.Add(b.StartTime.TimeOfDay) >= now)
+        .OrderBy(b => b.EventDate).ThenBy(b => b.StartTime).ToList();
+    var dayData = confirmed.GroupBy(b => b.EventDate.Date).ToDictionary(
+        g => g.Key.ToString("yyyy-MM-dd"),
+        g => new {
+            count = g.Count(),
+            packages = g.Select(PackageName).Distinct().ToArray(),
+            keys = g.Select(b => PackageKey(PackageName(b))).ToArray()
+        });
+    var dayDataJson = JsonSerializer.Serialize(dayData);
+    var packageColorsJson = JsonSerializer.Serialize(packageColors);
+}
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css" />
+<link rel="stylesheet" href="~/css/staff-calendar.css" asp-append-version="true" />
+
+<div class="staff-calendar-page">
+    <header class="staff-calendar-hero">
+        <div>
+            <span class="staff-calendar-eyebrow">Operational Schedule</span>
+            <h1>Event Calendar</h1>
+            <p>See confirmed events at a glance, then open a quick preview only when you need details.</p>
+        </div>
+        <a asp-controller="Bookings" asp-action="Index" class="btn btn-outline-primary">
+            <i class="bi bi-journal-check"></i> Booking Requests
+        </a>
+    </header>
+    <section class="staff-calendar-panel" aria-labelledby="calendarHeading">
+        <div class="staff-calendar-toolbar">
+            <div>
+                <h2 id="calendarHeading">Confirmed Schedule</h2>
+                <p>Select a date with events to open the booking preview.</p>
+            </div>
+            <div class="staff-calendar-nav" aria-label="Calendar navigation">
+                <button type="button" class="btn btn-outline-secondary" id="calPrev" aria-label="Previous month"><i class="bi bi-chevron-left"></i></button>
+                <button type="button" class="btn btn-outline-secondary" id="calToday">Today</button>
+                <button type="button" class="btn btn-outline-secondary" id="calNext" aria-label="Next month"><i class="bi bi-chevron-right"></i></button>
+            </div>
+        </div>
+        <div class="staff-calendar-month-row">
+            <strong id="calendarTitle" aria-live="polite"></strong>
+            <div class="staff-package-legend" aria-label="Package legend">
+                <span class="staff-package-legend-label">Package Legend</span>
+                @foreach (var item in packageColors.OrderBy(x => x.Key))
+                {
+                    <span class="package-legend-item"><span class="package-dot package-@item.Value"></span>@item.Key</span>
+                }
+                @if (!packageColors.Any())
+                {
+                    <span class="package-legend-empty">No confirmed packages yet</span>
+                }
+            </div>
+        </div>
+        <div class="staff-calendar-loading" id="calendarLoading" role="status">
+            <span class="spinner-border spinner-border-sm"></span> Loading event schedule...
+        </div>
+        <div class="staff-calendar-error d-none" id="calendarError" role="alert">
+            <i class="bi bi-exclamation-triangle"></i>
+            <span>Unable to load the event schedule. Please try again.</span>
+            <button type="button" class="btn btn-sm btn-outline-danger" id="calendarRetry">Retry</button>
+        </div>
+        <div id="calendar" aria-label="Confirmed booking calendar"></div>
+    </section>
+
+    <section class="staff-upcoming-panel" aria-labelledby="upcomingHeading">
+        <div class="staff-upcoming-heading">
+            <div>
+                <h2 id="upcomingHeading">Upcoming Confirmed Bookings</h2>
+                <p>Nearest event date and time first.</p>
+            </div>
+            <div class="staff-upcoming-tools">
+                <label class="visually-hidden" for="upcomingSearch">Search upcoming bookings</label>
+                <input id="upcomingSearch" type="search" class="form-control" placeholder="Search booking, client, or venue" />
+                <label class="visually-hidden" for="packageFilter">Filter by package</label>
+                <select id="packageFilter" class="form-select">
+                    <option value="">All Packages</option>
+                    @foreach (var item in packageColors.OrderBy(x => x.Key))
+                    {
+                        <option value="@item.Key">@item.Key</option>
+                    }
+                </select>
+            </div>
+        </div>
+        @if (!upcoming.Any())
+        {
+            <div class="staff-upcoming-empty"><i class="bi bi-calendar2-check"></i><span>No upcoming confirmed events.</span></div>
+        }
+        else
+        {
+            <div class="staff-upcoming-table-wrap">
+                <table class="table staff-upcoming-table" id="upcomingTable">
+                    <thead><tr><th>Booking</th><th>Client</th><th>Event Date & Time</th><th>Package</th><th>Location</th><th class="text-end">Action</th></tr></thead>
+                    <tbody>
+                    @foreach (var booking in upcoming)
+                    {
+                        var packageName = PackageName(booking);
+                        var colorKey = PackageKey(packageName);
+                        var bookingCode = $"BK-{booking.CreatedAt.Year}-{booking.Id:D3}";
+                        <tr class="js-upcoming-row" data-search="@(bookingCode) @(booking.Client?.FullName) @(booking.PartyVenue)" data-package="@packageName">
+                            <td><strong>@bookingCode</strong></td>
+                            <td>@(booking.Client?.FullName ?? "Unknown client")</td>
+                            <td><strong>@booking.EventDate.ToString("MMM dd, yyyy")</strong><span>@booking.StartTime.ToString("hh:mm tt")</span></td>
+                            <td><span class="package-badge package-@colorKey"><span class="package-dot"></span>@packageName</span></td>
+                            <td><strong>@booking.PartyVenue</strong><span>@(booking.DistanceKm.HasValue ? $"{booking.DistanceKm.Value:N1} KM" : "Distance unavailable")</span></td>
+                            <td class="text-end"><a asp-controller="Bookings" asp-action="Details" asp-route-id="@booking.Id" class="btn btn-sm btn-outline-primary">Details</a></td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+            <div class="staff-upcoming-cards" id="upcomingCards">
+                @foreach (var booking in upcoming)
+                {
+                    var packageName = PackageName(booking);
+                    var colorKey = PackageKey(packageName);
+                    var bookingCode = $"BK-{booking.CreatedAt.Year}-{booking.Id:D3}";
+                    <article class="staff-upcoming-card js-upcoming-row" data-search="@(bookingCode) @(booking.Client?.FullName) @(booking.PartyVenue)" data-package="@packageName">
+                        <div class="staff-upcoming-card-head"><strong>@bookingCode</strong><span class="package-badge package-@colorKey">@packageName</span></div>
+                        <span>@(booking.Client?.FullName ?? "Unknown client")</span>
+                        <span><i class="bi bi-calendar-event"></i> @booking.EventDate.ToString("MMM dd, yyyy") · @booking.StartTime.ToString("hh:mm tt")</span>
+                        <span><i class="bi bi-geo-alt"></i> @booking.PartyVenue</span>
+                        <a asp-controller="Bookings" asp-action="Details" asp-route-id="@booking.Id" class="btn btn-sm btn-outline-primary">View Details</a>
+                    </article>
+                }
+            </div>
+            <div class="staff-upcoming-empty d-none" id="upcomingFilteredEmpty"><i class="bi bi-search"></i><span>No upcoming bookings match your search.</span></div>
+        }
+    </section>
+</div>
+<div class="modal fade staff-preview-modal" id="bookingPreviewModal" tabindex="-1" aria-labelledby="bookingPreviewTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div><span class="staff-preview-kicker">Quick Booking Preview</span><h2 class="modal-title fs-5" id="bookingPreviewTitle">Confirmed Booking</h2></div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="previewLoading" class="staff-preview-state"><span class="spinner-border spinner-border-sm"></span> Loading booking...</div>
+                <div id="previewError" class="staff-preview-state staff-preview-error d-none" role="alert">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <span>Unable to load the event schedule. Please try again.</span>
+                    <button type="button" class="btn btn-sm btn-outline-danger" id="previewRetry">Retry</button>
+                </div>
+                <div id="previewContent" class="d-none">
+                    <div class="staff-preview-position" id="previewPosition"></div>
+                    <div class="staff-preview-grid">
+                        <div><span>Booking</span><strong id="previewBooking"></strong></div>
+                        <div><span>Client</span><strong id="previewClient"></strong></div>
+                        <div><span>Event Date</span><strong id="previewDate"></strong></div>
+                        <div><span>Start Time</span><strong id="previewStart"></strong></div>
+                        <div><span>Expected End Time</span><strong id="previewEnd"></strong></div>
+                        <div class="staff-preview-wide"><span>Package</span><strong><span id="previewPackage" class="package-badge"></span></strong></div>
+                        <div class="staff-preview-wide"><span>Venue</span><strong id="previewVenue"></strong></div>
+                        <div><span>Distance</span><strong id="previewDistance"></strong></div>
+                        <div><span>Status</span><strong><span class="status-badge status-confirmed">Confirmed · Upcoming</span></strong></div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer staff-preview-footer">
+                <div class="staff-preview-browse">
+                    <button type="button" class="btn btn-outline-secondary" id="previewPrevious" aria-label="Previous booking"><i class="bi bi-arrow-left"></i> Previous</button>
+                    <button type="button" class="btn btn-outline-secondary" id="previewNext" aria-label="Next booking">Next <i class="bi bi-arrow-right"></i></button>
+                </div>
+                <a href="#" class="btn btn-primary" id="previewDetails">View Full Details</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+
+@section Scripts {
+<script>
+(() => {
+    'use strict';
+    const dayData = @Html.Raw(dayDataJson);
+    const packageColors = @Html.Raw(packageColorsJson);
+    const previewUrl = '@Url.Action("GetReservationsByDate", "Calendar")';
+    let calendar;
+    let selectedDate = null;
+    let selectedCell = null;
+    let previewItems = [];
+    let previewIndex = 0;
+    const formatDateKey = date => {
+        const y = date.getFullYear();
+        const m = String(date.getMonth() + 1).padStart(2, '0');
+        const d = String(date.getDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
+    };
+    const packageKey = name => packageColors[name] || 'pink';
+    const previewModalEl = document.getElementById('bookingPreviewModal');
+    const previewModal = previewModalEl ? new bootstrap.Modal(previewModalEl) : null;
+
+    function setSelectedCell(cell) {
+        selectedCell?.classList.remove('staff-calendar-selected');
+        selectedCell = cell || null;
+        selectedCell?.classList.add('staff-calendar-selected');
+    }
+
+    async function openDatePreview(dateKey, cell) {
+        const summary = dayData[dateKey];
+        if (!summary?.count) return;
+        selectedDate = dateKey;
+        setSelectedCell(cell);
+        document.getElementById('previewLoading').classList.remove('d-none');
+        document.getElementById('previewError').classList.add('d-none');
+        document.getElementById('previewContent').classList.add('d-none');
+        document.getElementById('previewPrevious').disabled = true;
+        document.getElementById('previewNext').disabled = true;
+        document.getElementById('previewDetails').classList.add('disabled');
+        previewModal?.show();
+        try {
+            const response = await fetch(`${previewUrl}?date=${encodeURIComponent(dateKey)}`, { headers: { 'Accept': 'application/json' } });
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            previewItems = await response.json();
+            if (!Array.isArray(previewItems) || previewItems.length === 0) throw new Error('No bookings returned');
+            previewIndex = 0;
+            renderPreview();
+        } catch (error) {
+            console.error('Calendar preview failed:', error);
+            document.getElementById('previewLoading').classList.add('d-none');
+            document.getElementById('previewError').classList.remove('d-none');
+        }
+    }
+
+    function renderPreview() {
+        const item = previewItems[previewIndex];
+        if (!item) return;
+        document.getElementById('previewLoading').classList.add('d-none');
+        document.getElementById('previewError').classList.add('d-none');
+        document.getElementById('previewContent').classList.remove('d-none');
+        document.getElementById('previewPosition').textContent = `Booking ${previewIndex + 1} of ${previewItems.length}`;
+        document.getElementById('previewBooking').textContent = item.bookingCode;
+        document.getElementById('previewClient').textContent = item.clientName;
+        document.getElementById('previewDate').textContent = item.eventDate;
+        document.getElementById('previewStart').textContent = item.startTime;
+        document.getElementById('previewEnd').textContent = item.endTime;
+        const pkg = document.getElementById('previewPackage');
+        pkg.className = `package-badge package-${packageKey(item.packageName)}`;
+        pkg.textContent = item.packageName;
+        document.getElementById('previewVenue').textContent = item.venue;
+        document.getElementById('previewDistance').textContent = item.distanceKm != null ? `${Number(item.distanceKm).toFixed(1)} KM` : 'Distance unavailable';
+        const details = document.getElementById('previewDetails');
+        details.href = item.detailsUrl || '#';
+        details.classList.toggle('disabled', !item.detailsUrl);
+        document.getElementById('previewPrevious').disabled = previewIndex === 0;
+        document.getElementById('previewNext').disabled = previewIndex >= previewItems.length - 1;
+    }
+
+    function mountDaySummary(info) {
+        const key = formatDateKey(info.date);
+        const summary = dayData[key];
+        if (!summary?.count) return;
+        info.el.classList.add('staff-calendar-has-events');
+        info.el.tabIndex = 0;
+        info.el.setAttribute('role', 'button');
+        const label = summary.count === 1 ? '1 confirmed booking' : `${summary.count} confirmed bookings`;
+        info.el.setAttribute('aria-label', `${info.date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}: ${label}`);
+        const frame = info.el.querySelector('.fc-daygrid-day-frame');
+        if (!frame) return;
+        const box = document.createElement('div');
+        box.className = 'staff-day-summary';
+        const dots = document.createElement('div');
+        dots.className = 'staff-day-dots';
+        summary.keys.slice(0, 4).forEach(color => {
+            const dot = document.createElement('span');
+            dot.className = `package-dot package-${color}`;
+            dots.appendChild(dot);
+        });
+        if (summary.count > 4) {
+            const more = document.createElement('span');
+            more.className = 'staff-day-more';
+            more.textContent = `+${summary.count - 4}`;
+            more.setAttribute('aria-label', `${summary.count - 4} more bookings`);
+            dots.appendChild(more);
+        }
+        const count = document.createElement('strong');
+        count.textContent = summary.count === 1 ? '1 Booking' : `${summary.count} Bookings`;
+        box.append(dots, count);
+        frame.appendChild(box);
+        info.el.addEventListener('keydown', event => {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                openDatePreview(key, info.el);
+            }
+        });
+    }
+
+    function initCalendar() {
+        const calendarEl = document.getElementById('calendar');
+        const loading = document.getElementById('calendarLoading');
+        const error = document.getElementById('calendarError');
+        if (!calendarEl) return;
+        loading?.classList.remove('d-none');
+        error?.classList.add('d-none');
+        calendarEl.classList.remove('d-none');
+        try {
+        calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            headerToolbar: false,
+            height: 'auto',
+            fixedWeekCount: false,
+            showNonCurrentDates: true,
+            dayCellDidMount: mountDaySummary,
+            dateClick: info => openDatePreview(info.dateStr, info.dayEl),
+            datesSet: () => {
+                document.getElementById('calendarTitle').textContent = calendar.view.title;
+                document.getElementById('calendarLoading').classList.add('d-none');
+                selectedCell = null;
+            }
+        });
+        calendar.render();
+        document.getElementById('calPrev')?.addEventListener('click', () => calendar.prev());
+        document.getElementById('calNext')?.addEventListener('click', () => calendar.next());
+        document.getElementById('calToday')?.addEventListener('click', () => calendar.today());
+        } catch (errorValue) {
+            console.error('Calendar initialization failed:', errorValue);
+            loading?.classList.add('d-none');
+            calendarEl.classList.add('d-none');
+            error?.classList.remove('d-none');
+        }
+    }
+
+    function initPreviewControls() {
+        document.getElementById('previewPrevious')?.addEventListener('click', () => {
+            if (previewIndex > 0) { previewIndex--; renderPreview(); }
+        });
+        document.getElementById('previewNext')?.addEventListener('click', () => {
+            if (previewIndex < previewItems.length - 1) { previewIndex++; renderPreview(); }
+        });
+        document.getElementById('previewRetry')?.addEventListener('click', () => {
+            if (selectedDate) openDatePreview(selectedDate, selectedCell);
+        });
+    }
+
+    function initUpcomingFilters() {
+        const search = document.getElementById('upcomingSearch');
+        const filter = document.getElementById('packageFilter');
+        const rows = [...document.querySelectorAll('.js-upcoming-row')];
+        const empty = document.getElementById('upcomingFilteredEmpty');
+        const apply = () => {
+            const query = (search?.value || '').trim().toLowerCase();
+            const packageName = filter?.value || '';
+            let visible = 0;
+            rows.forEach(row => {
+                const matchesSearch = !query || (row.dataset.search || '').toLowerCase().includes(query);
+                const matchesPackage = !packageName || row.dataset.package === packageName;
+                const show = matchesSearch && matchesPackage;
+                row.classList.toggle('d-none', !show);
+                if (show) visible++;
+            });
+            empty?.classList.toggle('d-none', visible > 0);
+        };
+        search?.addEventListener('input', apply);
+        filter?.addEventListener('change', apply);
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        initCalendar();
+        initPreviewControls();
+        initUpcomingFilters();
+        document.getElementById('calendarRetry')?.addEventListener('click', () => {
+            calendar?.destroy();
+            calendar = null;
+            initCalendar();
+        });
+    });
+})();
+</script>
+}
