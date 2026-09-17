@@ -1,162 +1,252 @@
-@model IEnumerable<AriesMagicAppointmentSystem.Models.RescheduleRequest>
-
+@model AriesMagicAppointmentSystem.ViewModels.RescheduleRequestIndexViewModel
+@using AriesMagicAppointmentSystem.Models
 @{
     Layout = "_DashboardLayout";
     ViewData["Title"] = "Reschedule Requests";
-
-    var requests = Model.OrderByDescending(x => x.CreatedAt).ToList();
-    var totalRequests = requests.Count;
-    var pendingCount = requests.Count(x => x.Status == AriesMagicAppointmentSystem.Models.RescheduleRequestStatus.Pending);
-    var approvedCount = requests.Count(x => x.Status == AriesMagicAppointmentSystem.Models.RescheduleRequestStatus.Approved);
-    var rejectedCount = requests.Count(x => x.Status == AriesMagicAppointmentSystem.Models.RescheduleRequestStatus.Rejected);
+    var canDecide = User.CanApproveRescheduleRequests();
+    string BookingCode(Booking booking) => $"BK-{booking.CreatedAt.Year}-{booking.Id:D3}";
+    DateTime? OriginalDate(RescheduleRequest request) => request.OriginalDate ?? (request.Status == RescheduleRequestStatus.Pending ? request.Booking?.EventDate : null);
+    DateTime? OriginalStart(RescheduleRequest request) => request.OriginalStartTime ?? (request.Status == RescheduleRequestStatus.Pending ? request.Booking?.StartTime : null);
+    DateTime? OriginalEnd(RescheduleRequest request) => request.OriginalEndTime ?? (request.Status == RescheduleRequestStatus.Pending ? request.Booking?.EndTime : null);
+    string AvailabilityClass(string state) => state switch {
+        "Available" => "reschedule-availability-available",
+        "Processed" => "reschedule-availability-processed",
+        _ => "reschedule-availability-conflict"
+    };
+    string StatusClass(string status) => status switch {
+        RescheduleRequestStatus.Approved => "status-approved",
+        RescheduleRequestStatus.Rejected => "status-rejected",
+        _ => "status-pending"
+    };
 }
 
-<div class="page-header">
-</div>
-
-<div class="dashboard-stats mb-4">
-    <div class="stat-card">
-        <div class="stat-label">Total Requests</div>
-        <div class="stat-value">@totalRequests</div>
-    </div>
-    
-    <div class="stat-card">
-        <div class="stat-label">Approved</div>
-        <div class="stat-value">@approvedCount</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-label">Rejected</div>
-        <div class="stat-value">@rejectedCount</div>
-    </div>
-</div>
-
-@if (TempData["Error"] != null)
-{
-    <div class="alert alert-danger mb-3">@TempData["Error"]</div>
-}
-
-<!-- FILTER & SEARCH BAR SECTION (LIKE IMAGE 2) -->
-<div class="dashboard-panel mb-4 p-3 rounded-4 bg-white shadow-sm border">
-    <form method="get" asp-action="Index" class="d-flex align-items-center gap-2 flex-wrap">
-        <div class="flex-grow-1">
-            <input type="text" name="search" value="@Context.Request.Query["search"]" class="form-control rounded-pill px-3" placeholder="Search client, email, or service...">
+<div class="staff-reschedule-page">
+    <div class="page-header staff-reschedule-header">
+        <div>
+            <h1>Reschedule Requests</h1>
+            <p class="page-subtitle">Compare the current schedule with the client’s requested change, confirm availability, then approve or reject.</p>
         </div>
+        <a asp-controller="Calendar" asp-action="Index" class="btn btn-outline-primary"><i class="bi bi-calendar3"></i> Calendar</a>
+    </div>
 
-        <!-- DROPDOWN FILTER BUTTON -->
-        <div class="dropdown">
-            <button class="btn btn-outline-secondary rounded-pill px-3 dropdown-toggle d-flex align-items-center gap-2" type="button" id="filterDropdown" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
-                <i class="bi bi-funnel"></i> Filters
-            </button>
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success" role="status">@TempData["Success"]</div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger" role="alert">@TempData["Error"]</div>
+    }
 
-            <!-- DROPDOWN POPOVER PANEL -->
-            <div class="dropdown-menu p-4 rounded-4 shadow-lg border-0 style-filter-panel" aria-labelledby="filterDropdown" style="width: 320px;">
-                <h5 class="fw-bold mb-3">Filter Requests</h5>
+    <nav class="reschedule-status-tabs" aria-label="Reschedule request status">
+        <a asp-action="Index" asp-route-status="Pending" class="@(Model.StatusFilter == RescheduleRequestStatus.Pending ? "active" : "")">Pending <span>@Model.PendingCount</span></a>
+        <a asp-action="Index" asp-route-status="Approved" class="@(Model.StatusFilter == RescheduleRequestStatus.Approved ? "active" : "")">Approved <span>@Model.ApprovedCount</span></a>
+        <a asp-action="Index" asp-route-status="Rejected" class="@(Model.StatusFilter == RescheduleRequestStatus.Rejected ? "active" : "")">Rejected <span>@Model.RejectedCount</span></a>
+        <a asp-action="Index" asp-route-status="All" class="@(Model.StatusFilter == "All" ? "active" : "")">Request History</a>
+    </nav>
 
-                <div class="mb-3">
-                    <label class="form-label small text-muted fw-bold text-uppercase">Status</label>
-                    <select name="status" class="form-select rounded-3">
-                        <option value="">All Statuses</option>
-                        <option value="Pending">Pending</option>
-                        <option value="Approved">Approved</option>
-                        <option value="Rejected">Rejected</option>
-                    </select>
-                </div>
+    <div class="dashboard-panel staff-reschedule-filter-panel">
+        <form method="get" asp-action="Index" class="staff-reschedule-filters">
+            <input type="hidden" name="status" value="@Model.StatusFilter" />
+            <label class="visually-hidden" for="rescheduleSearch">Search reschedule requests</label>
+            <input id="rescheduleSearch" type="search" name="search" value="@Model.Search" class="form-control" placeholder="Booking ID, client, or package" />
+            <label class="visually-hidden" for="rescheduleDate">Requested date</label>
+            <input id="rescheduleDate" type="date" name="requestedDate" value="@(Model.RequestedDate?.ToString("yyyy-MM-dd"))" class="form-control" />
+            <label class="visually-hidden" for="rescheduleSort">Sort requests</label>
+            <select id="rescheduleSort" name="sortBy" class="form-select">
+                <option value="newest" selected="@(Model.SortBy == "newest")">Newest first</option>
+                <option value="oldest" selected="@(Model.SortBy == "oldest")">Oldest first</option>
+            </select>
+            <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i> Apply</button>
+            <a asp-action="Index" asp-route-status="@Model.StatusFilter" class="btn btn-outline-secondary">Reset</a>
+        </form>
+    </div>
 
-                <div class="mb-3">
-                    <label class="form-label small text-muted fw-bold text-uppercase">Requested Date</label>
-                    <input type="date" name="requestedDate" value="@Context.Request.Query["requestedDate"]" class="form-control rounded-3" />
-                </div>
-
-                <div class="mb-4">
-                    <label class="form-label small text-muted fw-bold text-uppercase">Sort By</label>
-                    <select name="sortBy" class="form-select rounded-3">
-                        <option value="newest">Newest</option>
-                        <option value="oldest">Oldest</option>
-                    </select>
-                </div>
-
-                <div class="d-flex justify-content-end gap-2">
-                    <a asp-action="Index" class="btn btn-light rounded-pill px-3">Reset</a>
-                    <button type="submit" class="btn btn-primary rounded-pill px-3">Apply Filters</button>
-                </div>
+    <div class="dashboard-panel staff-reschedule-table-panel">
+        <div class="staff-reschedule-panel-heading">
+            <div>
+                <h2>@(Model.StatusFilter == RescheduleRequestStatus.Pending ? "Pending Reschedule Requests" : "Reschedule Request History")</h2>
+                <p>@(Model.StatusFilter == RescheduleRequestStatus.Pending ? "Only requests still requiring a Staff decision appear here by default." : "Processed requests remain available for audit and reference.")</p>
             </div>
         </div>
 
-        <button type="submit" class="btn btn-primary rounded-pill px-4">
-            Search
-        </button>
-    </form>
-</div>
-
-<div class="dashboard-panel">
-    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
-        <div>
-            <h3 class="mb-1">Reschedule Request Records</h3>
-            <p class="page-subtitle mb-0">Showing @requests.Count request(s) in the current queue.</p>
-        </div>
-    </div>
-
-    @if (!requests.Any())
-    {
-        <div class="empty-state">
-            <h3>No reschedule requests found</h3>
-        </div>
-    }
-    else
-    {
-        <div class="table-clean reschedule-table-wrap">
-            <table class="table align-middle reschedule-management-table">
-                <thead>
-                    <tr>
-                        <th>Client</th>
-                        <th>Service</th>
-                        <th>Original Date</th>
-                        <th>Requested Date</th>
-                        <th>Requested Start</th>
-                        <th>Status</th>
-                        <th class="text-end">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var item in requests)
-                    {
-                        var statusClass = item.Status switch
-                        {
-                            AriesMagicAppointmentSystem.Models.RescheduleRequestStatus.Pending => "status-pending",
-                            AriesMagicAppointmentSystem.Models.RescheduleRequestStatus.Approved => "status-approved",
-                            AriesMagicAppointmentSystem.Models.RescheduleRequestStatus.Rejected => "status-rejected",
-                            _ => "status-read"
-                        };
-
+        @if (!Model.Requests.Any())
+        {
+            <div class="empty-state staff-reschedule-empty">
+                <i class="bi bi-calendar2-check"></i>
+                <h3>@(Model.StatusFilter == RescheduleRequestStatus.Pending ? "No pending reschedule requests." : "No matching reschedule requests found.")</h3>
+                <p>@(Model.StatusFilter == RescheduleRequestStatus.Pending ? "There is nothing waiting for Staff review right now." : "Try another search or status filter.")</p>
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive staff-reschedule-table-wrap">
+                <table class="table align-middle staff-reschedule-table">
+                    <thead>
                         <tr>
+                            <th>Booking</th>
+                            <th>Client</th>
+                            <th>Original Date &amp; Time</th>
+                            <th>Requested Date &amp; Time</th>
+                            <th>Details</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    @foreach (var item in Model.Requests)
+                    {
+                        var request = item.Request;
+                        var booking = request.Booking!;
+                        var bookingCode = BookingCode(booking);
+                        var originalDate = OriginalDate(request);
+                        var originalStart = OriginalStart(request);
+                        var originalEnd = OriginalEnd(request);
+                        var originalDisplay = originalDate.HasValue && originalStart.HasValue && originalEnd.HasValue
+                            ? $"{originalDate.Value:MMMM dd, yyyy}|{originalStart.Value:hh:mm tt} – {originalEnd.Value:hh:mm tt}"
+                            : "Historical original schedule unavailable|—";
+                        var requestedDisplay = $"{request.RequestedDate:MMMM dd, yyyy}|{request.RequestedStartTime:hh:mm tt} – {request.RequestedEndTime:hh:mm tt}";
+                        <tr>
+                            <td><strong class="staff-booking-code">@bookingCode</strong><span class="staff-booking-subtext">@(booking.PackageName ?? booking.Service?.Name)</span></td>
+                            <td><strong>@(booking.Client?.FullName ?? "Unknown client")</strong></td>
                             <td>
-                                <div class="fw-semibold">@item.Booking?.Client?.FullName</div>
-                                <div class="text-muted small">@item.Booking?.Client?.Email</div>
+                                <div class="reschedule-schedule neutral">
+                                    <span>Original Schedule</span>
+                                    <strong>@originalDisplay.Split('|')[0]</strong>
+                                    <small>@originalDisplay.Split('|')[1]</small>
+                                </div>
                             </td>
-                            <td>@item.Booking?.Service?.Name</td>
-                            <td>@(item.Booking?.EventDate.ToString("MMM dd, yyyy") ?? "N/A")</td>
-                            <td>@item.RequestedDate.ToString("MMM dd, yyyy")</td>
-                            <td>@item.RequestedStartTime.ToString("hh:mm tt")</td>
                             <td>
-                                <span class="status-badge @statusClass">@item.Status</span>
-                            </td>
-                            <td class="text-end">
-                                <div class="reschedule-action-group">
-                                    @if (item.Status == AriesMagicAppointmentSystem.Models.RescheduleRequestStatus.Pending && User.CanApproveRescheduleRequests())
+                                <div class="reschedule-schedule requested">
+                                    <span>Requested Schedule</span>
+                                    <strong>@requestedDisplay.Split('|')[0]</strong>
+                                    <small>@requestedDisplay.Split('|')[1]</small>
+                                    @if (request.Status == RescheduleRequestStatus.Pending)
                                     {
-                                        <a asp-action="Approve" asp-route-id="@item.Id" class="btn btn-sm btn-success">Approve</a>
-                                        <a asp-action="Reject" asp-route-id="@item.Id" class="btn btn-sm btn-danger">Reject</a>
+                                        <span class="reschedule-availability @AvailabilityClass(item.Availability.State)"><i class="bi @(item.Availability.IsAvailable ? "bi-check-circle" : "bi-exclamation-triangle")"></i> @item.Availability.State</span>
+                                    }
+                                </div>
+                            </td>
+                            <td><a asp-action="Details" asp-route-id="@request.Id" class="btn btn-sm btn-outline-secondary"><i class="bi bi-eye"></i> View Details</a></td>
+                            <td class="text-end">
+                                <div class="staff-reschedule-actions">
+                                    @if (request.Status == RescheduleRequestStatus.Pending && canDecide)
+                                    {
+                                        <button type="button" class="btn btn-sm btn-success js-reschedule-approve" data-request-id="@request.Id" data-booking-code="@bookingCode" data-original="@originalDisplay.Replace("|", " · ")" data-requested="@requestedDisplay.Replace("|", " · ")" data-bs-toggle="modal" data-bs-target="#approveRescheduleModal" disabled="@(!item.Availability.IsAvailable)" title="@(item.Availability.IsAvailable ? "Approve reschedule" : item.Availability.Message)"><i class="bi bi-check-lg"></i> Approve</button>
+                                        <button type="button" class="btn btn-sm btn-outline-danger js-reschedule-reject" data-request-id="@request.Id" data-booking-code="@bookingCode" data-requested="@requestedDisplay.Replace("|", " · ")" data-bs-toggle="modal" data-bs-target="#rejectRescheduleModal"><i class="bi bi-x-lg"></i> Reject</button>
+                                    }
+                                    else if (request.Status == RescheduleRequestStatus.Pending)
+                                    {
+                                        <span class="status-badge status-pending">Pending Staff Review</span>
                                     }
                                     else
                                     {
-                                        <button type="button" class="btn btn-sm btn-outline-secondary" disabled>No Action Needed</button>
+                                        <span class="status-badge @StatusClass(request.Status)">@request.Status</span>
                                     }
                                 </div>
                             </td>
                         </tr>
                     }
-                </tbody>
-            </table>
-        </div>
-    }
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="staff-reschedule-cards">
+                @foreach (var item in Model.Requests)
+                {
+                    var request = item.Request;
+                    var booking = request.Booking!;
+                    var bookingCode = BookingCode(booking);
+                    var originalDate = OriginalDate(request);
+                    var originalStart = OriginalStart(request);
+                    var originalEnd = OriginalEnd(request);
+                    var originalText = originalDate.HasValue && originalStart.HasValue && originalEnd.HasValue ? $"{originalDate.Value:MMM dd, yyyy} · {originalStart.Value:hh:mm tt} – {originalEnd.Value:hh:mm tt}" : "Historical original schedule unavailable";
+                    var requestedText = $"{request.RequestedDate:MMM dd, yyyy} · {request.RequestedStartTime:hh:mm tt} – {request.RequestedEndTime:hh:mm tt}";
+                    <article class="staff-reschedule-card">
+                        <div class="staff-reschedule-card-head"><div><strong class="staff-booking-code">@bookingCode</strong><span class="staff-booking-subtext">@(booking.PackageName ?? booking.Service?.Name)</span></div>@if (request.Status != RescheduleRequestStatus.Pending){<span class="status-badge @StatusClass(request.Status)">@request.Status</span>}</div>
+                        <strong class="staff-reschedule-client">@(booking.Client?.FullName ?? "Unknown client")</strong>
+                        <div class="staff-reschedule-card-schedules">
+                            <div class="reschedule-schedule neutral"><span>Original</span><strong>@originalText</strong></div>
+                            <i class="bi bi-arrow-right reschedule-change-arrow" aria-hidden="true"></i>
+                            <div class="reschedule-schedule requested"><span>Requested</span><strong>@requestedText</strong>@if (request.Status == RescheduleRequestStatus.Pending){<span class="reschedule-availability @AvailabilityClass(item.Availability.State)">@item.Availability.State</span>}</div>
+                        </div>
+                        <div class="staff-reschedule-card-actions">
+                            <a asp-action="Details" asp-route-id="@request.Id" class="btn btn-sm btn-outline-secondary"><i class="bi bi-eye"></i> Details</a>
+                            @if (request.Status == RescheduleRequestStatus.Pending && canDecide)
+                            {
+                                <button type="button" class="btn btn-sm btn-success js-reschedule-approve" data-request-id="@request.Id" data-booking-code="@bookingCode" data-original="@originalText" data-requested="@requestedText" data-bs-toggle="modal" data-bs-target="#approveRescheduleModal" disabled="@(!item.Availability.IsAvailable)" title="@(item.Availability.IsAvailable ? "Approve reschedule" : item.Availability.Message)">Approve</button>
+                                <button type="button" class="btn btn-sm btn-outline-danger js-reschedule-reject" data-request-id="@request.Id" data-booking-code="@bookingCode" data-requested="@requestedText" data-bs-toggle="modal" data-bs-target="#rejectRescheduleModal">Reject</button>
+                            }
+                        </div>
+                    </article>
+                }
+            </div>
+        }
+    </div>
 </div>
+
+@if (canDecide)
+{
+    <div class="modal fade staff-reschedule-modal" id="approveRescheduleModal" tabindex="-1" aria-labelledby="approveRescheduleTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered"><div class="modal-content"><form asp-action="Approve" method="post" class="js-reschedule-decision-form">
+            @Html.AntiForgeryToken()<input type="hidden" name="id" id="approveRescheduleId" />
+            <div class="modal-header"><h2 class="modal-title fs-5" id="approveRescheduleTitle">Approve Reschedule Request</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+            <div class="modal-body">
+                <strong id="approveRescheduleBooking" class="staff-booking-code"></strong>
+                <div class="reschedule-modal-schedule"><span>Original Schedule</span><strong id="approveOriginalSchedule"></strong></div>
+                <div class="reschedule-modal-schedule requested"><span>Requested Schedule</span><strong id="approveRequestedSchedule"></strong></div>
+                <label for="approveInternalNote" class="form-label mt-3">Internal Note <span class="text-muted">— Optional</span></label>
+                <textarea id="approveInternalNote" name="internalNote" class="form-control" rows="4" maxlength="1000" placeholder="Add an internal operational note if needed."></textarea>
+                <div class="form-text">Internal notes are not shown to the client.</div>
+            </div>
+            <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-success js-reschedule-submit" data-loading-text="Approving...">Approve Reschedule</button></div>
+        </form></div></div>
+    </div>
+
+    <div class="modal fade staff-reschedule-modal" id="rejectRescheduleModal" tabindex="-1" aria-labelledby="rejectRescheduleTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered"><div class="modal-content"><form asp-action="Reject" method="post" class="js-reschedule-decision-form">
+            @Html.AntiForgeryToken()<input type="hidden" name="id" id="rejectRescheduleId" />
+            <div class="modal-header"><h2 class="modal-title fs-5" id="rejectRescheduleTitle">Reject Reschedule Request</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+            <div class="modal-body">
+                <strong id="rejectRescheduleBooking" class="staff-booking-code"></strong>
+                <div class="reschedule-modal-schedule requested"><span>Requested Schedule</span><strong id="rejectRequestedSchedule"></strong></div>
+                <label for="clientFacingReason" class="form-label mt-3">Client-Facing Reason <span class="text-muted">— Optional</span></label>
+                <textarea id="clientFacingReason" name="clientFacingReason" class="form-control" rows="3" maxlength="1000" placeholder="Optional explanation the client may see."></textarea>
+                <label for="rejectInternalNote" class="form-label mt-3">Internal Note <span class="text-muted">— Optional</span></label>
+                <textarea id="rejectInternalNote" name="internalNote" class="form-control" rows="3" maxlength="1000" placeholder="Internal Staff note only."></textarea>
+                <div class="form-text">Internal notes are never included in the client notification or email.</div>
+            </div>
+            <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-danger js-reschedule-submit" data-loading-text="Rejecting...">Reject Request</button></div>
+        </form></div></div>
+    </div>
+}
+
+@section Scripts {
+<script>
+(() => {
+    'use strict';
+    document.querySelectorAll('.js-reschedule-approve').forEach(button => {
+        button.addEventListener('click', () => {
+            document.getElementById('approveRescheduleId').value = button.dataset.requestId || '';
+            document.getElementById('approveRescheduleBooking').textContent = button.dataset.bookingCode || '';
+            document.getElementById('approveOriginalSchedule').textContent = button.dataset.original || '';
+            document.getElementById('approveRequestedSchedule').textContent = button.dataset.requested || '';
+        });
+    });
+    document.querySelectorAll('.js-reschedule-reject').forEach(button => {
+        button.addEventListener('click', () => {
+            document.getElementById('rejectRescheduleId').value = button.dataset.requestId || '';
+            document.getElementById('rejectRescheduleBooking').textContent = button.dataset.bookingCode || '';
+            document.getElementById('rejectRequestedSchedule').textContent = button.dataset.requested || '';
+        });
+    });
+    document.querySelectorAll('.js-reschedule-decision-form').forEach(form => {
+        form.addEventListener('submit', () => {
+            const submit = form.querySelector('.js-reschedule-submit');
+            if (!submit || submit.disabled) return;
+            submit.disabled = true;
+            submit.textContent = submit.dataset.loadingText || 'Processing...';
+        });
+    });
+})();
+</script>
+}

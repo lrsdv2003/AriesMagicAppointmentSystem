@@ -29,6 +29,7 @@
     <link rel="stylesheet" href="~/css/communication-center.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/ocr-verification.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/staff-bookings.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/staff-reschedules.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/staff-interface.css" asp-append-version="true" />
 </head>
 <body class="dashboard-body @(User.IsInRole("Staff") ? "staff-dashboard" : User.IsInRole("Admin") ? "admin-dashboard" : User.IsInRole("Owner") ? "owner-dashboard" : "")">

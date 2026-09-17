@@ -33,7 +33,7 @@ namespace AriesMagicAppointmentSystem.Extensions
             user.IsInRole("Staff") || user.IsInRole("Admin") || user.IsInRole("Owner");
 
         public static bool CanApproveRescheduleRequests(this ClaimsPrincipal user) =>
-            user.IsInRole("Owner");
+            user.IsInRole("Staff");
 
         // Calendar
         public static bool CanViewCalendar(this ClaimsPrincipal user) =>

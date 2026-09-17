@@ -1,3 +1,4 @@
+using System.Data;
 using System.Security.Claims;
 using AriesMagicAppointmentSystem.Data;
 using AriesMagicAppointmentSystem.Models;
@@ -56,19 +57,6 @@ namespace AriesMagicAppointmentSystem.Controllers
             {
                 ModelState.AddModelError("RequestedDate", "Reschedule requests must be made at least 3 days in advance.");
             }
-            var isBlocked = await _context.BlockedDates
-                .AnyAsync(x => x.Date.Date == model.RequestedDate.Date);
-
-            if (isBlocked)
-            {
-                ModelState.AddModelError("RequestedDate", "This date is unavailable for reschedule.");
-            }
-
-            if (await HasReachedDailyConfirmedLimitForReschedule(model.RequestedDate))
-            {
-                ModelState.AddModelError("RequestedDate", "This date has already reached the maximum number of bookings.");
-            }
-
             if (model.RequestedDate.Date == DateTime.Today && model.RequestedStartTime < DateTime.Now.TimeOfDay)
             {
                 ModelState.AddModelError("RequestedStartTime", "Past time is not allowed for today.");
@@ -91,17 +79,26 @@ namespace AriesMagicAppointmentSystem.Controllers
                 return View(model);
             }
 
+            var hasPendingRequest = await _context.RescheduleRequests
+                .AnyAsync(r => r.BookingId == booking.Id && r.Status == RescheduleRequestStatus.Pending);
+
+            if (hasPendingRequest)
+            {
+                ModelState.AddModelError("BookingId", "This booking already has a pending reschedule request.");
+                model.Bookings = await GetEligibleClientBookingsAsync(appUserId);
+                return View(model);
+            }
+
             var requestedStart = model.RequestedDate.Date.Add(model.RequestedStartTime);
             var requestedEnd = requestedStart.AddHours(booking.Service!.DurationInHours);
-
-            bool conflict = await HasBookingConflictExcludingCurrentBooking(
+            var availability = await CheckRequestedScheduleAvailabilityAsync(
                 booking.Id,
                 requestedStart,
                 requestedEnd);
 
-            if (conflict)
+            if (!availability.IsAvailable)
             {
-                ModelState.AddModelError("RequestedStartTime", "The selected time conflicts with an existing confirmed booking.");
+                ModelState.AddModelError("RequestedStartTime", availability.Message);
                 model.Bookings = await GetEligibleClientBookingsAsync(appUserId);
                 return View(model);
             }
@@ -109,6 +106,9 @@ namespace AriesMagicAppointmentSystem.Controllers
             var request = new RescheduleRequest
             {
                 BookingId = booking.Id,
+                OriginalDate = booking.EventDate.Date,
+                OriginalStartTime = booking.StartTime,
+                OriginalEndTime = booking.EndTime,
                 RequestedDate = model.RequestedDate.Date,
                 RequestedStartTime = requestedStart,
                 RequestedEndTime = requestedEnd,
@@ -130,26 +130,17 @@ namespace AriesMagicAppointmentSystem.Controllers
             await _context.SaveChangesAsync();
 
             var staffUsers = await _userManager.GetUsersInRoleAsync("Staff");
-            var ownerUsers = await _userManager.GetUsersInRoleAsync("Owner");
 
             foreach (var staff in staffUsers)
             {
                 await CreateNotificationAsync(
                     staff.Id,
                     "New Reschedule Request",
-                    "A client submitted a reschedule request.",
+                    $"Booking BK-{booking.CreatedAt.Year}-{booking.Id:D3} has a new reschedule request.",
                     "/RescheduleRequests/Index");
             }
 
-            foreach (var owner in ownerUsers)
-            {
-                await CreateNotificationAsync(
-                    owner.Id,
-                    "Reschedule Awaiting Final Approval",
-                    "A reschedule request is awaiting final approval.",
-                    "/RescheduleRequests/Index");
-            }
-            TempData["Success"] = "Your reschedule request was submitted successfully. Please wait for owner review.";
+            TempData["Success"] = "Your reschedule request was submitted successfully. Please wait for Staff review.";
             return RedirectToAction(nameof(MyRequests));
         }
 
@@ -169,190 +160,347 @@ namespace AriesMagicAppointmentSystem.Controllers
         }
 
         [Authorize(Roles = "Staff,Admin,Owner")]
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(
+            string status = RescheduleRequestStatus.Pending,
+            string? search = null,
+            DateTime? requestedDate = null,
+            string sortBy = "newest")
         {
-            var requests = await _context.RescheduleRequests
+            var allowedStatuses = new[]
+            {
+                RescheduleRequestStatus.Pending,
+                RescheduleRequestStatus.Approved,
+                RescheduleRequestStatus.Rejected,
+                "All"
+            };
+            if (!allowedStatuses.Contains(status, StringComparer.OrdinalIgnoreCase))
+            {
+                status = RescheduleRequestStatus.Pending;
+            }
+
+            var baseQuery = _context.RescheduleRequests
+                .AsNoTracking()
                 .Include(r => r.Booking)
                     .ThenInclude(b => b!.Client)
                 .Include(r => r.Booking)
                     .ThenInclude(b => b!.Service)
-                .OrderByDescending(r => r.CreatedAt)
-                .ToListAsync();
+                .AsQueryable();
 
-            return View(requests);
+            var model = new RescheduleRequestIndexViewModel
+            {
+                StatusFilter = status,
+                Search = search?.Trim() ?? string.Empty,
+                RequestedDate = requestedDate,
+                SortBy = string.Equals(sortBy, "oldest", StringComparison.OrdinalIgnoreCase) ? "oldest" : "newest",
+                PendingCount = await baseQuery.CountAsync(r => r.Status == RescheduleRequestStatus.Pending),
+                ApprovedCount = await baseQuery.CountAsync(r => r.Status == RescheduleRequestStatus.Approved),
+                RejectedCount = await baseQuery.CountAsync(r => r.Status == RescheduleRequestStatus.Rejected)
+            };
+
+            var query = baseQuery;
+            if (!string.Equals(status, "All", StringComparison.OrdinalIgnoreCase))
+            {
+                query = query.Where(r => r.Status == status);
+            }
+
+            if (!string.IsNullOrWhiteSpace(model.Search))
+            {
+                var term = model.Search;
+                var digits = new string(term.Where(char.IsDigit).ToArray());
+                var hasNumericId = int.TryParse(digits, out var numericId);
+                query = query.Where(r =>
+                    (r.Booking != null && r.Booking.Client != null &&
+                        (r.Booking.Client.FullName.Contains(term) || r.Booking.Client.Email.Contains(term))) ||
+                    (r.Booking != null &&
+                        (r.Booking.PackageName.Contains(term) || (r.Booking.Service != null && r.Booking.Service.Name.Contains(term)))) ||
+                    (hasNumericId && (r.Id == numericId || r.BookingId == numericId)));
+            }
+
+            if (requestedDate.HasValue)
+            {
+                query = query.Where(r => r.RequestedDate.Date == requestedDate.Value.Date);
+            }
+
+            query = model.SortBy == "oldest"
+                ? query.OrderBy(r => r.CreatedAt)
+                : query.OrderByDescending(r => r.CreatedAt);
+
+            var requests = await query.ToListAsync();
+            foreach (var request in requests)
+            {
+                var availability = request.Status == RescheduleRequestStatus.Pending
+                    ? await CheckRequestedScheduleAvailabilityAsync(request.BookingId, request.RequestedStartTime, request.RequestedEndTime)
+                    : new RescheduleAvailabilityViewModel
+                    {
+                        IsAvailable = false,
+                        State = "Processed",
+                        Message = "This request has already been processed."
+                    };
+
+                model.Requests.Add(new RescheduleRequestReviewItemViewModel
+                {
+                    Request = request,
+                    Availability = availability
+                });
+            }
+
+            return View(model);
         }
 
-        [Authorize(Roles = "Owner")]
-        public async Task<IActionResult> Approve(int? id)
+        [Authorize(Roles = "Staff,Admin,Owner")]
+        public async Task<IActionResult> Details(int? id, string? decision = null)
         {
             if (id == null) return NotFound();
 
             var request = await _context.RescheduleRequests
+                .AsNoTracking()
                 .Include(r => r.Booking)
                     .ThenInclude(b => b!.Client)
                 .Include(r => r.Booking)
                     .ThenInclude(b => b!.Service)
                 .FirstOrDefaultAsync(r => r.Id == id);
 
-            if (request == null) return NotFound();
+            if (request == null || request.Booking == null) return NotFound();
 
-            return View(request);
+            var availability = request.Status == RescheduleRequestStatus.Pending
+                ? await CheckRequestedScheduleAvailabilityAsync(request.BookingId, request.RequestedStartTime, request.RequestedEndTime)
+                : new RescheduleAvailabilityViewModel
+                {
+                    IsAvailable = false,
+                    State = "Processed",
+                    Message = "This reschedule request has already been processed."
+                };
+
+            return View(new RescheduleRequestDetailsViewModel
+            {
+                Request = request,
+                Availability = availability,
+                Decision = decision
+            });
+        }
+
+        [Authorize(Roles = "Staff")]
+        public IActionResult Approve(int? id)
+        {
+            if (id == null) return NotFound();
+            return RedirectToAction(nameof(Details), new { id, decision = "approve" });
         }
 
         [HttpPost, ActionName("Approve")]
-        [Authorize(Roles = "Owner")]
+        [Authorize(Roles = "Staff")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ApproveConfirmed(int id, string? adminRemarks)
+        public async Task<IActionResult> ApproveConfirmed(int id, string? internalNote)
         {
-            var request = await _context.RescheduleRequests
-                .Include(r => r.Booking)
-                    .ThenInclude(b => b!.Service)
-                .FirstOrDefaultAsync(r => r.Id == id);
+            var reviewer = await _userManager.GetUserAsync(User);
+            var reviewerId = reviewer?.Id ?? User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "Unknown";
+            var reviewerName = reviewer?.FullName ?? reviewer?.Email ?? User.Identity?.Name ?? "Staff";
+            RescheduleRequest? request;
 
-            if (request == null || request.Booking == null) return NotFound();
-
-            if (request.Status != RescheduleRequestStatus.Pending)
+            await using (var transaction = await _context.Database.BeginTransactionAsync(IsolationLevel.Serializable))
             {
-                TempData["Error"] = "Only pending reschedule requests can be approved.";
-                return RedirectToAction(nameof(Index));
+                request = await _context.RescheduleRequests
+                    .Include(r => r.Booking)
+                        .ThenInclude(b => b!.Client)
+                    .Include(r => r.Booking)
+                        .ThenInclude(b => b!.Service)
+                    .FirstOrDefaultAsync(r => r.Id == id);
+
+                if (request == null || request.Booking == null) return NotFound();
+
+                if (request.Status != RescheduleRequestStatus.Pending)
+                {
+                    await transaction.RollbackAsync();
+                    TempData["Error"] = "This reschedule request has already been processed.";
+                    return RedirectToAction(nameof(Details), new { id });
+                }
+
+                var availability = await CheckRequestedScheduleAvailabilityAsync(
+                    request.BookingId,
+                    request.RequestedStartTime,
+                    request.RequestedEndTime);
+
+                if (!availability.IsAvailable)
+                {
+                    await transaction.RollbackAsync();
+                    TempData["Error"] = $"Schedule Conflict Detected. {availability.Message}";
+                    return RedirectToAction(nameof(Details), new { id });
+                }
+
+                var reviewedAt = DateTime.Now;
+                var originalDate = request.OriginalDate ?? request.Booking.EventDate.Date;
+                var originalStartTime = request.OriginalStartTime ?? request.Booking.StartTime;
+                var originalEndTime = request.OriginalEndTime ?? request.Booking.EndTime;
+                var claimed = await _context.RescheduleRequests
+                    .Where(r => r.Id == id && r.Status == RescheduleRequestStatus.Pending)
+                    .ExecuteUpdateAsync(setters => setters
+                        .SetProperty(r => r.Status, RescheduleRequestStatus.Approved)
+                        .SetProperty(r => r.ReviewedAt, reviewedAt)
+                        .SetProperty(r => r.ReviewedByUserId, reviewerId)
+                        .SetProperty(r => r.ReviewedByName, reviewerName)
+                        .SetProperty(r => r.InternalNote, internalNote)
+                        .SetProperty(r => r.OriginalDate, originalDate)
+                        .SetProperty(r => r.OriginalStartTime, originalStartTime)
+                        .SetProperty(r => r.OriginalEndTime, originalEndTime));
+
+                if (claimed != 1)
+                {
+                    await transaction.RollbackAsync();
+                    TempData["Error"] = "This reschedule request has already been processed.";
+                    return RedirectToAction(nameof(Details), new { id });
+                }
+
+                // Booking is the single live schedule record used by Calendar, Upcoming Events,
+                // booking details, reports, client views, and communication booking context.
+                request.Booking.EventDate = request.RequestedDate.Date;
+                request.Booking.StartTime = request.RequestedStartTime;
+                request.Booking.EndTime = request.RequestedEndTime;
+
+                _context.BookingTimelines.Add(new BookingTimeline
+                {
+                    BookingId = request.Booking.Id,
+                    EventType = TimelineEventType.RescheduleApproved,
+                    Notes = $"Staff approved reschedule request. New schedule: {request.RequestedDate:MMM dd, yyyy}, {request.RequestedStartTime:hh:mm tt} - {request.RequestedEndTime:hh:mm tt}.",
+                    CreatedAt = reviewedAt
+                });
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
             }
 
-            bool conflict = await HasBookingConflictExcludingCurrentBooking(
-                request.Booking.Id,
-                request.RequestedStartTime,
-                request.RequestedEndTime);
-
-            if (conflict)
-            {
-                TempData["Error"] = "Requested schedule conflicts with an existing confirmed booking.";
-                return RedirectToAction(nameof(Index));
-            }
-            var isBlocked = await _context.BlockedDates
-                .AnyAsync(x => x.Date.Date == request.RequestedDate.Date);
-
-            if (isBlocked)
-            {
-                TempData["Error"] = "The requested date is blocked and unavailable.";
-                return RedirectToAction(nameof(Index));
-            }
-
-            request.Status = RescheduleRequestStatus.Approved;
-            request.ReviewedAt = DateTime.Now;
-            request.AdminRemarks = adminRemarks;
-
-            request.Booking.EventDate = request.RequestedDate.Date;
-            request.Booking.StartTime = request.RequestedStartTime;
-            request.Booking.EndTime = request.RequestedEndTime;
-
-            _context.BookingTimelines.Add(new BookingTimeline
-            {
-                BookingId = request.Booking.Id,
-                EventType = TimelineEventType.RescheduleApproved,
-                Notes = "Owner approved the reschedule request.",
-                CreatedAt = DateTime.Now
-            });
-
-            await _context.SaveChangesAsync();
+            var bookingCode = $"BK-{request!.Booking!.CreatedAt.Year}-{request.Booking.Id:D3}";
+            var newSchedule = $"{request.RequestedDate:MMMM dd, yyyy}, {request.RequestedStartTime:hh:mm tt} - {request.RequestedEndTime:hh:mm tt}";
 
             if (!string.IsNullOrWhiteSpace(request.Booking.ApplicationUserId))
             {
                 await CreateNotificationAsync(
                     request.Booking.ApplicationUserId,
                     "Reschedule Approved",
-                    "Your reschedule request was approved.",
-                    "/RescheduleRequests/MyRequests");
+                    $"Your booking has been moved to {newSchedule}.",
+                    "/Bookings/MyBookings");
             }
 
-            var bookingWithClient = await _context.Bookings
-                .Include(b => b.Client)
-                .FirstOrDefaultAsync(b => b.Id == request.Booking.Id);
+            await NotifyInternalUsersAsync(
+                reviewerId,
+                "Booking Rescheduled",
+                $"{bookingCode} has been rescheduled to {newSchedule}.",
+                $"/Bookings/Details/{request.Booking.Id}");
 
-            if (bookingWithClient != null && bookingWithClient.Client != null)
+            if (request.Booking.Client != null)
             {
                 await _emailService.SendEmailAsync(
-                    bookingWithClient.Client.Email,
+                    request.Booking.Client.Email,
                     "Reschedule Approved",
-                    @"
-                    <h2>Your Reschedule Request Was Approved</h2>
-                    <p>Your booking schedule has been updated successfully.</p>
-                    <p>Please log in to view the updated booking details.</p>");
+                    $@"
+                    <h2>Reschedule Approved</h2>
+                    <p>Your event schedule has been updated.</p>
+                    <p><strong>{newSchedule}</strong></p>
+                    <p>You can view the updated booking details in your account.</p>");
             }
 
+            TempData["Success"] = $"{bookingCode} was rescheduled successfully.";
             return RedirectToAction(nameof(Index));
         }
 
-        [Authorize(Roles = "Owner")]
-        public async Task<IActionResult> Reject(int? id)
+        [Authorize(Roles = "Staff")]
+        public IActionResult Reject(int? id)
         {
             if (id == null) return NotFound();
-
-            var request = await _context.RescheduleRequests
-                .Include(r => r.Booking)
-                    .ThenInclude(b => b!.Client)
-                .Include(r => r.Booking)
-                    .ThenInclude(b => b!.Service)
-                .FirstOrDefaultAsync(r => r.Id == id);
-
-            if (request == null) return NotFound();
-
-            return View(request);
+            return RedirectToAction(nameof(Details), new { id, decision = "reject" });
         }
 
         [HttpPost, ActionName("Reject")]
-        [Authorize(Roles = "Owner")]
+        [Authorize(Roles = "Staff")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> RejectConfirmed(int id, string? adminRemarks)
+        public async Task<IActionResult> RejectConfirmed(int id, string? clientFacingReason, string? internalNote)
         {
-            var request = await _context.RescheduleRequests
-                .Include(r => r.Booking)
-                .FirstOrDefaultAsync(r => r.Id == id);
+            var reviewer = await _userManager.GetUserAsync(User);
+            var reviewerId = reviewer?.Id ?? User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "Unknown";
+            var reviewerName = reviewer?.FullName ?? reviewer?.Email ?? User.Identity?.Name ?? "Staff";
+            RescheduleRequest? request;
 
-            if (request == null || request.Booking == null) return NotFound();
-
-            if (request.Status != RescheduleRequestStatus.Pending)
+            await using (var transaction = await _context.Database.BeginTransactionAsync(IsolationLevel.Serializable))
             {
-                TempData["Error"] = "Only pending reschedule requests can be rejected.";
-                return RedirectToAction(nameof(Index));
+                request = await _context.RescheduleRequests
+                    .Include(r => r.Booking)
+                        .ThenInclude(b => b!.Client)
+                    .FirstOrDefaultAsync(r => r.Id == id);
+
+                if (request == null || request.Booking == null) return NotFound();
+
+                if (request.Status != RescheduleRequestStatus.Pending)
+                {
+                    await transaction.RollbackAsync();
+                    TempData["Error"] = "This reschedule request has already been processed.";
+                    return RedirectToAction(nameof(Details), new { id });
+                }
+
+                var reviewedAt = DateTime.Now;
+                var snapshotOriginalDate = request.OriginalDate ?? request.Booking.EventDate.Date;
+                var snapshotOriginalStartTime = request.OriginalStartTime ?? request.Booking.StartTime;
+                var snapshotOriginalEndTime = request.OriginalEndTime ?? request.Booking.EndTime;
+                var claimed = await _context.RescheduleRequests
+                    .Where(r => r.Id == id && r.Status == RescheduleRequestStatus.Pending)
+                    .ExecuteUpdateAsync(setters => setters
+                        .SetProperty(r => r.Status, RescheduleRequestStatus.Rejected)
+                        .SetProperty(r => r.ReviewedAt, reviewedAt)
+                        .SetProperty(r => r.ReviewedByUserId, reviewerId)
+                        .SetProperty(r => r.ReviewedByName, reviewerName)
+                        .SetProperty(r => r.InternalNote, internalNote)
+                        .SetProperty(r => r.ClientFacingReason, clientFacingReason)
+                        .SetProperty(r => r.OriginalDate, snapshotOriginalDate)
+                        .SetProperty(r => r.OriginalStartTime, snapshotOriginalStartTime)
+                        .SetProperty(r => r.OriginalEndTime, snapshotOriginalEndTime));
+
+                if (claimed != 1)
+                {
+                    await transaction.RollbackAsync();
+                    TempData["Error"] = "This reschedule request has already been processed.";
+                    return RedirectToAction(nameof(Details), new { id });
+                }
+
+                // Rejection intentionally does not modify Booking.EventDate/StartTime/EndTime.
+                _context.BookingTimelines.Add(new BookingTimeline
+                {
+                    BookingId = request.Booking.Id,
+                    EventType = TimelineEventType.RescheduleRejected,
+                    Notes = "Staff rejected the reschedule request. The booking schedule remains unchanged.",
+                    CreatedAt = reviewedAt
+                });
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
             }
 
-            request.Status = RescheduleRequestStatus.Rejected;
-            request.ReviewedAt = DateTime.Now;
-            request.AdminRemarks = adminRemarks;
-
-            _context.BookingTimelines.Add(new BookingTimeline
-            {
-                BookingId = request.Booking.Id,
-                EventType = TimelineEventType.RescheduleRejected,
-                Notes = "Owner rejected the reschedule request.",
-                CreatedAt = DateTime.Now
-            });
-
-            await _context.SaveChangesAsync();
+            var originalDate = request!.OriginalDate ?? request.Booking!.EventDate;
+            var originalStart = request.OriginalStartTime ?? request.Booking.StartTime;
+            var originalEnd = request.OriginalEndTime ?? request.Booking.EndTime;
+            var originalSchedule = $"{originalDate:MMMM dd, yyyy}, {originalStart:hh:mm tt} - {originalEnd:hh:mm tt}";
 
             if (!string.IsNullOrWhiteSpace(request.Booking.ApplicationUserId))
             {
                 await CreateNotificationAsync(
                     request.Booking.ApplicationUserId,
-                    "Reschedule Rejected",
-                    "Your reschedule request was rejected.",
+                    "Reschedule Request Declined",
+                    $"Your original event schedule remains {originalSchedule}.",
                     "/RescheduleRequests/MyRequests");
             }
 
-            var bookingWithClient = await _context.Bookings
-                .Include(b => b.Client)
-                .FirstOrDefaultAsync(b => b.Id == request.Booking.Id);
-
-            if (bookingWithClient != null && bookingWithClient.Client != null)
+            if (request.Booking.Client != null)
             {
+                var reasonParagraph = string.IsNullOrWhiteSpace(clientFacingReason)
+                    ? string.Empty
+                    : $"<p><strong>Reason:</strong> {System.Net.WebUtility.HtmlEncode(clientFacingReason)}</p>";
                 await _emailService.SendEmailAsync(
-                    bookingWithClient.Client.Email,
-                    "Reschedule Rejected",
+                    request.Booking.Client.Email,
+                    "Reschedule Request Declined",
                     $@"
-                    <h2>Your Reschedule Request Was Rejected</h2>
-                    <p>Your reschedule request was not approved.</p>
-                    <p>Remarks: {adminRemarks}</p>");
+                    <h2>Reschedule Request Declined</h2>
+                    <p>Your requested schedule change was not approved.</p>
+                    <p>Your original event schedule remains <strong>{originalSchedule}</strong>.</p>
+                    {reasonParagraph}");
             }
-            TempData["Success"] = "Reschedule request rejected.";
+
+            TempData["Success"] = "Reschedule request rejected. The booking schedule was not changed.";
             return RedirectToAction(nameof(Index));
         }
 
@@ -378,12 +526,13 @@ namespace AriesMagicAppointmentSystem.Controllers
                 .Where(b => b.Status == BookingStatus.Confirmed && b.Id != currentBookingId)
                 .ToListAsync();
 
+            var requestedEndWithBuffer = requestedEnd.AddHours(1);
             foreach (var booking in confirmedBookings)
             {
                 var existingStart = booking.StartTime;
                 var existingEndWithBuffer = booking.EndTime.AddHours(1);
 
-                bool overlaps = requestedStart < existingEndWithBuffer && requestedEnd > existingStart;
+                var overlaps = requestedStart < existingEndWithBuffer && requestedEndWithBuffer > existingStart;
 
                 if (overlaps)
                 {
@@ -392,6 +541,86 @@ namespace AriesMagicAppointmentSystem.Controllers
             }
 
             return false;
+        }
+
+        private async Task<RescheduleAvailabilityViewModel> CheckRequestedScheduleAvailabilityAsync(
+            int currentBookingId,
+            DateTime requestedStart,
+            DateTime requestedEnd)
+        {
+            if (requestedEnd <= requestedStart)
+            {
+                return new RescheduleAvailabilityViewModel
+                {
+                    IsAvailable = false,
+                    State = "Invalid Schedule",
+                    Message = "Requested end time must be later than the requested start time."
+                };
+            }
+
+            if (requestedStart <= DateTime.Now)
+            {
+                return new RescheduleAvailabilityViewModel
+                {
+                    IsAvailable = false,
+                    State = "Unavailable",
+                    Message = "The requested schedule has already passed."
+                };
+            }
+
+            var blockedEntry = await _context.BlockedDates
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Date.Date == requestedStart.Date);
+            if (blockedEntry != null)
+            {
+                return new RescheduleAvailabilityViewModel
+                {
+                    IsAvailable = false,
+                    State = "Blocked",
+                    Message = string.IsNullOrWhiteSpace(blockedEntry.Reason)
+                        ? "The requested date is blocked and unavailable."
+                        : $"The requested date is blocked: {blockedEntry.Reason}"
+                };
+            }
+
+            var customLimit = await _context.DateBookingLimits
+                .AsNoTracking()
+                .Where(x => x.Date.Date == requestedStart.Date)
+                .Select(x => (int?)x.MaxBookings)
+                .FirstOrDefaultAsync();
+            var settings = await _context.SystemSettings.AsNoTracking().FirstOrDefaultAsync();
+            var maxPerDay = customLimit ?? settings?.MaxBookingsPerDay ?? 3;
+            var confirmedCount = await _context.Bookings
+                .CountAsync(b => b.Status == BookingStatus.Confirmed
+                            && b.Id != currentBookingId
+                            && b.EventDate.Date == requestedStart.Date);
+
+            if (confirmedCount >= maxPerDay)
+            {
+                return new RescheduleAvailabilityViewModel
+                {
+                    IsAvailable = false,
+                    State = "Daily Limit Reached",
+                    Message = "The requested date has reached the maximum number of confirmed bookings."
+                };
+            }
+
+            if (await HasBookingConflictExcludingCurrentBooking(currentBookingId, requestedStart, requestedEnd))
+            {
+                return new RescheduleAvailabilityViewModel
+                {
+                    IsAvailable = false,
+                    State = "Schedule Conflict",
+                    Message = "Requested schedule overlaps another confirmed event or its required 1-hour buffer."
+                };
+            }
+
+            return new RescheduleAvailabilityViewModel
+            {
+                IsAvailable = true,
+                State = "Available",
+                Message = "Requested schedule is currently available."
+            };
         }
 
         private async Task CreateNotificationAsync(string userId, string title, string message, string? link = null)
@@ -409,62 +638,50 @@ namespace AriesMagicAppointmentSystem.Controllers
             await _context.SaveChangesAsync();
         }
 
+        private async Task NotifyInternalUsersAsync(string skipUserId, string title, string message, string link)
+        {
+            var staffUsers = await _userManager.GetUsersInRoleAsync("Staff");
+            var adminUsers = await _userManager.GetUsersInRoleAsync("Admin");
+            var ownerUsers = await _userManager.GetUsersInRoleAsync("Owner");
+
+            var recipients = staffUsers
+                .Concat(adminUsers)
+                .Concat(ownerUsers)
+                .Where(u => u.Id != skipUserId)
+                .GroupBy(u => u.Id)
+                .Select(g => g.First());
+
+            foreach (var recipient in recipients)
+            {
+                _context.Notifications.Add(new Notification
+                {
+                    UserId = recipient.Id,
+                    Title = title,
+                    Message = message,
+                    Link = link,
+                    IsRead = false,
+                    CreatedAt = DateTime.Now
+                });
+            }
+
+            await _context.SaveChangesAsync();
+        }
+
         private async Task<List<string>> GetUnavailableRescheduleDatesAsync()
         {
+            // Only owner/admin blocked dates are disabled globally. Capacity depends on the
+            // selected booking because the current booking must be excluded from the count.
             var blockedDates = await _context.BlockedDates
+                .AsNoTracking()
                 .Select(x => x.Date.Date)
                 .ToListAsync();
 
-            var settings = await _context.SystemSettings.FirstOrDefaultAsync();
-            var defaultMax = settings?.MaxBookingsPerDay ?? 3;
-
-            var customLimits = await _context.DateBookingLimits
-                .ToDictionaryAsync(x => x.Date.Date, x => x.MaxBookings);
-
-            var confirmedCounts = await _context.Bookings
-                .Where(b => b.Status == BookingStatus.Confirmed)
-                .GroupBy(b => b.EventDate.Date)
-                .Select(g => new
-                {
-                    Date = g.Key,
-                    Count = g.Count()
-                })
-                .ToListAsync();
-
-            var fullDates = confirmedCounts
-                .Where(x =>
-                {
-                    var limit = customLimits.ContainsKey(x.Date) ? customLimits[x.Date] : defaultMax;
-                    return x.Count >= limit;
-                })
-                .Select(x => x.Date)
-                .ToList();
-
-            return blockedDates
-                .Union(fullDates)
-                .Select(d => d.ToString("yyyy-MM-dd"))
-                .ToList();
-        }
-        private async Task<bool> HasReachedDailyConfirmedLimitForReschedule(DateTime eventDate)
-        {
-            var customLimit = await _context.DateBookingLimits
-                .Where(x => x.Date.Date == eventDate.Date)
-                .Select(x => (int?)x.MaxBookings)
-                .FirstOrDefaultAsync();
-
-            var defaultSetting = await _context.SystemSettings.FirstOrDefaultAsync();
-            var maxPerDay = customLimit ?? defaultSetting?.MaxBookingsPerDay ?? 3;
-
-            var confirmedCount = await _context.Bookings
-                .CountAsync(b => b.Status == BookingStatus.Confirmed
-                            && b.EventDate.Date == eventDate.Date);
-
-            return confirmedCount >= maxPerDay;
+            return blockedDates.Select(d => d.ToString("yyyy-MM-dd")).ToList();
         }
 
         [Authorize(Roles = "Client")]
         [HttpGet]
-        public async Task<IActionResult> CheckRescheduleDateAvailability(DateTime date)
+        public async Task<IActionResult> CheckRescheduleDateAvailability(DateTime date, int? bookingId = null)
         {
             var blockedEntry = await _context.BlockedDates
                 .FirstOrDefaultAsync(x => x.Date.Date == date.Date);
@@ -481,7 +698,9 @@ namespace AriesMagicAppointmentSystem.Controllers
             var maxPerDay = customLimit ?? settings?.MaxBookingsPerDay ?? 3;
 
             var confirmedCount = await _context.Bookings
-                .CountAsync(b => b.Status == BookingStatus.Confirmed && b.EventDate.Date == date.Date);
+                .CountAsync(b => b.Status == BookingStatus.Confirmed
+                            && b.EventDate.Date == date.Date
+                            && (!bookingId.HasValue || b.Id != bookingId.Value));
 
             var remainingSlots = Math.Max(0, maxPerDay - confirmedCount);
 

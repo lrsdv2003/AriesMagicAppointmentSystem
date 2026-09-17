@@ -19,8 +19,8 @@
 <div class="dashboard-panel mb-4">
     <div class="form-section-title mb-2">Availability Guide</div>
     <p class="availability-help mb-3">
-        Some dates may be unavailable because they are already full or blocked by the admin.
-        All packages last <strong>3 hours</strong> and include a required <strong>1-hour buffer</strong> after the event.
+        Some dates may be unavailable because they are already full or blocked by the scheduling team.
+        Availability uses the selected package duration and the system's required <strong>1-hour buffer</strong> after the event.
     </p>
 
     <div class="availability-legend">
@@ -193,7 +193,8 @@
                 }
 
                 try {
-                    const response = await fetch(`/RescheduleRequests/CheckRescheduleDateAvailability?date=${selectedDate}`);
+                    const selectedBookingId = bookingSelect.value || "";
+                    const response = await fetch(`/RescheduleRequests/CheckRescheduleDateAvailability?date=${selectedDate}&bookingId=${selectedBookingId}`);
                     const data = await response.json();
 
                     if (data.isBlocked) {

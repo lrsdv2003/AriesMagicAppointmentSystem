@@ -9,7 +9,7 @@
     <div>
         <div class="section-kicker">Client Portal</div>
         <h1 class="client-portal-title">My Reschedule Requests</h1>
-        <p class="client-portal-text">Track the status of your submitted reschedule requests and monitor admin decisions.</p>
+        <p class="client-portal-text">Track your submitted reschedule requests and Staff decisions.</p>
     </div>
     <div>
         <a asp-action="Create" class="btn btn-primary btn-lg">New Request</a>
@@ -36,7 +36,7 @@
         <strong class="client-portal-stat-value">
             @requests.Count(x => x.Status == AriesMagicAppointmentSystem.Models.RescheduleRequestStatus.Pending)
         </strong>
-        <span class="client-portal-stat-note">Requests still waiting for admin review</span>
+        <span class="client-portal-stat-note">Requests still waiting for Staff review</span>
     </div>
 </div>
 
@@ -83,6 +83,13 @@ else
             };
 
             var packageName = item.Booking?.PackageName ?? item.Booking?.Service?.Name ?? "Package";
+            var originalDate = item.OriginalDate ?? (item.Status == AriesMagicAppointmentSystem.Models.RescheduleRequestStatus.Pending ? item.Booking?.EventDate : null);
+            var originalStart = item.OriginalStartTime ?? (item.Status == AriesMagicAppointmentSystem.Models.RescheduleRequestStatus.Pending ? item.Booking?.StartTime : null);
+            var originalEnd = item.OriginalEndTime ?? (item.Status == AriesMagicAppointmentSystem.Models.RescheduleRequestStatus.Pending ? item.Booking?.EndTime : null);
+            var originalSchedule = originalDate.HasValue && originalStart.HasValue && originalEnd.HasValue
+                ? $"{originalDate.Value:MMMM dd, yyyy}, {originalStart.Value:hh:mm tt} – {originalEnd.Value:hh:mm tt}"
+                : "Historical original schedule unavailable";
+            var requestedSchedule = $"{item.RequestedDate:MMMM dd, yyyy}, {item.RequestedStartTime:hh:mm tt} – {item.RequestedEndTime:hh:mm tt}";
 
             <div class="client-booking-card">
                 <div class="client-booking-top">
@@ -111,12 +118,12 @@ else
 
                 <div class="client-booking-details">
                     <div class="client-booking-detail-row">
-                        <span>Original Booking Date</span>
-                        <strong>@(item.Booking?.EventDate.ToString("MMMM dd, yyyy") ?? "N/A")</strong>
+                        <span>Original Schedule</span>
+                        <strong>@originalSchedule</strong>
                     </div>
                     <div class="client-booking-detail-row">
-                        <span>Original Start Time</span>
-                        <strong>@(item.Booking?.StartTime.ToString("hh:mm tt") ?? "N/A")</strong>
+                        <span>Requested Schedule</span>
+                        <strong>@requestedSchedule</strong>
                     </div>
                     <div class="client-booking-detail-row">
                         <span>Reason</span>
@@ -127,38 +134,25 @@ else
                 <div class="client-booking-note">
                     @if (item.Status == AriesMagicAppointmentSystem.Models.RescheduleRequestStatus.Pending)
                     {
-                        <span>Your request is currently waiting for admin review.</span>
+                        <span>Your request is currently waiting for Staff review.</span>
                     }
                     else if (item.Status == AriesMagicAppointmentSystem.Models.RescheduleRequestStatus.Approved)
                     {
-                        <span>Your reschedule request was approved and your booking schedule has been updated.</span>
+                        <span><strong>Reschedule Approved.</strong> Your booking has been moved to @requestedSchedule.</span>
                     }
                     else if (item.Status == AriesMagicAppointmentSystem.Models.RescheduleRequestStatus.Rejected)
                     {
-                        <span>Your reschedule request was rejected. Please review the admin remarks and submit a new request if necessary.</span>
-                    }
-                    else
-                    {
-                        <span>Check this request regularly for updates.</span>
+                        <span><strong>Reschedule Request Declined.</strong> Your original event schedule remains unchanged.</span>
                     }
                 </div>
 
-                <div class="mt-3">
-                    <div class="form-section-title mb-2">Owner Remarks</div>
-
-                    @if (string.IsNullOrWhiteSpace(item.AdminRemarks))
-                    {
-                        <div class="details-description-block">
-                            No remarks yet.
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="details-description-block">
-                            @item.AdminRemarks
-                        </div>
-                    }
-                </div>
+                @if (item.Status == AriesMagicAppointmentSystem.Models.RescheduleRequestStatus.Rejected && !string.IsNullOrWhiteSpace(item.ClientFacingReason))
+                {
+                    <div class="mt-3">
+                        <div class="form-section-title mb-2">Reason</div>
+                        <div class="details-description-block">@item.ClientFacingReason</div>
+                    </div>
+                }
 
                 <div class="client-booking-footer">
                     <div class="client-booking-footer-actions">
