@@ -2,15 +2,18 @@
 @using AriesMagicAppointmentSystem.Models
 @{
     var isClient = User.IsInRole("Client");
+    var isStaff = User.IsInRole("Staff");
+    var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
     Layout = isClient ? "_Layout" : "_DashboardLayout";
     ViewData["Title"] = "Messages";
     var selected = Model.SelectedConversation;
+    var otherParticipant = selected?.Participants.FirstOrDefault(p => p.UserId != currentUserId);
     var lastMessageId = selected?.Messages.LastOrDefault()?.Id ?? 0;
     var canCompleteRequests = User.IsInRole("Admin") || User.IsInRole("Owner");
 }
 
 <div id="communicationCenter"
-     class="comm-page @(isClient ? "comm-page-client" : "comm-page-dashboard")"
+     class="comm-page @(isClient ? "comm-page-client" : "comm-page-dashboard") @(isStaff ? "comm-page-staff" : "") @(isStaff && selected != null ? "comm-has-selection" : "")"
      data-conversation-id="@(selected?.Id ?? 0)"
      data-last-message-id="@lastMessageId"
      data-messages-url="@Url.Action("MessagesSince", "Communications")"
@@ -19,8 +22,8 @@
     <div class="comm-page-header">
         <div>
             <span class="comm-kicker"><i class="bi bi-chat-heart"></i> Communication Center</span>
-            <h1>Messages & Coordination</h1>
-            <p>@(isClient ? "Keep every booking question and update connected to your event." : "Coordinate client concerns, bookings, schedules, and team operations in one place.")</p>
+            <h1>@(isStaff ? "Messages" : "Messages & Coordination")</h1>
+            <p>@(isClient ? "Keep every booking question and update connected to your event." : isStaff ? "Message clients and team members without leaving the Staff workspace." : "Coordinate client concerns, bookings, schedules, and team operations in one place.")</p>
         </div>
         @if (Model.IsInternalUser)
         {
@@ -94,9 +97,12 @@
                 @if (Model.Conversations.Count == 0)
                 {
                     <div class="comm-list-empty">
-                        <i class="bi bi-stars"></i>
-                        <strong>No conversations found</strong>
-                        <span>@(string.IsNullOrWhiteSpace(Model.Search) ? "Your conversations will appear here." : "Try another search or filter.")</span>
+                        <i class="bi bi-chat-dots"></i>
+                        <strong>@(string.IsNullOrWhiteSpace(Model.Search) ? "No messages yet." : "No conversations found")</strong>
+                        @if (!string.IsNullOrWhiteSpace(Model.Search))
+                        {
+                            <span>Try another search or filter.</span>
+                        }
                     </div>
                 }
                 else
@@ -108,14 +114,14 @@
                             <span class="comm-avatar">@item.Initials</span>
                             <span class="comm-item-copy">
                                 <span class="comm-item-heading">
-                                    <strong>@item.Title</strong>
-                                    <time>@item.LastActivityAt.ToLocalTime().ToString("MMM d")</time>
+                                    <strong>@(isStaff ? item.DisplayName : item.Title)</strong>
+                                    <time>@(item.LastActivityAt.ToLocalTime().Date == DateTime.Today ? item.LastActivityAt.ToLocalTime().ToString("h:mm tt") : item.LastActivityAt.ToLocalTime().ToString("MMM d"))</time>
                                 </span>
                                 <span class="comm-item-subtitle">@item.Subtitle</span>
                                 <span class="comm-item-preview">@item.LatestMessage</span>
                             </span>
                             <span class="comm-item-signals">
-                                @if (item.HasOpenRequest)
+                                @if (item.HasOpenRequest && !isStaff)
                                 {
                                     <span class="comm-request-dot" title="Open operational request"><i class="bi bi-lightning-charge-fill"></i></span>
                                 }
@@ -136,8 +142,11 @@
                 <div class="comm-chat-empty">
                     <div class="comm-empty-orbit"><i class="bi bi-chat-dots"></i></div>
                     <span class="comm-eyebrow">Your conversations</span>
-                    <h2>Select a conversation</h2>
-                    <p>Choose a message thread from the left to view its history and continue the discussion.</p>
+                    <h2>Select a conversation to start messaging.</h2>
+                    @if (!isStaff)
+                    {
+                        <p>Choose a message thread from the left to view its history and continue the discussion.</p>
+                    }
                     @if (isClient)
                     {
                         <p class="comm-empty-hint"><i class="bi bi-calendar2-event"></i> Booking-specific chats can also be opened directly from <strong>My Bookings</strong>.</p>
@@ -147,14 +156,18 @@
             else
             {
                 <header class="comm-chat-header">
+                    @if (isStaff)
+                    {
+                        <a asp-action="Index" asp-route-filter="@Model.Filter" asp-route-q="@Model.Search" class="comm-mobile-back" aria-label="Back to conversations"><i class="bi bi-arrow-left"></i></a>
+                    }
                     <div class="comm-chat-title">
-                        <span class="comm-avatar comm-avatar-lg">@(selected.Participants.FirstOrDefault(p => p.UserId != User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value)?.Initials ?? "AM")</span>
+                        <span class="comm-avatar comm-avatar-lg">@(otherParticipant?.Initials ?? "AM")</span>
                         <div>
                             <div class="comm-title-line">
-                                <h2>@selected.Title</h2>
-                                <span class="comm-type-chip">@selected.ConversationType.Replace("Internal", "Team ").Replace("ClientSupport", "Support").Replace("OperationalRequest", "Request")</span>
+                                <h2>@(isStaff ? otherParticipant?.Name ?? selected.Title : selected.Title)</h2>
+                                <span class="comm-type-chip">@(isStaff ? otherParticipant?.Role ?? "Conversation" : selected.ConversationType.Replace("Internal", "Team ").Replace("ClientSupport", "Support").Replace("OperationalRequest", "Request"))</span>
                             </div>
-                            <p>@(string.IsNullOrWhiteSpace(selected.ParticipantSummary) ? "Aries Magic conversation" : selected.ParticipantSummary)</p>
+                            <p>@(isStaff ? (selected.BookingId.HasValue ? $"{otherParticipant?.Role ?? "Conversation"} · Regarding Booking #{selected.BookingId}" : otherParticipant?.Role ?? "Aries Magic conversation") : string.IsNullOrWhiteSpace(selected.ParticipantSummary) ? "Aries Magic conversation" : selected.ParticipantSummary)</p>
                         </div>
                     </div>
                     @if (selected.BookingId.HasValue)
@@ -165,7 +178,7 @@
                     }
                 </header>
 
-                @if (selected.Booking != null)
+                @if (selected.Booking != null && !isStaff)
                 {
                     <div class="comm-booking-context">
                         <span class="comm-context-icon"><i class="bi bi-ticket-perforated"></i></span>
@@ -221,7 +234,7 @@
                     <form asp-action="SendMessage" method="post" id="commComposer" class="comm-composer">
                         @Html.AntiForgeryToken()
                         <input type="hidden" name="conversationId" value="@selected.Id" />
-                        @if (Model.IsInternalUser)
+                        @if (Model.IsInternalUser && !isStaff)
                         {
                             <details class="comm-request-tools">
                                 <summary><i class="bi bi-lightning-charge"></i> Add operational request</summary>
@@ -249,7 +262,9 @@
             }
         </section>
 
-        <aside class="comm-info-panel" aria-label="Conversation information">
+        @if (!isStaff)
+        {
+            <aside class="comm-info-panel" aria-label="Conversation information">
             @if (selected != null)
             {
                 <div class="comm-info-section">
@@ -287,7 +302,8 @@
             {
                 <div class="comm-info-empty"><i class="bi bi-stars"></i><span>Booking context and participants appear here.</span></div>
             }
-        </aside>
+            </aside>
+        }
     </div>
 </div>
 
@@ -314,8 +330,11 @@
                             <div class="col-md-7"><label class="form-label">Conversation title <span class="text-secondary">(optional for direct message)</span></label><input class="form-control" type="text" name="title" maxlength="200" placeholder="e.g. October 21 Wedding Event" /></div>
                             <div class="col-md-5"><label class="form-label">Related Booking ID <span class="text-secondary">(optional)</span></label><input class="form-control" type="number" min="1" name="relatedBookingId" placeholder="e.g. 1025" /></div>
                             <div class="col-12"><label class="form-label">First message</label><textarea class="form-control" name="initialMessage" rows="3" maxlength="4000" placeholder="What do you need to coordinate?"></textarea></div>
-                            <div class="col-md-6"><label class="form-label">Operational request <span class="text-secondary">(optional)</span></label><select class="form-select" name="requestType"><option value="">Normal conversation</option><option>Calendar Change Request</option><option>Booking Review Request</option><option>Schedule Modification</option><option>Client Request</option><option>Availability Update</option><option>Payment Concern</option></select></div>
-                            <div class="col-md-6"><label class="form-label">Related system link <span class="text-secondary">(optional)</span></label><input class="form-control" type="text" name="actionLink" placeholder="/Calendar or /Bookings/Details/1025" /></div>
+                            @if (!isStaff)
+                            {
+                                <div class="col-md-6"><label class="form-label">Operational request <span class="text-secondary">(optional)</span></label><select class="form-select" name="requestType"><option value="">Normal conversation</option><option>Calendar Change Request</option><option>Booking Review Request</option><option>Schedule Modification</option><option>Client Request</option><option>Availability Update</option><option>Payment Concern</option></select></div>
+                                <div class="col-md-6"><label class="form-label">Related system link <span class="text-secondary">(optional)</span></label><input class="form-control" type="text" name="actionLink" placeholder="/Calendar or /Bookings/Details/1025" /></div>
+                            }
                         </div>
                     </div>
                     <div class="modal-footer"><button type="button" class="btn comm-secondary-btn" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn comm-primary-btn"><i class="bi bi-chat-square-text"></i> Create Conversation</button></div>

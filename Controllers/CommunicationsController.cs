@@ -470,7 +470,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                 Id = conversation.Id,
                 Title = title,
                 ConversationType = conversation.ConversationType,
-                ParticipantSummary = string.Join(" Â· ", conversation.Participants
+                ParticipantSummary = string.Join(" · ", conversation.Participants
                     .Where(p => p.UserId != userId)
                     .Select(p => $"{p.User?.FullName ?? p.User?.Email ?? "User"} ({roleMap.GetValueOrDefault(p.UserId, "User")})")
                     .Take(4)),
@@ -519,23 +519,30 @@ namespace AriesMagicAppointmentSystem.Controllers
             var latest = conversation.Messages.OrderByDescending(m => m.SentAt).FirstOrDefault();
             var title = BuildConversationTitle(conversation, userId, roleMap);
             var others = conversation.Participants.Where(p => p.UserId != userId).ToList();
+            var primaryOther = others.FirstOrDefault(p => roleMap.GetValueOrDefault(p.UserId) == "Client") ?? others.FirstOrDefault();
+            var displayName = primaryOther?.User?.FullName ?? primaryOther?.User?.Email ?? title;
+            var displayRole = primaryOther == null
+                ? "Conversation"
+                : roleMap.GetValueOrDefault(primaryOther.UserId, "User");
             var subtitle = conversation.BookingId.HasValue
-                ? $"Booking #{conversation.BookingId} Â· {conversation.Booking?.Status}"
-                : string.Join(", ", others.Select(p => roleMap.GetValueOrDefault(p.UserId, "User")).Distinct());
+                ? $"{displayRole} · Booking #{conversation.BookingId}"
+                : displayRole;
             var preview = latest?.MessageContent ?? "No messages yet";
-            if (preview.Length > 74) preview = preview[..74] + "â€¦";
+            if (preview.Length > 74) preview = preview[..74] + "…";
 
             return new ConversationListItemViewModel
             {
                 Id = conversation.Id,
                 Title = title,
                 Subtitle = subtitle,
+                DisplayName = displayName,
+                DisplayRole = displayRole,
                 ConversationType = conversation.ConversationType,
                 BookingId = conversation.BookingId,
                 LatestMessage = preview,
                 LastActivityAt = latest?.SentAt ?? conversation.UpdatedAt,
                 UnreadCount = conversation.Messages.Count(m => m.SenderId != userId && (!membership.LastReadAt.HasValue || m.SentAt > membership.LastReadAt.Value)),
-                Initials = Initials(others.FirstOrDefault()?.User?.FullName ?? title),
+                Initials = Initials(primaryOther?.User?.FullName ?? displayName),
                 HasOpenRequest = conversation.Messages.Any(m => m.MessageType == MessageTypes.ActionRequest && m.RequestStatus == MessageRequestStatuses.Open)
             };
         }
@@ -570,11 +577,11 @@ namespace AriesMagicAppointmentSystem.Controllers
         private static string BuildConversationTitle(Conversation conversation, string userId, Dictionary<string, string> roleMap)
         {
             if (conversation.ConversationType == ConversationTypes.Booking)
-                return $"Booking #{conversation.BookingId} Â· {conversation.Booking?.PackageName ?? conversation.Booking?.Service?.Name ?? "Event"}";
+                return $"Booking #{conversation.BookingId} · {conversation.Booking?.PackageName ?? conversation.Booking?.Service?.Name ?? "Event"}";
             if (conversation.ConversationType == ConversationTypes.ClientSupport)
             {
                 var client = conversation.Participants.FirstOrDefault(p => roleMap.GetValueOrDefault(p.UserId) == "Client");
-                return client?.UserId == userId ? "Aries Magic Support" : $"Support Â· {client?.User?.FullName ?? "Client"}";
+                return client?.UserId == userId ? "Aries Magic Support" : $"Support · {client?.User?.FullName ?? "Client"}";
             }
             if (!string.IsNullOrWhiteSpace(conversation.Title)) return conversation.Title;
             var others = conversation.Participants.Where(p => p.UserId != userId).Select(p => p.User?.FullName ?? p.User?.Email ?? "Team Member");
@@ -605,7 +612,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                 : conversation.ConversationType is ConversationTypes.InternalDirect or ConversationTypes.InternalGroup or ConversationTypes.OperationalRequest
                     ? "New Internal Message"
                     : "New Message";
-            var preview = message.MessageContent.Length > 120 ? message.MessageContent[..120] + "â€¦" : message.MessageContent;
+            var preview = message.MessageContent.Length > 120 ? message.MessageContent[..120] + "…" : message.MessageContent;
             foreach (var recipientId in recipientIds.Distinct())
             {
                 _context.Notifications.Add(new Notification

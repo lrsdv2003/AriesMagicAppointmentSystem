@@ -18,6 +18,8 @@ namespace AriesMagicAppointmentSystem.ViewModels
         public int Id { get; set; }
         public string Title { get; set; } = string.Empty;
         public string Subtitle { get; set; } = string.Empty;
+        public string DisplayName { get; set; } = string.Empty;
+        public string DisplayRole { get; set; } = string.Empty;
         public string ConversationType { get; set; } = string.Empty;
         public int? BookingId { get; set; }
         public string LatestMessage { get; set; } = "No messages yet";

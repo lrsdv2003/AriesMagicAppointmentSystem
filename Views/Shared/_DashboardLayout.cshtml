@@ -29,8 +29,9 @@
     <link rel="stylesheet" href="~/css/communication-center.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/ocr-verification.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/staff-bookings.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/staff-interface.css" asp-append-version="true" />
 </head>
-<body class="dashboard-body">
+<body class="dashboard-body @(User.IsInRole("Staff") ? "staff-dashboard" : User.IsInRole("Admin") ? "admin-dashboard" : User.IsInRole("Owner") ? "owner-dashboard" : "")">
     <div class="dashboard-shell">
         <aside class="dashboard-sidebar">
             <div>
@@ -154,12 +155,15 @@
                             </a>
                         }
 
-                        <a asp-controller="Communications" asp-action="Index"
-                           class="sidebar-link communication-nav-link @(currentController == "Communications" ? "active" : "")">
-                            <i class="bi bi-chat-dots-fill"></i>
-                            Messages
-                            <span class="communication-unread-badge" @(unreadMessageCount == 0 ? "hidden" : null)>@(unreadMessageCount > 99 ? "99+" : unreadMessageCount)</span>
-                        </a>
+                        @if (!User.IsInRole("Staff"))
+                        {
+                            <a asp-controller="Communications" asp-action="Index"
+                               class="sidebar-link communication-nav-link @(currentController == "Communications" ? "active" : "")">
+                                <i class="bi bi-chat-dots-fill"></i>
+                                Messages
+                                <span class="communication-unread-badge" @(unreadMessageCount == 0 ? "hidden" : null)>@(unreadMessageCount > 99 ? "99+" : unreadMessageCount)</span>
+                            </a>
+                        }
                     }
                 </nav>
             </div>
@@ -198,9 +202,12 @@
                                 </span>
                             }
                     </a>
-                    <button type="button" class="topbar-icon" title="Settings">
-                    <i class="bi bi-gear-fill"></i>
-                    </button>
+                    @if (!User.IsInRole("Staff"))
+                    {
+                        <button type="button" class="topbar-icon" title="Settings" aria-label="Settings">
+                            <i class="bi bi-gear-fill"></i>
+                        </button>
+                    }
 
                     @{
                         var userRole = "User";

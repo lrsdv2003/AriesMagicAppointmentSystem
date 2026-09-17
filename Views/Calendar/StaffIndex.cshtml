@@ -17,11 +17,14 @@
         g => g.Key.ToString("yyyy-MM-dd"),
         g => new {
             count = g.Count(),
-            packages = g.Select(PackageName).Distinct().ToArray(),
-            keys = g.Select(b => PackageKey(PackageName(b))).ToArray()
+            items = g.Select(b => new {
+                packageName = PackageName(b),
+                key = PackageKey(PackageName(b))
+            }).ToArray()
         });
     var dayDataJson = JsonSerializer.Serialize(dayData);
     var packageColorsJson = JsonSerializer.Serialize(packageColors);
+    var blockedDatesJson = JsonSerializer.Serialize(ViewBag.BlockedDates ?? new List<object>());
 }
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css" />
@@ -52,16 +55,16 @@
         </div>
         <div class="staff-calendar-month-row">
             <strong id="calendarTitle" aria-live="polite"></strong>
-            <div class="staff-package-legend" aria-label="Package legend">
+            <div class="staff-package-legend" aria-label="Package legend and filter">
                 <span class="staff-package-legend-label">Package Legend</span>
+                <button type="button" class="package-legend-filter active" data-package-filter="" aria-pressed="true">All</button>
                 @foreach (var item in packageColors.OrderBy(x => x.Key))
                 {
-                    <span class="package-legend-item"><span class="package-dot package-@item.Value"></span>@item.Key</span>
+                    <button type="button" class="package-legend-filter" data-package-filter="@item.Key" aria-pressed="false">
+                        <span class="package-dot package-@item.Value"></span><span>@item.Key</span>
+                    </button>
                 }
-                @if (!packageColors.Any())
-                {
-                    <span class="package-legend-empty">No confirmed packages yet</span>
-                }
+                <span class="package-legend-blocked"><span class="blocked-legend-mark">×</span> Blocked / Unavailable</span>
             </div>
         </div>
         <div class="staff-calendar-loading" id="calendarLoading" role="status">
@@ -84,14 +87,6 @@
             <div class="staff-upcoming-tools">
                 <label class="visually-hidden" for="upcomingSearch">Search upcoming bookings</label>
                 <input id="upcomingSearch" type="search" class="form-control" placeholder="Search booking, client, or venue" />
-                <label class="visually-hidden" for="packageFilter">Filter by package</label>
-                <select id="packageFilter" class="form-select">
-                    <option value="">All Packages</option>
-                    @foreach (var item in packageColors.OrderBy(x => x.Key))
-                    {
-                        <option value="@item.Key">@item.Key</option>
-                    }
-                </select>
             </div>
         </div>
         @if (!upcoming.Any())
@@ -180,6 +175,22 @@
     </div>
 </div>
 
+<div class="modal fade staff-blocked-modal" id="blockedDateModal" tabindex="-1" aria-labelledby="blockedDateTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div><span class="staff-preview-kicker">Schedule Notice</span><h2 class="modal-title fs-5" id="blockedDateTitle">Schedule Unavailable</h2></div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="staff-blocked-date" id="blockedDateDisplay"></div>
+                <span class="staff-blocked-label">Reason</span>
+                <p id="blockedReasonDisplay" class="mb-0">No additional information provided.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
 
 @section Scripts {
@@ -188,12 +199,16 @@
     'use strict';
     const dayData = @Html.Raw(dayDataJson);
     const packageColors = @Html.Raw(packageColorsJson);
+    const blockedDates = @Html.Raw(blockedDatesJson);
+    const blockedDateMap = Object.fromEntries(blockedDates.map(item => [item.date, item]));
     const previewUrl = '@Url.Action("GetReservationsByDate", "Calendar")';
     let calendar;
+    let activePackageFilter = '';
     let selectedDate = null;
     let selectedCell = null;
     let previewItems = [];
     let previewIndex = 0;
+    let applyUpcomingFilters = () => {};
     const formatDateKey = date => {
         const y = date.getFullYear();
         const m = String(date.getMonth() + 1).padStart(2, '0');
@@ -203,6 +218,25 @@
     const packageKey = name => packageColors[name] || 'pink';
     const previewModalEl = document.getElementById('bookingPreviewModal');
     const previewModal = previewModalEl ? new bootstrap.Modal(previewModalEl) : null;
+    const blockedModalEl = document.getElementById('blockedDateModal');
+    const blockedModal = blockedModalEl ? new bootstrap.Modal(blockedModalEl) : null;
+
+    const filteredDayItems = dateKey => {
+        const items = dayData[dateKey]?.items || [];
+        return activePackageFilter ? items.filter(item => item.packageName === activePackageFilter) : items;
+    };
+
+    function openBlockedDate(dateKey, cell) {
+        const blocked = blockedDateMap[dateKey];
+        if (!blocked) return false;
+        selectedDate = dateKey;
+        setSelectedCell(cell);
+        const date = new Date(`${dateKey}T00:00:00`);
+        document.getElementById('blockedDateDisplay').textContent = date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+        document.getElementById('blockedReasonDisplay').textContent = blocked.reason?.trim() || 'No additional information provided.';
+        blockedModal?.show();
+        return true;
+    }
 
     function setSelectedCell(cell) {
         selectedCell?.classList.remove('staff-calendar-selected');
@@ -211,8 +245,9 @@
     }
 
     async function openDatePreview(dateKey, cell) {
-        const summary = dayData[dateKey];
-        if (!summary?.count) return;
+        if (openBlockedDate(dateKey, cell)) return;
+        const visibleItems = filteredDayItems(dateKey);
+        if (!visibleItems.length) return;
         selectedDate = dateKey;
         setSelectedCell(cell);
         document.getElementById('previewLoading').classList.remove('d-none');
@@ -226,6 +261,9 @@
             const response = await fetch(`${previewUrl}?date=${encodeURIComponent(dateKey)}`, { headers: { 'Accept': 'application/json' } });
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
             previewItems = await response.json();
+            if (activePackageFilter) {
+                previewItems = previewItems.filter(item => item.packageName === activePackageFilter);
+            }
             if (!Array.isArray(previewItems) || previewItems.length === 0) throw new Error('No bookings returned');
             previewIndex = 0;
             renderPreview();
@@ -260,43 +298,78 @@
         document.getElementById('previewNext').disabled = previewIndex >= previewItems.length - 1;
     }
 
+    function renderDaySummary(cell, key) {
+        const frame = cell.querySelector('.fc-daygrid-day-frame');
+        if (!frame) return;
+        frame.querySelector('.staff-day-summary')?.remove();
+        frame.querySelector('.staff-day-blocked-label')?.remove();
+        cell.classList.remove('staff-calendar-has-events', 'staff-calendar-blocked');
+        cell.removeAttribute('role');
+        cell.removeAttribute('aria-label');
+        cell.removeAttribute('tabindex');
+
+        const blocked = blockedDateMap[key];
+        const visibleItems = filteredDayItems(key);
+        const date = new Date(`${key}T00:00:00`);
+        const displayDate = date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+
+        if (blocked) {
+            cell.classList.add('staff-calendar-blocked');
+            const blockedLabel = document.createElement('span');
+            blockedLabel.className = 'staff-day-blocked-label';
+            blockedLabel.textContent = 'Blocked';
+            frame.appendChild(blockedLabel);
+        }
+
+        if (visibleItems.length) {
+            cell.classList.add('staff-calendar-has-events');
+            const box = document.createElement('div');
+            box.className = 'staff-day-summary';
+            const dots = document.createElement('div');
+            dots.className = 'staff-day-dots';
+            visibleItems.slice(0, 4).forEach(item => {
+                const dot = document.createElement('span');
+                dot.className = `package-dot package-${item.key}`;
+                dot.title = item.packageName;
+                dots.appendChild(dot);
+            });
+            if (visibleItems.length > 4) {
+                const more = document.createElement('span');
+                more.className = 'staff-day-more';
+                more.textContent = `+${visibleItems.length - 4}`;
+                more.setAttribute('aria-label', `${visibleItems.length - 4} more bookings`);
+                dots.appendChild(more);
+            }
+            const count = document.createElement('strong');
+            count.textContent = visibleItems.length === 1 ? '1 Booking' : `${visibleItems.length} Bookings`;
+            box.append(dots, count);
+            frame.appendChild(box);
+        }
+
+        if (blocked || visibleItems.length) {
+            cell.tabIndex = 0;
+            cell.setAttribute('role', 'button');
+            const bookingLabel = visibleItems.length
+                ? `${visibleItems.length} confirmed booking${visibleItems.length === 1 ? '' : 's'}`
+                : 'no visible confirmed bookings';
+            cell.setAttribute('aria-label', `${displayDate}: ${blocked ? 'Blocked / unavailable; ' : ''}${bookingLabel}`);
+        }
+    }
+
     function mountDaySummary(info) {
         const key = formatDateKey(info.date);
-        const summary = dayData[key];
-        if (!summary?.count) return;
-        info.el.classList.add('staff-calendar-has-events');
-        info.el.tabIndex = 0;
-        info.el.setAttribute('role', 'button');
-        const label = summary.count === 1 ? '1 confirmed booking' : `${summary.count} confirmed bookings`;
-        info.el.setAttribute('aria-label', `${info.date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}: ${label}`);
-        const frame = info.el.querySelector('.fc-daygrid-day-frame');
-        if (!frame) return;
-        const box = document.createElement('div');
-        box.className = 'staff-day-summary';
-        const dots = document.createElement('div');
-        dots.className = 'staff-day-dots';
-        summary.keys.slice(0, 4).forEach(color => {
-            const dot = document.createElement('span');
-            dot.className = `package-dot package-${color}`;
-            dots.appendChild(dot);
-        });
-        if (summary.count > 4) {
-            const more = document.createElement('span');
-            more.className = 'staff-day-more';
-            more.textContent = `+${summary.count - 4}`;
-            more.setAttribute('aria-label', `${summary.count - 4} more bookings`);
-            dots.appendChild(more);
-        }
-        const count = document.createElement('strong');
-        count.textContent = summary.count === 1 ? '1 Booking' : `${summary.count} Bookings`;
-        box.append(dots, count);
-        frame.appendChild(box);
+        info.el.dataset.staffDate = key;
+        renderDaySummary(info.el, key);
         info.el.addEventListener('keydown', event => {
-            if (event.key === 'Enter' || event.key === ' ') {
+            if ((event.key === 'Enter' || event.key === ' ') && (blockedDateMap[key] || filteredDayItems(key).length)) {
                 event.preventDefault();
                 openDatePreview(key, info.el);
             }
         });
+    }
+
+    function refreshDaySummaries() {
+        document.querySelectorAll('[data-staff-date]').forEach(cell => renderDaySummary(cell, cell.dataset.staffDate));
     }
 
     function initCalendar() {
@@ -348,30 +421,44 @@
 
     function initUpcomingFilters() {
         const search = document.getElementById('upcomingSearch');
-        const filter = document.getElementById('packageFilter');
         const rows = [...document.querySelectorAll('.js-upcoming-row')];
         const empty = document.getElementById('upcomingFilteredEmpty');
-        const apply = () => {
+        applyUpcomingFilters = () => {
             const query = (search?.value || '').trim().toLowerCase();
-            const packageName = filter?.value || '';
             let visible = 0;
             rows.forEach(row => {
                 const matchesSearch = !query || (row.dataset.search || '').toLowerCase().includes(query);
-                const matchesPackage = !packageName || row.dataset.package === packageName;
+                const matchesPackage = !activePackageFilter || row.dataset.package === activePackageFilter;
                 const show = matchesSearch && matchesPackage;
                 row.classList.toggle('d-none', !show);
                 if (show) visible++;
             });
             empty?.classList.toggle('d-none', visible > 0);
         };
-        search?.addEventListener('input', apply);
-        filter?.addEventListener('change', apply);
+        search?.addEventListener('input', applyUpcomingFilters);
+    }
+
+    function initLegendFilters() {
+        document.querySelectorAll('.package-legend-filter').forEach(button => {
+            button.addEventListener('click', () => {
+                activePackageFilter = button.dataset.packageFilter || '';
+                document.querySelectorAll('.package-legend-filter').forEach(item => {
+                    const active = item === button;
+                    item.classList.toggle('active', active);
+                    item.setAttribute('aria-pressed', active ? 'true' : 'false');
+                });
+                setSelectedCell(null);
+                refreshDaySummaries();
+                applyUpcomingFilters();
+            });
+        });
     }
 
     document.addEventListener('DOMContentLoaded', () => {
         initCalendar();
         initPreviewControls();
         initUpcomingFilters();
+        initLegendFilters();
         document.getElementById('calendarRetry')?.addEventListener('click', () => {
             calendar?.destroy();
             calendar = null;

@@ -25,6 +25,7 @@ namespace AriesMagicAppointmentSystem.Controllers
         public async Task<IActionResult> Index()
         {
             var packages = await _context.Services
+                .Include(s => s.Inclusions)
                 .Where(s => !s.IsArchived)
                 .OrderBy(s => s.Name)
                 .ToListAsync();
@@ -125,7 +126,7 @@ namespace AriesMagicAppointmentSystem.Controllers
 
             return RedirectToAction(nameof(Index));
         }
-        // STAFF + ADMIN: edit package
+        // ADMIN + OWNER: edit package
         [Authorize(Roles = "Admin,Owner")]
         public async Task<IActionResult> Edit(int? id)
         {

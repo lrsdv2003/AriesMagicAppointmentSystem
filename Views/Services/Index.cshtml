@@ -3,75 +3,136 @@
 @{
     Layout = "_DashboardLayout";
     ViewData["Title"] = "Packages";
+    var isStaff = User.IsInRole("Staff");
 }
 
-<div class="page-header">
-    <div class="d-flex gap-2">
-        @if (User.CanEditPackages())
-        {
-            <a asp-action="Create" class="btn btn-primary">
-                Create Package
-            </a>
-        }
-
-        @if (User.IsInRole("Admin"))
-        {
-            <a asp-action="Archived" class="btn btn-outline-secondary">
-                Archived Packages
-            </a>
-        }
-    </div>
-</div>
-
-@if (!Model.Any())
+@if (isStaff)
 {
-    <div class="empty-state">
-        <h3>No active packages yet</h3>
-        <p>There are currently no active packages available in the system.</p>
-    </div>
-}
-else
-{
-    <div class="package-grid">
-        @foreach (var item in Model)
+    <div class="staff-package-page">
+        <header class="staff-package-hero">
+            <div>
+                <span class="staff-interface-eyebrow">Package Reference</span>
+                <h1>Packages</h1>
+                <p>Quickly review pricing, duration, and the main inclusions available for each active package.</p>
+            </div>
+        </header>
+
+        @if (!Model.Any())
         {
-            <div class="package-card">
-                <div class="package-card-top">
-                    <div>
-                        <h3 class="package-card-title">@item.Name</h3>
-                        <div class="package-card-badge">Active Package</div>
-                    </div>
-                    <div class="package-card-price">
-                        ₱@item.Price.ToString("N2")
-                    </div>
-                </div>
+            <div class="staff-package-empty">
+                <i class="bi bi-box-seam"></i>
+                <h2>No active packages yet</h2>
+                <p>There are currently no active packages available.</p>
+            </div>
+        }
+        else
+        {
+            <div class="staff-package-grid">
+                @foreach (var item in Model)
+                {
+                    var inclusions = item.Inclusions?.OrderBy(i => i.Id).ToList() ?? new List<AriesMagicAppointmentSystem.Models.ServiceInclusion>();
+                    var previewInclusions = inclusions.Take(3).ToList();
+                    var remaining = Math.Max(0, inclusions.Count - previewInclusions.Count);
+                    <article class="staff-package-card">
+                        <div class="staff-package-card-head">
+                            <div class="staff-package-title-wrap">
+                                <span class="staff-package-status"><i class="bi bi-check-circle-fill"></i> Active</span>
+                                <h2>@item.Name</h2>
+                            </div>
+                            <strong class="staff-package-price">₱@item.Price.ToString("N2")</strong>
+                        </div>
 
-                <div class="package-card-meta">
-                    <div class="package-meta-box">
-                        <span class="package-meta-label">Duration</span>
-                        <span class="package-meta-value">@item.DurationInHours hour(s)</span>
-                    </div>
-                    <div class="package-meta-box">
-                        <span class="package-meta-label">Status</span>
-                        <span class="package-meta-value">Active</span>
-                    </div>
-                </div>
+                        <div class="staff-package-facts" aria-label="Package summary">
+                            <div><span>Duration</span><strong>@item.DurationInHours hour(s)</strong></div>
+                            <div><span>Availability</span><strong>Active</strong></div>
+                        </div>
 
-                <div class="package-card-body">
-                    <p class="package-card-description">
-                        @(string.IsNullOrWhiteSpace(item.Description) ? "No description available for this package yet." : item.Description)
-                    </p>
-                </div>
+                        <div class="staff-package-inclusions">
+                            <span class="staff-package-section-label">Main Inclusions</span>
+                            @if (!previewInclusions.Any())
+                            {
+                                <p class="staff-package-muted">No inclusions configured.</p>
+                            }
+                            else
+                            {
+                                <ul>
+                                    @foreach (var inclusion in previewInclusions)
+                                    {
+                                        <li><i class="bi bi-check2"></i><span>@inclusion.Name</span></li>
+                                    }
+                                </ul>
+                                @if (remaining > 0)
+                                {
+                                    <span class="staff-package-more">+ @remaining more inclusion@(remaining == 1 ? "" : "s")</span>
+                                }
+                            }
+                        </div>
 
-                <div class="package-card-actions">
-                    <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-light package-btn-light">Details</a>
-                    @if (User.CanEditPackages())
-                    {
-                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-warning">Edit</a>
-                    <a asp-action="Archive" asp-route-id="@item.Id" class="btn btn-danger">Archive</a>
-                    }
-                </div>
+                        <div class="staff-package-actions">
+                            <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-outline-primary">
+                                View Details <i class="bi bi-arrow-right"></i>
+                            </a>
+                        </div>
+                    </article>
+                }
             </div>
         }
     </div>
+}
+else
+{    <div class="page-header">
+        <div class="d-flex gap-2">
+            @if (User.CanEditPackages())
+            {
+                <a asp-action="Create" class="btn btn-primary">Create Package</a>
+            }
+            @if (User.IsInRole("Admin"))
+            {
+                <a asp-action="Archived" class="btn btn-outline-secondary">Archived Packages</a>
+            }
+        </div>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="empty-state">
+            <h3>No active packages yet</h3>
+            <p>There are currently no active packages available in the system.</p>
+        </div>
+    }
+    else
+    {
+        <div class="package-grid">
+            @foreach (var item in Model)
+            {
+                <div class="package-card">
+                    <div class="package-card-top">
+                        <div>
+                            <h3 class="package-card-title">@item.Name</h3>
+                            <div class="package-card-badge">Active Package</div>
+                        </div>
+                        <div class="package-card-price">₱@item.Price.ToString("N2")</div>
+                    </div>
+
+                    <div class="package-card-meta">
+                        <div class="package-meta-box"><span class="package-meta-label">Duration</span><span class="package-meta-value">@item.DurationInHours hour(s)</span></div>
+                        <div class="package-meta-box"><span class="package-meta-label">Status</span><span class="package-meta-value">Active</span></div>
+                    </div>
+
+                    <div class="package-card-body">
+                        <p class="package-card-description">@(string.IsNullOrWhiteSpace(item.Description) ? "No description available for this package yet." : item.Description)</p>
+                    </div>
+
+                    <div class="package-card-actions">
+                        <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-light package-btn-light">Details</a>
+                        @if (User.CanEditPackages())
+                        {
+                            <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-warning">Edit</a>
+                            <a asp-action="Archive" asp-route-id="@item.Id" class="btn btn-danger">Archive</a>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    }
 }

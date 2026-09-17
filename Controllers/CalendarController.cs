@@ -50,9 +50,16 @@ namespace AriesMagicAppointmentSystem.Controllers
                 .ThenBy(b => b.StartTime)
                 .ToListAsync();
 
+            var activePackageNames = await _context.Services
+                .AsNoTracking()
+                .Where(s => !s.IsArchived)
+                .Select(s => s.Name)
+                .ToListAsync();
+
             ViewBag.ShowHistorical = showHistorical;
-            ViewBag.PackageColors = bookings
-                .Select(GetPackageName)
+            ViewBag.PackageColors = activePackageNames
+                .Concat(bookings.Select(GetPackageName))
+                .Where(name => !string.IsNullOrWhiteSpace(name))
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .OrderBy(x => x)
                 .ToDictionary(x => x, GetPackageColorKey, StringComparer.OrdinalIgnoreCase);
