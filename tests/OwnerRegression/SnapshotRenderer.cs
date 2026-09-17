@@ -45,11 +45,24 @@ static class SnapshotRenderer
             ("Reports","Index",reports),
             ("Services","Index",new[] {package})
         };
+        var filterPages = new (string Controller,string Action,object Model)[] {
+            ("Bookings","Index",new BookingManagementViewModel { AvailableServices = [package] }),
+            ("Bookings","StaffIndex",new BookingManagementViewModel { AvailableServices = [package], BookingStatus = "AllRequests" }),
+            ("Bookings","MyBookings",new[] {booking}),
+            ("RescheduleRequests","Index",new RescheduleRequestIndexViewModel()),
+            ("History","Index",new HistoryIndexViewModel { AvailableServices = [package], TotalPages = 2, TotalCount = 16, Bookings = [new HistoryRowViewModel { BookingCode = "BK-2026-001" }] }),
+            ("SystemActivity","Index",new SystemActivityIndexViewModel { Page = 1, PageSize = 20, TotalPages = 2, Activities = [new SystemActivity()] }),
+            ("TrashHistory","Index",new TrashHistoryIndexViewModel { TotalPages = 2, Bookings = [new TrashHistoryRowViewModel()] }),
+            ("Calendar","StaffIndex",new CalendarIndexViewModel { Bookings = [new Booking { Id = 999, Status = BookingStatus.Confirmed, EventDate = DateTime.Today.AddDays(2), StartTime = DateTime.Today.AddHours(10), EndTime = DateTime.Today.AddHours(12), PackageName = "Regression Package", PartyVenue = "Fixture Venue" }] }),
+            ("UserManagement","Index",Array.Empty<ApplicationUser>()),
+            ("Communications","Index",new CommunicationCenterViewModel { IsInternalUser = true })
+        };
+        pages = pages.Concat(filterPages).ToArray();
         foreach(var page in pages)
         {
             var http = new DefaultHttpContext {
                 RequestServices = provider,
-                User = new ClaimsPrincipal(new ClaimsIdentity(new[] {new Claim(ClaimTypes.Role,"Owner"),new Claim(ClaimTypes.Name,"Regression Owner")}, "Fixture"))
+                User = new ClaimsPrincipal(new ClaimsIdentity(new[] {new Claim(ClaimTypes.Role,page.Action == "MyBookings" ? "Client" : page.Action == "StaffIndex" || page.Controller == "RescheduleRequests" ? "Staff" : page.Controller is "UserManagement" or "SystemActivity" or "TrashHistory" ? "Admin" : "Owner"),new Claim(ClaimTypes.Name,"Regression Owner")}, "Fixture"))
             };
             http.Request.Scheme = "http"; http.Request.Host = new HostString("owner.test");
             var route = new RouteData();
@@ -60,12 +73,13 @@ static class SnapshotRenderer
             if (!result.Success) throw new Exception("Could not find snapshot view");
             var data = new ViewDataDictionary(provider.GetRequiredService<IModelMetadataProvider>(),new ModelStateDictionary()) {Model=page.Model};
             data["FinancialSummary"]=finance; data["ExpectedReceiver"]="Aries Magic"; data["Filter"]="awaiting";
+            data["PackageColors"] = new Dictionary<string,string> { ["Regression Package"] = "pink", ["Other Package"] = "blue" };
             using var writer = new StringWriter();
             var viewContext = new ViewContext(context,result.View,data,new TempDataDictionary(http,new EmptyTempData()),writer,new HtmlHelperOptions());
             await result.View.RenderAsync(viewContext);
             await File.WriteAllTextAsync(Path.Combine(output,page.Controller+"-"+page.Action+".html"),writer.ToString());
         }
-        Console.WriteLine("Rendered 6 Owner fixture pages to " + output);
+        Console.WriteLine($"Rendered {pages.Length} role fixture pages to " + output);
     }
 }
 sealed class SnapshotUrls : IUrlHelperFactory

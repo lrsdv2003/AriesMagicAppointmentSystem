@@ -57,22 +57,23 @@
 </div>
 
 <div class="page-header mb-4">
-    <form method="get" class="d-flex gap-2 align-items-center flex-wrap" id="filterForm">
-        <div class="table-search-wrap" style="min-width: 280px;">
+    <form method="get" class="am-filter-bar am-filter-row" id="filterForm">
+        <div class="am-filter-search">
             <input type="text"
-                   id="searchInput"
+                   id="searchInput" aria-label="Search staff"
                    name="search"
                    class="form-control table-search"
                    placeholder="Search staff by name, email, phone..."
                    value="@Context.Request.Query["search"]" />
         </div>
 
-        <select name="status" class="form-select table-filter" style="min-width: 180px;" onchange="this.form.submit()">
+<div class="dropdown"><button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">Filters</button><div class="dropdown-menu dropdown-menu-end"><label for="staffStatus" class="form-label">Staff status</label>        <select id="staffStatus" name="status" class="form-select table-filter" style="min-width: 180px;">
             <option value="All" selected="@(Context.Request.Query["status"] == "All" || string.IsNullOrEmpty(Context.Request.Query["status"]) ? "selected" : null)">All Staff</option>
             <option value="Active" selected="@(Context.Request.Query["status"] == "Active" ? "selected" : null)">Active</option>
             <option value="Disabled" selected="@(Context.Request.Query["status"] == "Disabled" ? "selected" : null)">Disabled</option>
         </select>
 
+<div class="am-filter-actions"><a asp-action="Index" class="btn btn-light">Reset</a><button type="submit" class="btn btn-primary">Apply Filters</button></div></div></div><button type="submit" class="btn btn-primary">Search</button>
         <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createStaffModal">
             <i class="bi bi-person-plus me-1"></i> Create Staff Account
         </button>
@@ -345,20 +346,6 @@ else
 </div>
 
 <script>
-    let searchTimer;
-
-    var searchInput = document.getElementById("searchInput");
-    var filterForm = document.getElementById("filterForm");
-    if (searchInput && filterForm) {
-        searchInput.addEventListener("keyup", function () {
-            clearTimeout(searchTimer);
-
-            searchTimer = setTimeout(() => {
-                filterForm.submit();
-            }, 400);
-        });
-    }
-
     // Initialize tooltips
     document.addEventListener('DOMContentLoaded', function() {
         var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));

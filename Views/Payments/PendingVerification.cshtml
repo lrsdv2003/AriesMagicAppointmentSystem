@@ -26,18 +26,18 @@
         <div><span>Awaiting Review</span><strong>@payments.Count(x => x.Status == PaymentStatus.Pending)</strong></div>
         <div><span>OCR Attention</span><strong>@payments.Count(x => x.OcrVerifications.Where(o => o.VerificationPurpose == OcrVerificationPurposes.PaymentProof).OrderByDescending(o => o.ProcessedAt).FirstOrDefault()?.VerificationResult is OcrVerificationResults.MismatchDetected or OcrVerificationResults.OcrFailed)</strong></div>
     </div>
-    <form method="get" class="owner-filter-card" aria-label="Payment verification filters">
-        <div class="owner-filter-search"><i class="bi bi-search"></i><input type="search" name="q" value="@ViewBag.Search" placeholder="Search booking or client" aria-label="Search payment verification queue" /></div>
+    <form method="get" class="am-filter-bar am-filter-row" aria-label="Payment verification filters">
+        <div class="am-filter-search"><i class="bi bi-search"></i><input type="search" name="q" value="@ViewBag.Search" placeholder="Search booking or client" aria-label="Search payment verification queue" /></div>
         <div class="dropdown">
-            <button class="btn btn-outline-secondary dropdown-toggle owner-filter-trigger" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside"><i class="bi bi-funnel"></i> Filters</button>
-            <div class="dropdown-menu dropdown-menu-end owner-filter-menu p-3">
+            <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false"><i class="bi bi-funnel"></i> Filters</button>
+            <div class="dropdown-menu dropdown-menu-end p-3">
                 <label class="form-label" for="PendingVerificationfilter">Verification Status</label><select id="PendingVerificationfilter" name="filter" class="form-select mb-3"><option value="awaiting" selected="@(ViewBag.Filter == "awaiting")">Awaiting Owner Verification</option><option value="verified" selected="@(ViewBag.Filter == "verified")">Verified</option><option value="rejected" selected="@(ViewBag.Filter == "rejected")">Rejected</option><option value="evidence" selected="@(ViewBag.Filter == "evidence")">Additional Evidence</option><option value="mismatch" selected="@(ViewBag.Filter == "mismatch")">OCR Mismatch</option><option value="ocrfailed" selected="@(ViewBag.Filter == "ocrfailed")">OCR Failed</option></select>
                 <label class="form-label" for="PendingVerificationpaymentMethod">Payment Method</label><select id="PendingVerificationpaymentMethod" name="paymentMethod" class="form-select mb-3"><option value="">All methods</option><option selected="@(ViewBag.PaymentMethod == "GCash")">GCash</option><option selected="@(ViewBag.PaymentMethod == "Maya")">Maya</option><option selected="@(ViewBag.PaymentMethod == "Bank Transfer")">Bank Transfer</option><option selected="@(ViewBag.PaymentMethod == "Online Banking")">Online Banking</option></select>
                 <label class="form-label" for="PendingVerificationdate">Submitted Date</label><input id="PendingVerificationdate" type="date" name="date" value="@ViewBag.Date" class="form-control mb-3" />
                 <div class="d-flex justify-content-end gap-2"><a asp-action="PendingVerification" class="btn btn-light">Reset</a><button class="btn btn-primary">Apply Filters</button></div>
             </div>
         </div>
-        <button class="btn btn-primary owner-search-btn" type="submit">Search</button>
+        <button class="btn btn-primary" type="submit">Search</button>
     </form>
     <div class="dashboard-panel owner-table-panel">
         @if (!payments.Any())

@@ -38,28 +38,30 @@
         <div class="alert alert-danger" role="alert">@TempData["Error"]</div>
     }
 
-    <nav class="reschedule-status-tabs" aria-label="Reschedule request status">
-        <a asp-action="Index" asp-route-status="Pending" class="@(Model.StatusFilter == RescheduleRequestStatus.Pending ? "active" : "")">Pending <span>@Model.PendingCount</span></a>
-        <a asp-action="Index" asp-route-status="Approved" class="@(Model.StatusFilter == RescheduleRequestStatus.Approved ? "active" : "")">Approved <span>@Model.ApprovedCount</span></a>
-        <a asp-action="Index" asp-route-status="Rejected" class="@(Model.StatusFilter == RescheduleRequestStatus.Rejected ? "active" : "")">Rejected <span>@Model.RejectedCount</span></a>
-        <a asp-action="Index" asp-route-status="All" class="@(Model.StatusFilter == "All" ? "active" : "")">Request History</a>
+    <nav class="reschedule-status-tabs am-filter-chips" aria-label="Reschedule request status">
+        <a asp-route-search="@Model.Search" asp-route-requestedDate="@Model.RequestedDate?.ToString("yyyy-MM-dd")" asp-route-sortBy="@Model.SortBy" asp-action="Index" asp-route-status="Pending" class="@(Model.StatusFilter == RescheduleRequestStatus.Pending ? "active" : "")">Pending <span>@Model.PendingCount</span></a>
+        <a asp-route-search="@Model.Search" asp-route-requestedDate="@Model.RequestedDate?.ToString("yyyy-MM-dd")" asp-route-sortBy="@Model.SortBy" asp-action="Index" asp-route-status="Approved" class="@(Model.StatusFilter == RescheduleRequestStatus.Approved ? "active" : "")">Approved <span>@Model.ApprovedCount</span></a>
+        <a asp-route-search="@Model.Search" asp-route-requestedDate="@Model.RequestedDate?.ToString("yyyy-MM-dd")" asp-route-sortBy="@Model.SortBy" asp-action="Index" asp-route-status="Rejected" class="@(Model.StatusFilter == RescheduleRequestStatus.Rejected ? "active" : "")">Rejected <span>@Model.RejectedCount</span></a>
+        <a asp-route-search="@Model.Search" asp-route-requestedDate="@Model.RequestedDate?.ToString("yyyy-MM-dd")" asp-route-sortBy="@Model.SortBy" asp-action="Index" asp-route-status="All" class="@(Model.StatusFilter == "All" ? "active" : "")">Request History</a>
     </nav>
 
-    <div class="dashboard-panel staff-reschedule-filter-panel">
-        <form method="get" asp-action="Index" class="staff-reschedule-filters">
+    <div class="am-filter-container">
+        <form method="get" asp-action="Index" class="am-filter-bar am-filter-row">
             <input type="hidden" name="status" value="@Model.StatusFilter" />
             <label class="visually-hidden" for="rescheduleSearch">Search reschedule requests</label>
-            <input id="rescheduleSearch" type="search" name="search" value="@Model.Search" class="form-control" placeholder="Booking ID, client, or package" />
-            <label class="visually-hidden" for="rescheduleDate">Requested date</label>
-            <input id="rescheduleDate" type="date" name="requestedDate" value="@(Model.RequestedDate?.ToString("yyyy-MM-dd"))" class="form-control" />
-            <label class="visually-hidden" for="rescheduleSort">Sort requests</label>
-            <select id="rescheduleSort" name="sortBy" class="form-select">
+            <div class="am-filter-search"><input id="rescheduleSearch" type="search" name="search" value="@Model.Search" class="form-control" placeholder="Booking ID, client, or package" /></div>
+<div class="dropdown"><button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false"><i class="bi bi-funnel" aria-hidden="true"></i> Filters</button><div class="dropdown-menu dropdown-menu-end"><h6>Filter requests</h6>
+            <label class="form-label" for="rescheduleDate">Requested date</label>
+            <input id="rescheduleDate" type="date" name="requestedDate" value="@(Model.RequestedDate?.ToString("yyyy-MM-dd"))" class="form-control mb-3" />
+            <label class="form-label" for="rescheduleSort">Sort requests</label>
+            <select id="rescheduleSort" name="sortBy" class="form-select mb-3">
                 <option value="newest" selected="@(Model.SortBy == "newest")">Newest first</option>
                 <option value="oldest" selected="@(Model.SortBy == "oldest")">Oldest first</option>
             </select>
-            <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i> Apply</button>
+<div class="am-filter-actions">
             <a asp-action="Index" asp-route-status="@Model.StatusFilter" class="btn btn-outline-secondary">Reset</a>
-        </form>
+            <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i> Apply Filters</button>
+        </div></div></div><button type="submit" class="btn btn-primary">Search</button></form>
     </div>
 
     <div class="dashboard-panel staff-reschedule-table-panel">

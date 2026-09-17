@@ -33,6 +33,7 @@
     <link rel="stylesheet" href="~/css/staff-interface.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/package-cards.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/owner-interface.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/filters.css" asp-append-version="true" />
 </head>
 <body class="dashboard-body @(User.IsInRole("Staff") ? "staff-dashboard" : User.IsInRole("Admin") ? "admin-dashboard" : User.IsInRole("Owner") ? "owner-dashboard" : "")">
     <div class="dashboard-shell">
@@ -284,5 +285,6 @@
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/communication-global.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
+    <script src="~/js/filters.js" asp-append-version="true"></script>
 </body>
 </html>

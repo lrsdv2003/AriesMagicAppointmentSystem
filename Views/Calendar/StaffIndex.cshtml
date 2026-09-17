@@ -55,7 +55,7 @@
         </div>
         <div class="staff-calendar-month-row">
             <strong id="calendarTitle" aria-live="polite"></strong>
-            <div class="staff-package-legend" aria-label="Package legend and filter">
+            <div class="staff-package-legend am-filter-bar am-filter-chips" id="calendarPackageChips" aria-label="Package legend and filter">
                 <span class="staff-package-legend-label">Package Legend</span>
                 <button type="button" class="package-legend-filter active" data-package-filter="" aria-pressed="true">All</button>
                 @foreach (var item in packageColors.OrderBy(x => x.Key))
@@ -84,9 +84,9 @@
                 <h2 id="upcomingHeading">Upcoming Confirmed Bookings</h2>
                 <p>Nearest event date and time first.</p>
             </div>
-            <div class="staff-upcoming-tools">
+            <div class="staff-upcoming-tools am-filter-bar am-filter-row" data-local-filter="calendar" data-filter-search="upcomingSearch" data-filter-chips="calendarPackageChips">
                 <label class="visually-hidden" for="upcomingSearch">Search upcoming bookings</label>
-                <input id="upcomingSearch" type="search" class="form-control" placeholder="Search booking, client, or venue" />
+                <div class="am-filter-search"><input id="upcomingSearch" type="search" class="form-control" placeholder="Search booking, client, or venue" /></div><button type="button" class="btn btn-light" data-filter-reset>Reset</button>
             </div>
         </div>
         @if (!upcoming.Any())
@@ -131,7 +131,7 @@
                     </article>
                 }
             </div>
-            <div class="staff-upcoming-empty d-none" id="upcomingFilteredEmpty"><i class="bi bi-search"></i><span>No upcoming bookings match your search.</span></div>
+            <div class="staff-upcoming-empty d-none" id="upcomingFilteredEmpty" role="status"><i class="bi bi-search"></i><span>No upcoming bookings match your search.</span></div>
         }
     </section>
 </div>

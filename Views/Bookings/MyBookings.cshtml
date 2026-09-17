@@ -152,22 +152,23 @@
 }
 else
 {
-    <div class="am-list-toolbar mb-3">
-        <div class="am-search-box">
+    <div class="am-filter-bar am-filter-row" data-local-filter="bookings" data-filter-search="bookingSearchInput" data-filter-chips="bookingFilterChips">
+        <div class="am-filter-search">
             <i class="bi bi-search"></i>
             <input type="text" id="bookingSearchInput" class="form-control" placeholder="Search by package, event type, or venue" aria-label="Search bookings">
         </div>
 
         <div class="am-filter-chips" id="bookingFilterChips" role="group" aria-label="Filter bookings by status">
-            <button type="button" class="am-chip is-active" data-filter="all">All</button>
+            <button type="button" class="am-chip is-active" data-filter="all" aria-pressed="true">All</button>
             <button type="button" class="am-chip" data-filter="active">Active</button>
             <button type="button" class="am-chip" data-filter="confirmed">Confirmed</button>
             <button type="button" class="am-chip" data-filter="completed">Completed</button>
             <button type="button" class="am-chip" data-filter="declined">Declined / Cancelled</button>
         </div>
+        <button type="button" class="btn btn-light" data-filter-reset>Reset</button>
     </div>
 
-    <div id="bookingEmptyFilterState" class="empty-state client-empty-state d-none">
+    <div id="bookingEmptyFilterState" role="status" class="empty-state client-empty-state d-none">
         <h3>No bookings match your search</h3>
         <p>Try a different keyword or clear the filters above.</p>
     </div>

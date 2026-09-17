@@ -49,14 +49,15 @@
         <div class="staff-booking-stat"><span>Approved / Awaiting Payment</span><strong>@approvedCount</strong></div>
         <div class="staff-booking-stat"><span>Venue Review Needed</span><strong>@reviewCount</strong></div>
     </div>
-    <div class="dashboard-panel staff-booking-filter-panel">
-        <form method="get" asp-action="Index" class="staff-booking-filters">
-            <div class="staff-filter-search">
+    <div class="am-filter-container">
+        <form method="get" asp-action="Index" class="am-filter-bar am-filter-row">
+            <div class="am-filter-search">
                 <label class="visually-hidden" for="staffBookingSearch">Search bookings</label>
                 <input id="staffBookingSearch" type="search" name="search" value="@Model.Search" class="form-control" placeholder="Booking ID, client, email, or package" />
             </div>
+<div class="dropdown"><button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false"><i class="bi bi-funnel" aria-hidden="true"></i> Filters</button><div class="dropdown-menu dropdown-menu-end"><h6>Filter requests</h6>
             <div>
-                <label class="visually-hidden" for="staffBookingStatus">Booking status</label>
+                <label class="form-label" for="staffBookingStatus">Booking status</label>
                 <select id="staffBookingStatus" name="bookingStatus" class="form-select">
                     <option value="AllRequests" selected="@(Model.BookingStatus == "AllRequests")">All Requests</option>
                     <option value="Pending" selected="@(Model.BookingStatus == "Pending")">Pending</option>
@@ -66,11 +67,11 @@
                 </select>
             </div>
             <div>
-                <label class="visually-hidden" for="staffEventDate">Event date</label>
+                <label class="form-label" for="staffEventDate">Event date</label>
                 <input id="staffEventDate" type="date" name="eventDate" value="@(Model.EventDate?.ToString("yyyy-MM-dd"))" class="form-control" />
             </div>
             <div>
-                <label class="visually-hidden" for="staffService">Package</label>
+                <label class="form-label" for="staffService">Package</label>
                 <select id="staffService" name="serviceId" class="form-select">
                     <option value="">All Packages</option>
                     @foreach (var service in Model.AvailableServices)
@@ -79,9 +80,10 @@
                     }
                 </select>
             </div>
-            <button type="submit" class="btn btn-primary"><i class="bi bi-funnel"></i> Apply</button>
+<div class="am-filter-actions">
             <a asp-action="Index" class="btn btn-outline-secondary">Reset</a>
-        </form>
+            <button type="submit" class="btn btn-primary"><i class="bi bi-funnel"></i> Apply Filters</button>
+        </div></div></div><button type="submit" class="btn btn-primary">Search</button></form>
     </div>
     <div class="dashboard-panel staff-booking-table-panel">
         <div class="staff-booking-panel-heading">

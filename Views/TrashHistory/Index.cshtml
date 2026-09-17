@@ -15,17 +15,15 @@
 }
 
 
-<div class="dashboard-panel mb-4">
-    <form method="get" asp-action="Index">
-        <div class="d-flex align-items-center gap-2 flex-wrap">
+<div class="am-filter-container">
+    <form method="get" asp-action="Index" class="am-filter-bar">
+        <div class="am-filter-row">
             
             <!-- Direct Search Input -->
-            <div class="flex-grow-1" style="max-width: 400px;">
-                <div class="input-group">
-                    <span class="input-group-text bg-white text-muted">
-                        <i class="bi bi-search"></i>
-                    </span>
-                    <input type="text" name="Search" value="@f?.Search" class="form-control border-start-0"
+            <div class="am-filter-search">
+                <div class="input-group w-100">
+                    <i class="bi bi-search" aria-hidden="true"></i>
+                    <input aria-label="Search records" type="text" name="Search" value="@f?.Search" class="form-control border-start-0"
                            placeholder="Booking ID, client, package, event type..." />
                 </div>
             </div>
@@ -54,8 +52,8 @@
                     <h6 class="fw-bold mb-3">Filter Archived Requests</h6>
                     
                     <div class="mb-3">
-                        <label class="form-label">Reason</label>
-                        <select name="Reason" class="form-select form-select-sm">
+                        <label class="form-label" for="TrashHistoryIndexReason">Reason</label>
+<select id="TrashHistoryIndexReason" name="Reason" class="form-select form-select-sm">
                             <option value="">All Reasons</option>
                             @foreach (TrashReason reason in Enum.GetValues(typeof(TrashReason)))
                             {
@@ -67,12 +65,12 @@
 
                     <div class="row g-2 mb-3">
                         <div class="col-6">
-                            <label class="form-label">From Date</label>
-                            <input type="date" name="DateFrom" value="@(f?.DateFrom?.ToString("yyyy-MM-dd"))" class="form-control form-control-sm" />
+                            <label class="form-label" for="TrashHistoryIndexDateFrom">From Date</label>
+<input id="TrashHistoryIndexDateFrom" type="date" name="DateFrom" value="@(f?.DateFrom?.ToString("yyyy-MM-dd"))" class="form-control form-control-sm" />
                         </div>
                         <div class="col-6">
-                            <label class="form-label">To Date</label>
-                            <input type="date" name="DateTo" value="@(f?.DateTo?.ToString("yyyy-MM-dd"))" class="form-control form-control-sm" />
+                            <label class="form-label" for="TrashHistoryIndexDateTo">To Date</label>
+<input id="TrashHistoryIndexDateTo" type="date" name="DateTo" value="@(f?.DateTo?.ToString("yyyy-MM-dd"))" class="form-control form-control-sm" />
                         </div>
                     </div>
 
@@ -90,7 +88,7 @@
 
             @if (f != null && (!string.IsNullOrEmpty(f.Search) || hasActiveFilters))
             {
-                <a asp-action="Index" class="btn btn-link text-decoration-none text-muted">Clear all</a>
+                <a asp-action="Index" class="btn btn-link text-decoration-none text-muted">Reset</a>
             }
         </div>
     </form>

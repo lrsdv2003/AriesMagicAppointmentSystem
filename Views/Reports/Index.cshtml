@@ -9,11 +9,11 @@
         <div class="d-flex gap-2 flex-wrap"><a asp-action="ExportCsv" asp-route-startDate="@Model.StartDate?.ToString("yyyy-MM-dd")" asp-route-endDate="@Model.EndDate?.ToString("yyyy-MM-dd")" asp-route-month="@Model.Month" asp-route-year="@Model.Year" asp-route-package="@Model.PackageFilter" asp-route-bookingStatus="@Model.BookingStatusFilter" class="btn btn-outline-success"><i class="bi bi-file-earmark-spreadsheet"></i> Export CSV</a><button type="button" class="btn btn-outline-secondary" onclick="window.print()"><i class="bi bi-printer"></i> Print</button></div>
     </div>
     @if(!ViewData.ModelState.IsValid){<div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>}
-    <form asp-action="Index" method="get" class="owner-filter-card owner-report-filter" aria-label="Report filters">
+    <form asp-action="Index" method="get" class="am-filter-bar am-filter-row" aria-label="Report filters">
     <div class="owner-filter-summary"><i class="bi bi-calendar-range"></i><span>@(Model.StartDate.HasValue || Model.EndDate.HasValue ? $"{Model.StartDate?.ToString("MMM dd, yyyy") ?? "Any start"} - {Model.EndDate?.ToString("MMM dd, yyyy") ?? "Any end"}" : "All event dates")</span></div>
     <div class="dropdown">
-        <button class="btn btn-outline-secondary dropdown-toggle owner-filter-trigger" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside"><i class="bi bi-funnel"></i> Filters</button>
-        <div class="dropdown-menu dropdown-menu-end owner-filter-menu p-3">
+        <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false"><i class="bi bi-funnel"></i> Filters</button>
+        <div class="dropdown-menu dropdown-menu-end p-3">
             <label class="form-label" for="startDate">Event Start Date</label><input type="date" id="startDate" name="startDate" value="@Model.StartDate?.ToString("yyyy-MM-dd")" class="form-control mb-3" />
             <label class="form-label" for="endDate">Event End Date</label><input type="date" id="endDate" name="endDate" value="@Model.EndDate?.ToString("yyyy-MM-dd")" class="form-control mb-3" />
             <div class="row g-2">

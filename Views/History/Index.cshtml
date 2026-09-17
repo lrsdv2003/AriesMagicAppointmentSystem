@@ -79,16 +79,14 @@
     </div>
 
     <!-- Search and Filter Bar Card -->
-    <div class="card border-0 shadow-sm rounded-4 p-3 mb-4 bg-white">
-        <form method="get" asp-action="Index">
-            <div class="d-flex flex-column flex-md-row gap-2 align-items-center">
+    <div class="am-filter-container">
+        <form method="get" asp-action="Index" class="am-filter-bar">
+            <div class="am-filter-row">
                 
                 <!-- Search Input Field -->
-                <div class="input-group flex-grow-1">
-                    <span class="input-group-text bg-white border-end-0 text-muted ps-3 rounded-start-pill">
-                        <i class="bi bi-search"></i>
-                    </span>
-                    <input type="text" name="Search" value="@f.Search" 
+                <div class="am-filter-search">
+                    <i class="bi bi-search" aria-hidden="true"></i>
+                    <input aria-label="Search records" type="text" name="Search" value="@f.Search"
                            class="form-control border-start-0 ps-2 rounded-end-pill py-2" 
                            placeholder="Search action, user, record..." />
                 </div>
@@ -108,8 +106,8 @@
 
                         <!-- Activity/Package Type -->
                         <div class="mb-3">
-                            <label class="form-label text-muted text-uppercase fw-semibold" style="font-size: 0.75rem;">ACTIVITY TYPE</label>
-                            <select name="ServiceId" class="form-select rounded-3">
+                            <label class="form-label text-muted text-uppercase fw-semibold" style="font-size: 0.75rem;" for="HistoryIndexServiceId">ACTIVITY TYPE</label>
+<select id="HistoryIndexServiceId" name="ServiceId" class="form-select rounded-3">
                                 <option value="">All Types</option>
                                 @foreach (var svc in Model.AvailableServices)
                                 {
@@ -120,8 +118,8 @@
 
                         <!-- Date Range Preset / From Date -->
                         <div class="mb-3">
-                            <label class="form-label text-muted text-uppercase fw-semibold" style="font-size: 0.75rem;">DATE RANGE</label>
-                            <select name="DateRange" class="form-select rounded-3">
+                            <label class="form-label text-muted text-uppercase fw-semibold" style="font-size: 0.75rem;" for="HistoryIndexDateRange">DATE RANGE</label>
+<select id="HistoryIndexDateRange" name="DateRange" class="form-select rounded-3">
                                 <option value="" selected="@(string.IsNullOrEmpty(f.DateRange))">Any Time</option>
                                 <option value="Today" selected="@(f.DateRange == "Today")">Today</option>
                                 <option value="ThisWeek" selected="@(f.DateRange == "ThisWeek")">This Week</option>
@@ -132,8 +130,8 @@
 
                         <!-- Sort Option -->
                         <div class="mb-4">
-                            <label class="form-label text-muted text-uppercase fw-semibold" style="font-size: 0.75rem;">SORT BY</label>
-                            <select name="SortBy" class="form-select rounded-3">
+                            <label class="form-label text-muted text-uppercase fw-semibold" style="font-size: 0.75rem;" for="HistoryIndexSortBy">SORT BY</label>
+<select id="HistoryIndexSortBy" name="SortBy" class="form-select rounded-3">
                                 <option value="Newest" selected="@(string.IsNullOrEmpty(f.SortBy) || f.SortBy == "Newest")">Newest</option>
                                 <option value="Oldest" selected="@(f.SortBy == "Oldest")">Oldest</option>
                                 <option value="ClientName" selected="@(f.SortBy == "ClientName")">Client Name</option>

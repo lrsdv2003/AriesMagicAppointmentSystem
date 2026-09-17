@@ -43,6 +43,7 @@
     <link rel="stylesheet" href="~/css/communication-center.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/ocr-verification.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/package-cards.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/filters.css" asp-append-version="true" />
 </head>
 <body class="client-body @pageClass @(isHome ? "client-home-page" : "client-inner-page")">
     <a class="magic-skip-link" href="#mainContent">Skip to content</a>
@@ -243,5 +244,6 @@
         <script src="~/js/communication-global.js" asp-append-version="true"></script>
     }
     @await RenderSectionAsync("Scripts", required: false)
+    <script src="~/js/filters.js" asp-append-version="true"></script>
 </body>
 </html>

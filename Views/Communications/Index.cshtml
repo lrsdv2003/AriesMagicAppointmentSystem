@@ -58,19 +58,15 @@
                     }
                 </div>
 
-                <form method="get" asp-action="Index" class="comm-search-form">
+                <form method="get" asp-action="Index" class="am-filter-bar am-filter-row">
                     <input type="hidden" name="filter" value="@Model.Filter" />
-                    <div class="comm-search-box">
+                    <div class="am-filter-search">
                         <i class="bi bi-search"></i>
                         <input type="search" name="q" value="@Model.Search" placeholder="Search messages, names, booking #..." aria-label="Search conversations" />
-                        @if (!string.IsNullOrWhiteSpace(Model.Search))
-                        {
-                            <a asp-action="Index" asp-route-filter="@Model.Filter" class="comm-search-clear" title="Clear search"><i class="bi bi-x-lg"></i></a>
-                        }
                     </div>
-                </form>
+                <button type="submit" class="btn btn-primary">Search</button><a asp-action="Index" class="btn btn-light">Reset</a></form>
 
-                <div class="comm-filter-strip" aria-label="Conversation filters">
+                <div class="comm-filter-strip am-filter-chips" aria-label="Conversation filters">
                     <a asp-action="Index" asp-route-filter="all" asp-route-q="@Model.Search" class="@(Model.Filter == "all" ? "active" : "")">All</a>
                     <a asp-action="Index" asp-route-filter="unread" asp-route-q="@Model.Search" class="@(Model.Filter == "unread" ? "active" : "")">Unread</a>
                     @if (Model.IsInternalUser)
