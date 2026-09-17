@@ -217,7 +217,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             await LogActivityAsync(SystemActivityType.OcrAnalysisCompleted, $"OCR analysis completed for payment #{payment.Id}: {ocr.VerificationResult}.", payment.Id.ToString(), "Payment", new { ocr.VerificationResult, ocr.OcrConfidence, ocr.IsDuplicateReference });
             if (financialBefore.TotalVerifiedPayments <= 0)
                 await NotifyAffectedClientsAboutLockedScheduleAsync(booking);
-            await NotifyInternalReviewersAsync("New Payment Verification Required", $"A payment proof was submitted for Booking #BK-{booking.Id}. OCR result: {ocr.VerificationResult}.", "/Payments/PendingVerification");
+            await NotifyInternalReviewersAsync("New Payment Verification Required", $"A payment proof was submitted for Booking #BK-{booking.Id}. OCR result: {ocr.VerificationResult}.", $"/Payments/Verify/{payment.Id}");
 
             TempData["Success"] = model.Amount > financialBefore.RemainingBalance
                 ? $"Payment amount exceeds the remaining balance of ₱{financialBefore.RemainingBalance:N2}. Manual review required; the balance will not change unless an authorized reviewer resolves the discrepancy."
@@ -311,7 +311,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             _context.OcrVerifications.Add(ocr);
             payment.TransactionReference = ocr.ExtractedReferenceNumber;
             await _context.SaveChangesAsync();
-            await NotifyInternalReviewersAsync("Updated Payment Proof Submitted", $"Replacement evidence for Booking #BK-{payment.BookingId}. OCR result: {ocr.VerificationResult}.", "/Payments/PendingVerification");
+            await NotifyInternalReviewersAsync("Updated Payment Proof Submitted", $"Replacement evidence for Booking #BK-{payment.BookingId}. OCR result: {ocr.VerificationResult}.", $"/Payments/Verify/{payment.Id}");
             await LogActivityAsync(SystemActivityType.PaymentProofSubmitted, $"Replacement payment proof submitted for payment #{id}.", id.ToString(), "Payment");
             TempData["Success"] = "Your new payment proof was submitted and is awaiting Owner verification.";
             return RedirectToAction(nameof(MyUploads));
@@ -671,7 +671,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             });
             _context.OcrVerifications.Add(refundOcr);
             await _context.SaveChangesAsync();
-            await NotifyInternalReviewersAsync("New Refund Request", $"Refund request RF-{refundRequest.Id:D4} for Booking #BK-{booking.Id} requires review. OCR result: {refundOcr.VerificationResult}.", "/Payments/RefundRequests");
+            await NotifyInternalReviewersAsync("New Refund Request", $"Refund request RF-{refundRequest.Id:D4} for Booking #BK-{booking.Id} requires review. OCR result: {refundOcr.VerificationResult}.", $"/Payments/RefundReview/{refundRequest.Id}");
             await LogActivityAsync(SystemActivityType.RefundRequested, $"Refund request #{refundRequest.Id} submitted for booking #{booking.Id}.", refundRequest.Id.ToString(), "RefundRequest", new { refundOcr.VerificationResult });
             TempData["Success"] = "Your refund request has been submitted and is awaiting Owner review.";
             return RedirectToAction(nameof(MyRefundRequests));

@@ -1,0 +1,21 @@
+@model AriesMagicAppointmentSystem.ViewModels.ServiceInclusionInputViewModel
+@{ var prefix = $"Inclusions[{ViewData["Index"]}]"; }
+<div class="package-inclusion-row">
+    @Html.Hidden(prefix + ".Id", Model.Id)
+    <div>
+        <label for="@Html.Id(prefix + ".Name")" class="form-label">Inclusion Name</label>
+        @Html.TextBox(prefix + ".Name", Model.Name, new { @class = "form-control", required = "required", data_val = "true", data_val_required = "Enter an inclusion name." })
+        @Html.ValidationMessage(prefix + ".Name", null, new { @class = "text-danger" })
+    </div>
+    <div>
+        <label for="@Html.Id(prefix + ".DeductionAmount")" class="form-label">Deduction Amount (PHP)</label>
+        @Html.TextBox(prefix + ".DeductionAmount", Model.DeductionAmount, new { @class = "form-control", type = "number", min = "0", max = "999999", step = "0.01", required = "required", data_val = "true", data_val_number = "Enter an amount.", data_val_range = "Use an amount from 0 to 999999.", data_val_range_min = "0", data_val_range_max = "999999" })
+        @Html.ValidationMessage(prefix + ".DeductionAmount", null, new { @class = "text-danger" })
+    </div>
+    <div class="package-inclusion-toggle">
+        <input type="checkbox" class="form-check-input" id="@Html.Id(prefix + ".IsRemovable")" name="@(prefix + ".IsRemovable")" value="true" checked="@Model.IsRemovable" />
+        <input type="hidden" name="@(prefix + ".IsRemovable")" value="false" />
+        <label for="@Html.Id(prefix + ".IsRemovable")">Removable by Client</label>
+    </div>
+    <button type="button" class="btn btn-outline-danger" data-remove-inclusion>Remove<span class="visually-hidden"> inclusion</span></button>
+</div>

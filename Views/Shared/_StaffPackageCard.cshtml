@@ -1,0 +1,30 @@
+@model AriesMagicAppointmentSystem.Models.Service
+@{
+    var inclusions = Model.Inclusions.OrderBy(i => i.Id).ToList();
+    var preview = inclusions.Take(3).ToList();
+}
+<article class="staff-package-card">
+    <div class="staff-package-card-head">
+        <div class="staff-package-title-wrap">
+            <span class="staff-package-status">@(Model.IsArchived ? "Archived" : "Active")</span>
+            <h2>@Model.Name</h2>
+        </div>
+        <strong class="staff-package-price">&#8369;@Model.Price.ToString("N2")</strong>
+    </div>
+    <div class="staff-package-facts" aria-label="Package summary">
+        <div><span>Duration</span><strong>@Model.DurationInHours hour(s)</strong></div>
+        <div><span>Availability</span><strong>@(Model.IsArchived ? "Unavailable" : "Active")</strong></div>
+    </div>
+    <div class="staff-package-inclusions">
+        <span class="staff-package-section-label">Main Inclusions</span>
+        @if (preview.Count == 0) { <p class="staff-package-muted">No inclusions configured.</p> }
+        else {
+            <ul>@foreach (var inclusion in preview) { <li><i class="bi bi-check2" aria-hidden="true"></i><span>@inclusion.Name</span></li> }</ul>
+            @if (inclusions.Count > preview.Count) { <span class="staff-package-more">+ @(inclusions.Count - preview.Count) more</span> }
+        }
+    </div>
+    <div class="staff-package-actions">
+        <a asp-controller="Services" asp-action="Details" asp-route-id="@Model.Id" class="btn btn-outline-primary">View Details<span class="visually-hidden"> for @Model.Name</span></a>
+        @if (User.CanEditPackages()) { <a asp-controller="Services" asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-outline-secondary">Edit<span class="visually-hidden"> @Model.Name</span></a><a asp-controller="Services" asp-action="@(Model.IsArchived ? "Restore" : "Archive")" asp-route-id="@Model.Id" class="btn btn-light">@(Model.IsArchived ? "Restore" : "Archive")<span class="visually-hidden"> @Model.Name</span></a> }
+    </div>
+</article>

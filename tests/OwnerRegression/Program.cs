@@ -84,6 +84,7 @@ try
     await db.SaveChangesAsync();
     var queue = (ViewResult)await payments.PendingVerification("mismatch");
     Check(!((IEnumerable<Payment>)queue.Model!).Any(), "Old OCR mismatch is excluded after replacement");
+    await InterfaceRegression.RunAsync(db, Check);
     if (args.Contains("--render"))
     {
         await SnapshotRenderer.RenderAsync(options, report, active, pending, service,

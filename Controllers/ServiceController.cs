@@ -82,9 +82,8 @@ namespace AriesMagicAppointmentSystem.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(ServiceManageViewModel model)
         {
-            model.Inclusions = model.Inclusions
-                .Where(i => !string.IsNullOrWhiteSpace(i.Name))
-                .ToList();
+            if (model.Inclusions.Count == 0)
+                ModelState.AddModelError("Inclusions", "Add at least one inclusion.");
 
             if (await _context.Services.AnyAsync(s => s.Name == model.Name))
             {
@@ -141,6 +140,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             var model = new ServiceManageViewModel
             {
                 Id = service.Id,
+                IsArchived = service.IsArchived,
                 Name = service.Name,
                 Price = service.Price,
                 DurationInHours = service.DurationInHours,
@@ -168,10 +168,12 @@ namespace AriesMagicAppointmentSystem.Controllers
         public async Task<IActionResult> Edit(int id, ServiceManageViewModel model)
         {
             if (id != model.Id) return NotFound();
+            var existing = await _context.Services.AsNoTracking().FirstOrDefaultAsync(s => s.Id == id);
+            if (existing == null) return NotFound();
+            model.IsArchived = existing.IsArchived;
 
-            model.Inclusions = model.Inclusions
-                .Where(i => !string.IsNullOrWhiteSpace(i.Name))
-                .ToList();
+            if (model.Inclusions.Count == 0)
+                ModelState.AddModelError("Inclusions", "Add at least one inclusion.");
 
             if (await _context.Services.AnyAsync(s => s.Name == model.Name && s.Id != model.Id))
             {

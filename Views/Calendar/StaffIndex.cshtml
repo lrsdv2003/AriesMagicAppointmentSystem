@@ -301,8 +301,10 @@
     function renderDaySummary(cell, key) {
         const frame = cell.querySelector('.fc-daygrid-day-frame');
         if (!frame) return;
-        frame.querySelector('.staff-day-summary')?.remove();
-        frame.querySelector('.staff-day-blocked-label')?.remove();
+        frame.querySelector('.staff-day-content')?.remove();
+        const content = document.createElement('div');
+        content.className = 'staff-day-content';
+        frame.appendChild(content);
         cell.classList.remove('staff-calendar-has-events', 'staff-calendar-blocked');
         cell.removeAttribute('role');
         cell.removeAttribute('aria-label');
@@ -318,7 +320,7 @@
             const blockedLabel = document.createElement('span');
             blockedLabel.className = 'staff-day-blocked-label';
             blockedLabel.textContent = 'Blocked';
-            frame.appendChild(blockedLabel);
+            content.appendChild(blockedLabel);
         }
 
         if (visibleItems.length) {
@@ -331,6 +333,8 @@
                 const dot = document.createElement('span');
                 dot.className = `package-dot package-${item.key}`;
                 dot.title = item.packageName;
+                dot.setAttribute('role', 'img');
+                dot.setAttribute('aria-label', item.packageName);
                 dots.appendChild(dot);
             });
             if (visibleItems.length > 4) {
@@ -341,9 +345,13 @@
                 dots.appendChild(more);
             }
             const count = document.createElement('strong');
-            count.textContent = visibleItems.length === 1 ? '1 Booking' : `${visibleItems.length} Bookings`;
+            count.append(document.createTextNode(String(visibleItems.length)));
+            const word = document.createElement('span');
+            word.className = 'staff-day-count-label';
+            word.textContent = visibleItems.length === 1 ? ' Booking' : ' Bookings';
+            count.appendChild(word);
             box.append(dots, count);
-            frame.appendChild(box);
+            content.appendChild(box);
         }
 
         if (blocked || visibleItems.length) {

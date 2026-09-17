@@ -23,6 +23,10 @@ namespace AriesMagicAppointmentSystem.ViewModels
         [Display(Name = "Package Description")]
         public string? Description { get; set; }
 
+        [Microsoft.AspNetCore.Mvc.ModelBinding.BindNever]
+        public bool IsArchived { get; set; }
+
+        [MinLength(1, ErrorMessage = "Add at least one inclusion.")]
         public List<ServiceInclusionInputViewModel> Inclusions { get; set; } = new();
     }
 

@@ -53,6 +53,7 @@
             <button type="button" class="btn btn-outline-primary" onclick="addInclusionRow()">Add Inclusion</button>
         </div>
 
+        <span asp-validation-for="Inclusions" class="text-danger"></span>
         <div id="inclusions-container" class="inclusion-list-wrap">
             @for (int i = 0; i < Model.Inclusions.Count; i++)
             {

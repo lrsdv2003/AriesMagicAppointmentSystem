@@ -1,109 +1,20 @@
 @model IEnumerable<AriesMagicAppointmentSystem.Models.Notification>
-
 @{
-    var notifications = Model.OrderByDescending(x => x.CreatedAt).ToList();
-    var isClient = User.IsInRole("Client");
-
-    Layout = isClient ? "_Layout" : "_DashboardLayout";
+    Layout = User.IsInRole("Client") ? "_Layout" : "_DashboardLayout";
     ViewData["Title"] = "Notifications";
-
-    var totalCount = notifications.Count;
-    var unreadCount = notifications.Count(x => !x.IsRead);
-    var readCount = notifications.Count(x => x.IsRead);
+    var notifications = Model.OrderByDescending(x => x.CreatedAt).ToList();
+    var unread = notifications.Count(x => !x.IsRead);
 }
-
-@if (isClient)
-{
-    <div class="client-portal-header">
-        <div>
-            <div class="section-kicker">Client Portal</div>
-            <h1 class="client-portal-title">Notifications</h1>
-          
-        </div>
-    </div>
-
-    <div class="client-portal-stats">
-        <div class="client-portal-stat-card">
-            <span class="client-portal-stat-label">Total Notifications</span>
-            <strong class="client-portal-stat-value">@totalCount</strong>
-            
-        </div>
-
-        <div class="client-portal-stat-card">
-            <span class="client-portal-stat-label">Unread</span>
-            <strong class="client-portal-stat-value">@unreadCount</strong>
-            
-        </div>
-
-        <div class="client-portal-stat-card">
-            <span class="client-portal-stat-label">Read</span>
-            <strong class="client-portal-stat-value">@readCount</strong>
-            
-        </div>
-    </div>
-}
-else
-{
-    <div class="page-header">
-        <div>
-            <h1>Notifications</h1>
-            
-        </div>
-    </div>
-
-    <div class="dashboard-stats mb-4">
-        <div class="stat-card">
-            <div class="stat-label">Total Notifications</div>
-            <div class="stat-value">@totalCount</div>
-            
-        </div>
-        <div class="stat-card">
-            <div class="stat-label">Unread</div>
-            <div class="stat-value">@unreadCount</div>
-            
-        </div>
-        <div class="stat-card">
-            <div class="stat-label">Read</div>
-            <div class="stat-value">@readCount</div>
-            
-        </div>
-    </div>
-}
-
-@if (!notifications.Any())
-{
-    <div class="empty-state @(isClient ? "client-empty-state" : "")">
-        <h3>No notifications yet</h3>
-        
-    </div>
-}
-else
-{
-    <div class="notification-card-list">
-        @foreach (var item in notifications)
-        {
-            var notifClass = item.IsRead ? "status-read" : "status-unread";
-
-            <div class="notification-card @(item.IsRead ? "notification-read" : "notification-unread")">
-                <div class="notification-card-top">
-                    <div>
-                        <div class="notification-card-title">@item.Title</div>
-                        <div class="notification-card-date">@item.CreatedAt.ToString("MMM dd, yyyy hh:mm tt")</div>
-                    </div>
-
-                    <span class="status-badge @notifClass">
-                        @(item.IsRead ? "Read" : "Unread")
-                    </span>
-                </div>
-
-                <div class="notification-card-body">
-                    <p class="notification-card-message mb-0">@item.Message</p>
-                </div>
-
-                <div class="notification-card-footer">
-                    <a asp-action="Open" asp-route-id="@item.Id" class="btn btn-primary btn-sm">Open</a>
-                </div>
-            </div>
+<section class="notice-page" aria-labelledby="noticeTitle">
+    <header class="notice-header">
+        <div><h1 id="noticeTitle">Notifications</h1><p>@unread unread <span aria-hidden="true">&middot;</span> @notifications.Count total</p></div>
+        @if (unread > 0) {
+            <form asp-controller="Notifications" asp-action="MarkAllRead" method="post">@Html.AntiForgeryToken()<button type="submit" class="btn btn-outline-secondary">Mark all as read</button></form>
         }
-    </div>
-}
+    </header>
+    @if (notifications.Count == 0) {
+        <p class="notice-empty" role="status">You're all caught up.</p>
+    } else {
+        <div class="notice-list">@foreach (var item in notifications) { <partial name="_NotificationRow" model="item" /> }</div>
+    }
+</section>

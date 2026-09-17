@@ -34,6 +34,8 @@
     <link rel="stylesheet" href="~/css/package-cards.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/owner-interface.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/filters.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/package-editor.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/notifications.css" asp-append-version="true" />
 </head>
 <body class="dashboard-body @(User.IsInRole("Staff") ? "staff-dashboard" : User.IsInRole("Admin") ? "admin-dashboard" : User.IsInRole("Owner") ? "owner-dashboard" : "")">
     <div class="dashboard-shell">
@@ -201,7 +203,7 @@
                    <a asp-controller="Notifications"
                         asp-action="Index"
                         class="topbar-icon topbar-bell"
-                        title="Notifications">
+                        title="Notifications" aria-label="Notifications, @unreadNotificationCount unread">
 
                             <i class="bi bi-bell-fill"></i>
 

@@ -33,6 +33,18 @@ namespace AriesMagicAppointmentSystem.Controllers
             return View(notifications);
         }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> MarkAllRead()
+        {
+            var appUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrWhiteSpace(appUserId)) return Unauthorized();
+            await _context.Notifications.Where(n => n.UserId == appUserId && !n.IsRead)
+                .ExecuteUpdateAsync(set => set.SetProperty(n => n.IsRead, true)
+                    .SetProperty(n => n.ReadAt, DateTime.Now));
+            return RedirectToAction(nameof(Index));
+        }
+
         public async Task<IActionResult> Open(int id)
         {
             var appUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -45,9 +57,12 @@ namespace AriesMagicAppointmentSystem.Controllers
 
             if (notification == null) return NotFound();
 
-            notification.IsRead = true;
-            notification.ReadAt = DateTime.Now;
-            await _context.SaveChangesAsync();
+            if (!notification.IsRead)
+            {
+                notification.IsRead = true;
+                notification.ReadAt = DateTime.Now;
+                await _context.SaveChangesAsync();
+            }
 
             if (!string.IsNullOrWhiteSpace(notification.Link) && Url.IsLocalUrl(notification.Link))
             {

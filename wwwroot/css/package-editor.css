@@ -1,0 +1,28 @@
+.staff-package-actions{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:auto;padding-top:.5rem}
+.staff-package-actions .btn{width:auto;min-height:42px;flex:1 1 auto;font-size:.85rem}
+.staff-package-card-head{flex-wrap:wrap}
+.staff-package-title-wrap,.staff-package-price{min-width:0;overflow-wrap:anywhere}
+.package-editor{max-width:1280px;margin:0 auto;color:#1e293b}
+.package-editor-grid{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:1.25rem;align-items:start}
+.package-editor-sections{display:grid;gap:1rem;min-width:0}
+.package-editor-section{background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:1.25rem;min-width:0}
+.package-editor-section h2{font-size:1.05rem;font-weight:750;margin:0 0 1rem}
+.package-editor-section-heading{display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap}
+.package-editor-section-heading h2{margin:0}
+.package-editor .form-label{font-size:.85rem;font-weight:650;color:#334155}
+.package-editor .form-control{min-height:44px;border-radius:10px;border:1px solid #cbd5e1;font-size:.9rem;padding:.65rem .8rem}
+.package-editor .form-text{font-size:.8rem;color:#64748b;margin-top:.5rem}
+.package-editor .text-danger{display:block;font-size:.8rem;margin-top:.3rem}
+.package-editor .btn{min-height:44px;border-radius:10px;font-size:.875rem}
+.package-editor :is(input,textarea,button,a):focus-visible{outline:3px solid #a78bfa;outline-offset:3px}
+.package-inclusion-row{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:.8rem;padding:1rem 0;border-bottom:1px solid #e2e8f0}
+.package-inclusion-row>div{min-width:0}
+.package-inclusion-toggle{display:flex;align-items:center;gap:.6rem;font-size:.85rem}
+.package-inclusion-toggle .form-check-input{margin:0;flex-shrink:0;width:1.15rem;height:1.15rem}
+.package-inclusion-row>[data-remove-inclusion]{justify-self:end}
+.package-editor-preview h3{font-size:1.2rem;overflow-wrap:anywhere}
+.package-editor-preview>strong{display:block;font-size:1.5rem;color:#6d28d9}
+.package-editor-preview ul{padding-left:1.2rem;font-size:.9rem;overflow-wrap:anywhere}
+.package-editor-footer{display:flex;justify-content:flex-end;gap:.75rem;margin-top:1.25rem}
+@media(max-width:1050px){.package-editor-grid{grid-template-columns:1fr}.package-editor-preview{order:1}}
+@media(max-width:600px){.package-inclusion-row{grid-template-columns:1fr}.package-inclusion-row>[data-remove-inclusion]{justify-self:stretch}.package-editor-footer .btn{flex:1}.package-editor-section{padding:1rem}}
