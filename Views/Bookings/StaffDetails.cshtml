@@ -75,13 +75,20 @@
         </section>
 
         <section class="dashboard-panel staff-detail-section staff-detail-wide" aria-labelledby="venueInfoTitle">
-            <h2 id="venueInfoTitle"><i class="bi bi-geo-alt"></i> Venue Information</h2>
+            <h2 id="venueInfoTitle"><i class="bi bi-signpost-split"></i> Venue Travel Overview</h2>
+            <div class="booking-venue-overview">
+                <div class="booking-venue-status @(Model.RequiresManualReview ? "venue-awareness-review" : Model.IsServiceable ? "venue-awareness-serviceable" : "venue-awareness-unavailable")">
+                    <i class="bi @(Model.RequiresManualReview ? "bi-exclamation-triangle-fill" : Model.IsServiceable ? "bi-check-circle-fill" : "bi-x-circle-fill")" aria-hidden="true"></i>
+                    <div><span>Venue serviceability</span><strong>@(Model.RequiresManualReview ? "For staff review" : Model.IsServiceable ? "Serviceable" : "Not serviceable")</strong></div>
+                </div>
+                <div class="booking-venue-metrics">
+                    <div><span>Distance</span><strong>@(Model.DistanceKm.HasValue ? $"{Model.DistanceKm.Value:N1} km" : "Not available")</strong></div>
+                    <div><span>Service zone</span><strong>@(string.IsNullOrWhiteSpace(Model.ServiceZone) ? "Not available" : Model.ServiceZone)</strong></div>
+                    <div><span>Travel fee</span><strong>@(Model.TravelFee > 0 ? $"₱{Model.TravelFee:N2}" : "No travel fee")</strong></div>
+                </div>
+            </div>
             <div class="staff-detail-list staff-detail-list-2col">
                 <div class="staff-detail-span-2"><span>Full Address</span><strong>@(string.IsNullOrWhiteSpace(Model.PartyVenue) ? "Not provided" : Model.PartyVenue)</strong></div>
-                <div><span>Distance</span><strong>@(Model.DistanceKm.HasValue ? $"{Model.DistanceKm.Value:N1} KM" : "Not available")</strong></div>
-                <div><span>Service Zone</span><strong>@(string.IsNullOrWhiteSpace(Model.ServiceZone) ? "Not available" : Model.ServiceZone)</strong></div>
-                <div><span>Serviceability</span><strong><span class="status-badge staff-status-badge @(Model.RequiresManualReview ? "status-pending" : Model.IsServiceable ? "status-confirmed" : "status-declined")">@(Model.RequiresManualReview ? "For Staff Review" : Model.IsServiceable ? "Serviceable" : "Not Serviceable")</span></strong></div>
-                <div><span>Travel Information</span><strong>@(Model.TravelFee > 0 ? $"Travel fee: ₱{Model.TravelFee:N2}" : "No additional travel fee")</strong></div>
             </div>
         </section>
         <section class="dashboard-panel staff-detail-section" aria-labelledby="packageInfoTitle">

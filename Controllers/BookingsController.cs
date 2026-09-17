@@ -188,7 +188,7 @@ namespace AriesMagicAppointmentSystem.Controllers
         [Authorize(Roles = "Client")]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CheckVenueServiceability(string partyVenue)
+        public async Task<IActionResult> CheckVenueServiceability(string partyVenue, DateTime? eventDate, TimeSpan? startTime)
         {
             if (string.IsNullOrWhiteSpace(partyVenue))
             {
@@ -216,7 +216,9 @@ namespace AriesMagicAppointmentSystem.Controllers
                     });
                 }
 
-                var distance = _venueDistanceService.Calculate(selected.Latitude, selected.Longitude);
+                var distance = eventDate.HasValue && startTime.HasValue
+                    ? await CalculateVenueServiceabilityAsync(eventDate.Value, startTime.Value, selected.Latitude, selected.Longitude)
+                    : _venueDistanceService.Calculate(selected.Latitude, selected.Longitude);
 
                 return Json(new
                 {
@@ -234,7 +236,14 @@ namespace AriesMagicAppointmentSystem.Controllers
                     serviceZone = distance.ServiceZone,
                     isServiceable = distance.IsServiceable,
                     requiresManualReview = distance.RequiresManualReview,
-                    maximumServiceDistanceKm = distance.MaximumServiceDistanceKm
+                    maximumServiceDistanceKm = distance.MaximumServiceDistanceKm,
+                    estimatedTravelTimeMinutes = distance.EstimatedTravelTimeMinutes,
+                    availableTravelTimeMinutes = distance.AvailableTravelTimeMinutes,
+                    usesPreviousEventLocation = distance.UsesPreviousEventLocation,
+                    serviceabilityReason = distance.ServiceabilityReason,
+                    originLatitude = distance.OriginLatitude,
+                    originLongitude = distance.OriginLongitude,
+                    startingPointName = distance.StartingPointName
                 });
             }
             catch
@@ -322,7 +331,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                         model.PartyVenue = selected.DisplayName;
                         model.VenueLatitude = selected.Latitude;
                         model.VenueLongitude = selected.Longitude;
-                        var distance = _venueDistanceService.Calculate(selected.Latitude, selected.Longitude);
+                        var distance = await CalculateVenueServiceabilityAsync(model.EventDate, model.StartTime, selected.Latitude, selected.Longitude);
                         model.DistanceKm = distance.DistanceKm;
                         model.TravelFee = distance.TravelFee;
                         model.IsServiceable = distance.IsServiceable;
@@ -331,7 +340,7 @@ namespace AriesMagicAppointmentSystem.Controllers
 
                         if (!distance.IsServiceable)
                         {
-                            ModelState.AddModelError(nameof(model.PartyVenue), $"This venue is outside the maximum service distance of {distance.MaximumServiceDistanceKm:0.##} KM. Please select another venue or contact Aries Magic for assistance.");
+                            ModelState.AddModelError(nameof(model.PartyVenue), GetVenueServiceabilityError(distance));
                         }
                     }
                 }
@@ -481,7 +490,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                 model.PartyVenue = selectedVenue.DisplayName;
                 model.VenueLatitude = selectedVenue.Latitude;
                 model.VenueLongitude = selectedVenue.Longitude;
-                venueDistance = _venueDistanceService.Calculate(selectedVenue.Latitude, selectedVenue.Longitude);
+                venueDistance = await CalculateVenueServiceabilityAsync(model.EventDate, model.StartTime, selectedVenue.Latitude, selectedVenue.Longitude);
                 model.DistanceKm = venueDistance.DistanceKm;
                 model.TravelFee = venueDistance.TravelFee;
                 model.IsServiceable = venueDistance.IsServiceable;
@@ -490,7 +499,7 @@ namespace AriesMagicAppointmentSystem.Controllers
 
                 if (!venueDistance.IsServiceable)
                 {
-                    ModelState.AddModelError(nameof(model.PartyVenue), $"This venue is outside the maximum service distance of {venueDistance.MaximumServiceDistanceKm:0.##} KM. Please select another venue or contact Aries Magic for assistance.");
+                    ModelState.AddModelError(nameof(model.PartyVenue), GetVenueServiceabilityError(venueDistance));
                     return View("CreateStepTwo", model);
                 }
             }
@@ -1185,6 +1194,76 @@ namespace AriesMagicAppointmentSystem.Controllers
                 model.CelebrantName = null;
                 model.Age = null;
             }
+        }
+
+        private async Task<VenueDistanceResult> CalculateVenueServiceabilityAsync(
+            DateTime eventDate,
+            TimeSpan startTime,
+            double venueLatitude,
+            double venueLongitude)
+        {
+            var requestedStart = eventDate.Date.Add(startTime);
+            var previousBooking = await _context.Bookings
+                .Where(b => b.Status == BookingStatus.Confirmed
+                            && b.EventDate.Date == eventDate.Date
+                            && b.StartTime < requestedStart)
+                .OrderByDescending(b => b.StartTime)
+                .FirstOrDefaultAsync();
+
+            if (previousBooking == null)
+            {
+                return _venueDistanceService.Calculate(venueLatitude, venueLongitude);
+            }
+
+            var availableTravelTimeMinutes = Math.Max(
+                0,
+                (int)Math.Floor((requestedStart - previousBooking.EndTime).TotalMinutes));
+
+            if (previousBooking.VenueLatitude is not double originLatitude
+                || previousBooking.VenueLongitude is not double originLongitude
+                || !_venueDistanceService.IsValidCoordinate(originLatitude, originLongitude))
+            {
+                return new VenueDistanceResult
+                {
+                    IsServiceable = false,
+                    ServiceZone = "Not available",
+                    MaximumServiceDistanceKm = 0,
+                    AvailableTravelTimeMinutes = availableTravelTimeMinutes,
+                    UsesPreviousEventLocation = true,
+                    HasSufficientTravelTime = false,
+                    StartingPointName = previousBooking.PartyVenue,
+                    ServiceabilityReason = "The preceding confirmed event has no verified venue location, so travel time cannot be confirmed. Please select another time."
+                };
+            }
+
+            var route = _venueDistanceService.Calculate(originLatitude, originLongitude, venueLatitude, venueLongitude);
+            var hasSufficientTravelTime = route.EstimatedTravelTimeMinutes <= availableTravelTimeMinutes;
+
+            return new VenueDistanceResult
+            {
+                DistanceKm = route.DistanceKm,
+                TravelFee = route.TravelFee,
+                ServiceZone = route.ServiceZone,
+                IsServiceable = route.IsServiceable && hasSufficientTravelTime,
+                RequiresManualReview = route.RequiresManualReview && hasSufficientTravelTime,
+                MaximumServiceDistanceKm = route.MaximumServiceDistanceKm,
+                EstimatedTravelTimeMinutes = route.EstimatedTravelTimeMinutes,
+                AvailableTravelTimeMinutes = availableTravelTimeMinutes,
+                UsesPreviousEventLocation = true,
+                HasSufficientTravelTime = hasSufficientTravelTime,
+                OriginLatitude = route.OriginLatitude,
+                OriginLongitude = route.OriginLongitude,
+                StartingPointName = previousBooking.PartyVenue,
+                ServiceabilityReason = hasSufficientTravelTime
+                    ? null
+                    : "There is not enough travel time from the preceding confirmed event to the selected start time. Please select another time or venue."
+            };
+        }
+
+        private static string GetVenueServiceabilityError(VenueDistanceResult distance)
+        {
+            return distance.ServiceabilityReason
+                   ?? $"This venue is outside the maximum service distance of {distance.MaximumServiceDistanceKm:0.##} KM. Please select another venue or contact Aries Magic for assistance.";
         }
 
         private async Task<bool> HasBookingConflict(DateTime requestedStart, DateTime requestedEnd)

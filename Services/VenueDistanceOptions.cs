@@ -8,5 +8,6 @@ namespace AriesMagicAppointmentSystem.Services
         public double ManualReviewDistanceKm { get; set; } = 50;
         public double MaximumServiceDistanceKm { get; set; } = 80;
         public decimal TravelFeePerKm { get; set; } = 15m;
+        public double EstimatedTravelSpeedKph { get; set; } = 30;
     }
 }

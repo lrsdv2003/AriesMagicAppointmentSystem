@@ -18,71 +18,6 @@
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
 
-<link rel="stylesheet"
-
-      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-
-      integrity="sha256-p4NxAoJBhIINfQ3HynfQ5q1e8bYJ1D1M7k7Y2o5s0="
-
-      crossorigin="" />
-
-<style>
-
-    #venueMap {
-
-        height: 220px;
-
-        width: 100%;
-
-        border-radius: 12px;
-
-        border: 1px solid #dee2e6;
-
-        overflow: hidden;
-
-        display: none;
-
-    }
-.venue-map-toggle {
-
-        margin-top: 10px;
-
-    }
-
-    .venue-map-container {
-
-        margin-top: 10px;
-
-    }
-
-    #venueMap {
-
-        height: 220px;
-
-        width: 100%;
-
-        border-radius: 12px;
-
-        overflow: hidden;
-
-        border: 1px solid #dee2e6;
-
-    }
-
-    #venueMapToggleIcon {
-
-        transition: transform 0.2s ease;
-
-    }
-
-    .venue-map-toggle[aria-expanded="true"] #venueMapToggleIcon {
-
-        transform: rotate(180deg);
-
-    }
-
-</style>
-
 <partial name="_BookingWizardTracker" />
 
 <div class="page-header">
@@ -248,34 +183,6 @@
                            id="VenueLongitude" />
 
                     <div id="venueLocationStatus" class="mt-2"></div>
-
-                    <div id="venueMapSection" class="venue-map-container d-none">
-
-                        <button type="button"
-
-                                class="btn btn-outline-secondary btn-sm venue-map-toggle"
-
-                                id="venueMapToggle"
-
-                                aria-expanded="false"
-
-                                aria-controls="venueMapWrapper">
-
-                            <i class="bi bi-map"></i>
-
-                            <span id="venueMapToggleText">View Map</span>
-
-                            <i class="bi bi-chevron-down ms-1" id="venueMapToggleIcon"></i>
-
-                        </button>
-
-                        <div id="venueMapWrapper" class="mt-2 d-none">
-
-                            <div id="venueMap"></div>
-
-                        </div>
-
-                    </div>
 
                     <div id="venueDistancePreview" class="mt-3"></div>
 
@@ -593,7 +500,7 @@
 
 @section Scripts {
 
-    <!-- VENUE SEARCH + MAP -->
+    <!-- VENUE SEARCH + SERVICEABILITY -->
 
     <script>
 
@@ -611,91 +518,32 @@
 
             const status = document.getElementById("venueLocationStatus");
 
-            const mapElement = document.getElementById("venueMap");
-
             const distancePreview = document.getElementById("venueDistancePreview");
-
-            const venueMapSection = document.getElementById("venueMapSection");
-
-            const venueMapWrapper = document.getElementById("venueMapWrapper");
-
-            const venueMapToggle = document.getElementById("venueMapToggle");
-
-            const venueMapToggleText = document.getElementById("venueMapToggleText");
-
-            if (venueMapToggle) {
-
-                venueMapToggle.addEventListener("click", function () {
-
-                    const isHidden = venueMapWrapper.classList.contains("d-none");
-
-                    venueMapWrapper.classList.toggle("d-none");
-
-                    venueMapToggle.setAttribute("aria-expanded", isHidden ? "true" : "false");
-
-                    venueMapToggleText.textContent = isHidden
-
-                        ? "Hide Map"
-
-                        : "View Map";
-
-                    // Helps Leaflet recalculate its dimensions after expanding.
-
-                    if (isHidden) {
-
-                        setTimeout(function () {
-
-                            window.dispatchEvent(new Event("resize"));
-
-                        }, 100);
-
-                    }
-
-                });
-
-            }
 
             if (!searchBtn || !venueInput)
 
                 return;
 
-            /*
-
-             * TEMPORARY ARIES MAGIC BASE LOCATION
-
-             *
-
-             * STI Academic Center
-
-             * Ortigas Avenue Extension
-
-             * Cainta, Rizal
-
-             *
-
-             * Change ONLY these two values when the
-
-             * actual Aries Magic base location is known.
-
-             */
-
-            const baseLatitude = 14.58125;
-
-            const baseLongitude = 121.1258;
-
-            let venueMap = null;
-
-            let baseMarker = null;
-
-            let venueMarker = null;
-
-            let distanceLine = null;
             let venueServiceabilityState = "NO_LOCATION";
             window.venueServiceabilityState = venueServiceabilityState;
             let venueCheckSequence = 0;
 
             const goToScheduleBtn = document.getElementById("goToScheduleBtn");
             const serviceabilityUrl = '@Url.Action("CheckVenueServiceability", "Bookings")';
+            const eventDateInput = document.getElementById("eventDateInput");
+            const startTimeInput = document.getElementById("startTimeInput");
+
+            function escapeHtml(value) {
+                return String(value ?? "").replace(/[&<>"]/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[character]);
+            }
+
+            function formatTravelTime(minutes) {
+                const totalMinutes = Math.max(0, Math.round(Number(minutes) || 0));
+                const hours = Math.floor(totalMinutes / 60);
+                const remainingMinutes = totalMinutes % 60;
+                if (!hours) return `${totalMinutes} minutes`;
+                return remainingMinutes ? `${hours} hr ${remainingMinutes} min` : `${hours} hr`;
+            }
 
             function setVenueGateState(state) {
                 venueServiceabilityState = state;
@@ -725,44 +573,72 @@
 
             function showCheckingState() {
                 setVenueGateState("CHECKING");
-                status.innerHTML = '<div class="alert alert-info py-2 mb-0">Checking venue serviceability...</div>';
+                status.innerHTML = `
+                    <div class="venue-checking-state" role="status">
+                        <span class="venue-checking-spinner" aria-hidden="true"></span>
+                        <div><strong>Checking venue...</strong><span>Calculating distance and travel availability</span></div>
+                    </div>`;
                 distancePreview.innerHTML = '';
             }
 
             function showServerServiceability(result) {
                 const distance = Number(result.distanceKm);
                 const fee = Number(result.travelFee || 0);
-                const maxDistance = Number(result.maximumServiceDistanceKm || 80);
                 const formattedDistance = distance.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                 const formattedFee = fee.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
-                let state = result.status;
+                const estimatedTravelTime = Number(result.estimatedTravelTimeMinutes || 0);
+                const availableTravelTime = result.availableTravelTimeMinutes;
+                const state = result.status;
                 const statusLabel = state === "FOR_STAFF_REVIEW" ? "FOR STAFF REVIEW" : state === "SERVICEABLE" ? "SERVICEABLE" : "NOT SERVICEABLE";
                 const statusClass = state === "FOR_STAFF_REVIEW" ? "venue-status-review" : state === "SERVICEABLE" ? "venue-status-serviceable" : "venue-status-unavailable";
                 const feeDisplay = fee > 0 ? `₱${formattedFee}` : "No Additional Travel Fee";
+                const startingPoint = escapeHtml(result.startingPointName || "Aries Magic Base");
+                const destination = escapeHtml(result.displayName || venueInput.value);
+                const reason = escapeHtml(result.serviceabilityReason || "This venue cannot currently be serviced.");
+                const hasAvailableTravelTime = result.usesPreviousEventLocation && Number.isFinite(Number(availableTravelTime));
+                const travelBuffer = hasAvailableTravelTime ? Number(availableTravelTime) - estimatedTravelTime : null;
+                const statusIcon = state === "FOR_STAFF_REVIEW" ? "bi-exclamation-triangle-fill" : state === "SERVICEABLE" ? "bi-check-circle-fill" : "bi-x-circle-fill";
+                const statusSummary = state === "FOR_STAFF_REVIEW"
+                    ? "This venue requires staff review before approval."
+                    : state === "SERVICEABLE"
+                        ? "The selected venue is within the current serviceable conditions."
+                        : reason;
                 if (state === "SERVICEABLE") {
                     setVenueGateState("SERVICEABLE");
-                    status.innerHTML = '<div class="alert alert-success py-2 mb-0">✓ Venue is serviceable.</div>';
+                    status.innerHTML = '<div class="venue-verified-state"><i class="bi bi-check-circle-fill" aria-hidden="true"></i> Venue verified</div>';
                 } else if (state === "FOR_STAFF_REVIEW") {
                     setVenueGateState("FOR_STAFF_REVIEW");
-                    status.innerHTML = '<div class="alert alert-warning py-2 mb-0">⚠ Venue requires staff review. You may continue, but the booking must be reviewed before approval.</div>';
+                    status.innerHTML = '<div class="venue-verified-state venue-verified-state-review"><i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i> Venue verified — staff review required</div>';
                 } else {
                     setVenueGateState("NOT_SERVICEABLE");
-                    status.innerHTML = '<div class="alert alert-danger py-2 mb-0">✕ Venue is outside the maximum service area.</div>';
+                    status.innerHTML = '<div class="venue-verified-state venue-verified-state-unavailable"><i class="bi bi-x-circle-fill" aria-hidden="true"></i> Venue cannot be used for this booking</div>';
                 }
 
                 distancePreview.innerHTML = `
-                    <div class="venue-distance-card">
-                        <div class="venue-distance-title"><i class="bi bi-geo-alt-fill" aria-hidden="true"></i><span>Venue Serviceability</span></div>
-                        <div class="venue-distance-grid">
-                            <div class="venue-distance-row"><span class="venue-distance-label">Distance</span><strong class="venue-distance-value">${formattedDistance} KM</strong></div>
-                            <div class="venue-distance-row"><span class="venue-distance-label">Service Zone</span><strong class="venue-distance-value">${result.serviceZone || "Not Available"}</strong></div>
-                            <div class="venue-distance-row"><span class="venue-distance-label">Status</span><span class="venue-status-badge ${statusClass}">${statusLabel}</span></div>
-                            <div class="venue-distance-row venue-travel-fee-row"><span class="venue-distance-label">Travel Fee</span><strong class="venue-distance-value venue-travel-fee">${feeDisplay}</strong></div>
+                    <section class="venue-travel-overview" aria-label="Venue travel overview">
+                        <div class="venue-overview-heading"><i class="bi bi-signpost-split-fill" aria-hidden="true"></i><div><span>Venue travel overview</span><strong>Travel details for your selected venue</strong></div></div>
+                        <div class="venue-serviceability ${statusClass}">
+                            <i class="bi ${statusIcon}" aria-hidden="true"></i>
+                            <div><span>Venue serviceability</span><strong>${statusLabel}</strong><p>${statusSummary}</p></div>
                         </div>
-                        ${state === "FOR_STAFF_REVIEW" ? '<div class="venue-warning"><i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i><span>This location is outside the standard service area and requires staff review before approval.</span></div>' : ""}
-                        ${state === "NOT_SERVICEABLE" ? `<div class="venue-warning venue-warning-danger"><i class="bi bi-x-circle-fill" aria-hidden="true"></i><span>This venue is outside the maximum service distance of ${maxDistance} KM. Please select another venue.</span></div>` : ""}
-                    </div>`;
+                        <div class="venue-journey">
+                            <div class="venue-journey-stop"><i class="bi bi-geo-alt-fill" aria-hidden="true"></i><div><span>${result.usesPreviousEventLocation ? "Previous event" : "Starting point"}</span><strong title="${startingPoint}">${startingPoint}</strong></div></div>
+                            <div class="venue-journey-line" aria-hidden="true"><i class="bi bi-arrow-down"></i></div>
+                            <div class="venue-journey-stop venue-journey-destination"><i class="bi bi-flag-fill" aria-hidden="true"></i><div><span>${result.usesPreviousEventLocation ? "New client venue" : "Destination"}</span><strong title="${destination}">${destination}</strong></div></div>
+                        </div>
+                        <div class="venue-metric-grid">
+                            <div class="venue-metric"><span>Distance</span><strong>${formattedDistance} <small>km</small></strong></div>
+                            <div class="venue-metric"><span>Estimated travel time</span><strong>${formatTravelTime(estimatedTravelTime)}</strong></div>
+                            ${hasAvailableTravelTime ? `<div class="venue-metric"><span>Available travel time</span><strong>${formatTravelTime(availableTravelTime)}</strong></div>` : ""}
+                            ${travelBuffer !== null && travelBuffer >= 0 ? `<div class="venue-metric venue-metric-buffer"><span>Travel buffer</span><strong>${formatTravelTime(travelBuffer)}</strong></div>` : ""}
+                        </div>
+                        <div class="venue-service-details">
+                            <div><span>Service zone</span><strong>${escapeHtml(result.serviceZone || "Not available")}</strong></div>
+                            <div><span>Travel fee</span><strong>${feeDisplay}</strong></div>
+                        </div>
+                        <p class="venue-travel-context"><i class="bi bi-info-circle-fill" aria-hidden="true"></i>${result.usesPreviousEventLocation ? (state === "NOT_SERVICEABLE" && hasAvailableTravelTime && travelBuffer < 0 ? "There is not enough available travel time between the previous event and this appointment." : `${formatTravelTime(availableTravelTime)} are available between the previous event and this appointment.`) : `Travel will begin from ${startingPoint}.`}</p>
+                        ${state === "NOT_SERVICEABLE" ? `<div class="venue-service-reason"><i class="bi bi-exclamation-octagon-fill" aria-hidden="true"></i><div><strong>Reason</strong><span>${reason}</span></div></div>` : ""}
+                    </section>`;
             }
 
             async function verifySelectedVenue(displayName) {
@@ -773,6 +649,8 @@
                     const token = document.querySelector('#stepOneForm input[name="__RequestVerificationToken"]')?.value;
                     const body = new URLSearchParams();
                     body.append("partyVenue", displayName);
+                    if (eventDateInput?.value) body.append("eventDate", eventDateInput.value);
+                    if (startTimeInput?.value) body.append("startTime", startTimeInput.value);
 
                     const response = await fetch(serviceabilityUrl, {
                         method: "POST",
@@ -788,7 +666,7 @@
 
                     if (!response.ok || !result.success) {
                         setVenueGateState("NOT_VERIFIED");
-                        status.innerHTML = `<div class="alert alert-danger py-2 mb-0">${result.message || "Unable to verify this venue location. Please select another location or try again."}</div>`;
+                        status.innerHTML = '<div class="venue-verification-error"><i class="bi bi-exclamation-circle-fill" aria-hidden="true"></i><div><strong>Unable to verify venue</strong><span>Please select the venue again or verify the address.</span></div></div>';
                         distancePreview.innerHTML = "";
                         latInput.value = "";
                         lonInput.value = "";
@@ -804,7 +682,7 @@
                     if (sequence !== venueCheckSequence) return;
                     console.error(error);
                     setVenueGateState("NOT_VERIFIED");
-                    status.innerHTML = '<div class="alert alert-danger py-2 mb-0">Unable to verify this venue location. Please select another location or try again.</div>';
+                    status.innerHTML = '<div class="venue-verification-error"><i class="bi bi-exclamation-circle-fill" aria-hidden="true"></i><div><strong>Unable to verify venue</strong><span>Please select the venue again or verify the address.</span></div></div>';
                     distancePreview.innerHTML = "";
                 }
             }
@@ -812,236 +690,21 @@
             setVenueGateState("NO_LOCATION");
             status.innerHTML = '<div class="alert alert-warning py-2 mb-0">Please select an event venue to continue.</div>';
 
-            /*
-
-             * INITIALIZE MAP
-
-             */
-
-            function initializeMap(latitude, longitude) {
-
-                mapElement.style.display = "block";
-
-                if (!venueMap) {
-
-                    venueMap =
-
-                        L.map("venueMap")
-
-                         .setView(
-
-                             [latitude, longitude],
-
-                             14
-
-                         );
-
-                    L.tileLayer(
-
-                        "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-
-                        {
-
-                            maxZoom: 19,
-
-                            attribution:
-
-                                '&copy; OpenStreetMap contributors'
-
-                        }
-
-                    ).addTo(venueMap);
-
-                    /*
-
-                     * ARIES MAGIC BASE MARKER
-
-                     */
-
-                    baseMarker =
-
-                        L.marker([
-
-                            baseLatitude,
-
-                            baseLongitude
-
-                        ])
-
-                        .addTo(venueMap)
-
-                        .bindPopup(
-
-                            "<strong>Aries Magic Base</strong><br>" +
-
-                            "STI Academic Center, Cainta, Rizal"
-
-                        );
-
-                }
-
-                else {
-
-                    venueMap.setView(
-
-                        [latitude, longitude],
-
-                        14
-
-                    );
-
-                    venueMap.invalidateSize();
-
-                }
-
-                /*
-
-                 * REMOVE OLD VENUE MARKER
-
-                 */
-
-                if (venueMarker) {
-
-                    venueMap.removeLayer(
-
-                        venueMarker
-
-                    );
-
-                }
-
-                /*
-
-                 * REMOVE OLD DISTANCE LINE
-
-                 */
-
-                if (distanceLine) {
-
-                    venueMap.removeLayer(
-
-                        distanceLine
-
-                    );
-
-                }
-
-                /*
-
-                 * SELECTED VENUE MARKER
-
-                 */
-
-                venueMarker =
-
-                    L.marker([
-
-                        latitude,
-
-                        longitude
-
-                    ])
-
-                    .addTo(venueMap)
-
-                    .bindPopup(
-
-                        "<strong>Selected Venue</strong>"
-
-                    )
-
-                    .openPopup();
-
-                /*
-
-                 * LINE BETWEEN BASE AND VENUE
-
-                 */
-
-                distanceLine =
-
-                    L.polyline(
-
-                        [
-
-                            [
-
-                                baseLatitude,
-
-                                baseLongitude
-
-                            ],
-
-                            [
-
-                                latitude,
-
-                                longitude
-
-                            ]
-
-                        ],
-
-                        {
-
-                            weight: 3,
-
-                            dashArray: "8, 8"
-
-                        }
-
-                    )
-
-                    .addTo(venueMap);
-
-                /*
-
-                 * FIT BOTH LOCATIONS
-
-                 */
-
-                const bounds =
-
-                    L.latLngBounds([
-
-                        [
-
-                            baseLatitude,
-
-                            baseLongitude
-
-                        ],
-
-                        [
-
-                            latitude,
-
-                            longitude
-
-                        ]
-
-                    ]);
-
-                venueMap.fitBounds(
-
-                    bounds,
-
-                    {
-
-                        padding: [40, 40]
-
-                    }
-
-                );
-
-            }
-
             // Any manual edit invalidates the previous venue validation immediately.
             venueInput.addEventListener("input", function () {
                 venueCheckSequence++;
                 clearVenueSelection();
                 results.innerHTML = "";
             });
+
+            function refreshVenueServiceabilityForSchedule() {
+                if (venueInput.value && latInput.value && lonInput.value) {
+                    verifySelectedVenue(venueInput.value);
+                }
+            }
+
+            eventDateInput?.addEventListener("change", refreshVenueServiceabilityForSchedule);
+            startTimeInput?.addEventListener("change", refreshVenueServiceabilityForSchedule);
 
             /*
 
@@ -1162,22 +825,6 @@
 
                                         '</div>';
 
-                                    if (venueMapSection) {
-
-                                        venueMapSection.classList.remove("d-none");
-
-                                    }
-
-                                    // The client only shows the map immediately.
-                                    // Serviceability itself is determined by the server.
-                                    initializeMap(
-
-                                        item.latitude,
-
-                                        item.longitude
-
-                                    );
-
                                     verifySelectedVenue(item.displayName);
 
                                 });
@@ -1231,14 +878,6 @@
     <partial name="_ValidationScriptsPartial" />
 
     <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
-
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-
-            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-
-            crossorigin="">
-
-    </script>
 
     <!-- EXISTING DATE / AVAILABILITY / WIZARD LOGIC -->
 

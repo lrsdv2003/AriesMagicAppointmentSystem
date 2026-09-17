@@ -16,15 +16,22 @@ namespace AriesMagicAppointmentSystem.Services
             => latitude >= -90 && latitude <= 90 && longitude >= -180 && longitude <= 180;
 
         public VenueDistanceResult Calculate(double latitude, double longitude)
+            => Calculate(_options.BaseLatitude, _options.BaseLongitude, latitude, longitude);
+
+        public VenueDistanceResult Calculate(double originLatitude, double originLongitude, double destinationLatitude, double destinationLongitude)
         {
-            if (!IsValidCoordinate(latitude, longitude))
-                throw new ArgumentOutOfRangeException(nameof(latitude), "The venue coordinates are invalid.");
+            if (!IsValidCoordinate(destinationLatitude, destinationLongitude))
+                throw new ArgumentOutOfRangeException(nameof(destinationLatitude), "The venue coordinates are invalid.");
 
-            if (!IsValidCoordinate(_options.BaseLatitude, _options.BaseLongitude))
-                throw new InvalidOperationException("The Aries Magic base location is not configured with valid coordinates.");
+            if (!IsValidCoordinate(originLatitude, originLongitude))
+                throw new ArgumentOutOfRangeException(nameof(originLatitude), "The starting coordinates are invalid.");
 
-            var distanceKm = HaversineKm(_options.BaseLatitude, _options.BaseLongitude, latitude, longitude);
+            if (_options.EstimatedTravelSpeedKph <= 0)
+                throw new InvalidOperationException("The estimated travel speed must be greater than zero.");
+
+            var distanceKm = HaversineKm(originLatitude, originLongitude, destinationLatitude, destinationLongitude);
             var roundedDistance = Math.Round(distanceKm, 2, MidpointRounding.AwayFromZero);
+            var estimatedTravelTimeMinutes = (int)Math.Ceiling(distanceKm / _options.EstimatedTravelSpeedKph * 60);
 
             if (distanceKm > _options.MaximumServiceDistanceKm)
             {
@@ -35,7 +42,10 @@ namespace AriesMagicAppointmentSystem.Services
                     ServiceZone = "Zone D",
                     IsServiceable = false,
                     RequiresManualReview = false,
-                    MaximumServiceDistanceKm = _options.MaximumServiceDistanceKm
+                    MaximumServiceDistanceKm = _options.MaximumServiceDistanceKm,
+                    EstimatedTravelTimeMinutes = estimatedTravelTimeMinutes,
+                    OriginLatitude = originLatitude,
+                    OriginLongitude = originLongitude
                 };
             }
 
@@ -48,7 +58,10 @@ namespace AriesMagicAppointmentSystem.Services
                     ServiceZone = "Zone C",
                     IsServiceable = true,
                     RequiresManualReview = true,
-                    MaximumServiceDistanceKm = _options.MaximumServiceDistanceKm
+                    MaximumServiceDistanceKm = _options.MaximumServiceDistanceKm,
+                    EstimatedTravelTimeMinutes = estimatedTravelTimeMinutes,
+                    OriginLatitude = originLatitude,
+                    OriginLongitude = originLongitude
                 };
             }
 
@@ -61,7 +74,10 @@ namespace AriesMagicAppointmentSystem.Services
                     ServiceZone = "Zone B",
                     IsServiceable = true,
                     RequiresManualReview = false,
-                    MaximumServiceDistanceKm = _options.MaximumServiceDistanceKm
+                    MaximumServiceDistanceKm = _options.MaximumServiceDistanceKm,
+                    EstimatedTravelTimeMinutes = estimatedTravelTimeMinutes,
+                    OriginLatitude = originLatitude,
+                    OriginLongitude = originLongitude
                 };
             }
 
@@ -72,7 +88,10 @@ namespace AriesMagicAppointmentSystem.Services
                 ServiceZone = "Zone A",
                 IsServiceable = true,
                 RequiresManualReview = false,
-                MaximumServiceDistanceKm = _options.MaximumServiceDistanceKm
+                MaximumServiceDistanceKm = _options.MaximumServiceDistanceKm,
+                EstimatedTravelTimeMinutes = estimatedTravelTimeMinutes,
+                OriginLatitude = originLatitude,
+                OriginLongitude = originLongitude
             };
         }
 

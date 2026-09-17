@@ -5206,6 +5206,436 @@ textarea.form-control {
 }
 
 /* Email verification OTP */
+.client-body #venueDistancePreview .venue-travel-overview {
+  margin-top: 1rem;
+  padding: 1.3rem;
+  overflow: hidden;
+  color: #f8fafc;
+  background: linear-gradient(145deg, #171229 0%, #0d0a17 100%);
+  border: 1px solid rgba(232, 197, 112, 0.3);
+  border-radius: 20px;
+  box-shadow: 0 16px 34px rgba(7, 5, 13, 0.24);
+}
+
+.client-body #venueDistancePreview .venue-overview-heading,
+.client-body #venueDistancePreview .venue-journey-stop,
+.client-body #venueDistancePreview .venue-serviceability,
+.client-body #venueDistancePreview .venue-travel-context,
+.client-body #venueLocationStatus .venue-checking-state,
+.client-body #venueLocationStatus .venue-verification-error,
+.client-body #venueLocationStatus .venue-verified-state {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.client-body #venueDistancePreview .venue-overview-heading {
+  margin-bottom: 1rem;
+}
+
+.client-body #venueDistancePreview .venue-overview-heading > i {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  flex: 0 0 auto;
+  border-radius: 12px;
+  color: #2a183a;
+  background: #f3d98d;
+}
+
+.client-body #venueDistancePreview .venue-overview-heading span,
+.client-body #venueDistancePreview .venue-serviceability span,
+.client-body #venueDistancePreview .venue-journey-stop span,
+.client-body #venueDistancePreview .venue-metric > span,
+.client-body #venueDistancePreview .venue-service-details span {
+  display: block;
+  color: #bdb5cc;
+  font-size: 0.73rem;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.client-body #venueDistancePreview .venue-overview-heading strong {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 1.04rem;
+}
+
+.client-body #venueDistancePreview .venue-serviceability {
+  align-items: flex-start;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  border: 1px solid;
+  border-radius: 15px;
+}
+
+.client-body #venueDistancePreview .venue-serviceability > i {
+  margin-top: 0.08rem;
+  font-size: 1.35rem;
+}
+
+.client-body #venueDistancePreview .venue-serviceability strong {
+  display: block;
+  margin-top: 0.18rem;
+  font-size: 1.06rem;
+  font-weight: 850;
+  letter-spacing: 0.035em;
+}
+
+.client-body #venueDistancePreview .venue-serviceability p {
+  margin: 0.35rem 0 0;
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.client-body #venueDistancePreview .venue-status-serviceable {
+  color: #dcfce7;
+  background: rgba(22, 128, 60, 0.22);
+  border-color: rgba(134, 239, 172, 0.52);
+}
+
+.client-body #venueDistancePreview .venue-status-review {
+  color: #fff0bd;
+  background: rgba(167, 121, 22, 0.24);
+  border-color: rgba(252, 211, 77, 0.52);
+}
+
+.client-body #venueDistancePreview .venue-status-unavailable {
+  color: #ffe4e7;
+  background: rgba(168, 61, 72, 0.25);
+  border-color: rgba(252, 165, 165, 0.52);
+}
+
+.client-body #venueDistancePreview .venue-journey {
+  padding: 0.25rem 0 0.15rem;
+}
+
+.client-body #venueDistancePreview .venue-journey-stop {
+  align-items: flex-start;
+  min-width: 0;
+}
+
+.client-body #venueDistancePreview .venue-journey-stop > i {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  color: #2d203d;
+  background: #f3d98d;
+}
+
+.client-body #venueDistancePreview .venue-journey-destination > i {
+  color: #fff;
+  background: #8b5cf6;
+}
+
+.client-body #venueDistancePreview .venue-journey-stop > div {
+  min-width: 0;
+}
+
+.client-body #venueDistancePreview .venue-journey-stop strong {
+  display: block;
+  margin-top: 0.22rem;
+  overflow-wrap: anywhere;
+  font-size: 0.98rem;
+  line-height: 1.35;
+}
+
+.client-body #venueDistancePreview .venue-journey-line {
+  display: flex;
+  align-items: center;
+  width: 30px;
+  min-height: 28px;
+  margin: 0.15rem 0;
+  color: #f3d98d;
+  justify-content: center;
+}
+
+.client-body #venueDistancePreview .venue-metric-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.7rem;
+  margin-top: 1rem;
+}
+
+.client-body #venueDistancePreview .venue-metric,
+.client-body #venueDistancePreview .venue-service-details > div {
+  min-width: 0;
+  padding: 0.9rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 13px;
+  background: rgba(255, 255, 255, 0.055);
+}
+
+.client-body #venueDistancePreview .venue-metric strong {
+  display: block;
+  margin-top: 0.35rem;
+  color: #fff;
+  font-size: 1.08rem;
+  line-height: 1.3;
+}
+
+.client-body #venueDistancePreview .venue-metric small {
+  color: #d7d0e3;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.client-body #venueDistancePreview .venue-metric-buffer {
+  border-color: rgba(243, 217, 141, 0.32);
+}
+
+.client-body #venueDistancePreview .venue-service-details {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.7rem;
+  margin-top: 0.7rem;
+}
+
+.client-body #venueDistancePreview .venue-service-details strong {
+  display: block;
+  margin-top: 0.28rem;
+  color: #f3d98d;
+  font-size: 0.95rem;
+}
+
+.client-body #venueDistancePreview .venue-travel-context {
+  align-items: flex-start;
+  margin: 0.9rem 0 0;
+  color: #ded7e9;
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+
+.client-body #venueDistancePreview .venue-travel-context i {
+  margin-top: 0.18rem;
+  color: #a78bfa;
+}
+
+.client-body #venueDistancePreview .venue-service-reason {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.7rem;
+  margin-top: 0.9rem;
+  padding: 0.9rem;
+  color: #ffe4e7;
+  border: 1px solid rgba(252, 165, 165, 0.45);
+  border-radius: 13px;
+  background: rgba(127, 29, 29, 0.44);
+}
+
+.client-body #venueDistancePreview .venue-service-reason > i {
+  margin-top: 0.14rem;
+}
+
+.client-body #venueDistancePreview .venue-service-reason strong,
+.client-body #venueDistancePreview .venue-service-reason span {
+  display: block;
+}
+
+.client-body #venueDistancePreview .venue-service-reason span {
+  margin-top: 0.2rem;
+  font-size: 0.87rem;
+  line-height: 1.45;
+}
+
+.client-body #venueLocationStatus .venue-checking-state,
+.client-body #venueLocationStatus .venue-verification-error,
+.client-body #venueLocationStatus .venue-verified-state {
+  padding: 0.8rem 0.9rem;
+  border: 1px solid;
+  border-radius: 13px;
+  font-size: 0.88rem;
+}
+
+.client-body #venueLocationStatus .venue-checking-state {
+  color: #1e40af;
+  border-color: #bfdbfe;
+  background: #eff6ff;
+}
+
+.client-body #venueLocationStatus .venue-checking-state div,
+.client-body #venueLocationStatus .venue-verification-error div {
+  display: grid;
+  gap: 0.12rem;
+}
+
+.client-body #venueLocationStatus .venue-checking-state span,
+.client-body #venueLocationStatus .venue-verification-error span {
+  font-size: 0.8rem;
+}
+
+.client-body #venueLocationStatus .venue-checking-spinner {
+  width: 20px;
+  height: 20px;
+  border: 3px solid #bfdbfe;
+  border-top-color: #2563eb;
+  border-radius: 50%;
+  animation: venueCheckingSpin 0.8s linear infinite;
+}
+
+.client-body #venueLocationStatus .venue-verification-error {
+  align-items: flex-start;
+  color: #991b1b;
+  border-color: #fecaca;
+  background: #fef2f2;
+}
+
+.client-body #venueLocationStatus .venue-verified-state {
+  color: #166534;
+  border-color: #bbf7d0;
+  background: #ecfdf3;
+}
+
+.client-body #venueLocationStatus .venue-verified-state-review {
+  color: #92400e;
+  border-color: #fde68a;
+  background: #fffbeb;
+}
+
+.client-body #venueLocationStatus .venue-verified-state-unavailable {
+  color: #991b1b;
+  border-color: #fecaca;
+  background: #fef2f2;
+}
+
+@keyframes venueCheckingSpin {
+  to { transform: rotate(360deg); }
+}
+
+.staff-venue-cell {
+  display: grid;
+  gap: 0.28rem;
+  min-width: 190px;
+}
+
+.staff-venue-cell > strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.staff-venue-cell > span:not(.staff-venue-distance):not(.venue-awareness-pill),
+.staff-venue-cell small {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.staff-venue-distance {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--text);
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.staff-venue-distance i { color: var(--primary); }
+
+.venue-awareness-pill,
+.dashboard-venue-travel em {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  gap: 0.3rem;
+  padding: 0.22rem 0.45rem;
+  border: 1px solid;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-style: normal;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.venue-awareness-serviceable {
+  color: #166534;
+  border-color: #bbf7d0;
+  background: #ecfdf3;
+}
+
+.venue-awareness-review {
+  color: #92400e;
+  border-color: #fde68a;
+  background: #fffbeb;
+}
+
+.venue-awareness-unavailable {
+  color: #991b1b;
+  border-color: #fecaca;
+  background: #fef2f2;
+}
+
+.booking-venue-overview {
+  display: grid;
+  grid-template-columns: minmax(185px, 0.85fr) minmax(0, 2fr);
+  gap: 0.75rem;
+  margin: 0.9rem 0 1rem;
+}
+
+.booking-venue-status {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.85rem;
+  border: 1px solid;
+  border-radius: 14px;
+}
+
+.booking-venue-status > i { font-size: 1.2rem; }
+.booking-venue-status span,
+.booking-venue-metrics span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.69rem;
+  font-weight: 750;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.booking-venue-status strong { display: block; margin-top: 0.18rem; }
+
+.booking-venue-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.booking-venue-metrics > div {
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  background: var(--bg);
+}
+
+.booking-venue-metrics strong { display: block; margin-top: 0.22rem; color: var(--text); }
+
+.dashboard-venue-travel {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.3rem 0.45rem;
+  margin-top: 0.35rem;
+  color: var(--muted);
+  font-size: 0.76rem;
+}
+
+.dashboard-venue-travel > i { color: var(--primary); }
+.dashboard-venue-travel > strong { color: var(--text); font-size: 0.8rem; }
+.dashboard-venue-travel > span { overflow: visible; text-overflow: clip; white-space: normal; }
+
+@media (max-width: 767.98px) {
+  .client-body #venueDistancePreview .venue-travel-overview { padding: 1rem; border-radius: 16px; }
+  .client-body #venueDistancePreview .venue-metric-grid,
+  .client-body #venueDistancePreview .venue-service-details,
+  .booking-venue-overview,
+  .booking-venue-metrics { grid-template-columns: 1fr; }
+  .staff-venue-cell { min-width: 170px; }
+}
+
 .otp-page{min-height:calc(100vh - 120px);display:grid;place-items:center;padding:3rem 1rem;background:radial-gradient(circle at top,rgba(124,58,237,.18),transparent 36%),linear-gradient(180deg,#0a0714 0%,#120d22 100%)}
 .otp-card{width:min(100%,540px);background:rgba(19,14,35,.96);border:1px solid rgba(196,181,253,.2);border-radius:24px;padding:2rem;box-shadow:0 28px 70px rgba(0,0,0,.36);color:#f8fafc}
 .otp-icon{width:64px;height:64px;border-radius:20px;display:grid;place-items:center;margin:0 auto 1rem;background:linear-gradient(135deg,#7c3aed,#4c1d95);color:#fff;font-size:1.7rem;box-shadow:0 12px 30px rgba(124,58,237,.26)}
