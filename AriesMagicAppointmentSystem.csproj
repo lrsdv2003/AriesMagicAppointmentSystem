@@ -27,4 +27,9 @@
     <Content Include="tessdata\eng.traineddata" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Remove="tests\**\*.cs" />
+    <Content Remove="tests\**; .tmp-owner-build\**" />
+    <None Remove="tests\**; .tmp-owner-build\**" />
+  </ItemGroup>
 </Project>

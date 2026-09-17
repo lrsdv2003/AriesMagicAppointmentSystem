@@ -77,7 +77,7 @@ namespace AriesMagicAppointmentSystem.Services
                     warnings.Add("No readable text could be extracted from the screenshot.");
                 if (verification.ExtractedAmount.HasValue && Math.Abs(verification.ExtractedAmount.Value - request.ExpectedAmount) > 0.01m)
                     warnings.Add("Payment amount does not match the required amount.");
-                if (!string.IsNullOrWhiteSpace(verification.ExtractedReceiver) && !ContainsNormalized(verification.ExtractedReceiver, request.ExpectedReceiver))
+                if (!string.IsNullOrWhiteSpace(verification.ExtractedReceiver) && !OcrComparison.ReceiverMatches(verification.ExtractedReceiver, request.ExpectedReceiver))
                     warnings.Add("Detected receiver does not match the registered payment account.");
                 if (string.IsNullOrWhiteSpace(verification.ExtractedReferenceNumber))
                     warnings.Add("Transaction reference number could not be detected. Manual verification required.");
@@ -123,12 +123,12 @@ namespace AriesMagicAppointmentSystem.Services
             if (string.IsNullOrWhiteSpace(v.RawText)) return OcrVerificationResults.OcrFailed;
             var mismatch = v.IsDuplicateReference || IsNegativeStatus(v.ExtractedStatus) ||
                 (v.ExtractedAmount.HasValue && Math.Abs(v.ExtractedAmount.Value - request.ExpectedAmount) > 0.01m) ||
-                (!string.IsNullOrWhiteSpace(v.ExtractedReceiver) && !ContainsNormalized(v.ExtractedReceiver, request.ExpectedReceiver));
+                (!string.IsNullOrWhiteSpace(v.ExtractedReceiver) && !OcrComparison.ReceiverMatches(v.ExtractedReceiver, request.ExpectedReceiver));
             if (mismatch) return OcrVerificationResults.MismatchDetected;
 
             var matches = 0;
             if (v.ExtractedAmount.HasValue && Math.Abs(v.ExtractedAmount.Value - request.ExpectedAmount) <= 0.01m) matches++;
-            if (!string.IsNullOrWhiteSpace(v.ExtractedReceiver) && ContainsNormalized(v.ExtractedReceiver, request.ExpectedReceiver)) matches++;
+            if (!string.IsNullOrWhiteSpace(v.ExtractedReceiver) && OcrComparison.ReceiverMatches(v.ExtractedReceiver, request.ExpectedReceiver)) matches++;
             if (IsPositiveStatus(v.ExtractedStatus)) matches++;
             if (!string.IsNullOrWhiteSpace(v.ExtractedPaymentMethod) && !string.IsNullOrWhiteSpace(request.ExpectedPaymentMethod) && ContainsNormalized(v.ExtractedPaymentMethod, request.ExpectedPaymentMethod)) matches++;
             if (!string.IsNullOrWhiteSpace(v.ExtractedReferenceNumber)) matches++;
@@ -174,7 +174,8 @@ namespace AriesMagicAppointmentSystem.Services
 
         private static string? ExtractStatus(string text)
         {
-            foreach (var status in new[] { "Successful", "Completed", "Paid", "Pending", "Failed", "Cancelled", "Canceled" })
+            if (Regex.IsMatch(text, @"\b(unsuccessful|unpaid|not\s+(?:successful|completed|paid))\b", RegexOptions.IgnoreCase)) return "Failed";
+            foreach (var status in new[] { "Failed", "Cancelled", "Canceled", "Pending", "Successful", "Completed", "Paid" })
                 if (Regex.IsMatch(text, $@"\b{status}\b", RegexOptions.IgnoreCase)) return status;
             return null;
         }
@@ -209,7 +210,7 @@ namespace AriesMagicAppointmentSystem.Services
             return !string.IsNullOrWhiteSpace(a) && !string.IsNullOrWhiteSpace(b) && (a.Contains(b) || b.Contains(a));
         }
 
-        private static bool IsPositiveStatus(string? status) => status is not null && Regex.IsMatch(status, "successful|completed|paid", RegexOptions.IgnoreCase);
+        private static bool IsPositiveStatus(string? status) => OcrComparison.IsSuccessful(status);
         private static bool IsNegativeStatus(string? status) => status is not null && Regex.IsMatch(status, "pending|failed|cancelled|canceled", RegexOptions.IgnoreCase);
     }
 }

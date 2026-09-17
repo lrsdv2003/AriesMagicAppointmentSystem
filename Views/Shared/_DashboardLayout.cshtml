@@ -31,6 +31,8 @@
     <link rel="stylesheet" href="~/css/staff-bookings.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/staff-reschedules.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/staff-interface.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/package-cards.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/owner-interface.css" asp-append-version="true" />
 </head>
 <body class="dashboard-body @(User.IsInRole("Staff") ? "staff-dashboard" : User.IsInRole("Admin") ? "admin-dashboard" : User.IsInRole("Owner") ? "owner-dashboard" : "")">
     <div class="dashboard-shell">
@@ -143,6 +145,12 @@
                                 Calendar
                             </a>
 
+                            <a asp-controller="Services" asp-action="Index"
+                               class="sidebar-link @(currentController == "Services" ? "active" : "")">
+                                <i class="bi bi-box-seam"></i>
+                                Packages
+                            </a>
+
                             <a asp-controller="History" asp-action="Index"
                                class="sidebar-link @(currentController == "History" ? "active" : "")">
                                 <i class="bi bi-clock-history"></i>
@@ -156,7 +164,7 @@
                             </a>
                         }
 
-                        @if (!User.IsInRole("Staff"))
+                        @if (User.IsInRole("Admin"))
                         {
                             <a asp-controller="Communications" asp-action="Index"
                                class="sidebar-link communication-nav-link @(currentController == "Communications" ? "active" : "")">
@@ -203,7 +211,7 @@
                                 </span>
                             }
                     </a>
-                    @if (!User.IsInRole("Staff"))
+                    @if (User.IsInRole("Admin"))
                     {
                         <button type="button" class="topbar-icon" title="Settings" aria-label="Settings">
                             <i class="bi bi-gear-fill"></i>

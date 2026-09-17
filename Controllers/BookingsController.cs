@@ -784,7 +784,7 @@ namespace AriesMagicAppointmentSystem.Controllers
 
             if (booking == null) return NotFound();
 
-            if (User.IsInRole("Staff"))
+            if (User.IsInRole("Staff") || User.IsInRole("Owner"))
                 return View("StaffDetails", booking);
 
             ViewBag.FinancialSummary = await _financialService.GetSummaryAsync(booking.Id);

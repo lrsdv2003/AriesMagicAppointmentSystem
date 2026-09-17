@@ -1,0 +1,17 @@
+@model AriesMagicAppointmentSystem.ViewModels.PackageCardViewModel
+<article class="magic-package-card @(Model.Featured ? "magic-package-featured" : "")">
+    @if(Model.Featured){<div class="magic-package-ribbon"><i class="bi bi-gem"></i> Most Loved</div>}
+    <div class="magic-package-topline"><span>@Model.Eyebrow</span><span>@Model.Number</span></div>
+    <h3>@Model.Name</h3>
+    <p class="magic-package-subtitle">@Model.Description</p>
+    <div class="magic-package-price"><small>@(Model.Manage ? "Package price" : "starts at")</small><strong>&#8369;@Model.Price.ToString(Model.Manage ? "N2" : "N0")</strong></div>
+    @if(Model.Duration.HasValue){<p class="package-duration">@Model.Duration hour(s)</p>}
+    <ul>@foreach(var inclusion in Model.Inclusions){<li><i class="bi bi-stars" aria-hidden="true"></i><span>@inclusion</span></li>}</ul>
+    <a asp-controller="@Model.ActionController" asp-action="@Model.ActionName" asp-route-id="@Model.ServiceId" class="magic-package-link">@Model.ActionLabel <i class="bi bi-arrow-right"></i></a>
+    @if(Model.Manage && User.IsInRole("Owner")){
+        <div class="package-management-actions">
+            <a asp-controller="Services" asp-action="Edit" asp-route-id="@Model.ServiceId" class="btn btn-sm btn-outline-light">Edit Package</a>
+            <a asp-controller="Services" asp-action="Archive" asp-route-id="@Model.ServiceId" class="btn btn-sm btn-outline-light">Deactivate</a>
+        </div>
+    }
+</article>

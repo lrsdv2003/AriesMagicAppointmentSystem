@@ -129,51 +129,10 @@
         </div>
 
         <div class="magic-package-grid">
-            <article class="magic-package-card" data-magic-reveal>
-                <div class="magic-package-topline"><span>Premium</span><span>01</span></div>
-                <h3>Premium Package</h3>
-                <p class="magic-package-subtitle">A high-energy mix of hosting, illusion, comedy, and audience interaction.</p>
-                <div class="magic-package-price"><small>starts at</small><strong>₱19,800</strong></div>
-                <ul>
-                    <li><i class="bi bi-stars"></i> Professional Party Host</li>
-                    <li><i class="bi bi-stars"></i> Game Facilitator</li>
-                    <li><i class="bi bi-stars"></i> Ventriloquism</li>
-                    <li><i class="bi bi-stars"></i> Illusion Magic Performance</li>
-                    <li><i class="bi bi-stars"></i> Audience Participation</li>
-                </ul>
-                <a asp-controller="@bookCtaController" asp-action="@bookCtaAction" class="magic-package-link">Choose Premium <i class="bi bi-arrow-right"></i></a>
-            </article>
-
-            <article class="magic-package-card magic-package-featured" data-magic-reveal>
-                <div class="magic-package-ribbon"><i class="bi bi-gem"></i> Most Loved</div>
-                <div class="magic-package-topline"><span>Deluxe</span><span>02</span></div>
-                <h3>Deluxe Package</h3>
-                <p class="magic-package-subtitle">A celebration-ready experience with magic, ventriloquism, games, and a bubble show.</p>
-                <div class="magic-package-price"><small>starts at</small><strong>₱20,000</strong></div>
-                <ul>
-                    <li><i class="bi bi-stars"></i> Professional Party Host</li>
-                    <li><i class="bi bi-stars"></i> Game Facilitator</li>
-                    <li><i class="bi bi-stars"></i> Professional Magician</li>
-                    <li><i class="bi bi-stars"></i> Ventriloquism</li>
-                    <li><i class="bi bi-stars"></i> Bubble Show Experience</li>
-                </ul>
-                <a asp-controller="@bookCtaController" asp-action="@bookCtaAction" class="magic-package-link">Choose Deluxe <i class="bi bi-arrow-right"></i></a>
-            </article>
-
-            <article class="magic-package-card" data-magic-reveal>
-                <div class="magic-package-topline"><span>All In</span><span>03</span></div>
-                <h3>All In Package</h3>
-                <p class="magic-package-subtitle">The complete premium experience with grand illusion and bubble-show highlights.</p>
-                <div class="magic-package-price"><small>starts at</small><strong>₱24,500</strong></div>
-                <ul>
-                    <li><i class="bi bi-stars"></i> Professional Party Host</li>
-                    <li><i class="bi bi-stars"></i> Ventriloquism</li>
-                    <li><i class="bi bi-stars"></i> Illusion Magic</li>
-                    <li><i class="bi bi-stars"></i> Bubble Show Highlights</li>
-                    <li><i class="bi bi-stars"></i> Premium Event Experience</li>
-                </ul>
-                <a asp-controller="@bookCtaController" asp-action="@bookCtaAction" class="magic-package-link">Choose All In <i class="bi bi-arrow-right"></i></a>
-            </article>
+            @{ var publicPackages = new[] { new AriesMagicAppointmentSystem.ViewModels.PackageCardViewModel { Name = "Premium Package", Eyebrow = "Premium", Number = "01", Description = "A high-energy mix of hosting, illusion, comedy, and audience interaction.", Price = 19800m, Featured = false, Inclusions = new() { "Professional Party Host", "Game Facilitator", "Ventriloquism", "Illusion Magic Performance", "Audience Participation" }, ActionController = bookCtaController, ActionName = bookCtaAction, ActionLabel = "Choose Premium" },
+                new AriesMagicAppointmentSystem.ViewModels.PackageCardViewModel { Name = "Deluxe Package", Eyebrow = "Deluxe", Number = "02", Description = "A celebration-ready experience with magic, ventriloquism, games, and a bubble show.", Price = 20000m, Featured = true, Inclusions = new() { "Professional Party Host", "Game Facilitator", "Professional Magician", "Ventriloquism", "Bubble Show Experience" }, ActionController = bookCtaController, ActionName = bookCtaAction, ActionLabel = "Choose Deluxe" },
+                new AriesMagicAppointmentSystem.ViewModels.PackageCardViewModel { Name = "All In Package", Eyebrow = "All In", Number = "03", Description = "The complete premium experience with grand illusion and bubble-show highlights.", Price = 24500m, Featured = false, Inclusions = new() { "Professional Party Host", "Ventriloquism", "Illusion Magic", "Bubble Show Highlights", "Premium Event Experience" }, ActionController = bookCtaController, ActionName = bookCtaAction, ActionLabel = "Choose All In" } }; }
+            @foreach(var package in publicPackages){<partial name="_PackageCard" model="package" />}
         </div>
 
         <div class="magic-package-note" data-magic-reveal>

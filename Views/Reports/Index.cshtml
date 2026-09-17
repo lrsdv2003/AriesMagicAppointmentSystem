@@ -1,332 +1,93 @@
 @model AriesMagicAppointmentSystem.ViewModels.ReportDashboardViewModel
-
 @{
     Layout = "_DashboardLayout";
-    ViewData["Title"] = "Reports Center";
+    ViewData["Title"] = "Reports & Analytics";
 }
-
-@if (!ViewData.ModelState.IsValid)
-{
-    <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
-}
-
-<!-- Unified Header Toolbar (Filters + Actions) -->
-<div class="dashboard-panel mb-4">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h3 class="mb-0">Report Filters</h3>
+<div class="owner-reports-page">
+    <div class="page-header owner-page-header">
+        <div><span class="owner-eyebrow">Business Performance</span><h1>Reports & Analytics</h1><p class="page-subtitle">Verified revenue, outstanding balances, booking activity, refunds, and package performance.</p></div>
+        <div class="d-flex gap-2 flex-wrap"><a asp-action="ExportCsv" asp-route-startDate="@Model.StartDate?.ToString("yyyy-MM-dd")" asp-route-endDate="@Model.EndDate?.ToString("yyyy-MM-dd")" asp-route-month="@Model.Month" asp-route-year="@Model.Year" asp-route-package="@Model.PackageFilter" asp-route-bookingStatus="@Model.BookingStatusFilter" class="btn btn-outline-success"><i class="bi bi-file-earmark-spreadsheet"></i> Export CSV</a><button type="button" class="btn btn-outline-secondary" onclick="window.print()"><i class="bi bi-printer"></i> Print</button></div>
     </div>
-
-    <form asp-action="Index" method="get" class="row g-3 align-items-end">
-        <div class="col-md-3">
-            <label for="startDate" class="form-label fw-semibold text-secondary small mb-1">Start Date</label>
-            <input type="date"
-                   id="startDate"
-                   name="startDate"
-                   value="@Model.StartDate?.ToString("yyyy-MM-dd")"
-                   class="form-control" />
+    @if(!ViewData.ModelState.IsValid){<div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>}
+    <form asp-action="Index" method="get" class="owner-filter-card owner-report-filter" aria-label="Report filters">
+    <div class="owner-filter-summary"><i class="bi bi-calendar-range"></i><span>@(Model.StartDate.HasValue || Model.EndDate.HasValue ? $"{Model.StartDate?.ToString("MMM dd, yyyy") ?? "Any start"} - {Model.EndDate?.ToString("MMM dd, yyyy") ?? "Any end"}" : "All event dates")</span></div>
+    <div class="dropdown">
+        <button class="btn btn-outline-secondary dropdown-toggle owner-filter-trigger" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside"><i class="bi bi-funnel"></i> Filters</button>
+        <div class="dropdown-menu dropdown-menu-end owner-filter-menu p-3">
+            <label class="form-label" for="startDate">Event Start Date</label><input type="date" id="startDate" name="startDate" value="@Model.StartDate?.ToString("yyyy-MM-dd")" class="form-control mb-3" />
+            <label class="form-label" for="endDate">Event End Date</label><input type="date" id="endDate" name="endDate" value="@Model.EndDate?.ToString("yyyy-MM-dd")" class="form-control mb-3" />
+            <div class="row g-2">
+                <div class="col-6"><label class="form-label" for="reportMonth">Month</label><select id="reportMonth" name="month" class="form-select mb-3"><option value="">Any month</option>@for(var m=1;m<=12;m++){<option value="@m" selected="@(Model.Month==m)">@System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(m)</option>}</select></div>
+                <div class="col-6"><label class="form-label" for="reportYear">Year</label><select id="reportYear" name="year" class="form-select mb-3"><option value="">Any year</option>@foreach(var reportYear in Model.AvailableYears){<option value="@reportYear" selected="@(Model.Year==reportYear)">@reportYear</option>}</select></div>
+            </div>
+            <label class="form-label" for="reportPackage">Package</label><select id="reportPackage" name="package" class="form-select mb-3"><option value="">All packages</option>@foreach(var packageName in Model.AvailablePackages){<option value="@packageName" selected="@(Model.PackageFilter==packageName)">@packageName</option>}</select>
+            <label class="form-label" for="reportStatus">Booking Status</label><select id="reportStatus" name="bookingStatus" class="form-select mb-3"><option value="">All statuses</option>@foreach(var status in Model.AvailableBookingStatuses){<option value="@status" selected="@(Model.BookingStatusFilter==status)">@status</option>}</select>
+            <div class="d-flex justify-content-end gap-2"><a asp-action="Index" class="btn btn-light">Reset</a><button type="submit" class="btn btn-primary">Apply Filters</button></div>
         </div>
-
-        <div class="col-md-3">
-            <label for="endDate" class="form-label fw-semibold text-secondary small mb-1">End Date</label>
-            <input type="date"
-                   id="endDate"
-                   name="endDate"
-                   value="@Model.EndDate?.ToString("yyyy-MM-dd")"
-                   class="form-control" />
+    </div>
+</form>
+    <section class="owner-report-section" aria-labelledby="financialOverviewTitle">
+        <div class="owner-report-heading"><div><span class="owner-section-kicker">Financial Overview</span><h2 id="financialOverviewTitle">Financial Position of Selected Bookings</h2></div><span class="owner-report-note">All verified payments and completed refunds for selected bookings</span></div>
+        <div class="owner-report-metrics">
+            <article><span>Booking Value</span><strong>₱@Model.TotalBookingValue.ToString("N2")</strong><small>Excludes cancelled, declined and expired bookings</small></article>
+            <article class="positive"><span>Collected Revenue</span><strong>₱@Model.TotalCollectedRevenue.ToString("N2")</strong><small>Verified payments received</small></article>
+            <article class="warning"><span>Outstanding Balance</span><strong>₱@Model.OutstandingReceivables.ToString("N2")</strong><small>Still owed by clients</small></article>
+            <article class="negative"><span>Refunds</span><strong>₱@Model.RefundsIssued.ToString("N2")</strong><small>Completed refunds only</small></article>
+            <article class="positive"><span>Net Revenue</span><strong>₱@Model.NetCollectedRevenue.ToString("N2")</strong><small>Collected minus refunds</small></article>
+            <article><span>Confirmed Bookings</span><strong>@Model.ConfirmedBookings</strong><small>Confirmed events in selection</small></article>
+            <article><span>Completed Events</span><strong>@Model.CompletedBookings</strong><small>Finished events</small></article>
         </div>
-
-        <!-- Filter Action Buttons -->
-        <div class="col-md-3 d-flex gap-2">
-            <button type="submit" class="btn btn-primary flex-grow-1">
-                <i class="bi bi-funnel me-1"></i>
-                Generate Report
-            </button>
-
-            <a asp-action="Index" class="btn btn-outline-secondary">
-                Clear
-            </a>
+    </section>
+    <section class="owner-report-section" aria-labelledby="trendTitle">
+        <div class="owner-report-heading"><div><span class="owner-section-kicker">Trends</span><h2 id="trendTitle">Revenue & Booking Activity</h2></div></div>
+        <div class="owner-chart-grid">
+            <article class="owner-chart-card"><div><h3>Revenue Over Time</h3><p>Collection dates for the selected bookings.</p></div><div class="owner-chart-frame"><canvas id="revenueTrendChart" role="img" aria-describedby="reportChartData" aria-label="Verified revenue over time"></canvas></div></article>
+            <article class="owner-chart-card"><div><h3>Bookings Over Time</h3><p>Booking activity by month.</p></div><div class="owner-chart-frame"><canvas id="monthlyBookingsChart" role="img" aria-describedby="reportChartData" aria-label="Bookings over time"></canvas></div></article>
+            <article class="owner-chart-card"><div><h3>Package Bookings</h3><p>Booking volume by package.</p></div>@if(Model.PackageLabels.Any()){<div class="owner-chart-frame"><canvas id="packageTrendChart" role="img" aria-describedby="reportChartData" aria-label="Bookings by package"></canvas></div>}else{<div class="owner-chart-empty">No package data found for the selected filters.</div>}</article>
+            <article class="owner-chart-card"><div><h3>Package Net Revenue</h3><p>Verified collections minus completed refunds by package.</p></div>@if(Model.PackageLabels.Any()){<div class="owner-chart-frame"><canvas id="packageRevenueChart" role="img" aria-describedby="reportChartData" aria-label="Net revenue by package"></canvas></div>}else{<div class="owner-chart-empty">No package revenue found for the selected filters.</div>}</article>
+            <article class="owner-chart-card"><div><h3>Payment Verification Status</h3><p>Current verification outcomes.</p></div><div class="owner-chart-frame owner-chart-frame-donut"><canvas id="paymentStatusChart" role="img" aria-describedby="reportChartData" aria-label="Payment verification status distribution"></canvas></div></article>
         </div>
-
-        <!-- Export & Print Buttons -->
-        <div class="col-md-3 d-flex gap-2 justify-content-md-end">
-            <a asp-action="ExportCsv"
-               asp-route-startDate="@Model.StartDate?.ToString("yyyy-MM-dd")"
-               asp-route-endDate="@Model.EndDate?.ToString("yyyy-MM-dd")"
-               class="btn btn-success flex-grow-1">
-                <i class="bi bi-file-earmark-spreadsheet me-1"></i>
-                Export CSV
-            </a>
-
-            <button type="button"
-                    class="btn btn-outline-secondary flex-grow-1"
-                    onclick="window.print()">
-                <i class="bi bi-printer me-1"></i>
-                Print
-            </button>
-        </div>
-    </form>
+    </section>
+    <details class="owner-report-section" id="reportChartData">
+        <summary>View chart data</summary>
+        <div class="table-responsive mt-3"><table class="table"><caption>Monthly activity for selected bookings</caption><thead><tr><th scope="col">Month</th><th scope="col">Bookings</th><th scope="col">Collected Revenue</th></tr></thead><tbody>
+        @for(var i=0;i<Model.MonthlyLabels.Count;i++){<tr><th scope="row">@Model.MonthlyLabels[i]</th><td>@Model.MonthlyBookingCounts[i]</td><td>&#8369;@Model.MonthlyRevenue[i].ToString("N2")</td></tr>}
+        </tbody></table></div>
+        <div class="table-responsive"><table class="table"><caption>Package performance</caption><thead><tr><th scope="col">Package</th><th scope="col">Bookings</th><th scope="col">Net Revenue</th></tr></thead><tbody>
+        @for(var i=0;i<Model.PackageLabels.Count;i++){<tr><th scope="row">@Model.PackageLabels[i]</th><td>@Model.PackageBookingCounts[i]</td><td>&#8369;@Model.PackageRevenue[i].ToString("N2")</td></tr>}
+        </tbody></table></div>
+        <p>Awaiting review: @Model.PendingCount; Verified: @Model.VerifiedCount; Rejected: @Model.RejectedCount; Additional evidence required: @Model.EvidenceRequiredCount.</p>
+    </details>
+    <section class="owner-report-section" aria-labelledby="bookingPerformanceTitle">
+        <div class="owner-report-heading"><div><span class="owner-section-kicker">Booking Performance</span><h2 id="bookingPerformanceTitle">Operational Summary</h2></div></div>
+        <div class="owner-performance-row"><div><span>Confirmation Rate</span><strong>@Model.ConfirmationRate.ToString("N1")%</strong></div><div><span>Average Active Booking Value</span><strong>₱@Model.AverageBookingValue.ToString("N2")</strong></div><div><span>Cancelled / Declined</span><strong>@Model.CancelledBookings</strong></div><div><span>Fully Paid</span><strong>@Model.FullyPaidBookings</strong></div><div><span>Partial / Unpaid</span><strong>@Model.PartiallyPaidBookings / @Model.UnpaidBookings</strong></div></div>
+    </section>
+    <section class="owner-report-section" aria-labelledby="recordsTitle">
+        <div class="owner-report-heading"><div><span class="owner-section-kicker">Audit Records</span><h2 id="recordsTitle">Booking Financial Records</h2></div><span class="owner-report-note">Showing @Model.BookingRecords.Count of @Model.TotalBookings records</span></div>
+        @if(!Model.BookingRecords.Any()){<div class="owner-empty-state"><i class="bi bi-bar-chart"></i><h2>No report data found for the selected filters.</h2></div>}
+        else{<div class="table-responsive"><table class="table owner-audit-table align-middle"><thead><tr><th>Booking</th><th>Client</th><th>Package</th><th>Event Date</th><th>Booking Value</th><th>Collected</th><th>Outstanding</th><th>Status</th></tr></thead><tbody>
+        @foreach(var booking in Model.BookingRecords){Model.BookingFinancials.TryGetValue(booking.Id,out var finance);<tr><td><strong class="owner-booking-code">BK-@booking.CreatedAt.Year-@booking.Id.ToString("D3")</strong></td><td>@(booking.Client?.FullName??"Unknown Client")</td><td>@booking.PackageName</td><td>@booking.EventDate.ToString("MMM dd, yyyy")</td><td>₱@((finance?.BookingTotal??booking.FinalPrice).ToString("N2"))</td><td>₱@((finance?.TotalVerifiedPayments??0m).ToString("N2"))</td><td>₱@((booking.Status is AriesMagicAppointmentSystem.Models.BookingStatus.Cancelled or AriesMagicAppointmentSystem.Models.BookingStatus.Declined or AriesMagicAppointmentSystem.Models.BookingStatus.Expired ? 0m : finance?.RemainingBalance??booking.FinalPrice).ToString("N2"))</td><td><span class="status-badge status-read">@booking.Status</span></td></tr>}
+        </tbody></table></div>}
+    </section>
 </div>
-
-<!-- Key Stat Cards -->
-<div class="dashboard-stat-grid mb-4">
-    <div class="dashboard-stat-card stat-info">
-        <span class="dashboard-stat-icon"><i class="bi bi-journal-text"></i></span>
-        <span class="dashboard-stat-label">Total Bookings</span>
-        <strong>@Model.TotalBookings</strong>
-    </div>
-    <div class="dashboard-stat-card stat-success">
-        <span class="dashboard-stat-icon"><i class="bi bi-check2-circle"></i></span>
-        <span class="dashboard-stat-label">Confirmed</span>
-        <strong>@Model.ConfirmedBookings</strong>
-        <small>Ready for event</small>
-    </div>
-    <div class="dashboard-stat-card stat-neutral">
-        <span class="dashboard-stat-icon"><i class="bi bi-flag"></i></span>
-        <span class="dashboard-stat-label">Completed</span>
-        <strong>@Model.CompletedBookings</strong>
-    </div>
-    <div class="dashboard-stat-card stat-danger">
-        <span class="dashboard-stat-icon"><i class="bi bi-x-circle"></i></span>
-        <span class="dashboard-stat-label">Cancelled / Declined</span>
-        <strong>@Model.CancelledBookings</strong>
-    </div>
-    <div class="dashboard-stat-card stat-warning">
-        <span class="dashboard-stat-icon"><i class="bi bi-cash-stack"></i></span>
-        <span class="dashboard-stat-label">Verified Revenue</span>
-        <strong>₱@Model.TotalRevenue.ToString("N2")</strong>
-    </div>
-</div>
-
-<!-- Financial Collection Metrics -->
-<div class="dashboard-panel mb-4">
-    <div class="dashboard-list-heading"><h3>Financial Overview</h3><span class="badge bg-primary">Verified payments only</span></div>
-    <div class="dashboard-stat-grid">
-        <div class="dashboard-stat-card stat-info"><span class="dashboard-stat-label">Total Booking Value</span><strong>₱@Model.TotalBookingValue.ToString("N2")</strong><small>Value of active bookings</small></div>
-        <div class="dashboard-stat-card stat-success"><span class="dashboard-stat-label">Collected Revenue</span><strong>₱@Model.TotalCollectedRevenue.ToString("N2")</strong><small>Verified payments only</small></div>
-        <div class="dashboard-stat-card stat-warning"><span class="dashboard-stat-label">Outstanding Receivables</span><strong>₱@Model.OutstandingReceivables.ToString("N2")</strong><small>Still owed</small></div>
-        <div class="dashboard-stat-card"><span class="dashboard-stat-label">Down Payments Collected</span><strong>₱@Model.TotalDownPaymentsCollected.ToString("N2")</strong></div>
-        <div class="dashboard-stat-card stat-danger"><span class="dashboard-stat-label">Completed Refunds</span><strong>₱@Model.RefundsIssued.ToString("N2")</strong></div>
-        <div class="dashboard-stat-card stat-success"><span class="dashboard-stat-label">Net Collected Revenue</span><strong>₱@Model.NetCollectedRevenue.ToString("N2")</strong><small>Verified payments less completed refunds</small></div>
-    </div>
-    <div class="dashboard-stat-grid mt-3">
-        <div class="dashboard-stat-card"><span class="dashboard-stat-label">Completed Booking Value</span><strong>₱@Model.CompletedBookingValue.ToString("N2")</strong></div>
-        <div class="dashboard-stat-card"><span class="dashboard-stat-label">Completed Events Collected</span><strong>₱@Model.CompletedCollectedRevenue.ToString("N2")</strong></div>
-        <div class="dashboard-stat-card stat-warning"><span class="dashboard-stat-label">Completed Events Outstanding</span><strong>₱@Model.CompletedOutstandingReceivables.ToString("N2")</strong></div>
-        <div class="dashboard-stat-card"><span class="dashboard-stat-label">Fully Paid / Partial / Unpaid</span><strong>@Model.FullyPaidBookings / @Model.PartiallyPaidBookings / @Model.UnpaidBookings</strong></div>
-    </div>
-</div>
-
-<!-- Charts Section -->
-<div class="row g-4 mb-4">
-    <div class="col-lg-6">
-        <div class="dashboard-panel">
-            <div class="dashboard-list-heading">
-                <h3>Booking Report</h3>
-                <span class="badge bg-primary">Last 6 months</span>
-            </div>
-            <div style="height: 260px;">
-                <canvas id="monthlyBookingsChart"></canvas>
-            </div>
-        </div>
-    </div>
-    <div class="col-lg-6">
-        <div class="dashboard-panel">
-            <div class="dashboard-list-heading">
-                <h3>Revenue Report</h3>
-                <span class="badge bg-success">Verified</span>
-            </div>
-            <div style="height: 260px;">
-                <canvas id="revenueTrendChart"></canvas>
-            </div>
-        </div>
-    </div>
-    <div class="col-lg-6">
-        <div class="dashboard-panel">
-            <div class="dashboard-list-heading">
-                <h3>Payment Status</h3>
-                <span class="badge bg-secondary">@(Model.PendingCount + Model.VerifiedCount + Model.RejectedCount) total</span>
-            </div>
-            <div style="height: 260px; display: flex; align-items: center; justify-content: center;">
-                <canvas id="paymentStatusChart" style="max-height: 240px; max-width: 240px;"></canvas>
-            </div>
-        </div>
-    </div>
-    <div class="col-lg-6">
-        <div class="dashboard-panel">
-            <div class="dashboard-list-heading">
-                <h3>Package Trends</h3>
-                <span class="badge bg-info">Top 8</span>
-            </div>
-            @if (Model.PackageLabels.Any())
-            {
-                <div style="height: 260px;">
-                    <canvas id="packageTrendChart"></canvas>
-                </div>
-            }
-            else
-            {
-                <div class="empty-state">
-                    <i class="bi bi-bar-chart"></i>
-                    <h3>No package data</h3>
-                    <p>No package trend data for the selected period.</p>
-                </div>
-            }
-        </div>
-    </div>
-</div>
-
-<!-- Performance Metrics -->
-<div class="dashboard-panel mb-4">
-    <div class="dashboard-list-heading">
-        <h3>Performance Metrics</h3>
-    </div>
-    <div class="dashboard-stat-grid">
-        <div class="dashboard-stat-card stat-neutral text-center">
-            <span class="dashboard-stat-label">Successful Booking Rate</span>
-            <strong>@Model.ConfirmationRate.ToString("N1")%</strong>
-        </div>
-        <div class="dashboard-stat-card stat-neutral text-center">
-            <span class="dashboard-stat-label">Average Booking Value</span>
-            <strong>₱@Model.AverageBookingValue.ToString("N2")</strong>
-        </div>
-        <div class="dashboard-stat-card stat-neutral text-center">
-            <span class="dashboard-stat-label">Avg Payment Processing</span>
-            <strong>@Model.AveragePaymentProcessingDays.ToString("N1") days</strong>
-        </div>
-        <div class="dashboard-stat-card stat-neutral text-center">
-            <span class="dashboard-stat-label">Repeat Customer Rate</span>
-            <strong>@Model.CustomerRetentionRate.ToString("N1")%</strong>
-        </div>
-    </div>
-</div>
-
-<!-- Table Records Section -->
-<div class="dashboard-panel">
-    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
-        <div>
-            <h3 class="mb-1">Booking Report Records</h3>
-            <p class="page-subtitle mb-0">
-               
-            </p>
-        </div>
-
-        <span class="badge bg-secondary">
-            @Model.BookingRecords.Count record(s)
-        </span>
-    </div>
-
-    @if (!Model.BookingRecords.Any())
-    {
-        <div class="empty-state">
-            <h3>No report records</h3>
-            
-        </div>
-    }
-    else
-    {
-        <div class="table-responsive">
-            <table class="table align-middle">
-                <thead>
-                    <tr>
-                        <th>Booking ID</th>
-                        <th>Client</th>
-                        <th>Package</th>
-                        <th>Event</th>
-                        <th>Date</th>
-                        <th>Venue</th>
-                        <th>Booking Value</th>
-                        <th>Collected</th>
-                        <th>Outstanding</th>
-                        <th>Payment Status</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var booking in Model.BookingRecords)
-                    {
-                        <tr>
-                            <td>#@booking.Id</td>
-                            <td>@(booking.Client?.FullName ?? "Unknown Client")</td>
-                            <td>@booking.PackageName</td>
-                            <td>@booking.EventType</td>
-                            <td>@booking.EventDate.ToString("MMM dd, yyyy")</td>
-                            <td>@booking.PartyVenue</td>
-                            @{ Model.BookingFinancials.TryGetValue(booking.Id, out var finance); }
-                            <td>₱@booking.FinalPrice.ToString("N2")</td>
-                            <td>₱@((finance?.TotalVerifiedPayments ?? 0m).ToString("N2"))</td>
-                            <td>₱@((finance?.RemainingBalance ?? booking.FinalPrice).ToString("N2"))</td>
-                            <td><span class="badge bg-secondary">@(finance?.PaymentStatus ?? "Unpaid")</span></td>
-                            <td><span class="badge bg-secondary">@booking.Status</span></td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
-    }
-</div>
-
-@section Scripts {
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-    <script>
-        const monthlyLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.MonthlyLabels));
-        const monthlyBookingCounts = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.MonthlyBookingCounts));
-        const monthlyRevenue = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.MonthlyRevenue));
-        const packageLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.PackageLabels));
-        const packageBookingCounts = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.PackageBookingCounts));
-        const paymentCounts = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(new[]
-        {
-            Model.PendingCount,
-            Model.VerifiedCount,
-            Model.RejectedCount
-        }));
-
-        new Chart(document.getElementById("monthlyBookingsChart"), {
-            type: "bar",
-            data: {
-                labels: monthlyLabels,
-                datasets: [{ label: "Bookings", data: monthlyBookingCounts, borderRadius: 8 }]
-            },
-            options: {
-                responsive: true,
-                plugins: { legend: { display: false } }
-            }
-        });
-
-        new Chart(document.getElementById("revenueTrendChart"), {
-            type: "line",
-            data: {
-                labels: monthlyLabels,
-                datasets: [{ label: "Verified Revenue", data: monthlyRevenue, tension: 0.35, fill: false }]
-            },
-            options: {
-                responsive: true,
-                plugins: { legend: { display: false } }
-            }
-        });
-
-        new Chart(document.getElementById("paymentStatusChart"), {
-            type: "doughnut",
-            data: {
-                labels: ["Pending", "Verified", "Rejected"],
-                datasets: [{ data: paymentCounts }]
-            },
-            options: { responsive: true }
-        });
-
-        const packageTrendCanvas = document.getElementById("packageTrendChart");
-        if (packageTrendCanvas) {
-            new Chart(packageTrendCanvas, {
-                type: "bar",
-                data: {
-                    labels: packageLabels,
-                    datasets: [{ label: "Bookings", data: packageBookingCounts, borderRadius: 8 }]
-                },
-                options: {
-                    indexAxis: "y",
-                    responsive: true,
-                    plugins: { legend: { display: false } }
-                }
-            });
-        }
-    </script>
-}
+@section Scripts{
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+(() => {
+    const monthlyLabels=@Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.MonthlyLabels));
+    const monthlyBookings=@Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.MonthlyBookingCounts));
+    const monthlyRevenue=@Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.MonthlyRevenue));
+    const packageLabels=@Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.PackageLabels));
+    const packageCounts=@Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.PackageBookingCounts));
+    const packageRevenue=@Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.PackageRevenue));
+    const paymentCounts=@Html.Raw(System.Text.Json.JsonSerializer.Serialize(new[]{Model.PendingCount,Model.VerifiedCount,Model.RejectedCount,Model.EvidenceRequiredCount}));
+    const currency=value=>new Intl.NumberFormat('en-PH',{style:'currency',currency:'PHP',maximumFractionDigits:0}).format(value);
+    if(typeof Chart === 'undefined') return;
+    const common={responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{usePointStyle:true,boxWidth:8}}}};
+    new Chart(document.getElementById('revenueTrendChart'),{type:'line',data:{labels:monthlyLabels,datasets:[{label:'Collected Revenue',data:monthlyRevenue,tension:.35,borderWidth:2,pointRadius:3}]},options:{...common,plugins:{...common.plugins,legend:{display:false},tooltip:{callbacks:{label:c=>currency(c.parsed.y)}}},scales:{y:{beginAtZero:true,ticks:{callback:v=>currency(v)}}}}});
+    new Chart(document.getElementById('monthlyBookingsChart'),{type:'bar',data:{labels:monthlyLabels,datasets:[{label:'Bookings',data:monthlyBookings,borderRadius:7}]},options:{...common,plugins:{...common.plugins,legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{precision:0}}}}});
+    const pkg=document.getElementById('packageTrendChart'); if(pkg)new Chart(pkg,{type:'bar',data:{labels:packageLabels,datasets:[{label:'Bookings',data:packageCounts,borderRadius:7}]},options:{...common,indexAxis:'y',plugins:{...common.plugins,legend:{display:false}},scales:{x:{beginAtZero:true,ticks:{precision:0}}}}});
+    const pkgRevenue=document.getElementById('packageRevenueChart'); if(pkgRevenue)new Chart(pkgRevenue,{type:'bar',data:{labels:packageLabels,datasets:[{label:'Net Revenue',data:packageRevenue,borderRadius:7}]},options:{...common,indexAxis:'y',plugins:{...common.plugins,legend:{display:false},tooltip:{callbacks:{label:c=>currency(c.parsed.x)}}},scales:{x:{beginAtZero:true,ticks:{callback:v=>currency(v)}}}}});
+    new Chart(document.getElementById('paymentStatusChart'),{type:'doughnut',data:{labels:['Awaiting review','Verified','Rejected','Additional evidence'],datasets:[{data:paymentCounts,backgroundColor:['#b45309','#15803d','#b91c1c','#6d28d9'],borderWidth:2}]},options:{...common,cutout:'68%'}});
+})();
+</script>}

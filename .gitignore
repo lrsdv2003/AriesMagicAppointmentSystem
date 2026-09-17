@@ -13,3 +13,6 @@ tmp/
 .vscode/settings.json
 # --- private runtime financial proofs ---
 App_Data/financial-proofs/
+
+# Temporary Owner validation output
+.tmp-owner-build/

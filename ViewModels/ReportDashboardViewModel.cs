@@ -6,6 +6,13 @@ namespace AriesMagicAppointmentSystem.ViewModels
     {
         public DateTime? StartDate { get; set; }
         public DateTime? EndDate { get; set; }
+        public int? Month { get; set; }
+        public int? Year { get; set; }
+        public string PackageFilter { get; set; } = string.Empty;
+        public string BookingStatusFilter { get; set; } = string.Empty;
+        public List<string> AvailablePackages { get; set; } = new();
+        public List<int> AvailableYears { get; set; } = new();
+        public List<string> AvailableBookingStatuses { get; set; } = new();
 
         public int TotalBookings { get; set; }
         public int ConfirmedBookings { get; set; }
@@ -28,6 +35,7 @@ namespace AriesMagicAppointmentSystem.ViewModels
         public int UnpaidBookings { get; set; }
 
         public int PendingCount { get; set; }
+        public int EvidenceRequiredCount { get; set; }
         public int VerifiedCount { get; set; }
         public int RejectedCount { get; set; }
 
@@ -42,6 +50,7 @@ namespace AriesMagicAppointmentSystem.ViewModels
 
         public List<string> PackageLabels { get; set; } = new();
         public List<int> PackageBookingCounts { get; set; } = new();
+        public List<decimal> PackageRevenue { get; set; } = new();
 
         public List<Booking> BookingRecords { get; set; } = new();
         public Dictionary<int, BookingFinancialSummaryViewModel> BookingFinancials { get; set; } = new();

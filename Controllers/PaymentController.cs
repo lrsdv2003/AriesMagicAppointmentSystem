@@ -59,6 +59,25 @@ namespace AriesMagicAppointmentSystem.Controllers
             _financialService = financialService;
         }
 
+        public override async Task OnActionExecutionAsync(
+            Microsoft.AspNetCore.Mvc.Filters.ActionExecutingContext context,
+            Microsoft.AspNetCore.Mvc.Filters.ActionExecutionDelegate next)
+        {
+            var result = await next();
+            if (Request.Headers["X-Owner-Action"] != "true" || !HttpMethods.IsPost(Request.Method)) return;
+            if (result.Exception != null && !result.ExceptionHandled)
+            {
+                HttpContext.RequestServices.GetRequiredService<ILogger<PaymentsController>>()
+                    .LogError(result.Exception, "Owner financial action failed");
+                result.ExceptionHandled = true;
+                result.Result = StatusCode(500, new { error = "Unable to finish this action. Refresh to check the current status." });
+            }
+            else if (result.Result is RedirectToActionResult redirect)
+            {
+                result.Result = Json(new { redirectUrl = Url.Action(redirect.ActionName, redirect.ControllerName, redirect.RouteValues) });
+            }
+        }
+
         [Authorize(Roles = "Client")]
         public async Task<IActionResult> Upload()
         {
@@ -313,8 +332,8 @@ namespace AriesMagicAppointmentSystem.Controllers
                 "verified" => query.Where(p => p.Status == PaymentStatus.Verified),
                 "rejected" => query.Where(p => p.Status == PaymentStatus.Rejected),
                 "evidence" => query.Where(p => p.Status == PaymentStatus.AdditionalEvidenceRequired),
-                "mismatch" => query.Where(p => p.OcrVerifications.Any(o => o.VerificationResult == OcrVerificationResults.MismatchDetected)),
-                "ocrfailed" => query.Where(p => p.OcrVerifications.Any(o => o.VerificationResult == OcrVerificationResults.OcrFailed)),
+                "mismatch" => query.Where(p => p.OcrVerifications.Where(o => o.VerificationPurpose == OcrVerificationPurposes.PaymentProof).OrderByDescending(o => o.ProcessedAt).Select(o => o.VerificationResult).FirstOrDefault() == OcrVerificationResults.MismatchDetected),
+                "ocrfailed" => query.Where(p => p.OcrVerifications.Where(o => o.VerificationPurpose == OcrVerificationPurposes.PaymentProof).OrderByDescending(o => o.ProcessedAt).Select(o => o.VerificationResult).FirstOrDefault() == OcrVerificationResults.OcrFailed),
                 _ => query.Where(p => p.Status == PaymentStatus.Pending)
             };
 
@@ -348,13 +367,14 @@ namespace AriesMagicAppointmentSystem.Controllers
 
             if (payment == null) return NotFound();
             ViewBag.FinancialSummary = await _financialService.GetSummaryAsync(payment.BookingId);
+            ViewBag.ExpectedReceiver = _configuration["OcrVerification:ExpectedReceiver"] ?? "Aries Magic";
             return View(payment);
         }
 
         [HttpPost, ActionName("Verify")]
         [Authorize(Roles = "Owner")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> VerifyConfirmed(int id, string? reviewerNote)
+        public async Task<IActionResult> VerifyConfirmed(int id)
         {
             var payment = await _context.Payments
                 .Include(p => p.Booking)
@@ -368,6 +388,11 @@ namespace AriesMagicAppointmentSystem.Controllers
                 return RedirectToAction(nameof(PendingVerification));
             }
 
+            if (payment.Amount <= 0m)
+            {
+                TempData["Error"] = "The submitted payment amount must be greater than zero.";
+                return RedirectToAction(nameof(Verify), new { id });
+            }
             var financialBefore = await _financialService.GetSummaryAsync(payment.BookingId);
             var latestOcr = await _context.OcrVerifications.AsNoTracking()
                 .Where(o => o.PaymentId == payment.Id && o.VerificationPurpose == OcrVerificationPurposes.PaymentProof)
@@ -386,7 +411,6 @@ namespace AriesMagicAppointmentSystem.Controllers
 
             var previousStatus = payment.Status;
             payment.Status = PaymentStatus.Verified;
-            payment.ReviewerNote = string.IsNullOrWhiteSpace(reviewerNote) ? payment.ReviewerNote : reviewerNote.Trim();
             payment.VerifiedAt = DateTime.Now;
             payment.VerifiedByUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             payment.VerifiedByUserName = User.Identity?.Name;
@@ -461,30 +485,18 @@ namespace AriesMagicAppointmentSystem.Controllers
             await LogActivityAsync(SystemActivityType.PaymentVerified, $"Payment #{payment.Id} approved by Owner after OCR-assisted review.", payment.Id.ToString(), "Payment", new { PreviousStatus = previousStatus, NewStatus = payment.Status, OwnerUserId = payment.VerifiedByUserId, OwnerName = payment.VerifiedByUserName, ReviewNotes = payment.ReviewerNote, payment.Amount });
             return RedirectToAction(nameof(PendingVerification));
         }
-
-        [Authorize(Roles = "Owner")]
-        public async Task<IActionResult> Reject(int? id)
-        {
-            if (id == null) return NotFound();
-
-            var payment = await _context.Payments
-                .Include(p => p.Booking)
-                    .ThenInclude(b => b!.Client)
-                .Include(p => p.Booking)
-                    .ThenInclude(b => b!.Service)
-                .Include(p => p.OcrVerifications)
-                .FirstOrDefaultAsync(p => p.Id == id);
-
-            if (payment == null) return NotFound();
-
-            return View(payment);
-        }
-
         [HttpPost, ActionName("Reject")]
         [Authorize(Roles = "Owner")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RejectConfirmed(int id, string? rejectionReason)
         {
+            if (string.IsNullOrWhiteSpace(rejectionReason) || rejectionReason.Trim().Length > 1000)
+            {
+                TempData["Error"] = "Enter a rejection reason between 1 and 1,000 characters.";
+                return RedirectToAction(nameof(Verify), new { id });
+            }
+            rejectionReason = rejectionReason.Trim();
+
             var payment = await _context.Payments
                 .Include(p => p.Booking)
                 .FirstOrDefaultAsync(p => p.Id == id);
@@ -687,7 +699,10 @@ namespace AriesMagicAppointmentSystem.Controllers
                 .Include(r => r.Booking).ThenInclude(b => b!.Client)
                 .Include(r => r.Booking).ThenInclude(b => b!.Service)
                 .Include(r => r.OriginalPayment).Include(r => r.OcrVerifications).AsQueryable();
-            if (!string.IsNullOrWhiteSpace(filter) && filter != "all") query = query.Where(r => r.Status == filter);
+            if (filter == RefundStatus.UnderReview || filter == RefundStatus.Pending)
+                query = query.Where(r => r.Status == RefundStatus.UnderReview || r.Status == RefundStatus.Pending);
+            else if (!string.IsNullOrWhiteSpace(filter) && filter != "all")
+                query = query.Where(r => r.Status == filter);
             if (!string.IsNullOrWhiteSpace(q))
             {
                 var term = q.Trim();
@@ -709,10 +724,11 @@ namespace AriesMagicAppointmentSystem.Controllers
         [HttpPost]
         [Authorize(Roles = "Owner")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ApproveRefund(int id, string? adminRemarks)
+        public async Task<IActionResult> ApproveRefund(int id)
         {
             var refund = await _context.RefundRequests
                 .Include(r => r.Booking)
+                .Include(r => r.OriginalPayment)
                 .FirstOrDefaultAsync(r => r.Id == id);
 
             if (refund == null) return NotFound();
@@ -723,10 +739,14 @@ namespace AriesMagicAppointmentSystem.Controllers
                 return RedirectToAction(nameof(RefundRequests));
             }
 
+            if (refund.OriginalPayment == null || refund.OriginalPayment.Status != PaymentStatus.Verified || refund.Amount <= 0)
+            {
+                TempData["Error"] = "A refund requires a verified original payment and a positive amount.";
+                return RedirectToAction(nameof(RefundReview), new { id });
+            }
             var previousStatus = refund.Status;
             refund.Status = RefundStatus.Approved;
             refund.ApprovedAmount = Math.Min(refund.Amount, refund.OriginalPayment?.Amount ?? refund.Amount);
-            refund.AdminRemarks = adminRemarks;
             refund.ProcessedAt = DateTime.Now;
             refund.ReviewedByUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             refund.ReviewedByUserName = User.Identity?.Name;
@@ -750,7 +770,7 @@ namespace AriesMagicAppointmentSystem.Controllers
         [HttpPost]
         [Authorize(Roles = "Owner")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> UploadRefundProof(int id, IFormFile refundProofImage, string? adminRemarks)
+        public async Task<IActionResult> UploadRefundProof(int id, IFormFile refundProofImage)
         {
             var refund = await _context.RefundRequests
                 .Include(r => r.Booking)
@@ -772,7 +792,6 @@ namespace AriesMagicAppointmentSystem.Controllers
             var previousStatus = refund.Status;
             refund.RefundProofImagePath = saved.StoredPath;
             refund.Status = RefundStatus.RefundProcessing;
-            refund.AdminRemarks = adminRemarks;
             refund.ReviewedByUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             refund.ReviewedByUserName = User.Identity?.Name;
             await _context.SaveChangesAsync();
@@ -785,7 +804,7 @@ namespace AriesMagicAppointmentSystem.Controllers
         [HttpPost]
         [Authorize(Roles = "Owner")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> MarkAsRefunded(int id, string? adminRemarks)
+        public async Task<IActionResult> MarkAsRefunded(int id)
         {
             var refund = await _context.RefundRequests
                 .Include(r => r.Booking)
@@ -804,7 +823,6 @@ namespace AriesMagicAppointmentSystem.Controllers
             }
             var previousStatus = refund.Status;
             refund.Status = RefundStatus.Refunded;
-            refund.AdminRemarks = adminRemarks;
             refund.ProcessedAt = DateTime.Now;
             refund.RefundCompletedAt = DateTime.Now;
             refund.ReviewedByUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -820,8 +838,15 @@ namespace AriesMagicAppointmentSystem.Controllers
         [HttpPost]
         [Authorize(Roles = "Owner")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> RejectRefund(int id, string? adminRemarks)
+        public async Task<IActionResult> RejectRefund(int id, string? rejectionReason)
         {
+            if (string.IsNullOrWhiteSpace(rejectionReason) || rejectionReason.Trim().Length > 1000)
+            {
+                TempData["Error"] = "Enter a rejection reason between 1 and 1,000 characters.";
+                return RedirectToAction(nameof(RefundReview), new { id });
+            }
+            rejectionReason = rejectionReason.Trim();
+
             var refund = await _context.RefundRequests
                 .Include(r => r.Booking)
                 .FirstOrDefaultAsync(r => r.Id == id);
@@ -836,7 +861,7 @@ namespace AriesMagicAppointmentSystem.Controllers
 
             var previousStatus = refund.Status;
             refund.Status = RefundStatus.Rejected;
-            refund.AdminRemarks = adminRemarks;
+            refund.AdminRemarks = string.IsNullOrWhiteSpace(rejectionReason) ? null : rejectionReason.Trim();
             refund.ProcessedAt = DateTime.Now;
             refund.ReviewedByUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             refund.ReviewedByUserName = User.Identity?.Name;
@@ -848,7 +873,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                 await CreateNotificationAsync(
                     refund.Booking.ApplicationUserId,
                     "Refund Request Rejected",
-                    "Your refund request was rejected. Please check the owner remarks.",
+                    string.IsNullOrWhiteSpace(rejectionReason) ? "Your refund request was rejected." : $"Your refund request was rejected. Reason: {rejectionReason}",
                     "/Payments/MyRefundRequests");
             }
 

@@ -1,17 +1,72 @@
 @model IEnumerable<AriesMagicAppointmentSystem.Models.Payment>
 @using AriesMagicAppointmentSystem.Models
 @{
-    Layout = "_DashboardLayout"; ViewData["Title"] = "Payment Verification"; var payments = Model.ToList(); var isOwner = User.IsInRole("Owner");
-    string Badge(string? result) => result switch { OcrVerificationResults.LikelyMatch => "ocr-likely", OcrVerificationResults.PartialMatch => "ocr-partial", OcrVerificationResults.MismatchDetected => "ocr-mismatch", OcrVerificationResults.OcrFailed => "ocr-failed", _ => "ocr-manual" };
-    string StatusClass(string status) => status switch { PaymentStatus.Verified => "status-verified", PaymentStatus.Rejected => "status-rejected", PaymentStatus.AdditionalEvidenceRequired => "status-pending", _ => "status-pending" };
-    string StatusLabel(string status) => status == PaymentStatus.Pending ? "AWAITING OWNER VERIFICATION" : status == PaymentStatus.AdditionalEvidenceRequired ? "ADDITIONAL EVIDENCE REQUIRED" : status.ToUpperInvariant();
+    Layout = "_DashboardLayout";
+    ViewData["Title"] = "Payment Verification";
+    var payments = Model.ToList();
+    var isOwner = User.IsInRole("Owner");
+    string OcrClass(string? result) => result switch {
+        OcrVerificationResults.LikelyMatch => "ocr-likely", OcrVerificationResults.PartialMatch => "ocr-partial",
+        OcrVerificationResults.MismatchDetected => "ocr-mismatch", OcrVerificationResults.OcrFailed => "ocr-failed", _ => "ocr-manual" };
+    string OcrLabel(string? result) => string.IsNullOrWhiteSpace(result) ? "Manual Review Required" : result;
+    string StatusClass(string status) => status switch {
+        PaymentStatus.Verified => "status-verified", PaymentStatus.Rejected => "status-rejected", _ => "status-pending" };
+    string StatusLabel(string status) => status switch {
+        PaymentStatus.Pending => "AWAITING REVIEW", PaymentStatus.AdditionalEvidenceRequired => "ADDITIONAL EVIDENCE REQUIRED",
+        PaymentStatus.Verified => "VERIFIED", PaymentStatus.Rejected => "REJECTED", _ => status.ToUpperInvariant() };
 }
-<div class="page-header"><div><h1>Payment Verification</h1><p class="page-subtitle">Owner is the final financial authority. Admin access is read-only; OCR remains advisory only.</p></div></div>
-<div class="ocr-queue-stats"><div><small>Results shown</small><strong>@payments.Count</strong></div><div><small>Uploaded today</small><strong>@payments.Count(x=>x.UploadedAt.Date==DateTime.Today)</strong></div><div><small>OCR attention</small><strong>@payments.Count(x=>x.OcrVerifications.Any(o=>o.VerificationResult==OcrVerificationResults.MismatchDetected || o.VerificationResult==OcrVerificationResults.OcrFailed))</strong></div></div>
-<form method="get" class="ocr-filterbar"><select name="filter" class="form-select"><option value="awaiting" selected="@(ViewBag.Filter == "awaiting")">Awaiting Owner Verification</option><option value="verified" selected="@(ViewBag.Filter == "verified")">Verified</option><option value="rejected" selected="@(ViewBag.Filter == "rejected")">Rejected</option><option value="evidence" selected="@(ViewBag.Filter == "evidence")">Additional Evidence</option><option value="mismatch" selected="@(ViewBag.Filter == "mismatch")">OCR Mismatch</option><option value="ocrfailed" selected="@(ViewBag.Filter == "ocrfailed")">OCR Failed</option></select><input name="q" value="@ViewBag.Search" class="form-control" placeholder="Booking, client, payment ID, reference..."/><select name="paymentMethod" class="form-select"><option value="">All methods</option><option selected="@(ViewBag.PaymentMethod == "GCash")">GCash</option><option selected="@(ViewBag.PaymentMethod == "Maya")">Maya</option><option selected="@(ViewBag.PaymentMethod == "Bank Transfer")">Bank Transfer</option><option selected="@(ViewBag.PaymentMethod == "Online Banking")">Online Banking</option></select><input type="date" name="date" value="@ViewBag.Date" class="form-control"/><button class="btn btn-primary">Filter</button></form>
-<div class="dashboard-panel ocr-queue-panel">
-@if (!payments.Any()){<div class="empty-state"><h3>No matching payment submissions</h3><p>Try another filter or search term.</p></div>}
-else {<div class="table-responsive"><table class="table align-middle ocr-queue-table"><thead><tr><th>Client / Booking</th><th>Amount</th><th>Method</th><th>Proof</th><th>OCR Result</th><th>Status</th><th>Submitted</th><th></th></tr></thead><tbody>
-@foreach(var item in payments){var ocr=item.OcrVerifications.OrderByDescending(o=>o.ProcessedAt).FirstOrDefault();<tr><td><strong>@item.Booking?.Client?.FullName</strong><small>Booking #@item.BookingId · Payment #@item.Id</small></td><td>₱@item.Amount.ToString("N2")</td><td>@item.PaymentMethod</td><td><img src="@Url.Action("PaymentProof","Payments",new{id=item.Id})" class="payment-proof-thumb" alt="Protected payment proof"/></td><td><span class="ocr-badge @Badge(ocr?.VerificationResult)">@(ocr?.VerificationResult ?? "Manual Review")</span>@if(ocr?.IsDuplicateReference==true){<small class="text-danger d-block mt-1">Duplicate reference</small>}</td><td><span class="status-badge @StatusClass(item.Status)">@StatusLabel(item.Status)</span></td><td><small>@item.UploadedAt.ToString("MMM dd, yyyy")<br/>@item.UploadedAt.ToString("hh:mm tt")</small></td><td class="text-end"><a asp-action="Verify" asp-route-id="@item.Id" class="btn btn-sm btn-primary">@(isOwner ? "Review & Decide" : "View Status")</a></td></tr>}
-</tbody></table></div>}
+<div class="owner-financial-page">
+    <div class="page-header owner-page-header">
+        <div><span class="owner-eyebrow">Financial Oversight</span><h1>Payment Verification</h1><p class="page-subtitle">Review payment evidence, OCR findings, and workflow status before making an Owner decision.</p></div>
+    </div>
+    @if(TempData["Success"]!=null){<div class="alert alert-success" role="status">@TempData["Success"]</div>}
+    @if(TempData["Error"]!=null){<div class="alert alert-danger" role="alert">@TempData["Error"]</div>}
+    <div class="owner-summary-row" aria-label="Payment verification summary">
+        <div><span>Shown</span><strong>@payments.Count</strong></div>
+        <div><span>Awaiting Review</span><strong>@payments.Count(x => x.Status == PaymentStatus.Pending)</strong></div>
+        <div><span>OCR Attention</span><strong>@payments.Count(x => x.OcrVerifications.Where(o => o.VerificationPurpose == OcrVerificationPurposes.PaymentProof).OrderByDescending(o => o.ProcessedAt).FirstOrDefault()?.VerificationResult is OcrVerificationResults.MismatchDetected or OcrVerificationResults.OcrFailed)</strong></div>
+    </div>
+    <form method="get" class="owner-filter-card" aria-label="Payment verification filters">
+        <div class="owner-filter-search"><i class="bi bi-search"></i><input type="search" name="q" value="@ViewBag.Search" placeholder="Search booking or client" aria-label="Search payment verification queue" /></div>
+        <div class="dropdown">
+            <button class="btn btn-outline-secondary dropdown-toggle owner-filter-trigger" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside"><i class="bi bi-funnel"></i> Filters</button>
+            <div class="dropdown-menu dropdown-menu-end owner-filter-menu p-3">
+                <label class="form-label" for="PendingVerificationfilter">Verification Status</label><select id="PendingVerificationfilter" name="filter" class="form-select mb-3"><option value="awaiting" selected="@(ViewBag.Filter == "awaiting")">Awaiting Owner Verification</option><option value="verified" selected="@(ViewBag.Filter == "verified")">Verified</option><option value="rejected" selected="@(ViewBag.Filter == "rejected")">Rejected</option><option value="evidence" selected="@(ViewBag.Filter == "evidence")">Additional Evidence</option><option value="mismatch" selected="@(ViewBag.Filter == "mismatch")">OCR Mismatch</option><option value="ocrfailed" selected="@(ViewBag.Filter == "ocrfailed")">OCR Failed</option></select>
+                <label class="form-label" for="PendingVerificationpaymentMethod">Payment Method</label><select id="PendingVerificationpaymentMethod" name="paymentMethod" class="form-select mb-3"><option value="">All methods</option><option selected="@(ViewBag.PaymentMethod == "GCash")">GCash</option><option selected="@(ViewBag.PaymentMethod == "Maya")">Maya</option><option selected="@(ViewBag.PaymentMethod == "Bank Transfer")">Bank Transfer</option><option selected="@(ViewBag.PaymentMethod == "Online Banking")">Online Banking</option></select>
+                <label class="form-label" for="PendingVerificationdate">Submitted Date</label><input id="PendingVerificationdate" type="date" name="date" value="@ViewBag.Date" class="form-control mb-3" />
+                <div class="d-flex justify-content-end gap-2"><a asp-action="PendingVerification" class="btn btn-light">Reset</a><button class="btn btn-primary">Apply Filters</button></div>
+            </div>
+        </div>
+        <button class="btn btn-primary owner-search-btn" type="submit">Search</button>
+    </form>
+    <div class="dashboard-panel owner-table-panel">
+        @if (!payments.Any())
+        {
+            <div class="owner-empty-state"><i class="bi bi-shield-check"></i><h2>No payments are currently waiting for verification.</h2><p>Try another filter or search term if you are reviewing history.</p></div>
+        }
+        else
+        {
+            <div class="table-responsive"><table class="table owner-audit-table align-middle">
+                <thead><tr><th>Booking</th><th>Client</th><th>Amount</th><th>Payment Proof</th><th>OCR Result</th><th>Status</th><th class="text-end">Actions</th></tr></thead>
+                <tbody>
+                @foreach (var item in payments)
+                {
+                    var ocr = item.OcrVerifications.Where(o => o.VerificationPurpose == OcrVerificationPurposes.PaymentProof).OrderByDescending(o => o.ProcessedAt).FirstOrDefault();
+                    var packageName = item.Booking?.PackageName ?? item.Booking?.Service?.Name ?? "Package";
+                    <tr>
+                        <td><strong class="owner-booking-code">BK-@item.Booking?.CreatedAt.Year-@item.BookingId.ToString("D3")</strong><span class="owner-cell-subtext">@packageName</span></td>
+                        <td><strong>@(item.Booking?.Client?.FullName ?? "Unknown client")</strong></td>
+                        <td><strong>₱@item.Amount.ToString("N2")</strong>@if(ocr?.ExtractedAmount.HasValue==true){<span class="owner-cell-subtext">Detected: ₱@ocr.ExtractedAmount.Value.ToString("N2")</span>}</td>
+                        <td><button type="button" class="owner-proof-button js-proof-preview" data-proof-src="@Url.Action("PaymentProof","Payments",new{id=item.Id})" data-proof-title="Payment proof for BK-@item.BookingId" aria-label="Enlarge payment proof"><img src="@Url.Action("PaymentProof","Payments",new{id=item.Id})" class="owner-proof-thumb" alt="Payment proof thumbnail" /></button></td>
+                        <td><span class="ocr-badge @OcrClass(ocr?.VerificationResult)">@OcrLabel(ocr?.VerificationResult)</span>@if(ocr?.IsDuplicateReference==true){<span class="owner-attention-note"><i class="bi bi-exclamation-triangle"></i> Duplicate reference</span>}</td>
+                        <td><span class="status-badge @StatusClass(item.Status)">@StatusLabel(item.Status)</span></td>
+                        <td class="text-end"><a asp-action="Verify" asp-route-id="@item.Id" class="btn btn-sm btn-primary">@(isOwner ? "Review" : "View")</a></td>
+                    </tr>
+                }
+                </tbody>
+            </table></div>
+        }
+    </div>
 </div>
+<partial name="_FinancialProofViewer" />
+@section Scripts { <script src="~/js/owner-financial.js" asp-append-version="true"></script> }
