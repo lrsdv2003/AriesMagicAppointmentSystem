@@ -1,0 +1,172 @@
+@model AriesMagicAppointmentSystem.ViewModels.VerifyEmailViewModel
+@{
+    ViewData["Title"] = "Verify Your Email";
+}
+
+<div class="otp-page">
+    <div class="otp-card">
+        <div class="otp-icon" aria-hidden="true"><i class="bi bi-envelope-check"></i></div>
+        <div class="otp-heading">
+            <span class="otp-eyebrow">Secure account verification</span>
+            <h1>Verify Your Email</h1>
+            <p>We sent a 6-digit verification code to <strong>@Model.MaskedEmail</strong>.</p>
+        </div>
+
+        @if (TempData["VerificationSuccess"] != null)
+        {
+            <div class="alert alert-success otp-alert" role="status">@TempData["VerificationSuccess"]</div>
+        }
+        @if (TempData["VerificationError"] != null)
+        {
+            <div class="alert alert-danger otp-alert" role="alert">@TempData["VerificationError"]</div>
+        }
+        <div asp-validation-summary="ModelOnly" class="text-danger otp-validation"></div>
+
+        <form asp-action="VerifyEmail" method="post" id="verifyEmailForm" novalidate>
+            @Html.AntiForgeryToken()
+            <input asp-for="UserId" type="hidden" />
+            <input asp-for="Code" type="hidden" id="otpCombined" />
+            <fieldset class="otp-fieldset" @(Model.AttemptsLocked ? "disabled" : null)>
+                <legend class="visually-hidden">Enter six digit verification code</legend>
+                <div class="otp-inputs" role="group" aria-label="Six digit verification code">
+                    @for (var i = 0; i < 6; i++)
+                    {
+                        <input class="otp-digit" inputmode="numeric" pattern="[0-9]*" maxlength="1" autocomplete="one-time-code" aria-label="Digit @(i + 1)" data-index="@i" />
+                    }
+                </div>
+            </fieldset>
+            <span asp-validation-for="Code" class="text-danger d-block text-center mt-2"></span>
+            <button type="submit" class="btn btn-primary otp-primary-btn" id="verifyOtpButton" @(Model.AttemptsLocked ? "disabled" : null)>
+                <span class="normal-label"><i class="bi bi-shield-check"></i> Verify Email</span>
+                <span class="loading-label d-none">Verifying...</span>
+            </button>
+        </form>
+
+        <div class="otp-meta" aria-live="polite">
+            @if (Model.ExpiresAtUtc.HasValue && Model.HasActiveCode)
+            {
+                <span><i class="bi bi-clock"></i> Code expires in <strong id="expiryCountdown">--:--</strong></span>
+            }
+            else if (Model.AttemptsLocked)
+            {
+                <span><i class="bi bi-shield-exclamation"></i> Request a new code to continue.</span>
+            }
+            else
+            {
+                <span><i class="bi bi-info-circle"></i> Request a new code if the previous one expired.</span>
+            }
+        </div>
+
+        <form asp-action="ResendVerificationCode" method="post" id="resendOtpForm" class="otp-resend-form">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="userId" value="@Model.UserId" />
+            <button type="submit" class="btn otp-resend-btn" id="resendOtpButton" data-seconds="@Model.ResendSecondsRemaining">
+                <span class="normal-label">Resend Code</span>
+                <span class="loading-label d-none">Sending...</span>
+            </button>
+            <span id="resendCountdown" class="otp-resend-countdown"></span>
+        </form>
+
+        <div class="otp-help">
+            <p>Didn't receive it? Check your spam folder or wait for the resend timer.</p>
+            <details class="otp-change-email">
+                <summary>Wrong email address? Change Email</summary>
+                <form asp-action="ChangeVerificationEmail" method="post" class="otp-change-email-form">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="userId" value="@Model.UserId" />
+                    <label for="verificationEmail" class="form-label">New email address</label>
+                    <input id="verificationEmail" name="email" type="email" class="form-control mb-2" autocomplete="email" required placeholder="name@example.com" />
+                    <label for="verificationPassword" class="form-label">Current password</label>
+                    <input id="verificationPassword" name="currentPassword" type="password" class="form-control mb-2" autocomplete="current-password" required placeholder="Enter your password" />
+                    <button type="submit" class="btn btn-outline-primary w-100">Update Email &amp; Send New Code</button>
+                    <div class="form-text">Changing the email invalidates the current code and sends a new one.</div>
+                </form>
+            </details>
+            <a asp-action="Login"><i class="bi bi-arrow-left"></i> Back to Login</a>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (() => {
+            const form = document.getElementById('verifyEmailForm');
+            const combined = document.getElementById('otpCombined');
+            const digits = [...document.querySelectorAll('.otp-digit')];
+            const verifyButton = document.getElementById('verifyOtpButton');
+            const resendForm = document.getElementById('resendOtpForm');
+            const resendButton = document.getElementById('resendOtpButton');
+            const resendCountdown = document.getElementById('resendCountdown');
+            const syncCode = () => combined.value = digits.map(x => x.value).join('');
+            const focusDigit = i => { if (i >= 0 && i < digits.length) digits[i].focus(); };
+
+            digits.forEach((input, index) => {
+                input.addEventListener('input', () => {
+                    input.value = input.value.replace(/\D/g, '').slice(-1);
+                    syncCode();
+                    if (input.value && index < digits.length - 1) focusDigit(index + 1);
+                });
+                input.addEventListener('keydown', e => {
+                    if (e.key === 'Backspace' && !input.value && index > 0) focusDigit(index - 1);
+                    if (e.key === 'ArrowLeft') { e.preventDefault(); focusDigit(index - 1); }
+                    if (e.key === 'ArrowRight') { e.preventDefault(); focusDigit(index + 1); }
+                });
+                input.addEventListener('paste', e => {
+                    const text = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '').slice(0, 6);
+                    if (!text) return;
+                    e.preventDefault();
+                    digits.forEach((box, i) => box.value = text[i] || '');
+                    syncCode();
+                    focusDigit(Math.min(text.length, 6) - 1);
+                });
+            });
+
+            form?.addEventListener('submit', e => {
+                syncCode();
+                if (!/^\d{6}$/.test(combined.value)) {
+                    e.preventDefault();
+                    digits.find(x => !x.value)?.focus();
+                    return;
+                }
+                if (verifyButton) {
+                    verifyButton.disabled = true;
+                    verifyButton.querySelector('.normal-label')?.classList.add('d-none');
+                    verifyButton.querySelector('.loading-label')?.classList.remove('d-none');
+                }
+            });
+
+            let resendSeconds = Number(resendButton?.dataset.seconds || 0);
+            const updateResend = () => {
+                if (!resendButton) return;
+                const waiting = resendSeconds > 0;
+                resendButton.disabled = waiting;
+                resendCountdown.textContent = waiting ? `Resend code in ${resendSeconds} second${resendSeconds === 1 ? '' : 's'}` : '';
+            };
+            updateResend();
+            if (resendSeconds > 0) setInterval(() => { if (resendSeconds > 0) { resendSeconds--; updateResend(); } }, 1000);
+
+            resendForm?.addEventListener('submit', e => {
+                if (resendButton?.disabled) { e.preventDefault(); return; }
+                resendButton.disabled = true;
+                resendButton.querySelector('.normal-label')?.classList.add('d-none');
+                resendButton.querySelector('.loading-label')?.classList.remove('d-none');
+            });
+            const expiryEl = document.getElementById('expiryCountdown');
+            const expiresAt = '@(Model.ExpiresAtUtc?.ToString("O") ?? "")';
+            if (expiryEl && expiresAt) {
+                const target = new Date(expiresAt).getTime();
+                const renderExpiry = () => {
+                    const remaining = Math.max(0, Math.floor((target - Date.now()) / 1000));
+                    const minutes = Math.floor(remaining / 60).toString().padStart(2, '0');
+                    const seconds = (remaining % 60).toString().padStart(2, '0');
+                    expiryEl.textContent = `${minutes}:${seconds}`;
+                };
+                renderExpiry();
+                setInterval(renderExpiry, 1000);
+            }
+
+            if (digits.length && !digits[0].disabled) digits[0].focus();
+        })();
+    </script>
+}

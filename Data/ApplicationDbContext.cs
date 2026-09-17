@@ -29,6 +29,7 @@ namespace AriesMagicAppointmentSystem.Data
         public DbSet<Conversation> Conversations { get; set; }
         public DbSet<ConversationParticipant> ConversationParticipants { get; set; }
         public DbSet<Message> Messages { get; set; }
+        public DbSet<EmailVerification> EmailVerifications { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -76,6 +77,16 @@ namespace AriesMagicAppointmentSystem.Data
 
             builder.Entity<Conversation>()
                 .HasIndex(c => c.UpdatedAt);
+
+            builder.Entity<EmailVerification>()
+                .HasOne(v => v.User)
+                .WithOne()
+                .HasForeignKey<EmailVerification>(v => v.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<EmailVerification>()
+                .HasIndex(v => v.UserId)
+                .IsUnique();
 
             builder.Entity<Payment>().Property(p => p.Amount).HasPrecision(18, 2);
             builder.Entity<RefundRequest>().Property(r => r.Amount).HasPrecision(18, 2);

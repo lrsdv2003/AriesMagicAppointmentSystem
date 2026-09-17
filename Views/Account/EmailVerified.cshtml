@@ -1,0 +1,17 @@
+@{
+    ViewData["Title"] = "Email Verified";
+}
+
+<div class="otp-page">
+    <div class="otp-card otp-success-card">
+        <div class="otp-icon otp-icon-success" aria-hidden="true"><i class="bi bi-check2-circle"></i></div>
+        <div class="otp-heading">
+            <span class="otp-eyebrow">Verification complete</span>
+            <h1>Email Verified Successfully</h1>
+            <p>Your account has been successfully verified. You can now continue to login.</p>
+        </div>
+        <a asp-action="Login" class="btn btn-primary otp-primary-btn">
+            <i class="bi bi-box-arrow-in-right"></i> Continue to Login
+        </a>
+    </div>
+</div>

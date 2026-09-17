@@ -22,6 +22,8 @@ builder.Services.Configure<EmailSettings>(
     builder.Configuration.GetSection("EmailSettings"));
 
 builder.Services.AddScoped<IEmailService, SmtpEmailService>();
+builder.Services.AddScoped<IEmailVerificationService, EmailVerificationService>();
+builder.Services.AddScoped<IPasswordHasher<EmailVerification>, PasswordHasher<EmailVerification>>();
 
 builder.Services.AddScoped<IHistoryService, HistoryService>();
 builder.Services.AddScoped<ISystemActivityService, SystemActivityService>();

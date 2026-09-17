@@ -14,15 +14,18 @@ namespace AriesMagicAppointmentSystem.Controllers
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IEmailService _emailService;
+        private readonly IEmailVerificationService _emailVerificationService;
 
         public AccountController(
             SignInManager<ApplicationUser> signInManager,
             UserManager<ApplicationUser> userManager,
-            IEmailService emailService)
+            IEmailService emailService,
+            IEmailVerificationService emailVerificationService)
             {
                 _signInManager = signInManager;
                 _userManager = userManager;
                 _emailService = emailService;
+                _emailVerificationService = emailVerificationService;
             }
         [AllowAnonymous]
         public IActionResult Register()
@@ -35,10 +38,7 @@ namespace AriesMagicAppointmentSystem.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Register(RegisterViewModel model)
         {
-            if (!ModelState.IsValid)
-            {
-                return View(model);
-            }
+            if (!ModelState.IsValid) return View(model);
 
             var existingUser = await _userManager.FindByEmailAsync(model.Email);
             if (existingUser != null)
@@ -58,72 +58,199 @@ namespace AriesMagicAppointmentSystem.Controllers
             };
 
             var result = await _userManager.CreateAsync(user, model.Password);
-
             if (!result.Succeeded)
             {
-                foreach (var error in result.Errors)
-                {
-                    ModelState.AddModelError("", error.Description);
-                }
-
+                foreach (var error in result.Errors) ModelState.AddModelError("", error.Description);
                 return View(model);
             }
 
             await _userManager.AddToRoleAsync(user, "Client");
-            var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
-            var encodedToken = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(token));
-            var confirmationLink = Url.Action(
-                nameof(ConfirmEmail),
-                "Account",
-                new { userId = user.Id, token = encodedToken },
-                Request.Scheme);
-                var message = $@"
-                <p>Hello {user.FullName},</p>
-                <p>Thank you for registering in Aries Magic Appointment System.</p>
-                <p>Please confirm your email by clicking the link below:</p>
-                <p><a href='{confirmationLink}'>Confirm My Email</a></p>
-                <p>If you did not create this account, you may ignore this email.</p>";
-                await _emailService.SendEmailAsync(user.Email!, "Confirm Your Email", message);
-                return RedirectToAction(nameof(RegisterConfirmation));
+            var issue = await _emailVerificationService.IssueCodeAsync(user, enforceCooldown: false);
+            if (!issue.Sent)
+                TempData["VerificationError"] = issue.ErrorMessage ?? "We couldn't send your verification code. Please try again.";
+
+            return RedirectToAction(nameof(VerifyEmail), new { userId = user.Id });
         }
+
         [AllowAnonymous]
-        public IActionResult RegisterConfirmation()
+        [HttpGet]
+        public async Task<IActionResult> VerifyEmail(string? userId)
         {
+            if (string.IsNullOrWhiteSpace(userId)) return RedirectToAction(nameof(Login));
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null) return RedirectToAction(nameof(Login));
+            if (user.EmailConfirmed)
+            {
+                TempData["SuccessMessage"] = "Your email has already been verified.";
+                return RedirectToAction(nameof(Login));
+            }
+
+            var state = await _emailVerificationService.GetStateAsync(user.Id);
+            return View(BuildVerifyEmailViewModel(user, state));
+        }
+
+        [AllowAnonymous]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> VerifyEmail(VerifyEmailViewModel model)
+        {
+            var user = await _userManager.FindByIdAsync(model.UserId);
+            if (user == null) return RedirectToAction(nameof(Login));
+            if (user.EmailConfirmed)
+            {
+                TempData["SuccessMessage"] = "Your email has already been verified.";
+                return RedirectToAction(nameof(Login));
+            }
+
+            if (!ModelState.IsValid)
+            {
+                var state = await _emailVerificationService.GetStateAsync(user.Id);
+                FillVerificationDisplay(model, user, state);
+                return View(model);
+            }
+
+            var result = await _emailVerificationService.VerifyCodeAsync(user, model.Code);
+            switch (result.Status)
+            {
+                case EmailVerificationCheckStatus.Success:
+                    TempData["VerifiedEmail"] = user.Email;
+                    return RedirectToAction(nameof(EmailVerified));
+                case EmailVerificationCheckStatus.Incorrect:
+                    ModelState.AddModelError(nameof(model.Code), $"Incorrect verification code. Please try again. {result.AttemptsRemaining} attempt(s) remaining.");
+                    break;
+                case EmailVerificationCheckStatus.Expired:
+                    ModelState.AddModelError(nameof(model.Code), "This verification code has expired. Please request a new code.");
+                    break;
+                case EmailVerificationCheckStatus.Locked:
+                    ModelState.AddModelError(nameof(model.Code), "Too many incorrect attempts. Please request a new verification code.");
+                    break;
+                case EmailVerificationCheckStatus.NoActiveCode:
+                    ModelState.AddModelError(nameof(model.Code), "No active verification code is available. Please request a new code.");
+                    break;
+                case EmailVerificationCheckStatus.AlreadyVerified:
+                    TempData["SuccessMessage"] = "Your email has already been verified.";
+                    return RedirectToAction(nameof(Login));
+                default:
+                    ModelState.AddModelError("", "We couldn't verify your email right now. Please try again.");
+                    break;
+            }
+
+            var currentState = await _emailVerificationService.GetStateAsync(user.Id);
+            FillVerificationDisplay(model, user, currentState);
+            return View(model);
+        }
+
+        [AllowAnonymous]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ResendVerificationCode(string userId)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null) return RedirectToAction(nameof(Login));
+            if (user.EmailConfirmed)
+            {
+                TempData["SuccessMessage"] = "Your email has already been verified.";
+                return RedirectToAction(nameof(Login));
+            }
+
+            var issue = await _emailVerificationService.IssueCodeAsync(user, enforceCooldown: true);
+            if (issue.Sent)
+                TempData["VerificationSuccess"] = "A new verification code has been sent to your email.";
+            else if (issue.CooldownSeconds > 0)
+                TempData["VerificationError"] = $"Please wait {issue.CooldownSeconds} second(s) before requesting another code.";
+            else
+                TempData["VerificationError"] = issue.ErrorMessage ?? "We couldn't send your verification code. Please try again.";
+
+            return RedirectToAction(nameof(VerifyEmail), new { userId = user.Id });
+        }
+
+        [AllowAnonymous]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ChangeVerificationEmail(string userId, string email, string currentPassword)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null) return RedirectToAction(nameof(Login));
+            if (user.EmailConfirmed)
+            {
+                TempData["SuccessMessage"] = "Your email has already been verified.";
+                return RedirectToAction(nameof(Login));
+            }
+
+            if (string.IsNullOrWhiteSpace(currentPassword) || !await _userManager.CheckPasswordAsync(user, currentPassword))
+            {
+                TempData["VerificationError"] = "Enter your current password to change the email address.";
+                return RedirectToAction(nameof(VerifyEmail), new { userId = user.Id });
+            }
+
+            email = (email ?? string.Empty).Trim();
+            if (string.IsNullOrWhiteSpace(email) || !new System.ComponentModel.DataAnnotations.EmailAddressAttribute().IsValid(email))
+            {
+                TempData["VerificationError"] = "Enter a valid email address.";
+                return RedirectToAction(nameof(VerifyEmail), new { userId = user.Id });
+            }
+
+            var existing = await _userManager.FindByEmailAsync(email);
+            if (existing != null && existing.Id != user.Id)
+            {
+                TempData["VerificationError"] = "That email address is already registered.";
+                return RedirectToAction(nameof(VerifyEmail), new { userId = user.Id });
+            }
+
+            user.Email = email;
+            user.UserName = email;
+            user.EmailConfirmed = false;
+            var updateResult = await _userManager.UpdateAsync(user);
+            if (!updateResult.Succeeded)
+            {
+                TempData["VerificationError"] = "We couldn't update your email address. Please try again.";
+                return RedirectToAction(nameof(VerifyEmail), new { userId = user.Id });
+            }
+
+            await _emailVerificationService.InvalidateAsync(user.Id);
+            var issue = await _emailVerificationService.IssueCodeAsync(user, enforceCooldown: false);
+            TempData[issue.Sent ? "VerificationSuccess" : "VerificationError"] = issue.Sent
+                ? "Your email was updated and a new verification code was sent."
+                : issue.ErrorMessage ?? "We couldn't send your verification code. Please try again.";
+
+            return RedirectToAction(nameof(VerifyEmail), new { userId = user.Id });
+        }
+
+        [AllowAnonymous]
+        [HttpGet]
+        public IActionResult EmailVerified()
+        {
+            if (TempData.Peek("VerifiedEmail") == null)
+                return RedirectToAction(nameof(Login));
             return View();
         }
-        [AllowAnonymous]
-        public async Task<IActionResult> ConfirmEmail(string? userId, string? token)
+
+        private static VerifyEmailViewModel BuildVerifyEmailViewModel(ApplicationUser user, EmailVerificationState state)
         {
-            if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(token))
+            var model = new VerifyEmailViewModel { UserId = user.Id };
+            FillVerificationDisplay(model, user, state);
+            return model;
+        }
+
+        private static void FillVerificationDisplay(VerifyEmailViewModel model, ApplicationUser user, EmailVerificationState state)
         {
-            TempData["ErrorMessage"] = "Invalid email confirmation request.";
-            return RedirectToAction(nameof(Login));
+            model.MaskedEmail = MaskEmail(user.Email ?? string.Empty);
+            model.ExpiresAtUtc = state.ExpiresAtUtc;
+            model.ResendSecondsRemaining = state.ResendSecondsRemaining;
+            model.HasActiveCode = state.HasActiveCode;
+            model.AttemptsLocked = state.AttemptsLocked;
         }
-        var user = await _userManager.FindByIdAsync(userId);
-        if (user == null)
+
+        private static string MaskEmail(string email)
         {
-            TempData["ErrorMessage"] = "User not found.";
-            return RedirectToAction(nameof(Login));
+            var at = email.IndexOf('@');
+            if (at <= 0) return "your email address";
+            var local = email[..at];
+            var domain = email[at..];
+            var visible = local.Length <= 3 ? local[..1] : local[..Math.Min(3, local.Length)];
+            return $"{visible}••••{domain}";
         }
-        string decodedToken;
-        try
-        {
-            decodedToken = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(token));
-        }
-        catch (FormatException)
-        {
-            TempData["ErrorMessage"] = "Invalid email confirmation request.";
-            return RedirectToAction(nameof(Login));
-        }
-        var result = await _userManager.ConfirmEmailAsync(user, decodedToken);
-        if (!result.Succeeded)
-        {
-            TempData["ErrorMessage"] = "Email confirmation failed.";
-            return RedirectToAction(nameof(Login));
-        }
-        TempData["SuccessMessage"] = "Your email has been confirmed successfully. You may now log in.";
-        return RedirectToAction(nameof(Login));
-        }
+
         [AllowAnonymous]
         public IActionResult Login(string? returnUrl = null)
         {
@@ -160,22 +287,14 @@ namespace AriesMagicAppointmentSystem.Controllers
 
             if (!user.EmailConfirmed)
             {
-                const int expiryDays = 3;
-
-                if (user.CreatedAt.AddDays(expiryDays) < DateTime.UtcNow)
+                if (!await _userManager.CheckPasswordAsync(user, model.Password))
                 {
-                    await _userManager.DeleteAsync(user);
-
-                    ModelState.AddModelError(string.Empty,
-                        "Your unverified account has expired. Please register again.");
-
+                    ModelState.AddModelError(string.Empty, "Incorrect Email or Password.");
                     return View(model);
                 }
 
-                ModelState.AddModelError(string.Empty,
-                    "Please confirm your email first before logging in.");
-
-                return View(model);
+                TempData["VerificationError"] = "Email Verification Required. Please verify your email before continuing.";
+                return RedirectToAction(nameof(VerifyEmail), new { userId = user.Id });
             }
 
             var result = await _signInManager.PasswordSignInAsync(

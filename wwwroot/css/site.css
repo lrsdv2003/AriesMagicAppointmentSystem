@@ -5204,3 +5204,14 @@ textarea.form-control {
     font-size: 0.98rem;
   }
 }
+
+/* Email verification OTP */
+.otp-page{min-height:calc(100vh - 120px);display:grid;place-items:center;padding:3rem 1rem;background:radial-gradient(circle at top,rgba(124,58,237,.18),transparent 36%),linear-gradient(180deg,#0a0714 0%,#120d22 100%)}
+.otp-card{width:min(100%,540px);background:rgba(19,14,35,.96);border:1px solid rgba(196,181,253,.2);border-radius:24px;padding:2rem;box-shadow:0 28px 70px rgba(0,0,0,.36);color:#f8fafc}
+.otp-icon{width:64px;height:64px;border-radius:20px;display:grid;place-items:center;margin:0 auto 1rem;background:linear-gradient(135deg,#7c3aed,#4c1d95);color:#fff;font-size:1.7rem;box-shadow:0 12px 30px rgba(124,58,237,.26)}
+.otp-icon-success{background:linear-gradient(135deg,#16a34a,#15803d)}
+.otp-heading{text-align:center}.otp-heading h1{color:#fff;font-size:clamp(1.7rem,4vw,2.2rem);margin:.35rem 0 .6rem}.otp-heading p{color:#cbd5e1;margin:0 0 1.4rem}.otp-heading strong{color:#f8fafc}.otp-eyebrow{color:#d6bcfa;font-size:.76rem;font-weight:800;letter-spacing:.09em;text-transform:uppercase}
+.otp-inputs{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:.65rem;margin:1.2rem 0 .6rem}.otp-digit{width:100%;aspect-ratio:1/1.15;min-width:0;border-radius:14px;border:1px solid #4c3b69;background:#100b1e;color:#fff;text-align:center;font-size:1.55rem;font-weight:800;caret-color:#fbbf24}.otp-digit:focus{outline:3px solid rgba(251,191,36,.35);border-color:#fbbf24;box-shadow:0 0 0 1px #fbbf24}.otp-digit:disabled{opacity:.5}
+.otp-primary-btn{width:100%;min-height:50px;margin-top:1rem;font-weight:800;border:0;background:linear-gradient(135deg,#7c3aed,#5b21b6)}.otp-primary-btn:hover{background:linear-gradient(135deg,#8b5cf6,#6d28d9)}
+.otp-meta{display:flex;justify-content:center;text-align:center;margin:1rem 0;color:#cbd5e1;font-size:.88rem}.otp-meta i{color:#fbbf24;margin-right:.3rem}.otp-resend-form{display:flex;flex-direction:column;align-items:center;gap:.35rem}.otp-resend-btn{color:#e9d5ff;font-weight:700;border:0}.otp-resend-btn:hover:not(:disabled){color:#fff}.otp-resend-btn:disabled{color:#94a3b8;border:0}.otp-resend-countdown{min-height:1.2em;color:#94a3b8;font-size:.82rem}.otp-help{text-align:center;border-top:1px solid rgba(148,163,184,.16);margin-top:1.2rem;padding-top:1rem}.otp-help p{color:#94a3b8;font-size:.82rem}.otp-help a{color:#d8b4fe;text-decoration:none;font-weight:700}.otp-alert{border-radius:12px}.otp-validation:empty{display:none}.otp-success-card{text-align:center}
+@media(max-width:560px){.otp-card{padding:1.35rem;border-radius:20px}.otp-inputs{gap:.4rem}.otp-digit{border-radius:10px;font-size:1.3rem}.otp-page{padding:1.5rem .8rem}}
