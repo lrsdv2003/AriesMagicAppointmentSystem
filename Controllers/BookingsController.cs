@@ -769,7 +769,7 @@ namespace AriesMagicAppointmentSystem.Controllers
 
             return View(bookings);
         }
-        [Authorize(Roles = "Staff,Admin,Owner")]
+        [Authorize(Roles = "Staff,Owner")]
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null) return NotFound();
@@ -1290,13 +1290,7 @@ namespace AriesMagicAppointmentSystem.Controllers
 
         private async Task<bool> HasReachedDailyConfirmedLimit(DateTime eventDate)
         {
-            var customLimit = await _context.DateBookingLimits
-                .Where(x => x.Date.Date == eventDate.Date)
-                .Select(x => (int?)x.MaxBookings)
-                .FirstOrDefaultAsync();
-
-            var defaultSetting = await _context.SystemSettings.FirstOrDefaultAsync();
-            var maxPerDay = customLimit ?? defaultSetting?.MaxBookingsPerDay ?? 3;
+            var maxPerDay = BookingRules.MaximumDailyBookings;
 
             var confirmedCount = await _context.Bookings
                 .CountAsync(b => b.Status == BookingStatus.Confirmed
@@ -1311,11 +1305,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                 .Select(x => x.Date.Date)
                 .ToListAsync();
 
-            var settings = await _context.SystemSettings.FirstOrDefaultAsync();
-            var defaultMax = settings?.MaxBookingsPerDay ?? 3;
-
-            var customLimits = await _context.DateBookingLimits
-                .ToDictionaryAsync(x => x.Date.Date, x => x.MaxBookings);
+            var defaultMax = BookingRules.MaximumDailyBookings;
 
             var confirmedCounts = await _context.Bookings
                 .Where(b => b.Status == BookingStatus.Confirmed)
@@ -1330,7 +1320,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             var fullDates = confirmedCounts
                 .Where(x =>
                 {
-                    var limit = customLimits.ContainsKey(x.Date) ? customLimits[x.Date] : defaultMax;
+                    var limit = defaultMax;
                     return x.Count >= limit;
                 })
                 .Select(x => x.Date)
@@ -1352,13 +1342,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             var isBlocked = blockedEntry != null;
             var blockReason = blockedEntry?.Reason;
 
-            var customLimit = await _context.DateBookingLimits
-                .Where(x => x.Date.Date == date.Date)
-                .Select(x => (int?)x.MaxBookings)
-                .FirstOrDefaultAsync();
-
-            var settings = await _context.SystemSettings.FirstOrDefaultAsync();
-            var maxPerDay = customLimit ?? settings?.MaxBookingsPerDay ?? 3;
+            var maxPerDay = BookingRules.MaximumDailyBookings;
 
             var confirmedCount = await _context.Bookings
                 .CountAsync(b => b.Status == BookingStatus.Confirmed && b.EventDate.Date == date.Date);

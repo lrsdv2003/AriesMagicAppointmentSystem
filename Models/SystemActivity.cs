@@ -30,7 +30,8 @@ namespace AriesMagicAppointmentSystem.Models
         RefundRequested,
         RefundProcessed,
         BookingApproved,
-        BookingDeclined
+        BookingDeclined,
+        UserUpdated
     }
 
     public class SystemActivity

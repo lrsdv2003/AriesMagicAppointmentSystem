@@ -44,6 +44,14 @@ namespace AriesMagicAppointmentSystem.Services
             string? affectedRecordType = null,
             object? metadata = null)
         {
+            var roles = await (from userRole in _context.UserRoles
+                join role in _context.Roles on userRole.RoleId equals role.Id
+                where userRole.UserId == performedByUserId
+                select role.Name).ToListAsync();
+            var auditMetadata = metadata == null
+                ? new Dictionary<string, object?>()
+                : System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object?>>(System.Text.Json.JsonSerializer.Serialize(metadata)) ?? new();
+            auditMetadata["ActorRole"] = roles.Count > 0 ? string.Join(", ", roles) : "Not recorded";
             var activity = new SystemActivity
             {
                 Type = type,
@@ -52,7 +60,7 @@ namespace AriesMagicAppointmentSystem.Services
                 PerformedByUserName = performedByUserName,
                 AffectedRecordId = affectedRecordId,
                 AffectedRecordType = affectedRecordType,
-                MetadataJson = metadata != null ? System.Text.Json.JsonSerializer.Serialize(metadata) : null,
+                MetadataJson = System.Text.Json.JsonSerializer.Serialize(auditMetadata),
                 CreatedAt = DateTime.UtcNow
             };
 

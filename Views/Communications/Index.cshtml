@@ -1,17 +1,18 @@
 @model AriesMagicAppointmentSystem.ViewModels.CommunicationCenterViewModel
 @using AriesMagicAppointmentSystem.Models
+@using AriesMagicAppointmentSystem.Extensions
 @{
     var isClient = User.IsInRole("Client");
     var isStaff = User.IsInRole("Staff");
     var isOwner = User.IsInRole("Owner");
-    var useCompactInternal = isStaff || isOwner;
+    var useCompactInternal = isStaff || isOwner || User.IsInRole("Admin");
     var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
     Layout = isClient ? "_Layout" : "_DashboardLayout";
     ViewData["Title"] = "Messages";
     var selected = Model.SelectedConversation;
     var otherParticipant = selected?.Participants.FirstOrDefault(p => p.UserId != currentUserId);
     var lastMessageId = selected?.Messages.LastOrDefault()?.Id ?? 0;
-    var canCompleteRequests = User.IsInRole("Admin") || User.IsInRole("Owner");
+    var canCompleteRequests = User.IsInRole("Owner");
 }
 
 <div id="communicationCenter"
@@ -200,7 +201,7 @@
                                     <div class="comm-action-card-top"><span><i class="bi bi-lightning-charge-fill"></i> @(message.RequestType ?? "Operational Request")</span><span class="comm-request-status">@(message.RequestStatus ?? "Open")</span></div>
                                     <p>@message.Content</p>
                                     <div class="comm-action-actions">
-                                        @if (!string.IsNullOrWhiteSpace(message.ActionLink))
+                                        @if (!string.IsNullOrWhiteSpace(message.ActionLink) && User.CanFollowModuleLink(message.ActionLink))
                                         {
                                             <a href="@message.ActionLink" class="btn btn-sm comm-secondary-btn"><i class="bi bi-box-arrow-up-right"></i> Open Related Page</a>
                                         }

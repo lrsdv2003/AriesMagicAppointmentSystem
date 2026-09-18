@@ -1,4 +1,5 @@
 using AriesMagicAppointmentSystem.Data;
+using AriesMagicAppointmentSystem.Extensions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -64,7 +65,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                 await _context.SaveChangesAsync();
             }
 
-            if (!string.IsNullOrWhiteSpace(notification.Link) && Url.IsLocalUrl(notification.Link))
+            if (!string.IsNullOrWhiteSpace(notification.Link) && Url.IsLocalUrl(notification.Link) && User.CanFollowModuleLink(notification.Link))
             {
                 return Redirect(notification.Link);
             }

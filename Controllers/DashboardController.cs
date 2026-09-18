@@ -106,7 +106,7 @@ namespace AriesMagicAppointmentSystem.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Admin()
         {
-            var model = await BuildCommonDashboardAsync("Admin");
+            var model = new RoleDashboardViewModel { RoleName = "Admin" };
 
             var clients = await _userManager.GetUsersInRoleAsync("Client");
             var staff = await _userManager.GetUsersInRoleAsync("Staff");
@@ -125,9 +125,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             model.BlockedDates = await _context.BlockedDates
                 .CountAsync(b => b.Date >= DateTime.Today);
 
-            model.PendingReschedules = await _context.RescheduleRequests
-                .CountAsync(r =>
-                    r.Status == RescheduleRequestStatus.Pending);
+
 
             // Count trashed/failed booking requests
             model.TrashedBookingsCount = await _context.Bookings

@@ -159,7 +159,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             return View(requests);
         }
 
-        [Authorize(Roles = "Staff,Admin,Owner")]
+        [Authorize(Roles = "Staff,Owner")]
         public async Task<IActionResult> Index(
             string status = RescheduleRequestStatus.Pending,
             string? search = null,
@@ -247,7 +247,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             return View(model);
         }
 
-        [Authorize(Roles = "Staff,Admin,Owner")]
+        [Authorize(Roles = "Staff,Owner")]
         public async Task<IActionResult> Details(int? id, string? decision = null)
         {
             if (id == null) return NotFound();
@@ -583,13 +583,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                 };
             }
 
-            var customLimit = await _context.DateBookingLimits
-                .AsNoTracking()
-                .Where(x => x.Date.Date == requestedStart.Date)
-                .Select(x => (int?)x.MaxBookings)
-                .FirstOrDefaultAsync();
-            var settings = await _context.SystemSettings.AsNoTracking().FirstOrDefaultAsync();
-            var maxPerDay = customLimit ?? settings?.MaxBookingsPerDay ?? 3;
+            var maxPerDay = BookingRules.MaximumDailyBookings;
             var confirmedCount = await _context.Bookings
                 .CountAsync(b => b.Status == BookingStatus.Confirmed
                             && b.Id != currentBookingId
@@ -641,11 +635,9 @@ namespace AriesMagicAppointmentSystem.Controllers
         private async Task NotifyInternalUsersAsync(string skipUserId, string title, string message, string link)
         {
             var staffUsers = await _userManager.GetUsersInRoleAsync("Staff");
-            var adminUsers = await _userManager.GetUsersInRoleAsync("Admin");
             var ownerUsers = await _userManager.GetUsersInRoleAsync("Owner");
 
             var recipients = staffUsers
-                .Concat(adminUsers)
                 .Concat(ownerUsers)
                 .Where(u => u.Id != skipUserId)
                 .GroupBy(u => u.Id)
@@ -689,13 +681,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             var isBlocked = blockedEntry != null;
             var blockReason = blockedEntry?.Reason;
 
-            var customLimit = await _context.DateBookingLimits
-                .Where(x => x.Date.Date == date.Date)
-                .Select(x => (int?)x.MaxBookings)
-                .FirstOrDefaultAsync();
-
-            var settings = await _context.SystemSettings.FirstOrDefaultAsync();
-            var maxPerDay = customLimit ?? settings?.MaxBookingsPerDay ?? 3;
+            var maxPerDay = BookingRules.MaximumDailyBookings;
 
             var confirmedCount = await _context.Bookings
                 .CountAsync(b => b.Status == BookingStatus.Confirmed

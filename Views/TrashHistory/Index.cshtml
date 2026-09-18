@@ -1,20 +1,8 @@
 @model AriesMagicAppointmentSystem.ViewModels.TrashHistoryIndexViewModel
 @using AriesMagicAppointmentSystem.Models
-
-@{
-    Layout = "_DashboardLayout";
-    ViewData["Title"] = "Trash History";
-    var f = Model?.Filters;
-    var hasActiveFilters = f != null && (
-        f.Reason.HasValue || 
-        (f.PaymentStatus != null && f.PaymentStatus != "All") || 
-        !string.IsNullOrEmpty(f.AssignedStaffId) || 
-        f.DateFrom.HasValue || 
-        f.DateTo.HasValue
-    );
-}
-
-
+@{ Layout = "_DashboardLayout"; ViewData["Title"] = "Trash History"; var f = Model.Filters; var hasActiveFilters = f.Reason.HasValue || f.DateFrom.HasValue || f.DateTo.HasValue; }
+<div class="admin-console">
+<header class="admin-heading"><div><h2>Archived booking records</h2><p>Read-only records of cancelled, declined and expired requests.</p></div></header>
 <div class="am-filter-container">
     <form method="get" asp-action="Index" class="am-filter-bar">
         <div class="am-filter-row">
@@ -57,7 +45,7 @@
                             <option value="">All Reasons</option>
                             @foreach (TrashReason reason in Enum.GetValues(typeof(TrashReason)))
                             {
-                                <option value="@((int)reason)" selected="@(f?.Reason == reason)">@reason</option>
+                                <option value="@((int)reason)" selected="@(f?.Reason == reason)">@AriesMagicAppointmentSystem.ViewModels.AdminActivityPresentation.Label(reason)</option>
                             }
                         </select>
                     </div>
@@ -65,11 +53,11 @@
 
                     <div class="row g-2 mb-3">
                         <div class="col-6">
-                            <label class="form-label" for="TrashHistoryIndexDateFrom">From Date</label>
+                            <label class="form-label" for="TrashHistoryIndexDateFrom">Archived from</label>
 <input id="TrashHistoryIndexDateFrom" type="date" name="DateFrom" value="@(f?.DateFrom?.ToString("yyyy-MM-dd"))" class="form-control form-control-sm" />
                         </div>
                         <div class="col-6">
-                            <label class="form-label" for="TrashHistoryIndexDateTo">To Date</label>
+                            <label class="form-label" for="TrashHistoryIndexDateTo">Archived to</label>
 <input id="TrashHistoryIndexDateTo" type="date" name="DateTo" value="@(f?.DateTo?.ToString("yyyy-MM-dd"))" class="form-control form-control-sm" />
                         </div>
                     </div>
@@ -94,84 +82,17 @@
     </form>
 </div>
 
-<div class="dashboard-panel">
-    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
-        <div>
-            <h3 class="mb-1">Archived Requests</h3>
-            <p class="page-subtitle mb-0">Showing @(Model?.Bookings?.Count ?? 0) of @(Model?.TotalCount ?? 0) archived request(s).</p>
-        </div>
-    </div>
 
-    @if (Model?.Bookings == null || !Model.Bookings.Any())
-    {
-        <div class="empty-state">
-            <i class="bi bi-trash"></i>
-            <h3>No archived requests</h3>
-            
-        </div>
-    }
-    else
-    {
-        <div class="table-clean">
-            <table class="table align-middle">
-                <thead>
-                    <tr>
-                        <th>Booking ID</th>
-                        <th>Client</th>
-                        <th>Event Type</th>
-                        <th>Package</th>
-                        <th>Event Date</th>
-                        <th>Reason</th>
-                        <th>Payment</th>
-                        <th>Archived</th>
-                        <th class="text-end">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var item in Model.Bookings)
-                    {
-                        var paymentClass = item.PaymentStatus switch
-                        {
-                            "Pending" => "status-pending",
-                            "Verified" => "status-verified",
-                            "Rejected" => "status-rejected",
-                            _ => "status-read"
-                        };
-
-                        <tr>
-                            <td><div class="booking-code-cell">@item.BookingCode</div></td>
-                            <td>
-                                <div class="fw-semibold">@item.ClientName</div>
-                                <div class="text-muted small">@item.ClientPhone</div>
-                            </td>
-                            <td>@item.EventType</td>
-                            <td>@item.PackageName</td>
-                            <td>@item.EventDate.ToString("MMM dd, yyyy")</td>
-                            <td>
-                                <span class="badge bg-secondary">@item.ReasonDisplay</span>
-                                @if (!string.IsNullOrWhiteSpace(item.ReasonNotes))
-                                {
-                                    <span class="text-muted small d-block">@item.ReasonNotes</span>
-                                }
-                            </td>
-                            <td><span class="status-badge @paymentClass">@item.PaymentStatus</span></td>
-                            <td>@item.ArchivedAt.ToString("MMM dd, yyyy")</td>
-                            <td class="text-end">
-                                <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary">
-                                    <i class="bi bi-eye me-1"></i> View
-                                </a>
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
-
+<div class="admin-table-wrap"><table class="admin-table"><thead><tr><th scope="col">Record</th><th scope="col">Type</th><th scope="col">Archived by</th><th scope="col">Archived date</th><th scope="col">Recovery</th><th scope="col">Actions</th></tr></thead><tbody>
+@foreach(var item in Model.Bookings) {
+<tr><td data-label="Record"><div><strong>@item.BookingCode</strong><small>@item.ClientName</small></div></td><td data-label="Type"><span class="admin-badge">Booking</span></td><td data-label="Archived by">@item.ArchivedBy</td><td data-label="Archived date">@(item.ArchiveDateRecorded ? item.ArchivedAt.ToString("MMM d, yyyy") : "Not recorded")</td><td data-label="Recovery"><span class="admin-badge">Read-only archive</span></td><td data-label="Actions"><a asp-action="Details" asp-route-id="@item.Id" class="btn btn-outline-secondary">View</a></td></tr>
+}
+</tbody></table>@if(!Model.Bookings.Any()) { <p class="admin-empty">Trash is empty.</p> }</div>
         @if (Model.TotalPages > 1)
         {
             <nav class="mt-3">
                 <ul class="pagination justify-content-center">
-                    @for (var p = 1; p <= Model.TotalPages; p++)
+                    @for (var p = Math.Max(1, Model.Filters.Page - 2); p <= Math.Min(Model.TotalPages, Model.Filters.Page + 2); p++)
                     {
                         <li class="page-item @(p == f?.Page ? "active" : "")">
                             <a class="page-link" asp-action="Index" asp-route-page="@p"
@@ -186,5 +107,12 @@
                 </ul>
             </nav>
         }
-    }
+
+<section class="admin-panel"><h3>Archived packages</h3><p class="admin-note">Package records can be restored through Package Management.</p>
+<div class="admin-table-wrap"><table class="admin-table"><thead><tr><th scope="col">Record</th><th scope="col">Type</th><th scope="col">Archived by</th><th scope="col">Archived date (UTC)</th><th scope="col">Status</th><th scope="col">Actions</th></tr></thead><tbody>
+@foreach(var package in Model.ArchivedPackages) {
+var archive = Model.PackageArchives.GetValueOrDefault(package.Id.ToString());
+<tr><td data-label="Record">@package.Name</td><td data-label="Type"><span class="admin-badge">Package</span></td><td data-label="Archived by">@(archive?.PerformedByUserName ?? "Not recorded")</td><td data-label="Archived date (UTC)">@(archive?.CreatedAt.ToString("MMM d, yyyy h:mm tt") ?? "Not recorded")</td><td data-label="Status">Restorable</td><td data-label="Actions"><a asp-controller="Services" asp-action="Restore" asp-route-id="@package.Id" class="btn btn-outline-secondary">Restore</a></td></tr>
+}
+</tbody></table>@if(!Model.ArchivedPackages.Any()) { <p class="admin-empty">No archived packages.</p> }</div></section>
 </div>

@@ -249,7 +249,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             var payment = await _context.Payments.AsNoTracking().Include(p => p.Booking).FirstOrDefaultAsync(p => p.Id == id);
             if (payment == null) return NotFound();
             var uid = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var internalUser = User.IsInRole("Admin") || User.IsInRole("Owner");
+            var internalUser = User.IsInRole("Owner");
             if (!internalUser && (!User.IsInRole("Client") || payment.Booking?.ApplicationUserId != uid)) return Forbid();
             return ServeFinancialProof(payment.ProofImagePath);
         }
@@ -260,7 +260,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             var refund = await _context.RefundRequests.AsNoTracking().Include(r => r.Booking).FirstOrDefaultAsync(r => r.Id == id);
             if (refund == null) return NotFound();
             var uid = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var internalUser = User.IsInRole("Admin") || User.IsInRole("Owner");
+            var internalUser = User.IsInRole("Owner");
             if (!internalUser && (!User.IsInRole("Client") || refund.Booking?.ApplicationUserId != uid)) return Forbid();
             var path = confirmation ? refund.RefundProofImagePath : refund.PaymentProofImagePath;
             if (string.IsNullOrWhiteSpace(path)) return NotFound();
@@ -317,7 +317,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             return RedirectToAction(nameof(MyUploads));
         }
 
-        [Authorize(Roles = "Admin,Owner")]
+        [Authorize(Roles = "Owner")]
         public async Task<IActionResult> PendingVerification(string filter = "awaiting", string? q = null, string? paymentMethod = null, DateTime? date = null)
         {
             var query = _context.Payments
@@ -352,7 +352,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             return View(payments);
         }
 
-        [Authorize(Roles = "Admin,Owner")]
+        [Authorize(Roles = "Owner")]
         public async Task<IActionResult> Verify(int? id)
         {
             if (id == null) return NotFound();
@@ -376,6 +376,7 @@ namespace AriesMagicAppointmentSystem.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> VerifyConfirmed(int id)
         {
+            await using var transaction = await _context.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
             var payment = await _context.Payments
                 .Include(p => p.Booking)
                 .FirstOrDefaultAsync(p => p.Id == id);
@@ -407,6 +408,20 @@ namespace AriesMagicAppointmentSystem.Controllers
             {
                 TempData["Error"] = "Minimum down payment is ₱2,000.";
                 return RedirectToAction(nameof(Verify), new { id });
+            }
+
+            if (payment.Booking != null && financialBefore.TotalVerifiedPayments <= 0
+                && payment.Booking.Status == BookingStatus.AwaitingVerification)
+            {
+                var booking = payment.Booking;
+                var occupied = await _context.Bookings.CountAsync(b => b.Status == BookingStatus.Confirmed
+                    && b.Id != booking.Id && b.EventDate.Date == booking.EventDate.Date);
+                var blocked = await _context.BlockedDates.AnyAsync(d => d.Date.Date == booking.EventDate.Date);
+                if (blocked || occupied >= BookingRules.MaximumDailyBookings)
+                {
+                    TempData["Error"] = "This date is unavailable. Resolve the booking schedule before verifying payment.";
+                    return RedirectToAction(nameof(Verify), new { id });
+                }
             }
 
             var previousStatus = payment.Status;
@@ -441,6 +456,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             }
 
             await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
 
             var financialAfter = await _financialService.GetSummaryAsync(payment.BookingId);
             if (payment.Booking != null && !string.IsNullOrWhiteSpace(payment.Booking.ApplicationUserId))
@@ -692,7 +708,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             return View(requests);
         }
 
-        [Authorize(Roles = "Admin,Owner")]
+        [Authorize(Roles = "Owner")]
         public async Task<IActionResult> RefundRequests(string filter = "all", string? q = null)
         {
             var query = _context.RefundRequests.AsNoTracking()
@@ -712,7 +728,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             return View(await query.OrderByDescending(r => r.RequestedAt).Take(250).ToListAsync());
         }
 
-        [Authorize(Roles = "Admin,Owner")]
+        [Authorize(Roles = "Owner")]
         public async Task<IActionResult> RefundReview(int id)
         {
             var refund = await _context.RefundRequests.Include(r => r.Booking).ThenInclude(b => b!.Client).Include(r => r.Booking).ThenInclude(b => b!.Service).Include(r => r.OriginalPayment).Include(r => r.OcrVerifications).FirstOrDefaultAsync(r => r.Id == id);

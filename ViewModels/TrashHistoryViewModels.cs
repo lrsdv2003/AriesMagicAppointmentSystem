@@ -28,6 +28,8 @@ namespace AriesMagicAppointmentSystem.ViewModels
         public string? ReasonNotes { get; set; }
         public string PaymentStatus { get; set; } = string.Empty;
         public DateTime ArchivedAt { get; set; }
+        public bool ArchiveDateRecorded { get; set; }
+        public string ArchivedBy { get; set; } = "Not recorded";
         public string? AssignedStaffName { get; set; }
     }
 
@@ -35,6 +37,8 @@ namespace AriesMagicAppointmentSystem.ViewModels
     {
         public TrashHistoryFilterViewModel Filters { get; set; } = new();
         public List<TrashHistoryRowViewModel> Bookings { get; set; } = new();
+        public List<Service> ArchivedPackages { get; set; } = new();
+        public Dictionary<string, SystemActivity> PackageArchives { get; set; } = new();
         public int TotalCount { get; set; }
         public int TotalPages { get; set; }
         public List<ApplicationUser> AvailableStaff { get; set; } = new();
@@ -73,6 +77,8 @@ namespace AriesMagicAppointmentSystem.ViewModels
         public string? ReasonNotes { get; set; }
         public string PaymentStatus { get; set; } = string.Empty;
         public DateTime ArchivedAt { get; set; }
+        public bool ArchiveDateRecorded { get; set; }
+        public string ArchivedBy { get; set; } = "Not recorded";
         public string? AssignedStaffName { get; set; }
         public DateTime CreatedAt { get; set; }
         public int? OriginalBookingId { get; set; }

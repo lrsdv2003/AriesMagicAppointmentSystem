@@ -21,52 +21,52 @@ namespace AriesMagicAppointmentSystem.Controllers
             _activityService = activityService;
         }
 
-        public async Task<IActionResult> Index(string? search, string? status = "All")
+        public async Task<IActionResult> Index(string? search, string? status = "All", string? role = null, string? verification = null)
         {
-            var staffUsers = new List<ApplicationUser>();
-
-            foreach (var user in await _userManager.Users.ToListAsync())
-            {
-                if (await _userManager.IsInRoleAsync(user, "Staff"))
-                {
-                    staffUsers.Add(user);
-                }
-            }
-
+            var users = await _userManager.Users.OrderBy(u => u.FullName).ToListAsync();
+            var roles = new Dictionary<string, string>();
+            foreach (var user in users)
+                roles[user.Id] = string.Join(", ", await _userManager.GetRolesAsync(user));
             if (!string.IsNullOrWhiteSpace(search))
+                users = users.Where(u => u.FullName.Contains(search.Trim(), StringComparison.OrdinalIgnoreCase)
+                    || (u.Email?.Contains(search.Trim(), StringComparison.OrdinalIgnoreCase) ?? false)).ToList();
+            if (!string.IsNullOrWhiteSpace(role))
+                users = users.Where(u => roles[u.Id].Split(", ").Contains(role)).ToList();
+            users = status switch
             {
-                var lowered = search.ToLower();
-
-                staffUsers = staffUsers.Where(u =>
-                    (u.FullName != null && u.FullName.ToLower().Contains(lowered)) ||
-                    (u.Email != null && u.Email.ToLower().Contains(lowered)) ||
-                    (u.PhoneNumber != null && u.PhoneNumber.ToLower().Contains(lowered)))
-                    .ToList();
-            }
-
-            if (status == "Active")
-            {
-                staffUsers = staffUsers.Where(u => u.IsActive).ToList();
-            }
-            else if (status == "Disabled")
-            {
-                staffUsers = staffUsers.Where(u => !u.IsActive).ToList();
-            }
-            else if (status == "NeverLoggedIn")
-            {
-                staffUsers = staffUsers.Where(u => !u.LastLoginAt.HasValue).ToList();
-            }
-
-            ViewBag.Search = search;
-            ViewBag.Status = status;
-
-            return View(staffUsers);
+                "Active" => users.Where(u => u.IsActive && !(u.LockoutEnd > DateTimeOffset.UtcNow)).ToList(),
+                "Disabled" => users.Where(u => !u.IsActive).ToList(),
+                "Locked" => users.Where(u => u.LockoutEnd > DateTimeOffset.UtcNow).ToList(),
+                _ => users
+            };
+            if (verification == "Verified") users = users.Where(u => u.EmailConfirmed).ToList();
+            if (verification == "Unverified") users = users.Where(u => !u.EmailConfirmed).ToList();
+            ViewBag.UserRoles = roles;
+            return View(users);
         }
+
+        [HttpGet]
+        public async Task<IActionResult> Details(string id)
+        {
+            var user = await _userManager.FindByIdAsync(id);
+            if (user == null) return NotFound();
+            ViewBag.Roles = string.Join(", ", await _userManager.GetRolesAsync(user));
+            ViewBag.CanManage = await CanManageStaffAsync(user);
+            return View(user);
+        }
+
+        private async Task<bool> CanManageStaffAsync(ApplicationUser user) =>
+            user.Id != User.FindFirstValue(ClaimTypes.NameIdentifier)
+            && await _userManager.IsInRoleAsync(user, "Staff")
+            && !await _userManager.IsInRoleAsync(user, "Admin")
+            && !await _userManager.IsInRoleAsync(user, "Owner");
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateStaff(StaffUserViewModel model)
         {
+            if (string.IsNullOrWhiteSpace(model.Password))
+                ModelState.AddModelError(nameof(model.Password), "A password is required.");
             if (!ModelState.IsValid)
             {
                 TempData["ErrorMessage"] = "Please complete all required staff account fields.";
@@ -99,7 +99,13 @@ namespace AriesMagicAppointmentSystem.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            await _userManager.AddToRoleAsync(user, "Staff");
+            var roleResult = await _userManager.AddToRoleAsync(user, "Staff");
+            if (!roleResult.Succeeded)
+            {
+                await _userManager.DeleteAsync(user);
+                TempData["ErrorMessage"] = "Unable to create the staff account. Please try again.";
+                return RedirectToAction(nameof(Index));
+            }
 
             await _activityService.LogAsync(
                 SystemActivityType.UserCreated,
@@ -136,6 +142,8 @@ namespace AriesMagicAppointmentSystem.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
+            if (!await CanManageStaffAsync(user)) return Forbid();
+
             user.FullName = model.FullName;
             user.Email = model.Email;
             user.UserName = model.Email;
@@ -150,7 +158,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             }
 
             await _activityService.LogAsync(
-                SystemActivityType.UserEnabled, // Reusing for edit
+                SystemActivityType.UserUpdated,
                 $"Updated staff account: {user.FullName} ({user.Email})",
                 User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "Unknown",
                 User.Identity?.Name ?? "Unknown",
@@ -172,8 +180,16 @@ namespace AriesMagicAppointmentSystem.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
+            if (!await CanManageStaffAsync(user)) return Forbid();
+
             user.IsActive = false;
-            await _userManager.UpdateAsync(user);
+            var result = await _userManager.UpdateAsync(user);
+            if (!result.Succeeded)
+            {
+                TempData["ErrorMessage"] = "Unable to update this user. Please try again.";
+                return RedirectToAction(nameof(Index));
+            }
+            await _userManager.UpdateSecurityStampAsync(user);
 
             await _activityService.LogAsync(
                 SystemActivityType.UserDisabled,
@@ -198,8 +214,16 @@ namespace AriesMagicAppointmentSystem.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
+            if (!await CanManageStaffAsync(user)) return Forbid();
+
             user.IsActive = true;
-            await _userManager.UpdateAsync(user);
+            var result = await _userManager.UpdateAsync(user);
+            if (!result.Succeeded)
+            {
+                TempData["ErrorMessage"] = "Unable to update this user. Please try again.";
+                return RedirectToAction(nameof(Index));
+            }
+            await _userManager.UpdateSecurityStampAsync(user);
 
             await _activityService.LogAsync(
                 SystemActivityType.UserEnabled,

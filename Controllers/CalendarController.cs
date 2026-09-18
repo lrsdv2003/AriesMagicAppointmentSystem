@@ -14,12 +14,14 @@ namespace AriesMagicAppointmentSystem.Controllers
         private readonly ApplicationDbContext _context;
         private readonly IHistoryService _historyService;
         private readonly ISystemActivityService _activityService;
+        private readonly ILogger<CalendarController>? _logger;
 
-        public CalendarController(ApplicationDbContext context, IHistoryService historyService, ISystemActivityService activityService)
+        public CalendarController(ApplicationDbContext context, IHistoryService historyService, ISystemActivityService activityService, ILogger<CalendarController>? logger = null)
         {
             _context = context;
             _historyService = historyService;
             _activityService = activityService;
+            _logger = logger;
         }
 
         /// <summary>
@@ -72,14 +74,8 @@ namespace AriesMagicAppointmentSystem.Controllers
                 })
                 .ToListAsync();
 
-            var dateLimits = await _context.DateBookingLimits
-                .OrderByDescending(x => x.Date)
-                .ToListAsync();
-
-            var dateLimitsForCalendar = dateLimits.ToDictionary(
-                x => x.Date.ToString("yyyy-MM-dd"),
-                x => x.MaxBookings
-            );
+            var dateLimits = new List<DateBookingLimit>();
+            var dateLimitsForCalendar = new Dictionary<string, int>();
 
             var dailyCounts = bookings
                 .GroupBy(b => b.EventDate.Date)
@@ -88,20 +84,12 @@ namespace AriesMagicAppointmentSystem.Controllers
                     g => g.Count()
                 );
 
-            var settings = await _context.SystemSettings.FirstOrDefaultAsync();
-            if (settings == null)
-            {
-                settings = new SystemSetting { MaxBookingsPerDay = 3 };
-                _context.SystemSettings.Add(settings);
-                await _context.SaveChangesAsync();
-            }
-
             var model = new CalendarIndexViewModel
             {
                 Bookings = bookings,
                 Manage = new CalendarManageViewModel
                 {
-                    MaxBookingsPerDay = settings.MaxBookingsPerDay,
+                    MaxBookingsPerDay = BookingRules.MaximumDailyBookings,
                     BlockedDates = await _context.BlockedDates
                         .OrderByDescending(x => x.Date)
                         .ToListAsync(),
@@ -132,33 +120,28 @@ namespace AriesMagicAppointmentSystem.Controllers
 
         private async Task<IActionResult> AdminIndexAsync()
         {
-            var settings = await _context.SystemSettings.FirstOrDefaultAsync();
-            if (settings == null)
-            {
-                settings = new SystemSetting { MaxBookingsPerDay = 3 };
-                _context.SystemSettings.Add(settings);
-                await _context.SaveChangesAsync();
-            }
-
             var model = new CalendarIndexViewModel
             {
                 Bookings = new List<Booking>(), // Admin doesn't see operational bookings
                 Manage = new CalendarManageViewModel
                 {
-                    MaxBookingsPerDay = settings.MaxBookingsPerDay,
+                    MaxBookingsPerDay = BookingRules.MaximumDailyBookings,
                     BlockedDates = await _context.BlockedDates
                         .OrderByDescending(x => x.Date)
                         .ToListAsync(),
-                    DateBookingLimits = await _context.DateBookingLimits
-                        .OrderByDescending(x => x.Date)
-                        .ToListAsync()
+                    DateBookingLimits = new List<DateBookingLimit>()
                 }
             };
 
+            var creatorLogs = await _context.SystemActivities.AsNoTracking()
+                .Where(a => a.AffectedRecordType == "BlockedDate" && a.Description.StartsWith("Blocked date"))
+                .OrderBy(a => a.CreatedAt).ToListAsync();
+            ViewBag.BlockCreators = creatorLogs.GroupBy(a => a.AffectedRecordId ?? "")
+                .ToDictionary(g => g.Key, g => g.First().PerformedByUserName ?? "Not recorded");
             return View(model);
         }
 
-        [Authorize(Roles = "Staff,Admin,Owner")]
+        [Authorize(Roles = "Staff,Owner")]
         [HttpGet]
         public async Task<IActionResult> GetReservationsByDate(DateTime date, bool showHistorical = false)
         {
@@ -199,135 +182,6 @@ namespace AriesMagicAppointmentSystem.Controllers
         [Authorize(Roles = "Admin")]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> UpdateMaxBookingsAjax(
-            [FromForm] CalendarManageViewModel model)
-        {
-            if (model.MaxBookingsPerDay < 1)
-            {
-                return Json(new
-                {
-                    success = false,
-                    message = "Maximum bookings per day must be at least 1."
-                });
-            }
-
-            try
-            {
-                var settings = await _context.SystemSettings.FirstOrDefaultAsync();
-
-                var isNew = settings == null;
-                if (isNew)
-                {
-                    settings = new SystemSetting
-                    {
-                        MaxBookingsPerDay = model.MaxBookingsPerDay
-                    };
-
-                    _context.SystemSettings.Add(settings);
-                }
-
-                var oldMax = isNew ? (int?)null : settings!.MaxBookingsPerDay;
-                settings!.MaxBookingsPerDay = model.MaxBookingsPerDay;
-
-                await _context.SaveChangesAsync();
-
-                await _activityService.LogAsync(
-                    SystemActivityType.SettingsChanged,
-                    isNew
-                        ? $"Set default daily booking limit to {model.MaxBookingsPerDay}"
-                        : $"Updated default daily booking limit from {oldMax} to {model.MaxBookingsPerDay}",
-                    User.FindFirst(
-                        System.Security.Claims.ClaimTypes.NameIdentifier
-                    )?.Value ?? "Unknown",
-                    User.Identity?.Name ?? "Unknown",
-                    "SystemSettings",
-                    "SystemSettings",
-                    new
-                    {
-                        oldMax,
-                        newMax = model.MaxBookingsPerDay
-                    });
-
-                return Json(new
-                {
-                    success = true,
-                    message = "Maximum daily bookings updated successfully."
-                });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new
-                {
-                    success = false,
-                    message = ex.InnerException?.Message ?? ex.Message
-                });
-            }
-        }
-
-        [Authorize(Roles = "Admin")]
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> SetDateLimitAjax([FromForm] CalendarManageViewModel model)
-        {
-            if (model.LimitDate == null || model.LimitMaxBookings == null)
-            {
-                return Json(new { success = false, message = "Please select a valid date and maximum booking limit." });
-            }
-
-            var limitDate = model.LimitDate.Value.Date;
-
-            if (limitDate.Date < DateTime.Today)
-            {
-                return Json(new { success = false, message = "You cannot set a limit for a past date." });
-            }
-
-            if (model.LimitMaxBookings.Value < 0)
-            {
-                return Json(new { success = false, message = "Maximum bookings cannot be negative." });
-            }
-
-            var existing = await _context.DateBookingLimits
-                .FirstOrDefaultAsync(x => x.Date.Date == limitDate.Date);
-
-            var isNew = existing == null;
-            int activityRecordId;
-
-            if (existing == null)
-            {
-                var newLimit = new DateBookingLimit
-                {
-                    Date = limitDate,
-                    MaxBookings = model.LimitMaxBookings.Value
-                };
-
-                _context.DateBookingLimits.Add(newLimit);
-                await _context.SaveChangesAsync();
-                activityRecordId = newLimit.Id;
-            }
-            else
-            {
-                existing.MaxBookings = model.LimitMaxBookings.Value;
-                await _context.SaveChangesAsync();
-                activityRecordId = existing.Id;
-            }
-
-            await _activityService.LogAsync(
-                SystemActivityType.CalendarModified,
-                isNew
-                    ? $"Set custom daily limit of {model.LimitMaxBookings} for {limitDate:MMMM dd, yyyy}"
-                    : $"Updated custom daily limit to {model.LimitMaxBookings} for {limitDate:MMMM dd, yyyy}",
-                User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "Unknown",
-                User.Identity?.Name ?? "Unknown",
-                activityRecordId.ToString(),
-                "DateBookingLimit",
-                new { date = limitDate, maxBookings = model.LimitMaxBookings.Value, isNew }
-            );
-
-            return Json(new { success = true, message = "Date-specific booking limit saved successfully." });
-        }
-        [Authorize(Roles = "Admin")]
-        [HttpPost]
-        [ValidateAntiForgeryToken]
         public async Task<IActionResult> BlockDateAjax(
             [FromForm] CalendarManageViewModel model)
         {
@@ -341,12 +195,12 @@ namespace AriesMagicAppointmentSystem.Controllers
                 });
             }
 
-            if (string.IsNullOrWhiteSpace(model.BlockReason))
+            if (string.IsNullOrWhiteSpace(model.BlockReason) || model.BlockReason.Length > 255)
             {
                 return Json(new
                 {
                     success = false,
-                    message = "Please provide a reason."
+                    message = "Please provide a reason of up to 255 characters."
                 });
             }
 
@@ -404,10 +258,11 @@ namespace AriesMagicAppointmentSystem.Controllers
             }
             catch (Exception ex)
             {
+                _logger?.LogError(ex, "Unable to update blocked date.");
                 return StatusCode(500, new
                 {
                     success = false,
-                    message = ex.InnerException?.Message ?? ex.Message
+                    message = "Unable to update calendar availability. Please try again."
                 });
             }
         }
@@ -441,33 +296,5 @@ namespace AriesMagicAppointmentSystem.Controllers
             return Json(new { success = true, message = "Blocked date removed successfully." });
         }
 
-        [Authorize(Roles = "Admin")]
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> RemoveDateLimitAjax(int id)
-        {
-            var item = await _context.DateBookingLimits.FindAsync(id);
-            if (item == null)
-            {
-                return Json(new { success = false, message = "Date-specific booking limit not found." });
-            }
-
-            var limitDate = item.Date;
-            var maxBookings = item.MaxBookings;
-
-            _context.DateBookingLimits.Remove(item);
-            await _context.SaveChangesAsync();
-
-            await _activityService.LogAsync(
-                SystemActivityType.CalendarModified,
-                $"Removed custom daily limit of {maxBookings} for {limitDate:MMMM dd, yyyy}",
-                User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "Unknown",
-                User.Identity?.Name ?? "Unknown",
-                id.ToString(),
-                "DateBookingLimit"
-            );
-
-            return Json(new { success = true, message = "Date-specific booking limit removed successfully." });
-        }
     }
 }

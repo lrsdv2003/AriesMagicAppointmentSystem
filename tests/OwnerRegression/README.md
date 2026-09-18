@@ -25,7 +25,7 @@ external email delivery, or live client messaging.
 
 ## Shared filter regression checks
 
-The render option now includes Client, Staff, Admin and Owner and interface fixtures (20 pages total).
+The render option now includes Client, Staff, Admin and Owner interface fixtures (26 pages total).
 Run the browser checks from the repository root with Puppeteer and Chromium installed:
 
     node tests/OwnerRegression/filters.browser.mjs
@@ -51,3 +51,22 @@ All browser requests are intercepted; no live application data is changed.
 This checks the actual FullCalendar rendering at 1440, 1024, 768 and 390 pixels, date/marker
 separation, Staff management restrictions, inclusion add/remove submission, summary preview,
 blocked-day keyboard access and notification labels.
+
+
+## Admin console checks
+
+The same isolated regression harness exercises authorization policies for all four roles,
+financial proof access, fixed capacity at confirmation and rescheduling, legacy-limit bypass
+prevention, Staff account target restrictions, and audit role snapshots.
+No application database migration is required. Legacy configurable limits remain stored but
+are ignored; the fixed rule is three confirmed bookings per day.
+
+After rendering fixtures, run with Puppeteer as above:
+
+    node tests/OwnerRegression/admin.browser.mjs
+
+This checks nine Admin pages at 1440, 1024, 768 and 390 pixels, labels, navigation cleanup,
+sticky header, keyboard modal dismissal, blocked-date confirmation/error recovery, and shared
+messaging layout. Financial services, email and live user accounts are not exercised by
+the browser fixtures. Booking archives remain read-only; package restoration uses the
+existing confirmation workflow. Unrecorded historical actors/roles/dates are not inferred.

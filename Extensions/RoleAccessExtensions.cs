@@ -30,7 +30,7 @@ namespace AriesMagicAppointmentSystem.Extensions
 
         // Reschedule requests
         public static bool CanViewRescheduleRequests(this ClaimsPrincipal user) =>
-            user.IsInRole("Staff") || user.IsInRole("Admin") || user.IsInRole("Owner");
+            user.IsInRole("Staff") || user.IsInRole("Owner");
 
         public static bool CanApproveRescheduleRequests(this ClaimsPrincipal user) =>
             user.IsInRole("Staff");
@@ -54,9 +54,18 @@ namespace AriesMagicAppointmentSystem.Extensions
         public static bool CanViewHistory(this ClaimsPrincipal user) =>
             user.IsInRole("Owner") || user.IsInRole("Staff");
 
-        // Owner and Admin can export/print history reports. Staff can view but not export.
+        // Owner can export/print history reports. Staff can view but not export.
         public static bool CanExportHistoryReports(this ClaimsPrincipal user) =>
-            user.IsInRole("Owner") || user.IsInRole("Admin");
+            user.IsInRole("Owner");
+
+        // Presentation guard for historical links; destination endpoints enforce authorization.
+        public static bool CanFollowModuleLink(this ClaimsPrincipal user, string? link)
+        {
+            if (!user.IsInRole("Admin") || string.IsNullOrWhiteSpace(link)) return true;
+            var module = link.TrimStart('/').Split('/', '?', '#')[0];
+            return !new[] { "Payments", "Bookings", "RescheduleRequests", "Reports", "History" }
+                .Contains(module, StringComparer.OrdinalIgnoreCase);
+        }
 
         // Nobody can edit an archived/completed booking through the History module -
         // it is a permanent, read-only record. Kept here so the rule lives in one place.

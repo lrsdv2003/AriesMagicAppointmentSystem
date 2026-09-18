@@ -1,8 +1,9 @@
 @model AriesMagicAppointmentSystem.Models.Notification
 @using AriesMagicAppointmentSystem.ViewModels
+@using AriesMagicAppointmentSystem.Extensions
 @{
     var presentation = NotificationPresentation.From(Model);
-    var hasTarget = !string.IsNullOrWhiteSpace(Model.Link) && Url.IsLocalUrl(Model.Link);
+    var hasTarget = !string.IsNullOrWhiteSpace(Model.Link) && Url.IsLocalUrl(Model.Link) && User.CanFollowModuleLink(Model.Link);
 }
 <article class="notice-row @(Model.IsRead ? "notice-read" : "notice-unread") notice-@presentation.Accent">
     <span class="notice-icon" aria-hidden="true"><i class="bi @presentation.Icon"></i></span>

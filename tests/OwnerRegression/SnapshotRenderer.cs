@@ -62,18 +62,22 @@ static class SnapshotRenderer
             ("Bookings","MyBookings",new[] {booking}),
             ("RescheduleRequests","Index",new RescheduleRequestIndexViewModel()),
             ("History","Index",new HistoryIndexViewModel { AvailableServices = [package], TotalPages = 2, TotalCount = 16, Bookings = [new HistoryRowViewModel { BookingCode = "BK-2026-001" }] }),
-            ("SystemActivity","Index",new SystemActivityIndexViewModel { Page = 1, PageSize = 20, TotalPages = 2, Activities = [new SystemActivity()] }),
-            ("TrashHistory","Index",new TrashHistoryIndexViewModel { TotalPages = 2, Bookings = [new TrashHistoryRowViewModel()] }),
+            ("SystemActivity","Index",new SystemActivityIndexViewModel { Page = 1, PageSize = 20, TotalCount=21, TotalPages = 2, ActivityTypes=Enum.GetValues<SystemActivityType>().ToList(), Activities = [new SystemActivity {Type=SystemActivityType.PaymentVerified,PerformedByUserName="Test Owner",Description="Payment reviewed after proof comparison.",AffectedRecordType="Payment",AffectedRecordId="42",MetadataJson=System.Text.Json.JsonSerializer.Serialize(new { ActorRole="Owner" })}] }),
+            ("TrashHistory","Index",new TrashHistoryIndexViewModel { TotalPages = 2, ArchivedPackages=[new Service {Id=55,Name="Archived Fixture",IsArchived=true}], Bookings = [new TrashHistoryRowViewModel {BookingCode="BK-2026-001",ClientName="Test Client",ArchiveDateRecorded=true,ArchivedAt=DateTime.UtcNow,ArchivedBy="Test Staff"}] }),
             ("Calendar","StaffIndex",new CalendarIndexViewModel { Bookings = Enumerable.Range(0,8).Select(i=>new Booking { Id = 990+i, Status = BookingStatus.Confirmed, EventDate = DateTime.Today.AddDays(i<6?2:1), StartTime = DateTime.Today.AddHours(10), EndTime = DateTime.Today.AddHours(12), PackageName = i%2==0?"Regression Package":"Other Package", PartyVenue = "Fixture Venue" }).ToList() }),
-            ("UserManagement","Index",Array.Empty<ApplicationUser>()),
+            ("UserManagement","Index",Enumerable.Range(1,12).Select(i=>new ApplicationUser {Id="fixture-"+i,FullName="Test User "+i,Email="user"+i+"@example.test",EmailConfirmed=i%2==0,IsActive=i%3!=0}).ToArray()),
+            ("UserManagement","Details",new ApplicationUser {Id="fixture-1",FullName="Test Staff",Email="staff@example.test",PhoneNumber="123456789",EmailConfirmed=true}),
+            ("Dashboard","Admin",new RoleDashboardViewModel {TotalUsers=12,ActiveStaff=3,ActiveClients=6,ActivePackages=4,ArchivedPackages=2,BlockedDates=3}),
+            ("Calendar","Index",new CalendarIndexViewModel {Manage=new CalendarManageViewModel {MaxBookingsPerDay=3,BlockedDates=[new BlockedDate {Id=1,Date=DateTime.Today.AddDays(10),Reason="System maintenance"}]}}),
+            ("TrashHistory","Details",new TrashHistoryDetailsViewModel {Trash=new TrashHistoryDetailViewModel {BookingCode="BK-2026-001",ClientName="Test Client",PackageName="Test Package",ReasonNotes="Request expired."}}),
             ("Communications","Index",new CommunicationCenterViewModel { IsInternalUser = true })
         };
         pages = pages.Concat(filterPages).ToArray();
         var rendered = 0;
         foreach(var page in pages)
         {
-            var defaultRole = page.Action == "MyBookings" ? "Client" : page.Action == "StaffIndex" || page.Controller == "RescheduleRequests" ? "Staff" : page.Controller is "UserManagement" or "SystemActivity" or "TrashHistory" ? "Admin" : "Owner";
-            var roles = page.Controller == "Services" && page.Action == "Index" ? new[] { "Owner", "Staff" } : page.Controller == "Notifications" ? new[] { "Owner", "Client" } : new[] { defaultRole };
+            var defaultRole = page.Action == "Admin" || page.Controller == "Calendar" && page.Action == "Index" ? "Admin" : page.Action == "MyBookings" ? "Client" : page.Action == "StaffIndex" || page.Controller == "RescheduleRequests" ? "Staff" : page.Controller is "UserManagement" or "SystemActivity" or "TrashHistory" ? "Admin" : "Owner";
+            var roles = page.Controller == "Services" && page.Action == "Index" ? new[] { "Owner", "Staff", "Admin" } : page.Controller == "Communications" ? new[] { "Owner", "Admin" } : page.Controller == "Notifications" ? new[] { "Owner", "Client" } : new[] { defaultRole };
             foreach (var role in roles)
             {
             var http = new DefaultHttpContext {
@@ -91,6 +95,8 @@ static class SnapshotRenderer
             data["FinancialSummary"]=finance; data["ExpectedReceiver"]="Aries Magic"; data["Filter"]="awaiting";
             data["PackageColors"] = new Dictionary<string,string> { ["Regression Package"] = "pink", ["Other Package"] = "blue" };
             data["BlockedDates"] = new[] { new { date=DateTime.Today.AddDays(2).ToString("yyyy-MM-dd"), reason="Fixture blocked date" } };
+            data["UserRoles"] = Enumerable.Range(1,12).ToDictionary(i=>"fixture-"+i,i=>new[]{"Client","Staff","Owner","Admin"}[i%4]);
+            data["Roles"]="Staff";data["CanManage"]=true;
             using var writer = new StringWriter();
             var viewContext = new ViewContext(context,result.View,data,new TempDataDictionary(http,new EmptyTempData()),writer,new HtmlHelperOptions());
             await result.View.RenderAsync(viewContext);

@@ -67,21 +67,23 @@ namespace AriesMagicAppointmentSystem.Services
             if (filters.DateFrom.HasValue)
             {
                 var from = filters.DateFrom.Value.Date;
-                query = query.Where(b => b.CreatedAt >= from);
+                query = query.Where(b => b.ArchivedAt >= from);
             }
 
             if (filters.DateTo.HasValue)
             {
                 var to = filters.DateTo.Value.Date.AddDays(1);
-                query = query.Where(b => b.CreatedAt < to);
+                query = query.Where(b => b.ArchivedAt < to);
             }
 
             var totalCount = await query.CountAsync();
             var page = filters.Page < 1 ? 1 : filters.Page;
-            var pageSize = filters.PageSize < 1 ? 20 : filters.PageSize;
+            var pageSize = Math.Clamp(filters.PageSize, 1, 100);
+            filters.Page = page;
+            filters.PageSize = pageSize;
 
             var bookings = await query
-                .OrderByDescending(b => b.CreatedAt)
+                .OrderByDescending(b => b.ArchivedAt)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
@@ -100,7 +102,8 @@ namespace AriesMagicAppointmentSystem.Services
                 PaymentStatus = b.Payments.Any()
                     ? b.Payments.OrderByDescending(p => p.UploadedAt).First().Status
                     : "No Payment",
-                ArchivedAt = b.ArchivedAt ?? b.CreatedAt
+                ArchiveDateRecorded = b.ArchivedAt.HasValue,
+                ArchivedAt = b.ArchivedAt ?? default
             }).ToList();
 
             var availableStaff = await _context.Users
@@ -108,9 +111,19 @@ namespace AriesMagicAppointmentSystem.Services
                 .Select(u => new ApplicationUser { Id = u.Id, FullName = u.FullName })
                 .ToListAsync();
 
+            var archiveLogs = await _context.SystemActivities.AsNoTracking()
+                .Where(a => a.AffectedRecordType == "Booking" && (a.Type == SystemActivityType.BookingArchived || a.Type == SystemActivityType.BookingDeleted || a.Type == SystemActivityType.BookingExpired || a.Type == SystemActivityType.BookingDeclined))
+                .OrderByDescending(a => a.CreatedAt).ToListAsync();
+            foreach (var row in rows)
+                row.ArchivedBy = archiveLogs.FirstOrDefault(a => a.AffectedRecordId == row.Id.ToString())?.PerformedByUserName ?? "Not recorded";
+            var archivedPackages = await _context.Services.AsNoTracking().Where(s => s.IsArchived).OrderBy(s => s.Name).ToListAsync();
+            var packageLogs = await _context.SystemActivities.AsNoTracking()
+                .Where(a => a.Type == SystemActivityType.ServiceArchived).OrderByDescending(a => a.CreatedAt).ToListAsync();
             return new TrashHistoryIndexViewModel
             {
                 Filters = filters,
+                ArchivedPackages = archivedPackages,
+                PackageArchives = packageLogs.GroupBy(a => a.AffectedRecordId ?? "").ToDictionary(g => g.Key, g => g.First()),
                 Bookings = rows,
                 TotalCount = totalCount,
                 TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize),
@@ -127,7 +140,7 @@ namespace AriesMagicAppointmentSystem.Services
                 .Include(b => b.Payments)
                 .FirstOrDefaultAsync(b => b.Id == id);
 
-            if (booking == null)
+            if (booking == null || (booking.Status != BookingStatus.Declined && booking.Status != BookingStatus.Cancelled && booking.Status != BookingStatus.Expired))
             {
                 return null;
             }
@@ -159,7 +172,8 @@ namespace AriesMagicAppointmentSystem.Services
                 PaymentStatus = booking.Payments.Any()
                     ? booking.Payments.OrderByDescending(p => p.UploadedAt).First().Status
                     : "No Payment",
-                ArchivedAt = booking.ArchivedAt ?? booking.CreatedAt,
+                ArchiveDateRecorded = booking.ArchivedAt.HasValue,
+                ArchivedAt = booking.ArchivedAt ?? default,
                 AssignedStaffName = booking.AssignedStaffName,
                 CreatedAt = booking.CreatedAt,
                 OriginalBookingId = booking.OriginalBookingId
@@ -216,7 +230,7 @@ namespace AriesMagicAppointmentSystem.Services
         {
             return booking.Status switch
             {
-                BookingStatus.Declined => "Booking was declined by staff/admin.",
+                BookingStatus.Declined => "Booking was declined during review.",
                 BookingStatus.Cancelled => "Booking was cancelled by the client.",
                 BookingStatus.Expired => "Booking request expired without action.",
                 _ => "Booking request was invalid or abandoned."

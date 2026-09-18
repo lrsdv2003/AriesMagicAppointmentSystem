@@ -36,6 +36,7 @@
     <link rel="stylesheet" href="~/css/filters.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/package-editor.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/notifications.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/admin-console.css" asp-append-version="true" />
 </head>
 <body class="dashboard-body @(User.IsInRole("Staff") ? "staff-dashboard" : User.IsInRole("Admin") ? "admin-dashboard" : User.IsInRole("Owner") ? "owner-dashboard" : "")">
     <div class="dashboard-shell">
@@ -98,7 +99,7 @@
                             <a asp-controller="Calendar" asp-action="Index"
                                class="sidebar-link @(currentController == "Calendar" ? "active" : "")">
                                 <i class="bi bi-calendar3"></i>
-                                Calendar
+                                Calendar Management
                             </a>
 
                             <a asp-controller="Services" asp-action="Index"
@@ -107,8 +108,6 @@
                                 Packages
                             </a>
 
-                            <a asp-controller="Payments" asp-action="PendingVerification" class="sidebar-link @(currentController == "Payments" && currentAction == "PendingVerification" ? "active" : "")"><i class="bi bi-shield-check"></i>Verify Payments</a>
-                            <a asp-controller="Payments" asp-action="RefundRequests" class="sidebar-link @(currentController == "Payments" && (currentAction == "RefundRequests" || currentAction == "RefundReview") ? "active" : "")"><i class="bi bi-arrow-counterclockwise"></i>Refund Reviews</a>
                             <a asp-controller="TrashHistory" asp-action="Index"
                                class="sidebar-link @(currentController == "TrashHistory" ? "active" : "")">
                                 <i class="bi bi-trash"></i>
@@ -167,15 +166,6 @@
                             </a>
                         }
 
-                        @if (User.IsInRole("Admin"))
-                        {
-                            <a asp-controller="Communications" asp-action="Index"
-                               class="sidebar-link communication-nav-link @(currentController == "Communications" ? "active" : "")">
-                                <i class="bi bi-chat-dots-fill"></i>
-                                Messages
-                                <span class="communication-unread-badge" @(unreadMessageCount == 0 ? "hidden" : null)>@(unreadMessageCount > 99 ? "99+" : unreadMessageCount)</span>
-                            </a>
-                        }
                     }
                 </nav>
             </div>
@@ -214,12 +204,6 @@
                                 </span>
                             }
                     </a>
-                    @if (User.IsInRole("Admin"))
-                    {
-                        <button type="button" class="topbar-icon" title="Settings" aria-label="Settings">
-                            <i class="bi bi-gear-fill"></i>
-                        </button>
-                    }
 
                     @{
                         var userRole = "User";
@@ -288,5 +272,6 @@
     <script src="~/js/communication-global.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
     <script src="~/js/filters.js" asp-append-version="true"></script>
+    <script src="~/js/admin-console.js" asp-append-version="true"></script>
 </body>
 </html>

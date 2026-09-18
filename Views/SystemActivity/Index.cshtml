@@ -1,12 +1,9 @@
 @model AriesMagicAppointmentSystem.ViewModels.SystemActivityIndexViewModel
 @using AriesMagicAppointmentSystem.Models
-
-@{
-    Layout = "_DashboardLayout";
-    ViewData["Title"] = "System Activity History";
-}
-
-
+@using AriesMagicAppointmentSystem.ViewModels
+@{ Layout = "_DashboardLayout"; ViewData["Title"] = "System Activity"; }
+<div class="admin-console">
+<header class="admin-heading"><div><h2>System activity</h2><p>Newest activity first. Dates and times are UTC.</p></div></header>
 <div class="am-filter-container">
     <form method="get" asp-action="Index" class="am-filter-bar">
         <div class="am-filter-row">
@@ -48,7 +45,7 @@
                             {
                                 foreach (var t in Model.ActivityTypes)
                                 {
-                                    <option value="@((int)t)" selected="@(Model.TypeFilter == t)">@t</option>
+                                    <option value="@((int)t)" selected="@(Model.TypeFilter == t)">@AdminActivityPresentation.Label(t)</option>
                                 }
                             }
                         </select>
@@ -84,99 +81,25 @@
     </form>
 </div>
 
-<div class="dashboard-panel">
-    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
-        <div>
-            <h3 class="mb-1">Activity Log</h3>
-            <p class="page-subtitle mb-0">Showing @(Model?.Activities?.Count ?? 0) of @(Model?.TotalCount ?? 0) activities.</p>
-        </div>
-    </div>
 
-    @if (Model?.Activities == null || !Model.Activities.Any())
-    {
-        <div class="empty-state">
-            <i class="bi bi-activity"></i>
-            <h3>No activity recorded</h3>
-            
-        </div>
-    }
-    else
-    {
-        <div class="table-clean">
-            <table class="table align-middle">
-                <thead>
-                    <tr>
-                        <th style="width: 120px;">Time</th>
-                        <th>Action</th>
-                        <th>Performed By</th>
-                        <th>Affected Record</th>
-                        <th>Details</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var activity in Model.Activities)
-                    {
-                        var badgeClass = activity.Type switch
-                        {
-                            SystemActivityType.UserCreated => "bg-success",
-                            SystemActivityType.UserDisabled => "bg-danger",
-                            SystemActivityType.UserEnabled => "bg-success",
-                            SystemActivityType.ServiceCreated => "bg-primary",
-                            SystemActivityType.ServiceUpdated => "bg-info",
-                            SystemActivityType.ServiceArchived => "bg-warning text-dark",
-                            SystemActivityType.ServiceRestored => "bg-success",
-                            SystemActivityType.CalendarModified => "bg-primary",
-                            SystemActivityType.SettingsChanged => "bg-secondary",
-                            SystemActivityType.BookingArchived => "bg-info",
-                            SystemActivityType.PaymentVerified => "bg-success",
-                            SystemActivityType.PaymentRejected => "bg-danger",
-                            SystemActivityType.RefundApproved => "bg-success",
-                            SystemActivityType.RefundRejected => "bg-danger",
-                            SystemActivityType.RescheduleApproved => "bg-success",
-                            SystemActivityType.RescheduleRejected => "bg-danger",
-                            _ => "bg-secondary"
-                        };
-
-                        <tr>
-                            <td class="text-nowrap small">@activity.CreatedAt.ToString("MMM dd, yyyy h:mm tt")</td>
-                            <td>
-                                <span class="badge @badgeClass me-2">@activity.Type</span>
-                                <div class="d-inline">@activity.Description</div>
-                            </td>
-                            <td>@activity.PerformedByUserName</td>
-                            <td>
-                                @if (!string.IsNullOrEmpty(activity.AffectedRecordType))
-                                {
-                                    <div class="small">
-                                        <strong>@activity.AffectedRecordType</strong>
-                                        @if (!string.IsNullOrEmpty(activity.AffectedRecordId))
-                                        {
-                                            <span class="text-muted"> #@activity.AffectedRecordId</span>
-                                        }
-                                    </div>
-                                }
-                                else
-                                {
-                                    <span class="text-muted">-</span>
-                                }
-                            </td>
-                            <td class="text-muted small">
-                                @if (!string.IsNullOrEmpty(activity.MetadataJson))
-                                {
-                                    @activity.MetadataJson
-                                }
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
-
+<div class="admin-table-wrap"><table class="admin-table"><thead><tr><th scope="col">User</th><th scope="col">Role at time</th><th scope="col">Activity</th><th scope="col">Module</th><th scope="col">Target</th><th scope="col">Date &amp; time</th><th scope="col">Result</th></tr></thead><tbody>
+@foreach(var activity in Model.Activities) {
+<tr>
+<td data-label="User">@(activity.PerformedByUserName ?? "Not recorded")</td>
+<td data-label="Role at time"><span class="admin-badge">@AdminActivityPresentation.ActorRole(activity)</span></td>
+<td data-label="Activity"><div><strong>@AdminActivityPresentation.Label(activity.Type)</strong><details><summary>View Details</summary><p>@activity.Description</p></details></div></td>
+<td data-label="Module"><span class="admin-badge">@AdminActivityPresentation.Category(activity.Type)</span></td>
+<td data-label="Target">@(activity.AffectedRecordType == null ? "Not recorded" : AdminActivityPresentation.Label(activity.AffectedRecordType) + " #" + activity.AffectedRecordId)</td>
+<td data-label="Date & time"><time datetime="@activity.CreatedAt.ToString("O")">@activity.CreatedAt.ToString("MMM d, yyyy h:mm tt")</time></td>
+<td data-label="Result"><span class="admin-badge">@AdminActivityPresentation.Result(activity.Type)</span></td>
+</tr>
+}
+</tbody></table>@if(!Model.Activities.Any()) { <p class="admin-empty">No system activity found for the selected filters.</p> }</div>
         @if (Model.TotalPages > 1)
         {
             <nav class="mt-3">
                 <ul class="pagination justify-content-center">
-                    @for (var p = 1; p <= Model.TotalPages; p++)
+                    @for (var p = Math.Max(1, Model.Page - 2); p <= Math.Min(Model.TotalPages, Model.Page + 2); p++)
                     {
                         <li class="page-item @(p == Model.Page ? "active" : "")">
                             <a class="page-link" asp-action="Index" asp-route-page="@p"
@@ -189,5 +112,6 @@
                 </ul>
             </nav>
         }
-    }
+
+<p class="admin-note">@Model.TotalCount recorded activities. Historical roles are shown only when recorded.</p>
 </div>
