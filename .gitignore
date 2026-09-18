@@ -16,3 +16,6 @@ App_Data/financial-proofs/
 
 # Temporary Owner validation output
 .tmp-owner-build/
+
+# Private internal account photos
+App_Data/profiles/

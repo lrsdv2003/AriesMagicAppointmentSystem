@@ -69,6 +69,7 @@ static class SnapshotRenderer
             ("UserManagement","Details",new ApplicationUser {Id="fixture-1",FullName="Test Staff",Email="staff@example.test",PhoneNumber="123456789",EmailConfirmed=true}),
             ("Calendar","Index",new CalendarIndexViewModel {Manage=new CalendarManageViewModel {MaxBookingsPerDay=3,BlockedDates=[new BlockedDate {Id=1,Date=DateTime.Today.AddDays(10),Reason="System maintenance"}]}}),
             ("TrashHistory","Details",new TrashHistoryDetailsViewModel {Trash=new TrashHistoryDetailViewModel {BookingCode="BK-2026-001",ClientName="Test Client",PackageName="Test Package",ReasonNotes="Request expired."}}),
+            ("InternalProfile","Index",new InternalProfileViewModel {DisplayName="Test Internal User",Email="internal@example.test",Role="Staff",Status="Active",Verified=true,CreatedAt=DateTime.UtcNow.AddYears(-1),Personal=new() {FullName="Test Internal User",PhoneNumber="09123456789"},PasswordRules=["At least 6 characters."]}),
             ("Communications","Index",new CommunicationCenterViewModel { IsInternalUser = true })
         };
         pages = pages.Concat(filterPages).ToArray();
@@ -78,12 +79,13 @@ static class SnapshotRenderer
         foreach(var page in pages)
         {
             var defaultRole = page.Controller == "Dashboard" ? page.Action : page.Action == "Admin" || page.Controller == "Calendar" && page.Action == "Index" ? "Admin" : page.Action == "MyBookings" ? "Client" : page.Action == "StaffIndex" || page.Controller == "RescheduleRequests" ? "Staff" : page.Controller is "UserManagement" or "SystemActivity" or "TrashHistory" ? "Admin" : "Owner";
-            var roles = page.Controller == "Services" && page.Action == "Index" ? new[] { "Owner", "Staff", "Admin" } : page.Controller == "Communications" ? new[] { "Owner", "Admin" } : page.Controller == "Notifications" ? new[] { "Owner", "Client" } : new[] { defaultRole };
+            var roles = page.Controller == "InternalProfile" ? new[] { "Owner", "Staff", "Admin" } : page.Controller == "Services" && page.Action == "Index" ? new[] { "Owner", "Staff", "Admin" } : page.Controller == "Communications" ? new[] { "Owner", "Admin" } : page.Controller == "Notifications" ? new[] { "Owner", "Client" } : new[] { defaultRole };
             foreach (var role in roles)
             {
             foreach(var state in page.Controller == "Dashboard" ? new[]{"populated","empty","error"} : new[]{"populated"})
             {
             object fixtureModel = page.Model;
+            if(fixtureModel is InternalProfileViewModel account) account.Role=role;
             if(page.Controller == "Dashboard" && state != "populated") {
                 var original=(RoleDashboardViewModel)page.Model;
                 fixtureModel = state == "error" && role == "Owner" && dashboards != null
@@ -130,7 +132,7 @@ sealed class SnapshotUrlHelper(ActionContext context) : IUrlHelper
     public string? Action(UrlActionContext action) {
         var values=new RouteValueDictionary(action.Values);
         return "/" + (action.Controller ?? context.RouteData.Values["controller"]) + "/" + (action.Action ?? context.RouteData.Values["action"]) +
-            (values.Count>0?"?"+string.Join("&",values.Select(v=>Uri.EscapeDataString(v.Key)+"="+Uri.EscapeDataString(v.Value?.ToString()??""))):"");
+            (values.Count>0?"?"+string.Join("&",values.Select(v=>Uri.EscapeDataString(v.Key)+"="+Uri.EscapeDataString(v.Value?.ToString()??""))):"") + (string.IsNullOrEmpty(action.Fragment) ? "" : "#" + action.Fragment);
     }
     public string? Content(string? path) => path?.Replace("~/","/");
     public bool IsLocalUrl(string? url) => url?.StartsWith("/") == true;

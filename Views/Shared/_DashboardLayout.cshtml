@@ -38,6 +38,7 @@
     <link rel="stylesheet" href="~/css/notifications.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/admin-console.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/role-dashboards.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/internal-profile.css" asp-append-version="true" />
 </head>
 <body class="dashboard-body @(User.IsInRole("Staff") ? "staff-dashboard" : User.IsInRole("Admin") ? "admin-dashboard" : User.IsInRole("Owner") ? "owner-dashboard" : "")">
     <div class="dashboard-shell">
@@ -206,38 +207,7 @@
                             }
                     </a>
 
-                    @{
-                        var userRole = "User";
-                        if (User.IsInRole("Owner"))
-                        {
-                            userRole = "Owner";
-                        }
-                        else if (User.IsInRole("Admin"))
-                        {
-                            userRole = "Admin";
-                        }
-                        else if (User.IsInRole("Staff"))
-                        {
-                            userRole = "Staff";
-                        }
-                    }
-
-                    <div class="topbar-user-dropdown">
-                        <div class="topbar-user-text">
-                            <div class="topbar-user-name">@userRole User</div>
-                            <div class="topbar-user-email">@User.Identity?.Name</div>
-                        </div>
-
-                        <div class="topbar-avatar">AM</div>
-
-                        <button type="button"
-                                class="topbar-logout-trigger"
-                                title="Logout"
-                                data-bs-toggle="modal"
-                                data-bs-target="#logoutConfirmModal">
-                            <i class="bi bi-box-arrow-right topbar-chevron"></i>
-                        </button>
-                    </div>
+                    <partial name="_InternalAccountMenu" model="@(_context.Users.Find(currentUserId) ?? new AriesMagicAppointmentSystem.Models.ApplicationUser())" />
                 </div>
             </header>
 
@@ -272,6 +242,7 @@
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/communication-global.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
+    <script src="~/js/account-avatar.js" asp-append-version="true"></script>
     <script src="~/js/filters.js" asp-append-version="true"></script>
     <script src="~/js/admin-console.js" asp-append-version="true"></script>
 </body>

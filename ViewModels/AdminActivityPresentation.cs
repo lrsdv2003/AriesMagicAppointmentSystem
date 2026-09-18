@@ -14,7 +14,8 @@ public static class AdminActivityPresentation
         var n when n.StartsWith("Refund") => "Refund",
         var n when n.StartsWith("Booking") || n.StartsWith("Reschedule") => "Booking",
         "CalendarModified" => "Calendar",
-        "LoginFailed" => "Authentication",
+        "LoginFailed" or "PasswordChanged" => "Authentication",
+        "ProfileUpdated" or "ProfilePictureChanged" => "Account",
         _ => "System"
     };
     public static string ActorRole(SystemActivity activity)

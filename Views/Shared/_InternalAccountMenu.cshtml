@@ -1,0 +1,22 @@
+@model AriesMagicAppointmentSystem.Models.ApplicationUser
+@{
+    var role = User.IsInRole("Owner") ? "Owner" : User.IsInRole("Admin") ? "Admin" : "Staff";
+    var name = string.IsNullOrWhiteSpace(Model.FullName) ? role + " User" : Model.FullName;
+    var initials = string.Concat(name.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(n => n[0])).ToUpperInvariant();
+}
+<div class="dropdown internal-account-menu">
+<button class="account-menu-trigger" id="accountMenu" data-bs-toggle="dropdown" aria-expanded="false" type="button" aria-label="Account menu for @name">
+<span class="account-header-avatar">
+@if (!string.IsNullOrWhiteSpace(Model.ProfilePicturePath)) { <img src="@Url.Action("Photo", "InternalProfile")" alt="" data-avatar-image /> }
+<span hidden="@(!string.IsNullOrWhiteSpace(Model.ProfilePicturePath))">@initials</span>
+</span>
+<span class="account-menu-text"><strong>@name</strong><small>@role</small></span>
+<i class="bi bi-chevron-down" aria-hidden="true"></i>
+</button>
+<ul class="dropdown-menu dropdown-menu-end" aria-labelledby="accountMenu">
+<li><a class="dropdown-item" asp-controller="InternalProfile" asp-action="Index">My Profile</a></li>
+<li><a class="dropdown-item" asp-controller="InternalProfile" asp-action="Index" asp-fragment="security">Account Security</a></li>
+<li><hr class="dropdown-divider" /></li>
+<li><button class="dropdown-item" type="button" data-bs-toggle="modal" data-bs-target="#logoutConfirmModal">Logout</button></li>
+</ul>
+</div>

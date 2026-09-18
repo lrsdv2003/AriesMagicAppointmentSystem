@@ -37,3 +37,5 @@ body .am-filter-bar .btn.btn-light,body .am-filter-bar .btn.btn-outline-secondar
 body .am-filter-bar .btn.btn-primary{background:#6d28d9!important;color:#fff!important;border-color:#6d28d9!important}
 body .am-filter-chips.am-filter-chips button,body .am-filter-chips.am-filter-chips a{min-height:44px!important;padding:.6rem .9rem!important;border:1px solid #cbd5e1!important;background:#fff!important;color:#334155!important;font-size:.875rem!important}
 body .am-filter-chips.am-filter-chips .active,body .am-filter-chips.am-filter-chips .is-active,body .am-filter-chips.am-filter-chips button:hover,body .am-filter-chips.am-filter-chips a:hover{background:#ede9fe!important;border-color:#7c3aed!important;color:#5b21b6!important}
+
+.am-filter-row>.am-filter-field{flex:1 1 150px;min-width:0}.am-filter-row>.am-filter-search-field{flex:2 1 240px}.am-filter-row:has(>.am-filter-field){align-items:flex-end}@media(max-width:767px){.am-filter-row>.am-filter-field{flex-basis:100%;width:100%}}

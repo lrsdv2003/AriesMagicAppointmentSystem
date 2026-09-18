@@ -1,0 +1,83 @@
+@model AriesMagicAppointmentSystem.ViewModels.InternalProfileViewModel
+@{
+    Layout = "_DashboardLayout";
+    ViewData["Title"] = "My Profile";
+    var initials = string.Concat(Model.DisplayName.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(n => n[0])).ToUpperInvariant();
+}
+<div class="account-page">
+@if (TempData["ProfileSuccess"] is string success) { <div class="alert alert-success" role="status">@success</div> }
+@if (TempData["ProfileWarning"] is string warning) { <div class="alert alert-warning" role="status">@warning</div> }
+<div asp-validation-summary="All" class="text-danger account-errors" role="alert"></div>
+<div class="account-grid">
+<aside class="account-card account-summary">
+<div class="account-avatar" aria-label="Profile avatar">
+@if (Model.HasPhoto) { <img src="@Url.Action("Photo")" alt="" data-avatar-image /> }
+<span hidden="@Model.HasPhoto">@initials</span>
+</div>
+<h2>@Model.DisplayName</h2>
+<partial name="_DashboardBadge" model="Model.Role" />
+<p class="account-email">@Model.Email</p>
+<form asp-action="UploadPhoto" method="post" enctype="multipart/form-data" data-account-form>
+<label for="profilePhoto" class="form-label">@(Model.HasPhoto ? "Change photo" : "Upload photo")</label>
+<input id="profilePhoto" name="photo" type="file" accept="image/jpeg,image/png,image/webp" class="form-control" aria-describedby="photoHelp photoError" required />
+<p id="photoHelp" class="form-text">JPG, PNG or WEBP. Up to 2 MB.</p>
+<span id="photoError" class="text-danger" role="alert">@Html.ValidationMessage("photo")</span>
+<div id="photoPreviewPanel" hidden>
+<img id="photoPreview" class="account-preview" alt="New profile photo preview" />
+<p class="form-text">Choose another file to replace this preview.</p>
+<div class="account-actions"><button class="btn btn-primary" type="submit" data-saving="Saving...">Save Photo</button><button class="btn btn-outline-secondary" type="button" id="cancelPhoto">Cancel</button></div>
+</div>
+<noscript><button class="btn btn-primary" type="submit">Save Photo</button></noscript>
+</form>
+@if (Model.HasPhoto) {
+<form asp-action="RemovePhoto" method="post" data-account-form class="mt-3">
+<button class="btn btn-outline-secondary" type="submit" data-saving="Removing...">Remove Photo</button>
+</form>
+}
+</aside>
+<div class="account-sections">
+<section class="account-card" aria-labelledby="personalHeading">
+<h2 id="personalHeading">Personal Information</h2>
+<form asp-action="Edit" method="post" data-account-form>
+<div class="account-field"><label asp-for="Personal.FullName" class="form-label"></label>
+<input asp-for="Personal.FullName" class="form-control" autocomplete="name" required minlength="2" maxlength="100" aria-describedby="nameError" />
+<span asp-validation-for="Personal.FullName" id="nameError" class="text-danger"></span></div>
+<div class="account-field"><label asp-for="Personal.PhoneNumber" class="form-label"></label>
+<input asp-for="Personal.PhoneNumber" type="tel" class="form-control" autocomplete="tel" pattern="09[0-9]{9}" maxlength="11" aria-describedby="phoneHelp phoneError" />
+<div class="form-text" id="phoneHelp">Optional. 11 digits starting with 09.</div>
+<span asp-validation-for="Personal.PhoneNumber" id="phoneError" class="text-danger"></span></div>
+<div class="account-actions"><button class="btn btn-primary" type="submit" data-saving="Saving...">Save Changes</button><a asp-action="Index" class="btn btn-outline-secondary">Cancel</a></div>
+</form>
+</section>
+<section class="account-card" aria-labelledby="accountHeading">
+<h2 id="accountHeading">Account Information</h2>
+<dl class="account-details">
+<div><dt>Email address</dt><dd>@Model.Email</dd></div>
+<div><dt>Role</dt><dd><partial name="_DashboardBadge" model="Model.Role" /></dd></div>
+<div><dt>Account status</dt><dd><partial name="_DashboardBadge" model="Model.Status" /></dd></div>
+<div><dt>Email verification</dt><dd>@(Model.Verified ? "Verified" : "Unverified")</dd></div>
+<div><dt>Member since</dt><dd>@Model.CreatedAt.ToString("MMM d, yyyy")</dd></div>
+<div><dt>Last sign-in (UTC)</dt><dd>@(Model.LastLoginAt?.ToString("MMM d, yyyy h:mm tt") ?? "Not recorded")</dd></div>
+</dl>
+</section>
+<section class="account-card" id="security" aria-labelledby="securityHeading">
+<h2 id="securityHeading">Account Security</h2>
+<h3>Change Password</h3>
+<ul class="account-password-rules" id="passwordRules">@foreach (var rule in Model.PasswordRules) { <li>@rule</li> }</ul>
+<form asp-action="ChangePassword" method="post" data-account-form>
+<div class="account-field"><label asp-for="Password.CurrentPassword" class="form-label"></label>
+<div class="account-password"><input asp-for="Password.CurrentPassword" class="form-control" autocomplete="current-password" required aria-describedby="currentError" /><button type="button" class="btn btn-outline-secondary" data-toggle-password="Password_CurrentPassword" aria-controls="Password_CurrentPassword" aria-pressed="false" aria-label="Show current password">Show</button></div>
+<span asp-validation-for="Password.CurrentPassword" id="currentError" class="text-danger"></span></div>
+<div class="account-field"><label asp-for="Password.NewPassword" class="form-label"></label>
+<div class="account-password"><input asp-for="Password.NewPassword" class="form-control" autocomplete="new-password" required aria-describedby="passwordRules newError" /><button type="button" class="btn btn-outline-secondary" data-toggle-password="Password_NewPassword" aria-controls="Password_NewPassword" aria-pressed="false" aria-label="Show new password">Show</button></div>
+<span asp-validation-for="Password.NewPassword" id="newError" class="text-danger"></span></div>
+<div class="account-field"><label asp-for="Password.ConfirmPassword" class="form-label"></label>
+<div class="account-password"><input asp-for="Password.ConfirmPassword" class="form-control" autocomplete="new-password" required aria-describedby="confirmError" /><button type="button" class="btn btn-outline-secondary" data-toggle-password="Password_ConfirmPassword" aria-controls="Password_ConfirmPassword" aria-pressed="false" aria-label="Show password confirmation">Show</button></div>
+<span asp-validation-for="Password.ConfirmPassword" id="confirmError" class="text-danger"></span></div>
+<div class="account-actions"><button class="btn btn-primary" type="submit" data-saving="Saving...">Change Password</button><button class="btn btn-outline-secondary" type="reset">Cancel</button></div>
+</form>
+</section>
+</div>
+</div>
+</div>
+@section Scripts { <script src="~/js/internal-profile.js" asp-append-version="true"></script> }

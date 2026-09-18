@@ -90,3 +90,29 @@ Dashboard financial figures are all-time; the business overview uses event dates
 current month. Today's schedule counts confirmed events still in progress or upcoming;
 the upcoming count starts tomorrow. Admin failed-login attention uses today's recorded
 UTC events, not an inferred platform health score.
+
+
+## Internal account profiles and User Management filters
+
+`ProfileRegression.cs` covers Staff/Admin/Owner authorization, anonymous/Client denial,
+anti-forgery requirements, permitted input fields, current-user isolation, profile validation,
+Identity password policy, security-stamp rotation and the current-session refresh call,
+private photo storage/type/size checks, replacement/removal, and audit records without passwords.
+The sign-in refresh is a test double; these checks do not use real accounts or send notifications.
+The full suite now passes 216 checks and renders 37 fixture pages.
+
+Run `node tests/OwnerRegression/profile.browser.mjs` after `--render` (with the same
+PUPPETEER_MODULE setup as the other browser scripts). It checks 16 layouts across four widths,
+labels, CSRF fields, account-menu links, keyboard focus, password show/hide and reset,
+photo preview/cancel, personal-information submission, and filter Apply/Clear URLs.
+Set SKIP_LAYOUT=1 to rerun interactions only. Browser requests use synthetic pages and local assets.
+
+The internal roles share `/InternalProfile/Index`; the existing Client profile remains separate.
+Email, role, verification and account status are read-only. Names retain the existing FullName
+field rather than inventing first/last-name data. No schema migration is needed.
+User Management preserves its existing filter semantics (including Disabled) and has no pagination.
+
+Internal account photos are written under `App_Data/profiles` outside wwwroot and are served only
+for the currently signed-in account through `/InternalProfile/Photo`. Keep this directory writable
+and persistent with the application data during deployment/backup; it is excluded from Git.
+Existing generated photos under uploads/profiles remain readable until replaced or removed.

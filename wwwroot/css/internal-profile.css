@@ -1,0 +1,27 @@
+/* Shared internal account UI for Staff, Admin and Owner. */
+.account-page{max-width:1100px;margin:0 auto;color:#1e293b}
+.account-grid{display:grid;grid-template-columns:minmax(240px,300px) minmax(0,1fr);gap:1.25rem;align-items:start}
+.account-card{background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:1.5rem;min-width:0}
+.account-card h2{font-size:1.15rem;font-weight:700;margin:0 0 1.2rem;overflow-wrap:anywhere}
+.account-card h3{font-size:1rem;font-weight:600}.account-sections{display:grid;gap:1.25rem;min-width:0}
+.account-summary{text-align:center}.account-summary form{text-align:left}.account-summary h2{margin-bottom:.6rem}
+.account-avatar,.account-header-avatar{display:flex;align-items:center;justify-content:center;overflow:hidden;background:#ede9fe;color:#5b21b6;font-weight:700;border-radius:50%;flex-shrink:0}
+.account-avatar{width:88px;height:88px;font-size:1.7rem;margin:0 auto 1rem}
+.account-avatar img,.account-header-avatar img{width:100%;height:100%;object-fit:cover}
+.account-email{font-size:.875rem;overflow-wrap:anywhere;margin:1rem 0 1.5rem;color:#475569}
+.account-field{margin-bottom:1rem}.account-page .form-label{font-size:.875rem;font-weight:600}
+.account-page .form-control{min-height:44px;border:1px solid #cbd5e1;border-radius:10px;min-width:0}
+.account-page .btn{min-height:44px;border-radius:10px;font-size:.875rem;font-weight:600}
+.account-actions{display:flex;flex-wrap:wrap;gap:.65rem;margin-top:1.25rem}
+.account-details{display:grid;grid-template-columns:1fr 1fr;gap:1.2rem;margin:0}.account-details div{min-width:0}
+.account-details dt{font-size:.8rem;color:#64748b;font-weight:500;margin-bottom:.35rem}.account-details dd{font-size:.9rem;margin:0;overflow-wrap:anywhere}
+.account-password{display:flex;gap:.5rem}.account-password input{flex:1;width:1%}.account-password .btn{flex-shrink:0;min-width:65px}
+.account-password-rules{font-size:.85rem;color:#475569;padding-left:1.2rem}
+.account-preview{display:block;width:128px;height:128px;object-fit:cover;border-radius:14px;margin:.8rem auto}
+.account-page .text-danger{font-size:.875rem}.account-errors.validation-summary-valid{display:none}
+.account-page :focus-visible,.internal-account-menu :focus-visible{outline:3px solid #a78bfa;outline-offset:3px}
+#security{scroll-margin-top:110px}.account-header-avatar{width:38px;height:38px;font-size:.8rem}
+.account-menu-trigger{display:flex;align-items:center;gap:.65rem;border:0;border-radius:10px;background:transparent;color:#1e293b;padding:.35rem;min-height:44px;max-width:260px}
+.account-menu-text{display:flex;flex-direction:column;text-align:left;min-width:0}.account-menu-text strong{font-size:.85rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.account-menu-text small{font-size:.75rem;color:#64748b}.internal-account-menu .dropdown-item{min-height:44px;display:flex;align-items:center}
+@media(max-width:767px){.account-grid{grid-template-columns:1fr}.account-card{padding:1.1rem}.account-details{grid-template-columns:1fr}.account-menu-text{display:none}.account-menu-trigger{gap:.3rem}.account-actions>*{flex:1}.account-summary .account-actions{flex-wrap:wrap}}

@@ -8,18 +8,18 @@
 <header class="admin-heading"><div><h2>Users</h2><p>Account access, roles and verification.</p></div><button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createStaffModal">Create Staff Account</button></header>
 @if (TempData["SuccessMessage"] != null) { <div class="alert alert-success" role="status">@TempData["SuccessMessage"]</div> }
 @if (TempData["ErrorMessage"] != null) { <div class="alert alert-danger" role="alert">@TempData["ErrorMessage"]</div> }
-<form method="get" class="am-filter-bar am-filter-row">
-<div class="am-filter-search"><input class="form-control" name="search" aria-label="Search users" placeholder="Search name or email" value="@Context.Request.Query["search"]" /></div>
+<form method="get" asp-action="Index" class="am-filter-bar"><div class="am-filter-row">
+<div class="am-filter-field am-filter-search-field"><label for="userSearch">Search Users</label><div class="am-filter-search"><input id="userSearch" class="form-control" name="search" aria-label="Search users" placeholder="Search name or email" value="@Context.Request.Query["search"]" /></div></div>
 <div class="am-filter-field"><label for="userRole">Role</label><select class="form-select" id="userRole" name="role"><option value="">All roles</option>@foreach(var role in new[]{"Client","Staff","Owner","Admin"}) { <option selected="@(Context.Request.Query["role"] == role)">@role</option> }</select></div>
 <div class="am-filter-field"><label for="userStatus">Account status</label><select class="form-select" id="userStatus" name="status"><option value="All">All statuses</option>@foreach(var status in new[]{"Active","Disabled","Locked"}) { <option selected="@(Context.Request.Query["status"] == status)">@status</option> }</select></div>
 <div class="am-filter-field"><label for="userVerification">Verification</label><select class="form-select" id="userVerification" name="verification"><option value="">All</option>@foreach(var state in new[]{"Verified","Unverified"}) { <option selected="@(Context.Request.Query["verification"] == state)">@state</option> }</select></div>
-<button class="btn btn-primary">Apply Filters</button><a asp-action="Index" class="btn btn-light">Reset</a>
-</form>
+<button class="btn btn-primary">Apply Filters</button><a asp-action="Index" class="btn btn-light">Clear Filters</a>
+</div></form>
 <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th scope="col">User</th><th scope="col">Email</th><th scope="col">Role</th><th scope="col">Account status</th><th scope="col">Verification</th><th scope="col">Actions</th></tr></thead><tbody>
 @foreach(var user in Model) {
 <tr><td data-label="User"><strong>@user.FullName</strong></td><td data-label="Email">@user.Email</td><td data-label="Role"><span class="admin-badge">@roles.GetValueOrDefault(user.Id, "Not assigned")</span></td><td data-label="Account status"><span class="admin-badge">@(!user.IsActive ? "Disabled" : user.LockoutEnd > DateTimeOffset.UtcNow ? "Locked" : "Active")</span></td><td data-label="Verification">@(user.EmailConfirmed ? "Verified" : "Unverified")</td><td data-label="Actions"><a asp-action="Details" asp-route-id="@user.Id" class="btn btn-outline-secondary">View</a></td></tr>
 }
-</tbody></table>@if(!Model.Any()) { <p class="admin-empty">No users found.</p> }</div>
+</tbody></table>@if(!Model.Any()) { <div class="admin-empty"><p>No users found for the selected filters.</p><a asp-action="Index" class="btn btn-outline-secondary">Clear Filters</a></div> }</div>
 <p class="admin-note">Staff accounts inactive for 30 days are automatically disabled. Staff account access can be managed from their details.</p>
 <!-- Create Staff Modal -->
 <div class="modal fade" id="createStaffModal" tabindex="-1" aria-labelledby="createStaffModalLabel" aria-hidden="true">
