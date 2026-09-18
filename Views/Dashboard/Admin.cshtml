@@ -1,14 +1,25 @@
 @model AriesMagicAppointmentSystem.ViewModels.RoleDashboardViewModel
-@{ Layout = "_DashboardLayout"; ViewData["Title"] = "System Administration"; }
-<div class="admin-console">
-<header class="admin-heading"><div><h2>System overview</h2><p>Manage accounts, availability, packages and system records.</p></div></header>
-<div class="admin-metrics">
-<a asp-controller="UserManagement" asp-action="Index"><span>Total users</span><strong>@Model.TotalUsers</strong></a>
-<a asp-controller="UserManagement" asp-action="Index" asp-route-role="Staff" asp-route-status="Active"><span>Active Staff</span><strong>@Model.ActiveStaff</strong></a>
-<a asp-controller="UserManagement" asp-action="Index" asp-route-role="Client" asp-route-status="Active"><span>Active Clients</span><strong>@Model.ActiveClients</strong></a>
-<a asp-controller="Services" asp-action="Index"><span>Active packages</span><strong>@Model.ActivePackages</strong></a>
-<a asp-controller="Services" asp-action="Archived"><span>Archived packages</span><strong>@Model.ArchivedPackages</strong></a>
-<a asp-controller="Calendar" asp-action="Index"><span>Blocked dates</span><strong>@Model.BlockedDates</strong></a>
+@{ Layout = "_DashboardLayout"; ViewData["Title"] = "Admin Dashboard"; }
+<div class="role-workspace" data-role="Admin">
+<partial name="_DashboardStart" model="Model" />
+<div class="dash-content-grid">
+<section class="dash-panel"><div class="dash-section-heading"><h3>User Overview</h3><a asp-controller="UserManagement" asp-action="Index">Manage Users</a></div>
+@if(Model.UnavailableSections.Contains("users")){<p class="dash-empty">Unable to load user overview.</p>}
+else {<dl class="dash-facts">
+@foreach(var role in new[]{"Client","Staff","Owner","Admin"}){<div><dt>@role accounts</dt><dd>@Model.UserRoles.GetValueOrDefault(role).ToString("N0")</dd></div>}
+<div><dt>Unverified accounts</dt><dd>@Model.UnverifiedUsers</dd></div>
+</dl>}
+</section>
+<section class="dash-panel"><div class="dash-section-heading"><h3>Calendar Configuration</h3><a asp-controller="Calendar" asp-action="Index">Manage Calendar</a></div>
+<dl class="dash-facts"><div><dt>Maximum daily bookings</dt><dd>3 <small>Fixed rule</small></dd></div>
+@if(!Model.UnavailableSections.Contains("system overview")){<div><dt>Active blocked dates</dt><dd>@Model.BlockedDates</dd></div>}
+</dl>@if(Model.UnavailableSections.Contains("system overview")){<p class="dash-empty">Unable to load calendar configuration.</p>}
+</section>
 </div>
-<section class="admin-panel"><h3>System records</h3><div class="admin-actions"><a asp-controller="TrashHistory" asp-action="Index" class="btn btn-outline-secondary">Trash History</a><a asp-controller="SystemActivity" asp-action="Index" class="btn btn-outline-secondary">System Activity</a></div></section>
+<section class="dash-panel"><div class="dash-section-heading"><h3>Archived Records</h3><a asp-controller="TrashHistory" asp-action="Index">Review Trash</a></div>
+@if(Model.UnavailableSections.Contains("system overview")){<p class="dash-empty">Unable to load archived records.</p>}
+else if(Model.TrashedBookingsCount + Model.ArchivedPackages == 0){<p class="dash-empty">No archived records.</p>}
+else {<dl class="dash-facts"><div><dt>Booking archives</dt><dd>@Model.TrashedBookingsCount <small>Read-only records</small></dd></div><div><dt>Archived packages</dt><dd>@Model.ArchivedPackages <small>Restorable</small></dd></div></dl>}
+</section>
+<partial name="_DashboardRecentActivity" model="Model" />
 </div>

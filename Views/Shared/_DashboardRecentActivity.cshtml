@@ -1,0 +1,17 @@
+@model AriesMagicAppointmentSystem.ViewModels.RoleDashboardViewModel
+@using AriesMagicAppointmentSystem.ViewModels
+<section class="dash-panel" aria-labelledby="recentHeading">
+<div class="dash-section-heading"><h3 id="recentHeading">@(Model.RoleName == "Admin" ? "Recent Administrative Activity" : Model.RoleName == "Owner" ? "Recent Business Activity" : "Recent Activity")</h3>
+@if(Model.RoleName == "Admin"){<a asp-controller="SystemActivity" asp-action="Index">View All Activity</a>}</div>
+@if(Model.UnavailableSections.Contains("activity")) { <p class="dash-empty">Unable to load recent activity.</p> }
+else if(!Model.RecentActivity.Any()) { <p class="dash-empty">No recent activity recorded.</p> }
+else {
+<div class="dash-list">
+@foreach(var item in Model.RecentActivity) {
+<article class="dash-row dash-activity-row"><div class="dash-record"><strong>@AdminActivityPresentation.Label(item.Type)</strong><span>@(item.PerformedByUserName ?? "System / unrecorded user") &middot; @AdminActivityPresentation.Category(item.Type)</span>
+@if(Model.RoleName == "Admin"){<small>Role at time: @AdminActivityPresentation.ActorRole(item)</small>}
+</div><div class="dash-row-meta"><partial name="_DashboardBadge" model="@(AdminActivityPresentation.Result(item.Type))" /><time datetime="@item.CreatedAt.ToString("O")">@item.CreatedAt.ToLocalTime().ToString("MMM d, h:mm tt")</time></div></article>
+}
+</div>
+}
+</section>

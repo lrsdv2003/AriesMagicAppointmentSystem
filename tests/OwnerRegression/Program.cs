@@ -86,11 +86,12 @@ try
     Check(!((IEnumerable<Payment>)queue.Model!).Any(), "Old OCR mismatch is excluded after replacement");
     await InterfaceRegression.RunAsync(db, Check);
     await AdminRegression.RunAsync(db, Check);
+    var dashboards = await DashboardRegression.RunAsync(db, Check);
     if (args.Contains("--render"))
     {
         await SnapshotRenderer.RenderAsync(options, report, active, pending, service,
             await db.RefundRequests.Include(r=>r.Booking).ThenInclude(b=>b!.Client).Include(r=>r.OriginalPayment).FirstAsync(),
-            finance);
+            finance, dashboards);
         Check(true, "Owner pages render with isolated fixture data");
     }
     Console.WriteLine("SUCCESS: " + checks + " Owner regression checks passed.");

@@ -21,7 +21,7 @@ using Microsoft.Extensions.Logging;
 static class SnapshotRenderer
 {
     public static async Task RenderAsync(DbContextOptions<ApplicationDbContext> options, ReportDashboardViewModel reports,
-        Booking booking, Payment payment, Service package, RefundRequest refund, BookingFinancialSummaryViewModel finance)
+        Booking booking, Payment payment, Service package, RefundRequest refund, BookingFinancialSummaryViewModel finance, Dictionary<string,RoleDashboardViewModel>? dashboards = null)
     {
         var builder = WebApplication.CreateBuilder(new WebApplicationOptions {
             ApplicationName = typeof(PaymentsController).Assembly.GetName().Name,
@@ -67,19 +67,31 @@ static class SnapshotRenderer
             ("Calendar","StaffIndex",new CalendarIndexViewModel { Bookings = Enumerable.Range(0,8).Select(i=>new Booking { Id = 990+i, Status = BookingStatus.Confirmed, EventDate = DateTime.Today.AddDays(i<6?2:1), StartTime = DateTime.Today.AddHours(10), EndTime = DateTime.Today.AddHours(12), PackageName = i%2==0?"Regression Package":"Other Package", PartyVenue = "Fixture Venue" }).ToList() }),
             ("UserManagement","Index",Enumerable.Range(1,12).Select(i=>new ApplicationUser {Id="fixture-"+i,FullName="Test User "+i,Email="user"+i+"@example.test",EmailConfirmed=i%2==0,IsActive=i%3!=0}).ToArray()),
             ("UserManagement","Details",new ApplicationUser {Id="fixture-1",FullName="Test Staff",Email="staff@example.test",PhoneNumber="123456789",EmailConfirmed=true}),
-            ("Dashboard","Admin",new RoleDashboardViewModel {TotalUsers=12,ActiveStaff=3,ActiveClients=6,ActivePackages=4,ArchivedPackages=2,BlockedDates=3}),
             ("Calendar","Index",new CalendarIndexViewModel {Manage=new CalendarManageViewModel {MaxBookingsPerDay=3,BlockedDates=[new BlockedDate {Id=1,Date=DateTime.Today.AddDays(10),Reason="System maintenance"}]}}),
             ("TrashHistory","Details",new TrashHistoryDetailsViewModel {Trash=new TrashHistoryDetailViewModel {BookingCode="BK-2026-001",ClientName="Test Client",PackageName="Test Package",ReasonNotes="Request expired."}}),
             ("Communications","Index",new CommunicationCenterViewModel { IsInternalUser = true })
         };
         pages = pages.Concat(filterPages).ToArray();
+        if (dashboards != null)
+            pages = pages.Concat(new[]{"Staff","Owner","Admin"}.Select(role => (Controller:"Dashboard",Action:role,Model:(object)dashboards[role]))).ToArray();
         var rendered = 0;
         foreach(var page in pages)
         {
-            var defaultRole = page.Action == "Admin" || page.Controller == "Calendar" && page.Action == "Index" ? "Admin" : page.Action == "MyBookings" ? "Client" : page.Action == "StaffIndex" || page.Controller == "RescheduleRequests" ? "Staff" : page.Controller is "UserManagement" or "SystemActivity" or "TrashHistory" ? "Admin" : "Owner";
+            var defaultRole = page.Controller == "Dashboard" ? page.Action : page.Action == "Admin" || page.Controller == "Calendar" && page.Action == "Index" ? "Admin" : page.Action == "MyBookings" ? "Client" : page.Action == "StaffIndex" || page.Controller == "RescheduleRequests" ? "Staff" : page.Controller is "UserManagement" or "SystemActivity" or "TrashHistory" ? "Admin" : "Owner";
             var roles = page.Controller == "Services" && page.Action == "Index" ? new[] { "Owner", "Staff", "Admin" } : page.Controller == "Communications" ? new[] { "Owner", "Admin" } : page.Controller == "Notifications" ? new[] { "Owner", "Client" } : new[] { defaultRole };
             foreach (var role in roles)
             {
+            foreach(var state in page.Controller == "Dashboard" ? new[]{"populated","empty","error"} : new[]{"populated"})
+            {
+            object fixtureModel = page.Model;
+            if(page.Controller == "Dashboard" && state != "populated") {
+                var original=(RoleDashboardViewModel)page.Model;
+                fixtureModel = state == "error" && role == "Owner" && dashboards != null
+                    ? dashboards["OwnerFailure"]
+                    : new RoleDashboardViewModel {RoleName=role,DisplayName="Fixture "+role,QuickActions=original.QuickActions,
+                        Metrics=state=="empty" ? original.Metrics.Select(m=>new DashboardMetric(m.Label,m.Value.StartsWith("PHP")?"PHP 0.00":"0",m.Context)).ToList() : new(),
+                        UnavailableSections=state=="error" ? new() {"requests","schedule","users","system overview","activity","messages"} : new()};
+            }
             var http = new DefaultHttpContext {
                 RequestServices = provider,
                 User = new ClaimsPrincipal(new ClaimsIdentity(new[] {new Claim(ClaimTypes.Role,role),new Claim(ClaimTypes.Name,"Regression Owner")}, "Fixture"))
@@ -91,7 +103,7 @@ static class SnapshotRenderer
             var engine = provider.GetRequiredService<IRazorViewEngine>();
             var result = engine.GetView(null, "/Views/"+page.Controller+"/"+page.Action+".cshtml",true);
             if (!result.Success) throw new Exception("Could not find snapshot view");
-            var data = new ViewDataDictionary(provider.GetRequiredService<IModelMetadataProvider>(),new ModelStateDictionary()) {Model=page.Model};
+            var data = new ViewDataDictionary(provider.GetRequiredService<IModelMetadataProvider>(),new ModelStateDictionary()) {Model=fixtureModel};
             data["FinancialSummary"]=finance; data["ExpectedReceiver"]="Aries Magic"; data["Filter"]="awaiting";
             data["PackageColors"] = new Dictionary<string,string> { ["Regression Package"] = "pink", ["Other Package"] = "blue" };
             data["BlockedDates"] = new[] { new { date=DateTime.Today.AddDays(2).ToString("yyyy-MM-dd"), reason="Fixture blocked date" } };
@@ -100,8 +112,9 @@ static class SnapshotRenderer
             using var writer = new StringWriter();
             var viewContext = new ViewContext(context,result.View,data,new TempDataDictionary(http,new EmptyTempData()),writer,new HtmlHelperOptions());
             await result.View.RenderAsync(viewContext);
-            await File.WriteAllTextAsync(Path.Combine(output,page.Controller+"-"+page.Action+(role != defaultRole ? "-"+role : "")+".html"),writer.ToString());
+            await File.WriteAllTextAsync(Path.Combine(output,page.Controller+"-"+page.Action+(role != defaultRole ? "-"+role : "")+(state=="populated" ? "" : "-"+state)+".html"),writer.ToString());
             rendered++;
+            }
             }
         }
         Console.WriteLine($"Rendered {rendered} role fixture pages to " + output);

@@ -25,7 +25,7 @@ external email delivery, or live client messaging.
 
 ## Shared filter regression checks
 
-The render option now includes Client, Staff, Admin and Owner interface fixtures (26 pages total).
+The render option now includes Client, Staff, Admin and Owner interface fixtures (34 pages total).
 Run the browser checks from the repository root with Puppeteer and Chromium installed:
 
     node tests/OwnerRegression/filters.browser.mjs
@@ -70,3 +70,23 @@ sticky header, keyboard modal dismissal, blocked-date confirmation/error recover
 messaging layout. Financial services, email and live user accounts are not exercised by
 the browser fixtures. Booking archives remain read-only; package restoration uses the
 existing confirmation workflow. Unrecorded historical actors/roles/dates are not inferred.
+
+
+## Role dashboard checks
+
+The isolated data suite now verifies Staff pending-only previews, chronological schedules,
+unread conversation counts, reload freshness, Owner reconciliation to unfiltered Reports
+(including receipts/refunds on cancelled bookings), Admin user/archive totals, dashboard
+authorization, and isolation of a failed financial-summary widget.
+
+After rendering fixtures, run:
+
+    node tests/OwnerRegression/dashboard.browser.mjs
+
+The browser checks populated, empty and error states for Staff, Owner and Admin at
+1440, 1024, 768 and 390 pixels, plus role-appropriate links, single-column mobile metrics,
+keyboard focus, sticky headers and the accessible six-month booking-volume chart.
+Dashboard financial figures are all-time; the business overview uses event dates in the
+current month. Today's schedule counts confirmed events still in progress or upcoming;
+the upcoming count starts tomorrow. Admin failed-login attention uses today's recorded
+UTC events, not an inferred platform health score.

@@ -37,6 +37,7 @@
     <link rel="stylesheet" href="~/css/package-editor.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/notifications.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/admin-console.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/role-dashboards.css" asp-append-version="true" />
 </head>
 <body class="dashboard-body @(User.IsInRole("Staff") ? "staff-dashboard" : User.IsInRole("Admin") ? "admin-dashboard" : User.IsInRole("Owner") ? "owner-dashboard" : "")">
     <div class="dashboard-shell">

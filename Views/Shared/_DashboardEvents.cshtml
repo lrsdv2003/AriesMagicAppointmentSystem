@@ -1,0 +1,10 @@
+@model IEnumerable<AriesMagicAppointmentSystem.Models.Booking>
+<div class="dash-list">
+@foreach(var booking in Model) {
+<article class="dash-row">
+<div class="dash-date"><strong>@booking.EventDate.ToString("dd")</strong><span>@booking.EventDate.ToString("MMM yyyy")</span></div>
+<div class="dash-record"><strong>BK-@booking.CreatedAt.Year-@booking.Id.ToString("D3")</strong><span>@(booking.Client?.FullName ?? "Client not recorded")</span><span>@booking.StartTime.ToString("h:mm tt") &ndash; @booking.EndTime.ToString("h:mm tt")</span><small>@(string.IsNullOrWhiteSpace(booking.PackageName) ? booking.Service?.Name : booking.PackageName)</small><small>@(string.IsNullOrWhiteSpace(booking.PartyVenue) ? "Venue not recorded" : booking.PartyVenue)@if(booking.DistanceKm.HasValue){<text> &middot; @booking.DistanceKm.Value.ToString("N1") km</text>}</small></div>
+<a class="dash-button" asp-controller="Bookings" asp-action="Details" asp-route-id="@booking.Id">Details<span class="visually-hidden"> for booking @booking.Id</span></a>
+</article>
+}
+</div>

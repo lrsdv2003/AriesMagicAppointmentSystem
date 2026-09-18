@@ -1,0 +1,2 @@
+@model AriesMagicAppointmentSystem.ViewModels.DashboardShortcut
+<a class="dash-shortcut" href="@Model.Href"><i class="bi @Model.Icon" aria-hidden="true"></i><span>@Model.Label</span>@if(Model.Detail != null){<strong>@Model.Detail</strong>}<i class="bi bi-arrow-up-right dash-link-arrow" aria-hidden="true"></i></a>

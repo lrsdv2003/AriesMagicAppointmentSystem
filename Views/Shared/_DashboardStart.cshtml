@@ -1,0 +1,23 @@
+@model AriesMagicAppointmentSystem.ViewModels.RoleDashboardViewModel
+@{
+    var greeting = Model.AsOf.Hour < 12 ? "Good morning" : Model.AsOf.Hour < 18 ? "Good afternoon" : "Good evening";
+    var context = Model.RoleName == "Staff" ? "Bookings, schedules and client coordination." : Model.RoleName == "Owner" ? "Financial decisions and business oversight." : "Accounts, configuration and system records.";
+}
+<header class="dash-welcome"><div><span class="dash-eyebrow">@Model.RoleName workspace</span><h2>@greeting, @Model.DisplayName</h2><p>@context</p></div><time datetime="@Model.AsOf.ToString("O")">@Model.AsOf.ToString("dddd, MMM d, yyyy")<small>Updated @Model.AsOf.ToString("h:mm tt")</small></time></header>
+<section class="dash-panel dash-attention" aria-labelledby="attentionHeading">
+<div class="dash-section-heading"><h3 id="attentionHeading">@(Model.RoleName == "Admin" ? "System Attention" : "Needs Attention")</h3><span class="dash-muted">Current tasks</span></div>
+@if(Model.UnavailableSections.Any()) {
+    <div class="dash-load-errors" role="status">@foreach(var section in Model.UnavailableSections) { <p>Unable to load @(section). <a asp-controller="Dashboard" asp-action="@Model.RoleName">Retry</a></p> }</div>
+}
+@if(Model.Attention.Any()) {
+    <div class="dash-attention-grid">@foreach(var item in Model.Attention) { <partial name="_DashboardShortcut" model="item" /> }</div>
+} else if(!Model.UnavailableSections.Any()) {
+    <p class="dash-empty">@(Model.RoleName == "Staff" ? "No booking requests or messages currently require your attention." : Model.RoleName == "Owner" ? "No financial reviews or messages currently require your attention." : "No account or recorded login issues require attention.")</p>
+}
+</section>
+<section class="dash-quick-section" aria-labelledby="quickHeading"><div class="dash-section-heading"><h3 id="quickHeading">Quick Access</h3></div><nav class="dash-quick-grid" aria-label="@Model.RoleName quick access">
+@foreach(var item in Model.QuickActions) { <partial name="_DashboardShortcut" model="item" /> }
+</nav></section>
+<section aria-labelledby="metricsHeading"><div class="dash-section-heading"><h3 id="metricsHeading">@(Model.RoleName == "Owner" ? "Financial Overview" : Model.RoleName == "Staff" ? "Operational Summary" : "System Overview")</h3>@if(Model.RoleName == "Owner"){<span class="dash-muted">All time &middot; PHP</span>}</div>
+<div class="dash-metric-grid">@foreach(var metric in Model.Metrics) { <partial name="_DashboardMetric" model="metric" /> }</div>
+</section>

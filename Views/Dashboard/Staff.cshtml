@@ -1,167 +1,29 @@
 @model AriesMagicAppointmentSystem.ViewModels.RoleDashboardViewModel
-
-@{
-    ViewData["Title"] = "Staff Dashboard";
-    Layout = "_DashboardLayout";
-    string StaffStatusClass(string status) => status switch {
-        "Pending" => "status-pending",
-        "AwaitingDownpayment" => "status-confirmed",
-        "AwaitingVerification" => "status-confirmed",
-        "Declined" => "status-declined",
-        _ => "status-read"
-    };
-    string StaffStatusLabel(string status) => status switch {
-        "AwaitingDownpayment" => "Approved · Awaiting Payment",
-        "AwaitingVerification" => "Approved · Awaiting Owner Verification",
-        _ => status
-    };
+@{ Layout = "_DashboardLayout"; ViewData["Title"] = "Staff Dashboard"; }
+<div class="role-workspace" data-role="Staff">
+<partial name="_DashboardStart" model="Model" />
+<div class="dash-content-grid">
+<section class="dash-panel"><div class="dash-section-heading"><h3>@(Model.TodayEvents.Any() ? "Today's Schedule" : "Next Upcoming Events")</h3><a asp-controller="Calendar" asp-action="Index">View Calendar</a></div>
+@if(Model.UnavailableSections.Contains("schedule")){<p class="dash-empty">Unable to load the schedule.</p>}
+else if(Model.TodayEvents.Any()){<partial name="_DashboardEvents" model="Model.TodayEvents" />}
+else {<p class="dash-note">No events scheduled today.</p>
+@if(Model.UpcomingEvents.Any()){<partial name="_DashboardEvents" model="Model.UpcomingEvents" />}else{<p class="dash-empty">No upcoming confirmed events.</p>}}
+</section>
+<section class="dash-panel"><div class="dash-section-heading"><h3>Booking Requests</h3><a asp-controller="Bookings" asp-action="Index" asp-route-bookingStatus="Pending">View All</a></div>
+@if(Model.UnavailableSections.Contains("requests")){<p class="dash-empty">Unable to load requests.</p>}
+else if(!Model.RecentBookingRequests.Any()){<p class="dash-empty">No booking requests currently require your attention.</p>}
+else {<p class="dash-note">@Model.PendingBookings awaiting review &middot; Oldest first</p><div class="dash-list">
+@foreach(var booking in Model.RecentBookingRequests){
+<article class="dash-row"><div class="dash-record"><strong>BK-@booking.CreatedAt.Year-@booking.Id.ToString("D3")</strong><span>@(booking.Client?.FullName ?? "Client not recorded")</span><small>@booking.PackageName &middot; @booking.EventDate.ToString("MMM d, yyyy")</small><partial name="_DashboardBadge" model="booking.Status" /></div><a class="dash-button" asp-controller="Bookings" asp-action="Details" asp-route-id="@booking.Id">Review<span class="visually-hidden"> booking @booking.Id</span></a></article>
 }
-
-<div class="role-dashboard-hero">
-    <div>
-        <h2>Welcome back, Staff</h2>
-        <p>Review booking requests, coordinate upcoming events, and handle reschedules.</p>
-    </div>
-    <a asp-controller="Bookings" asp-action="Index" class="btn btn-primary">
-        <i class="bi bi-journal-check me-1"></i>
-        View Booking Requests
-    </a>
+</div>}
+</section>
 </div>
-
-<div class="dashboard-stat-grid">
-    <a asp-controller="Bookings" asp-action="Index" class="dashboard-stat-card stat-info">
-        <span class="dashboard-stat-icon">
-            <i class="bi bi-journal-text"></i>
-        </span>
-        <span class="dashboard-stat-label">Pending Requests</span>
-        <strong>@Model.PendingBookings</strong>
-        <small>Awaiting review</small>
-    </a>
-
-    <a asp-controller="Calendar" asp-action="Index" class="dashboard-stat-card stat-success">
-        <span class="dashboard-stat-icon">
-            <i class="bi bi-calendar3"></i>
-        </span>
-        <span class="dashboard-stat-label">Upcoming Events</span>
-        <strong>@Model.UpcomingBookings</strong>
-        <small>Confirmed</small>
-    </a>
-
-    <a asp-controller="Services" asp-action="Index" class="dashboard-stat-card stat-warning">
-        <span class="dashboard-stat-icon">
-            <i class="bi bi-box-seam"></i>
-        </span>
-        <span class="dashboard-stat-label">Active Packages</span>
-        <strong>@Model.ActivePackages</strong>
-        <small>Available</small>
-    </a>
-
-    <a asp-controller="RescheduleRequests" asp-action="Index" class="dashboard-stat-card stat-danger">
-        <span class="dashboard-stat-icon">
-            <i class="bi bi-arrow-left-right"></i>
-        </span>
-        <span class="dashboard-stat-label">Reschedules</span>
-        <strong>@Model.PendingReschedules</strong>
-        <small>Pending</small>
-    </a>
-</div>
-
-
-<div class="dashboard-two-column staff-activity-grid">
-    <!-- SECTION 1: INCOMING BOOKING REQUESTS -->
-    <section class="dashboard-list-panel">
-        <div class="dashboard-list-heading">
-            <div>
-                
-                <h3>Booking Requests Activity</h3>
-            </div>
-            <a asp-controller="Bookings" asp-action="Index">View all</a>
-        </div>
-
-        @if (!Model.RecentBookingRequests.Any())
-        {
-            <div class="dashboard-empty-state">
-                <i class="bi bi-inbox"></i>
-                <p>No booking requests currently require your attention.</p>
-            </div>
-        }
-        else
-        {
-            <div class="dashboard-record-list">
-                @foreach (var booking in Model.RecentBookingRequests)
-                {
-                    <div class="dashboard-activity-row p-3 border rounded-3 bg-light d-flex align-items-center justify-content-between">
-                        <div class="d-flex align-items-center gap-3">
-                            <div class="dashboard-record-icon p-2 rounded bg-white border d-flex align-items-center justify-content-center">
-                                <i class="bi bi-calendar-plus fs-5 text-primary"></i>
-                            </div>
-                            <div class="dashboard-record-copy d-flex flex-column">
-                                <strong class="lh-sm">@(booking.Client?.FullName ?? "Unknown client")</strong>
-                                 <span class="text-secondary small">@(booking.Service?.Name ?? booking.PackageName)</span>
-                                 <small class="text-muted">Event @booking.EventDate.ToString("MMM dd, yyyy") · @booking.StartTime.ToString("hh:mm tt") • Submitted @booking.CreatedAt.ToString("MMM dd, yyyy")</small>
-                                 @if (booking.DistanceKm.HasValue)
-                                 {
-                                     <div class="dashboard-venue-travel">
-                                         <i class="bi bi-signpost-split" aria-hidden="true"></i>
-                                         <strong>@booking.DistanceKm.Value.ToString("N1") km</strong>
-                                         <span>@(booking.ServiceZone ?? "Zone unavailable") · @(booking.TravelFee > 0 ? $"₱{booking.TravelFee:N2}" : "No travel fee")</span>
-                                         <em class="@(booking.RequiresManualReview ? "venue-awareness-review" : booking.IsServiceable ? "venue-awareness-serviceable" : "venue-awareness-unavailable")">@(booking.RequiresManualReview ? "Venue review" : booking.IsServiceable ? "Serviceable" : "Not serviceable")</em>
-                                     </div>
-                                 }
-                             </div>
-                        </div>
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="status-badge staff-status-badge @StaffStatusClass(booking.Status)">@StaffStatusLabel(booking.Status)</span>
-                            <a asp-controller="Bookings" asp-action="Details" asp-route-id="@booking.Id" class="btn btn-sm btn-outline-primary">View Details</a>
-                        </div>
-                    </div>
-                }
-            </div>
-        }
-    </section>
-
-    <!-- SECTION 2: RESCHEDULE REQUESTS (NOW SCROLLABLE AS WELL) -->
-    <section class="dashboard-list-panel">
-        <div class="dashboard-list-heading">
-            <div>
-                
-                <h3>Reschedule Requests Activity</h3>
-            </div>
-            <a asp-controller="RescheduleRequests" asp-action="Index">View all</a>
-        </div>
-
-        @if (!Model.RecentRescheduleRequests.Any())
-        {
-            <div class="dashboard-empty-state">
-                <i class="bi bi-calendar2-x"></i>
-                <p>No reschedule requests available.</p>
-            </div>
-        }
-        else
-        {
-            <div class="dashboard-record-list">
-                @foreach (var request in Model.RecentRescheduleRequests)
-                {
-                    <div class="dashboard-activity-row p-3 border rounded-3 bg-light d-flex align-items-center justify-content-between">
-                        <div class="d-flex align-items-center gap-3">
-                            <div class="dashboard-record-icon p-2 rounded bg-white border d-flex align-items-center justify-content-center">
-                                <i class="bi bi-arrow-left-right fs-5 text-warning"></i>
-                            </div>
-                            <div class="dashboard-record-copy d-flex flex-column">
-                                <strong class="lh-sm">@(request.Booking?.Client?.FullName ?? "Unknown client")</strong>
-                                <span class="text-secondary small">@(request.Booking?.Service?.Name ?? request.Booking?.PackageName ?? "Package not available")</span>
-                                <small class="text-muted">
-                                    @(request.Booking?.EventDate.ToString("MMM dd, yyyy") ?? "N/A") → @request.RequestedDate.ToString("MMM dd, yyyy") • Submitted @request.CreatedAt.ToString("MMM dd, yyyy")
-                                </small>
-                            </div>
-                        </div>
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="dashboard-status-pill">@request.Status</span>
-                            <a asp-controller="RescheduleRequests" asp-action="Index" class="btn btn-sm btn-outline-primary">View Requests</a>
-                        </div>
-                    </div>
-                }
-            </div>
-        }
-    </section>
+@if(!Model.UnavailableSections.Contains("requests") && Model.RecentRescheduleRequests.Any()){
+<section class="dash-panel"><div class="dash-section-heading"><h3>Reschedule Requests</h3><a asp-controller="RescheduleRequests" asp-action="Index" asp-route-status="Pending">View All</a></div><div class="dash-list">
+@foreach(var request in Model.RecentRescheduleRequests){
+<article class="dash-row"><div class="dash-record"><strong>@(request.Booking?.Client?.FullName ?? "Client not recorded")</strong><span>Booking #@request.BookingId &middot; Requested @request.RequestedDate.ToString("MMM d, yyyy")</span></div><a class="dash-button" asp-controller="RescheduleRequests" asp-action="Details" asp-route-id="@request.Id">Review<span class="visually-hidden"> reschedule @request.Id</span></a></article>
+}
+</div></section>}
+<partial name="_DashboardRecentActivity" model="Model" />
 </div>
