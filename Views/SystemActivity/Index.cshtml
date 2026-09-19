@@ -3,11 +3,11 @@
 @using AriesMagicAppointmentSystem.ViewModels
 @{ Layout = "_DashboardLayout"; ViewData["Title"] = "System Activity"; }
 <div class="admin-console">
-<header class="admin-heading"><div><h2>System activity</h2><p>Newest activity first. Dates and times are UTC.</p></div></header>
+<header class="admin-heading"><div><p>Dates and times are UTC.</p></div></header>
 <div class="am-filter-container">
     <form method="get" asp-action="Index" class="am-filter-bar">
         <div class="am-filter-row">
-            
+
             <!-- Direct Search Input -->
             <div class="am-filter-search">
                 <div class="input-group w-100">
@@ -19,11 +19,11 @@
 
             <!-- Floating Filter Popover Dropdown -->
             <div class="dropdown filter-dropdown-wrapper">
-                <button class="btn btn-outline-secondary dropdown-toggle d-flex align-items-center gap-2" 
-                        type="button" 
-                        id="filterDropdown" 
-                        data-bs-toggle="dropdown" 
-                        data-bs-auto-close="outside" 
+                <button class="btn btn-outline-secondary dropdown-toggle d-flex align-items-center gap-2"
+                        type="button"
+                        id="filterDropdown"
+                        data-bs-toggle="dropdown"
+                        data-bs-auto-close="outside"
                         aria-expanded="false">
                     <i class="bi bi-funnel"></i>
                     <span>Filters</span>
@@ -36,7 +36,7 @@
                 <!-- Floating Card Content -->
                 <div class="dropdown-menu dropdown-menu-end filter-popover-menu" aria-labelledby="filterDropdown">
                     <h6 class="fw-bold mb-3">Filter Activities</h6>
-                    
+
                     <div class="mb-3">
                         <label class="form-label" for="SystemActivityIndextype">Activity Type</label>
 <select id="SystemActivityIndextype" name="type" class="form-select form-select-sm">
@@ -64,7 +64,7 @@
                     <hr class="my-3" />
 
                     <div class="d-flex justify-content-end gap-2">
-                        <a asp-action="Index" class="btn btn-light btn-sm">Reset</a>
+                        <a asp-action="Index" class="btn btn-light btn-sm">Clear Filters</a>
                         <button type="submit" class="btn btn-primary btn-sm">Apply Filters</button>
                     </div>
                 </div>
@@ -72,10 +72,10 @@
 
             <!-- Quick Submit & Clear -->
             <button type="submit" class="btn btn-primary">Search</button>
-            
+
             @if (Model != null && (!string.IsNullOrEmpty(Model.SearchFilter) || Model.TypeFilter.HasValue || Model.FromDateFilter.HasValue || Model.ToDateFilter.HasValue))
             {
-                <a asp-action="Index" class="btn btn-link text-decoration-none text-muted">Reset</a>
+                <a asp-action="Index" class="btn btn-link text-decoration-none text-muted">Clear Filters</a>
             }
         </div>
     </form>

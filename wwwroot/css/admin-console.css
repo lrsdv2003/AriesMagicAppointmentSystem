@@ -1,6 +1,6 @@
 /* Shared administrative surfaces; package and messaging components stay shared. */
-.admin-dashboard .dashboard-topbar{position:sticky;top:0;z-index:1030;background:#fff}
-.admin-dashboard .dashboard-main{min-width:0}
+
+
 .admin-console{max-width:1440px;margin:0 auto;color:#263244;font-size:14px}
 .admin-heading{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:20px}
 .admin-heading h2{font-size:24px;font-weight:700;margin:0 0 6px}
@@ -34,5 +34,5 @@
 .admin-pagination{display:flex;gap:12px;justify-content:flex-end;align-items:center;margin-top:16px}
 .admin-console details summary{cursor:pointer;min-height:44px;padding:12px 0;color:#50438a;font-weight:600}
 .admin-console details p{max-width:40rem;white-space:pre-wrap;overflow-wrap:anywhere}
-@media(max-width:900px){.admin-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.admin-heading{align-items:flex-start}.admin-dashboard .dashboard-topbar{padding:12px 16px}}
-@media(max-width:600px){.admin-heading{flex-direction:column}.admin-form-grid,.admin-facts{grid-template-columns:1fr}.admin-panel{padding:16px}.admin-table thead{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}.admin-table,.admin-table tbody{display:block}.admin-table tr{display:block;padding:12px;border-bottom:1px solid #dfe4ec}.admin-table td{display:grid;grid-template-columns:100px minmax(0,1fr);gap:10px;padding:7px 0;border:0}.admin-table td:before{content:attr(data-label);font-size:12px;font-weight:600;color:#596779}.admin-metrics{gap:10px}.admin-metrics a{padding:16px}.admin-pagination{justify-content:center;flex-wrap:wrap}.admin-dashboard .dashboard-title{font-size:17px}.admin-dashboard .topbar-user-text{display:none}}
+@media(max-width:900px){.admin-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.admin-heading{align-items:flex-start}}
+@media(max-width:600px){.admin-heading{flex-direction:column}.admin-form-grid,.admin-facts{grid-template-columns:1fr}.admin-panel{padding:16px}.admin-table thead{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}.admin-table,.admin-table tbody{display:block}.admin-table tr{display:block;padding:12px;border-bottom:1px solid #dfe4ec}.admin-table td{display:grid;grid-template-columns:100px minmax(0,1fr);gap:10px;padding:7px 0;border:0}.admin-table td:before{content:attr(data-label);font-size:12px;font-weight:600;color:#596779}.admin-metrics{gap:10px}.admin-metrics a{padding:16px}.admin-pagination{justify-content:center;flex-wrap:wrap}}

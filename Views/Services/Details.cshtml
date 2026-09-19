@@ -1,27 +1,22 @@
 @model AriesMagicAppointmentSystem.Models.Service
-
 @{
     Layout = "_DashboardLayout";
-    ViewData["Title"] = "Package Details";
-    var isStaff = User.IsInRole("Staff");
+    ViewData["Title"] = Model.Name;
 }
-
-@if (isStaff)
-{
     <div class="staff-package-page staff-package-details-page">
         <header class="staff-package-hero staff-package-detail-hero">
             <div>
-                <span class="staff-interface-eyebrow">Package Details</span>
+
                 <div class="d-flex align-items-center gap-2 flex-wrap">
-                    <h1>@Model.Name</h1>
+
                     <span class="staff-package-status @(Model.IsArchived ? "inactive" : "")">
                         <i class="bi @(Model.IsArchived ? "bi-pause-circle-fill" : "bi-check-circle-fill")"></i>
                         @(Model.IsArchived ? "Inactive" : "Active")
                     </span>
                 </div>
-                <p>Complete operational reference for this package.</p>
+
             </div>
-            <a asp-action="Index" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Back to Packages</a>
+            <div class="ui-inline">@if(User.CanEditPackages()){<a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary">Edit Package</a>}<a asp-action="Index" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Back to Packages</a></div>
         </header>
 
         <div class="staff-package-detail-grid">
@@ -30,7 +25,7 @@
                 <div class="staff-package-detail-facts">
                     <div><span>Price</span><strong>₱@Model.Price.ToString("N2")</strong></div>
                     <div><span>Duration</span><strong>@Model.DurationInHours hour(s)</strong></div>
-                    <div><span>Status</span><strong>@(Model.IsArchived ? "Inactive" : "Active")</strong></div>
+
                 </div>
                 @if (!string.IsNullOrWhiteSpace(Model.Description))
                 {
@@ -45,7 +40,7 @@
                 <div class="staff-package-detail-heading">
                     <div>
                         <h2 id="packageInclusionsTitle">Package Inclusions</h2>
-                        <p>Everything included in the selected package.</p>
+
                     </div>
                     <span class="staff-package-count">@(Model.Inclusions?.Count ?? 0) total</span>
                 </div>
@@ -65,73 +60,3 @@
             </section>
         </div>
     </div>
-}
-else
-{    <div class="page-header">
-        <div>
-            <h1>Package Details</h1>
-            <p class="page-subtitle">View this package and all of its configured inclusions.</p>
-        </div>
-    </div>
-
-    <div class="package-details-layout">
-        <div class="dashboard-panel">
-            <div class="details-header-block">
-                <div>
-                    <h2 class="details-title">@Model.Name</h2>
-                    <div class="package-card-badge @(Model.IsArchived ? "archived-badge" : "")">@(Model.IsArchived ? "Archived Package" : "Active Package")</div>
-                </div>
-                <div class="package-details-price">₱@Model.Price.ToString("N2")</div>
-            </div>
-
-            <div class="package-card-meta mt-3">
-                <div class="package-meta-box"><span class="package-meta-label">Duration</span><span class="package-meta-value">@Model.DurationInHours hour(s)</span></div>
-                <div class="package-meta-box"><span class="package-meta-label">Status</span><span class="package-meta-value">@(Model.IsArchived ? "Archived" : "Active")</span></div>
-            </div>
-
-            <div class="details-description-block mt-4">
-                <div class="form-section-title mb-2">Package Description</div>
-                <p class="package-card-description mb-0">@(string.IsNullOrWhiteSpace(Model.Description) ? "No description available for this package yet." : Model.Description)</p>
-            </div>
-
-            <div class="d-flex gap-2 mt-4">
-                @if (User.CanEditPackages())
-                {
-                    <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">Edit</a>
-                }
-                <a asp-action="Index" class="btn btn-outline-secondary">Back</a>
-            </div>
-        </div>
-
-        <div class="dashboard-panel">
-            <div class="form-section-header mb-3">
-                <div><div class="form-section-title mb-1">Package Inclusions</div><p class="page-subtitle mb-0">Configured inclusions and deduction rules.</p></div>
-            </div>
-            @if (Model.Inclusions == null || !Model.Inclusions.Any())
-            {
-                <div class="empty-state"><h3>No inclusions yet</h3><p>This package does not have any inclusions defined yet.</p></div>
-            }
-            else
-            {
-                <div class="inclusion-card-list">
-                    @foreach (var inclusion in Model.Inclusions)
-                    {
-                        <div class="inclusion-card">
-                            <div class="inclusion-card-top"><h4 class="inclusion-name">@inclusion.Name</h4><div class="inclusion-price">₱@inclusion.DeductionAmount.ToString("N2")</div></div>
-                            <div class="inclusion-meta">
-                                @if (inclusion.IsRemovable)
-                                {
-                                    <span class="status-badge status-confirmed">Removable by Client</span>
-                                }
-                                else
-                                {
-                                    <span class="status-badge status-read">Fixed Inclusion</span>
-                                }
-                            </div>
-                        </div>
-                    }
-                </div>
-            }
-        </div>
-    </div>
-}

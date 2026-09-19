@@ -5,12 +5,12 @@
     var totalRevenue = Model.Sum(r => r.AmountPaid);
 }
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="utf-8" />
     <title>Booking History Report</title>
     <style>
-        body { font-family: Arial, sans-serif; padding: 24px; color: #111; }
+        body { font-family: "Segoe UI", Arial, sans-serif; padding: 24px; color: #111; }
         h1 { font-size: 20px; margin-bottom: 4px; }
         .meta { color: #555; font-size: 12px; margin-bottom: 16px; }
         table { width: 100%; border-collapse: collapse; font-size: 12px; }
@@ -46,6 +46,7 @@
                 <th>Balance</th>
                 <th>Payment</th>
                 <th>Refund</th>
+                <th>Final Status</th>
             </tr>
         </thead>
         <tbody>
@@ -61,6 +62,7 @@
                     <td>₱@row.RemainingBalance.ToString("N2")</td>
                     <td>@row.PaymentStatus</td>
                     <td>@row.RefundStatus</td>
+                    <td>@row.BookingStatus</td>
                 </tr>
             }
         </tbody>

@@ -21,11 +21,8 @@
 }
 
 <div class="staff-reschedule-page">
-    <div class="page-header staff-reschedule-header">
-        <div>
-            <h1>Reschedule Requests</h1>
-            <p class="page-subtitle">Compare the current schedule with the client’s requested change, confirm availability, then approve or reject.</p>
-        </div>
+    <div class="ui-toolbar page-header staff-reschedule-header">
+
         <a asp-controller="Calendar" asp-action="Index" class="btn btn-outline-primary"><i class="bi bi-calendar3"></i> Calendar</a>
     </div>
 
@@ -59,7 +56,7 @@
                 <option value="oldest" selected="@(Model.SortBy == "oldest")">Oldest first</option>
             </select>
 <div class="am-filter-actions">
-            <a asp-action="Index" asp-route-status="@Model.StatusFilter" class="btn btn-outline-secondary">Reset</a>
+            <a asp-action="Index" asp-route-status="@Model.StatusFilter" class="btn btn-outline-secondary">Clear Filters</a>
             <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i> Apply Filters</button>
         </div></div></div><button type="submit" class="btn btn-primary">Search</button></form>
     </div>

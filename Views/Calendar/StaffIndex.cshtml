@@ -28,15 +28,10 @@
 }
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css" />
-<link rel="stylesheet" href="~/css/staff-calendar.css" asp-append-version="true" />
 
 <div class="staff-calendar-page">
-    <header class="staff-calendar-hero">
-        <div>
-            <span class="staff-calendar-eyebrow">Operational Schedule</span>
-            <h1>Event Calendar</h1>
-            <p>See confirmed events at a glance, then open a quick preview only when you need details.</p>
-        </div>
+    <header class="ui-toolbar staff-calendar-hero">
+
         <a asp-controller="Bookings" asp-action="Index" class="btn btn-outline-primary">
             <i class="bi bi-journal-check"></i> Booking Requests
         </a>

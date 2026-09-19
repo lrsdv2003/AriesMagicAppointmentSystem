@@ -22,12 +22,14 @@
      data-messages-url="@Url.Action("MessagesSince", "Communications")"
      data-unread-url="@Url.Action("UnreadCount", "Communications")">
 
-    <div class="comm-page-header">
+    <div class="comm-page-header @(useCompactInternal ? "ui-toolbar" : "")">
+        @if (isClient) {
         <div>
             <span class="comm-kicker"><i class="bi bi-chat-heart"></i> Communication Center</span>
             <h1>@(useCompactInternal ? "Messages" : "Messages & Coordination")</h1>
             <p>@(isClient ? "Keep every booking question and update connected to your event." : useCompactInternal ? "Message clients and team members from one focused workspace." : "Coordinate client concerns, bookings, schedules, and team operations in one place.")</p>
         </div>
+        }
         @if (Model.IsInternalUser)
         {
             <button class="btn comm-primary-btn" type="button" data-bs-toggle="modal" data-bs-target="#newConversationModal">

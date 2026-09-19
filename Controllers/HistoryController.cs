@@ -11,7 +11,7 @@ using QuestPDF.Infrastructure;
 namespace AriesMagicAppointmentSystem.Controllers
 {
     /// <summary>
-    /// Permanent archive of completed events. Owner and Staff can browse and search
+    /// Read-only history of completed, cancelled, declined and expired bookings. Owner and Staff can browse and search
     /// the same records; only Owner can export or print reports. Nobody can edit a
     /// historical record through this controller - there is intentionally no Edit/Delete action.
     /// </summary>
@@ -27,6 +27,12 @@ namespace AriesMagicAppointmentSystem.Controllers
 
         public async Task<IActionResult> Index(HistoryFilterViewModel filters)
         {
+            if (!User.IsInRole("Owner"))
+            {
+                filters.PaymentStatus = null;
+                filters.RefundStatus = null;
+                if (filters.SortBy is "HighestRevenue" or "LowestRevenue") filters.SortBy = "Newest";
+            }
             var model = await _historyService.GetHistoryAsync(filters);
             return View(model);
         }
@@ -67,7 +73,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             var rows = await _historyService.GetHistoryForExportAsync(filters);
 
             var csv = new StringBuilder();
-            csv.AppendLine("Booking ID,Client Name,Event Type,Package,Venue,Event Date,Start Time,End Time,Guests,Amount Paid,Remaining Balance,Payment Status,Refund Status,Completed Date");
+            csv.AppendLine("Booking ID,Client Name,Event Type,Package,Venue,Event Date,Start Time,End Time,Guests,Amount Paid,Remaining Balance,Payment Status,Refund Status,Completed Date,Final Status");
 
             foreach (var row in rows)
             {
@@ -81,11 +87,12 @@ namespace AriesMagicAppointmentSystem.Controllers
                     row.StartTime.ToString("hh:mm tt"),
                     row.EndTime.ToString("hh:mm tt"),
                     row.Guests,
-                    row.FinalPrice.ToString("F2"),
+                    row.AmountPaid.ToString("F2"),
                     row.RemainingBalance.ToString("F2"),
                     Escape(row.PaymentStatus),
                     Escape(row.RefundStatus),
-                    row.CompletedAt?.ToString("yyyy-MM-dd") ?? ""));
+                    row.CompletedAt?.ToString("yyyy-MM-dd") ?? "",
+                    Escape(row.BookingStatus)));
             }
 
             var bytes = Encoding.UTF8.GetBytes(csv.ToString());
@@ -142,7 +149,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                     {
                         col.Item().Text("Aries Magic - Booking History Report").Bold().FontSize(16);
                         col.Item().Text($"Generated {DateTime.Now:MMMM dd, yyyy hh:mm tt}").FontSize(9);
-                        col.Item().Text($"Records: {rows.Count}   |   Total Revenue Collected: ₱{totalRevenue:N2}").FontSize(9);
+                        col.Item().Text($"Records: {rows.Count}   |   Total Revenue Collected: â‚±{totalRevenue:N2}").FontSize(9);
                     });
 
                     page.Content().PaddingTop(15).Table(table =>
@@ -158,6 +165,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                             columns.RelativeColumn(1f);   // Balance
                             columns.RelativeColumn(1.1f); // Payment Status
                             columns.RelativeColumn(1.1f); // Refund Status
+                            columns.RelativeColumn(1.1f); // Final Status
                         });
 
                         table.Header(header =>
@@ -174,6 +182,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                             HeaderCell("Balance");
                             HeaderCell("Payment");
                             HeaderCell("Refund");
+                            HeaderCell("Final Status");
                         });
 
                         foreach (var row in rows)
@@ -183,10 +192,11 @@ namespace AriesMagicAppointmentSystem.Controllers
                             table.Cell().Padding(4).Text(row.EventType);
                             table.Cell().Padding(4).Text(row.PackageName);
                             table.Cell().Padding(4).Text(row.EventDate.ToString("MMM dd, yyyy"));
-                            table.Cell().Padding(4).Text($"₱{row.AmountPaid:N2}");
-                            table.Cell().Padding(4).Text($"₱{row.RemainingBalance:N2}");
+                            table.Cell().Padding(4).Text($"â‚±{row.AmountPaid:N2}");
+                            table.Cell().Padding(4).Text($"â‚±{row.RemainingBalance:N2}");
                             table.Cell().Padding(4).Text(row.PaymentStatus);
                             table.Cell().Padding(4).Text(row.RefundStatus);
+                            table.Cell().Padding(4).Text(row.BookingStatus);
                         }
                     });
 

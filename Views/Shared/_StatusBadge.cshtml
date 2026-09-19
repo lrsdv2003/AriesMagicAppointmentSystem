@@ -1,0 +1,10 @@
+@model string
+@{
+    var tone = Model switch {
+        "Approved" or "Verified" or "Active" or "Confirmed" or "Fully Paid" => "success",
+        "Pending" or "AwaitingDownpayment" or "AwaitingVerification" or "Verification Pending" or "UnderReview" or "RefundProcessing" => "warning",
+        "Rejected" or "Declined" or "Cancelled" or "Failed" or "Locked" => "danger",
+        _ => "neutral"
+    };
+}
+<span class="ui-badge ui-badge-@tone">@AriesMagicAppointmentSystem.ViewModels.AdminActivityPresentation.Label(Model)</span>

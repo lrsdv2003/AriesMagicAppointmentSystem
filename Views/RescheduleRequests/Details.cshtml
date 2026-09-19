@@ -11,18 +11,18 @@
     var originalStart = request.OriginalStartTime ?? (request.Status == RescheduleRequestStatus.Pending ? booking.StartTime : (DateTime?)null);
     var originalEnd = request.OriginalEndTime ?? (request.Status == RescheduleRequestStatus.Pending ? booking.EndTime : (DateTime?)null);
     var originalText = originalDate.HasValue && originalStart.HasValue && originalEnd.HasValue
-        ? $"{originalDate.Value:MMMM dd, yyyy} · {originalStart.Value:hh:mm tt} – {originalEnd.Value:hh:mm tt}"
+        ? $"{originalDate.Value:MMMM dd, yyyy} Â· {originalStart.Value:hh:mm tt} â€“ {originalEnd.Value:hh:mm tt}"
         : "Historical original schedule unavailable";
-    var requestedText = $"{request.RequestedDate:MMMM dd, yyyy} · {request.RequestedStartTime:hh:mm tt} – {request.RequestedEndTime:hh:mm tt}";
+    var requestedText = $"{request.RequestedDate:MMMM dd, yyyy} Â· {request.RequestedStartTime:hh:mm tt} â€“ {request.RequestedEndTime:hh:mm tt}";
     var statusClass = request.Status == RescheduleRequestStatus.Approved ? "status-approved" : request.Status == RescheduleRequestStatus.Rejected ? "status-rejected" : "status-pending";
 }
 
 <div class="staff-reschedule-page reschedule-details-page">
-    <div class="page-header staff-reschedule-header">
+    <div class="ui-toolbar page-header staff-reschedule-header">
         <div>
-            <span class="staff-interface-eyebrow">Reschedule Request RS-@request.Id.ToString("D3")</span>
-            <h1>@bookingCode</h1>
-            <p class="page-subtitle">Audit the booking, compare schedules, and confirm current availability before making a decision.</p>
+
+            <h2>@bookingCode</h2>
+
         </div>
         <div class="d-flex align-items-center gap-2 flex-wrap">
             <a asp-action="Index" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Back to Requests</a>
@@ -37,7 +37,7 @@
 
     <div class="reschedule-details-grid">
         <section class="dashboard-panel reschedule-detail-section">
-            <div class="reschedule-detail-heading"><i class="bi bi-journal-text"></i><div><h2>Booking Information</h2><p>Core booking reference only.</p></div></div>
+            <div class="reschedule-detail-heading"><i class="bi bi-journal-text"></i><div><h2>Booking Information</h2></div></div>
             <dl class="reschedule-detail-list">
                 <div><dt>Booking ID</dt><dd>@bookingCode</dd></div>
                 <div><dt>Client</dt><dd>@(booking.Client?.FullName ?? "Unknown client")</dd></div>
@@ -50,7 +50,7 @@
             <div class="reschedule-detail-heading"><i class="bi bi-clock-history"></i><div><h2>Original Schedule</h2><p>Schedule captured when this request was submitted.</p></div></div>
             @if (originalDate.HasValue && originalStart.HasValue && originalEnd.HasValue)
             {
-                <div class="reschedule-detail-schedule neutral"><strong>@originalDate.Value.ToString("MMMM dd, yyyy")</strong><span>@originalStart.Value.ToString("hh:mm tt") – @originalEnd.Value.ToString("hh:mm tt")</span></div>
+                <div class="reschedule-detail-schedule neutral"><strong>@originalDate.Value.ToString("MMMM dd, yyyy")</strong><span>@originalStart.Value.ToString("hh:mm tt") â€“ @originalEnd.Value.ToString("hh:mm tt")</span></div>
             }
             else
             {
@@ -59,12 +59,12 @@
         </section>
 
         <section class="dashboard-panel reschedule-detail-section">
-            <div class="reschedule-detail-heading"><i class="bi bi-calendar2-event"></i><div><h2>Requested Schedule</h2><p>Client’s requested date and time.</p></div></div>
-            <div class="reschedule-detail-schedule requested"><strong>@request.RequestedDate.ToString("MMMM dd, yyyy")</strong><span>@request.RequestedStartTime.ToString("hh:mm tt") – @request.RequestedEndTime.ToString("hh:mm tt")</span></div>
+            <div class="reschedule-detail-heading"><i class="bi bi-calendar2-event"></i><div><h2>Requested Schedule</h2><p>Clientâ€™s requested date and time.</p></div></div>
+            <div class="reschedule-detail-schedule requested"><strong>@request.RequestedDate.ToString("MMMM dd, yyyy")</strong><span>@request.RequestedStartTime.ToString("hh:mm tt") â€“ @request.RequestedEndTime.ToString("hh:mm tt")</span></div>
         </section>
 
         <section class="dashboard-panel reschedule-detail-section">
-            <div class="reschedule-detail-heading"><i class="bi bi-geo-alt"></i><div><h2>Venue</h2><p>Location information used for event operations.</p></div></div>
+            <div class="reschedule-detail-heading"><i class="bi bi-geo-alt"></i><div><h2>Venue</h2></div></div>
             <dl class="reschedule-detail-list">
                 <div><dt>Address</dt><dd>@booking.PartyVenue</dd></div>
                 <div><dt>Distance</dt><dd>@(booking.DistanceKm.HasValue ? $"{booking.DistanceKm.Value:N1} KM" : "Unavailable")</dd></div>
@@ -73,7 +73,7 @@
         </section>
 
         <section class="dashboard-panel reschedule-detail-section">
-            <div class="reschedule-detail-heading"><i class="bi bi-chat-left-text"></i><div><h2>Client Request</h2><p>Reason submitted by the client.</p></div></div>
+            <div class="reschedule-detail-heading"><i class="bi bi-chat-left-text"></i><div><h2>Client Request</h2></div></div>
             <div class="reschedule-client-reason">@request.Reason</div>
         </section>
 
@@ -90,11 +90,11 @@
     @if (request.Status != RescheduleRequestStatus.Pending)
     {
         <section class="dashboard-panel reschedule-decision-audit">
-            <div class="reschedule-detail-heading"><i class="bi bi-shield-check"></i><div><h2>Decision Record</h2><p>Audit trail for this processed request.</p></div></div>
+            <div class="reschedule-detail-heading"><i class="bi bi-shield-check"></i><div><h2>Decision Record</h2></div></div>
             <dl class="reschedule-detail-list">
                 <div><dt>Decision</dt><dd><span class="status-badge @statusClass">@request.Status</span></dd></div>
                 <div><dt>Reviewed By</dt><dd>@(request.ReviewedByName ?? "Legacy record")</dd></div>
-                <div><dt>Decision Timestamp</dt><dd>@(request.ReviewedAt?.ToString("MMMM dd, yyyy — hh:mm tt") ?? "Unavailable")</dd></div>
+                <div><dt>Decision Timestamp</dt><dd>@(request.ReviewedAt?.ToString("MMMM dd, yyyy â€” hh:mm tt") ?? "Unavailable")</dd></div>
                 <div><dt>Internal Note</dt><dd>@(request.InternalNote ?? request.AdminRemarks ?? "No internal note.")</dd></div>
             </dl>
         </section>
@@ -118,7 +118,7 @@
             <div class="modal-body">
                 <div class="reschedule-modal-schedule"><span>Original Schedule</span><strong>@originalText</strong></div>
                 <div class="reschedule-modal-schedule requested"><span>Requested Schedule</span><strong>@requestedText</strong></div>
-                <label for="detailApproveNote" class="form-label mt-3">Internal Note <span class="text-muted">— Optional</span></label>
+                <label for="detailApproveNote" class="form-label mt-3">Internal Note <span class="text-muted">â€” Optional</span></label>
                 <textarea id="detailApproveNote" name="internalNote" class="form-control" rows="4" maxlength="1000" placeholder="Add an internal operational note if needed."></textarea>
                 <div class="form-text">Internal notes are not shown to the client.</div>
             </div>
@@ -132,9 +132,9 @@
             <div class="modal-header"><h2 class="modal-title fs-5" id="detailRejectTitle">Reject Reschedule Request</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
             <div class="modal-body">
                 <div class="reschedule-modal-schedule requested"><span>Requested Schedule</span><strong>@requestedText</strong></div>
-                <label for="detailClientReason" class="form-label mt-3">Client-Facing Reason <span class="text-muted">— Optional</span></label>
+                <label for="detailClientReason" class="form-label mt-3">Client-Facing Reason <span class="text-muted">â€” Optional</span></label>
                 <textarea id="detailClientReason" name="clientFacingReason" class="form-control" rows="3" maxlength="1000" placeholder="Optional explanation the client may see."></textarea>
-                <label for="detailRejectNote" class="form-label mt-3">Internal Note <span class="text-muted">— Optional</span></label>
+                <label for="detailRejectNote" class="form-label mt-3">Internal Note <span class="text-muted">â€” Optional</span></label>
                 <textarea id="detailRejectNote" name="internalNote" class="form-control" rows="3" maxlength="1000" placeholder="Internal Staff note only."></textarea>
                 <div class="form-text">Internal notes are never included in client-facing messages.</div>
             </div>

@@ -1,11 +1,10 @@
 @model AriesMagicAppointmentSystem.ViewModels.RoleDashboardViewModel
 @{
     var greeting = Model.AsOf.Hour < 12 ? "Good morning" : Model.AsOf.Hour < 18 ? "Good afternoon" : "Good evening";
-    var context = Model.RoleName == "Staff" ? "Bookings, schedules and client coordination." : Model.RoleName == "Owner" ? "Financial decisions and business oversight." : "Accounts, configuration and system records.";
 }
-<header class="dash-welcome"><div><span class="dash-eyebrow">@Model.RoleName workspace</span><h2>@greeting, @Model.DisplayName</h2><p>@context</p></div><time datetime="@Model.AsOf.ToString("O")">@Model.AsOf.ToString("dddd, MMM d, yyyy")<small>Updated @Model.AsOf.ToString("h:mm tt")</small></time></header>
+<header class="dash-welcome"><div><span class="dash-eyebrow">@Model.RoleName workspace</span><h2>@greeting, @Model.DisplayName</h2></div><time datetime="@Model.AsOf.ToString("O")">@Model.AsOf.ToString("dddd, MMM d, yyyy")<small>Updated @Model.AsOf.ToString("h:mm tt")</small></time></header>
 <section class="dash-panel dash-attention" aria-labelledby="attentionHeading">
-<div class="dash-section-heading"><h3 id="attentionHeading">@(Model.RoleName == "Admin" ? "System Attention" : "Needs Attention")</h3><span class="dash-muted">Current tasks</span></div>
+<div class="dash-section-heading"><h3 id="attentionHeading">@(Model.RoleName == "Admin" ? "System Attention" : "Needs Attention")</h3></div>
 @if(Model.UnavailableSections.Any()) {
     <div class="dash-load-errors" role="status">@foreach(var section in Model.UnavailableSections) { <p>Unable to load @(section). <a asp-controller="Dashboard" asp-action="@Model.RoleName">Retry</a></p> }</div>
 }

@@ -1,15 +1,8 @@
 /* Staff interface cohesion: packages, messaging, navigation */
-.staff-dashboard .dashboard-topbar {
-  position: sticky;
-  top: 0;
-  z-index: 1020;
-  background: rgba(255,255,255,.96);
-  backdrop-filter: blur(12px);
-  box-shadow: 0 4px 18px rgba(15,23,42,.04);
-}
-.staff-dashboard .dashboard-main { min-width: 0; }
-.staff-dashboard .dashboard-content { padding-top: 1.15rem; }
-.staff-dashboard .topbar-right { gap: .6rem; }
+
+
+
+
 .staff-dashboard .topbar-icon:focus-visible,
 .staff-dashboard .topbar-logout-trigger:focus-visible {
   outline: 3px solid rgba(37,99,235,.25);
@@ -135,11 +128,11 @@
   .staff-package-full-inclusions { grid-template-columns: 1fr; }
 }
 @media (max-width: 767.98px) {
-  .staff-dashboard .dashboard-content { padding: 1rem; }
-  .staff-dashboard .dashboard-topbar { padding: .75rem 1rem; }
-  .staff-dashboard .topbar-user-email { display: none; }
-  .staff-dashboard .topbar-right { gap: .35rem; }
-  .staff-dashboard .topbar-icon { width: 38px; height: 38px; }
+
+
+
+
+
   .staff-package-hero { flex-direction: column; padding: 1rem; }
   .staff-package-detail-hero .btn { width: 100%; }
   .staff-package-detail-facts { grid-template-columns: 1fr; }
@@ -154,9 +147,9 @@
   .comm-page-staff .comm-message { max-width: 88%; }
 }
 @media (max-width: 575.98px) {
-  .staff-dashboard .dashboard-title { font-size: 1.05rem; }
-  .staff-dashboard .topbar-user-text { display: none; }
-  .staff-dashboard .topbar-avatar { width: 40px; height: 40px; }
+
+
+
   .staff-package-grid { grid-template-columns: 1fr; }
   .staff-package-card-head { flex-direction: column; }
   .staff-package-price { font-size: 1.05rem; }

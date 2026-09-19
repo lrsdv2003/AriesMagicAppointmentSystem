@@ -1,0 +1,29 @@
+@model AriesMagicAppointmentSystem.ViewModels.HistoryIndexViewModel
+@using AriesMagicAppointmentSystem.Models
+@{ var f = Model.Filters; }
+<form method="get" asp-action="Index" class="am-filter-bar">
+<div class="am-filter-row">
+<div class="am-filter-search"><i class="bi bi-search" aria-hidden="true"></i><label for="historySearch" class="visually-hidden">Search booking or client</label><input id="historySearch" name="Search" value="@f.Search" placeholder="Search booking or client" class="form-control" /></div>
+<div class="dropdown">
+<button type="button" class="btn btn-outline-secondary dropdown-toggle" id="historyFilterToggle" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false"><i class="bi bi-funnel" aria-hidden="true"></i> Filters</button>
+<div class="dropdown-menu dropdown-menu-end" aria-labelledby="historyFilterToggle">
+<div><label for="historyPackage">Package</label><select class="form-select" id="historyPackage" name="ServiceId"><option value="">All packages</option>@foreach(var service in Model.AvailableServices) { <option value="@service.Id" selected="@(f.ServiceId==service.Id)">@service.Name</option> }</select></div>
+<div><label for="historyStatus">Final status</label><select class="form-select" id="historyStatus" name="BookingStatus"><option value="">All statuses</option>@foreach(var status in new[]{"Completed","Cancelled","Declined","Expired"}) { <option selected="@(f.BookingStatus==status)">@status</option> }</select></div>
+<div><label for="historyDate">Event date</label><select class="form-select" id="historyDate" name="DateRange"><option value="">Any time</option><option value="Today" selected="@(f.DateRange=="Today")">Today</option><option value="ThisWeek" selected="@(f.DateRange=="ThisWeek")">This week</option><option value="ThisMonth" selected="@(f.DateRange=="ThisMonth")">This month</option><option value="Year" selected="@(f.DateRange=="Year")">Selected year</option></select></div>
+<div><label for="historyYear">Year (with selected year)</label><input class="form-control" id="historyYear" name="Year" type="number" min="1900" max="9999" value="@(f.Year??DateTime.Today.Year)" /></div>
+@if(User.IsInRole("Owner")) {
+<div><label for="historyPayment">Payment review state</label><select class="form-select" id="historyPayment" name="PaymentStatus"><option value="">All states</option>@foreach(var status in new[]{"No Payment",PaymentStatus.Pending,PaymentStatus.Verified,PaymentStatus.Rejected,PaymentStatus.AdditionalEvidenceRequired}) { <option value="@status" selected="@(f.PaymentStatus==status)">@AriesMagicAppointmentSystem.ViewModels.AdminActivityPresentation.Label(status)</option> }</select></div>
+}
+<div><label for="historySort">Sort by</label><select class="form-select" id="historySort" name="SortBy"><option value="Newest" selected="@(f.SortBy=="Newest"||string.IsNullOrEmpty(f.SortBy))">Newest event</option><option value="Oldest" selected="@(f.SortBy=="Oldest")">Oldest event</option><option value="ClientName" selected="@(f.SortBy=="ClientName")">Client name</option></select></div>
+<div class="am-filter-actions"><a asp-action="Index" class="btn btn-light">Clear Filters</a><button type="submit" class="btn btn-primary">Apply Filters</button></div>
+</div>
+</div>
+<input type="hidden" name="PageSize" value="@f.PageSize" />
+@if(f.CompletedDateFrom.HasValue) { <input type="hidden" name="CompletedDateFrom" value="@f.CompletedDateFrom.Value.ToString("yyyy-MM-dd")" /> }
+@if(f.CompletedDateTo.HasValue) { <input type="hidden" name="CompletedDateTo" value="@f.CompletedDateTo.Value.ToString("yyyy-MM-dd")" /> }
+@if(!string.IsNullOrEmpty(f.EventType)) { <input type="hidden" name="EventType" value="@f.EventType" /> }
+@if(User.IsInRole("Owner") && !string.IsNullOrEmpty(f.RefundStatus)) { <input type="hidden" name="RefundStatus" value="@f.RefundStatus" /> }
+<button type="submit" class="btn btn-primary">Search</button>
+<a asp-action="Index" class="btn btn-light">Clear Filters</a>
+</div>
+</form>

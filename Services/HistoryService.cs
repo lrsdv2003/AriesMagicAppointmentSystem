@@ -12,7 +12,7 @@ namespace AriesMagicAppointmentSystem.Services
     /// they are exercised the same way regardless of which page or export triggered them.
     ///
     /// No new tables are introduced. History is simply the existing Booking table filtered
-    /// to Status == Completed, with BookingTimeline supplying the read-only audit trail.
+    /// to final booking statuses, with BookingTimeline supplying the read-only audit trail.
     /// </summary>
     public class HistoryService : IHistoryService
     {
@@ -56,7 +56,7 @@ namespace AriesMagicAppointmentSystem.Services
                     if (!string.IsNullOrWhiteSpace(booking.ApplicationUserId))
                         _context.Notifications.Add(new Notification { UserId = booking.ApplicationUserId, Title = "Remaining Balance Due", Message = $"Your event has been completed. Your remaining balance is PHP {financial.RemainingBalance:N2}.", Link = "/Bookings/MyBookings", IsRead = false, CreatedAt = now });
                     var internalIds = new HashSet<string>();
-                    foreach (var role in new[] { "Staff", "Admin", "Owner" }) foreach (var user in await _userManager.GetUsersInRoleAsync(role)) if (user.IsActive) internalIds.Add(user.Id);
+                    foreach (var role in new[] { "Owner" }) foreach (var user in await _userManager.GetUsersInRoleAsync(role)) if (user.IsActive) internalIds.Add(user.Id);
                     foreach (var uid in internalIds) _context.Notifications.Add(new Notification { UserId = uid, Title = "Completed Event - Balance Outstanding", Message = $"Booking BK-{booking.Id} completed with PHP {financial.RemainingBalance:N2} outstanding.", Link = $"/Bookings/Details/{booking.Id}", IsRead = false, CreatedAt = now });
                 }
             }
@@ -130,8 +130,10 @@ namespace AriesMagicAppointmentSystem.Services
 
             var totalCount = await query.CountAsync();
 
-            var page = filters.Page < 1 ? 1 : filters.Page;
-            var pageSize = filters.PageSize < 1 ? 15 : filters.PageSize;
+            var pageSize = Math.Clamp(filters.PageSize, 1, 100);
+            var page = Math.Clamp(filters.Page, 1, Math.Max(1, (int)Math.Ceiling(totalCount / (double)pageSize)));
+            filters.Page = page;
+            filters.PageSize = pageSize;
 
             var pagedBookings = await query
                 .Skip((page - 1) * pageSize)
@@ -180,7 +182,7 @@ namespace AriesMagicAppointmentSystem.Services
                 .Include(b => b.Payments)
                 .Include(b => b.RescheduleRequests)
                 .Include(b => b.TimelineEvents)
-                .FirstOrDefaultAsync(b => b.Id == bookingId && b.Status == BookingStatus.Completed);
+                .FirstOrDefaultAsync(b => b.Id == bookingId && (b.Status == BookingStatus.Completed || b.Status == BookingStatus.Cancelled || b.Status == BookingStatus.Declined || b.Status == BookingStatus.Expired));
 
             if (booking == null)
             {
@@ -193,6 +195,8 @@ namespace AriesMagicAppointmentSystem.Services
                 .FirstOrDefaultAsync();
 
             var (amountPaid, remainingBalance, paymentStatus) = CalculatePaymentSummary(booking);
+
+            var finance = await _financialService.GetSummaryAsync(bookingId);
 
             var archivedEntry = booking.TimelineEvents
                 .Where(t => t.EventType == TimelineEventType.BookingArchived)
@@ -208,12 +212,13 @@ namespace AriesMagicAppointmentSystem.Services
             {
                 Booking = booking,
                 BookingCode = $"BK-{booking.CreatedAt.Year}-{booking.Id:D3}",
-                AmountPaid = amountPaid,
-                RemainingBalance = remainingBalance,
+                AmountPaid = finance.TotalVerifiedPayments,
+                RemainingBalance = finance.RemainingBalance,
+                FinancialSummary = finance,
                 PaymentStatus = paymentStatus,
                 Refund = refund,
                 RefundStatus = refund?.Status ?? "None",
-                CompletedAt = archivedEntry?.CreatedAt ?? completedEntry?.CreatedAt,
+                CompletedAt = completedEntry?.CreatedAt ?? archivedEntry?.CreatedAt,
                 Timeline = booking.TimelineEvents
                     .OrderBy(t => t.CreatedAt)
                     .Select(t => new HistoryTimelineItemViewModel
@@ -240,7 +245,7 @@ namespace AriesMagicAppointmentSystem.Services
                 .CountAsync(b => b.Status == BookingStatus.Confirmed && b.EventDate.Date == today);
 
             var historyCount = await _context.Bookings
-                .CountAsync(b => b.Status == BookingStatus.Completed);
+                .CountAsync(b => b.Status == BookingStatus.Completed || b.Status == BookingStatus.Cancelled || b.Status == BookingStatus.Declined || b.Status == BookingStatus.Expired);
 
             // "Completed this month/year" is measured against the event date, i.e. events that
             // actually happened in that period (not when the archive flag was flipped).
@@ -276,15 +281,20 @@ namespace AriesMagicAppointmentSystem.Services
                 .Include(b => b.Client)
                 .Include(b => b.Service)
                 .Include(b => b.Payments)
-                .Where(b => b.Status == BookingStatus.Completed)
+                .Where(b => b.Status == BookingStatus.Completed || b.Status == BookingStatus.Cancelled || b.Status == BookingStatus.Declined || b.Status == BookingStatus.Expired)
                 .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(filters.BookingStatus)) query = query.Where(b => b.Status == filters.BookingStatus);
 
             if (!string.IsNullOrWhiteSpace(filters.Search))
             {
                 var term = filters.Search.Trim().ToLower();
 
+                var parts = term.Split('-');
+                var codeId = parts.Length == 3 && parts[0] == "bk" && int.TryParse(parts[2], out var parsedId) ? parsedId : -1;
+                var codeYear = parts.Length == 3 && int.TryParse(parts[1], out var parsedYear) ? parsedYear : -1;
                 query = query.Where(b =>
-                    b.Id.ToString().Contains(term) ||
+                    (b.Id == codeId && b.CreatedAt.Year == codeYear) || b.Id.ToString().Contains(term) ||
                     (b.Client != null && b.Client.FullName != null && b.Client.FullName.ToLower().Contains(term)) ||
                     (b.ContactNumber != null && b.ContactNumber.ToLower().Contains(term)) ||
                     b.PackageName.ToLower().Contains(term) ||
@@ -377,12 +387,12 @@ namespace AriesMagicAppointmentSystem.Services
         {
             return sortBy switch
             {
-                "Oldest" => query.OrderBy(b => b.EventDate),
-                "HighestRevenue" => query.OrderByDescending(b => b.FinalPrice),
-                "LowestRevenue" => query.OrderBy(b => b.FinalPrice),
-                "ClientName" => query.OrderBy(b => b.Client != null ? b.Client.FullName : string.Empty),
-                "EventDate" => query.OrderBy(b => b.EventDate),
-                _ => query.OrderByDescending(b => b.EventDate) // "Newest" default
+                "Oldest" => query.OrderBy(b => b.EventDate).ThenBy(b => b.Id),
+                "HighestRevenue" => query.OrderByDescending(b => b.FinalPrice).ThenBy(b => b.Id),
+                "LowestRevenue" => query.OrderBy(b => b.FinalPrice).ThenBy(b => b.Id),
+                "ClientName" => query.OrderBy(b => b.Client != null ? b.Client.FullName : string.Empty).ThenBy(b => b.Id),
+                "EventDate" => query.OrderBy(b => b.EventDate).ThenBy(b => b.Id),
+                _ => query.OrderByDescending(b => b.EventDate).ThenByDescending(b => b.Id) // "Newest" default
             };
         }
 
@@ -416,6 +426,7 @@ namespace AriesMagicAppointmentSystem.Services
                 rows.Add(new HistoryRowViewModel
                 {
                     Id = booking.Id,
+                    BookingStatus = booking.Status,
                     BookingCode = $"BK-{booking.CreatedAt.Year}-{booking.Id:D3}",
                     ClientName = booking.Client?.FullName ?? "N/A",
                     ClientPhone = booking.ContactNumber,

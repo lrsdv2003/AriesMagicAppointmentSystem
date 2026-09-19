@@ -14,14 +14,13 @@
 }
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="internal-shell">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - Aries Magic Dashboard</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="~/css/tokens.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/soft-ui.css" asp-append-version="true" />
@@ -39,13 +38,17 @@
     <link rel="stylesheet" href="~/css/admin-console.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/role-dashboards.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/internal-profile.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/staff-calendar.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/internal-ui.css" asp-append-version="true" />
 </head>
-<body class="dashboard-body @(User.IsInRole("Staff") ? "staff-dashboard" : User.IsInRole("Admin") ? "admin-dashboard" : User.IsInRole("Owner") ? "owner-dashboard" : "")">
+<body class="internal-ui dashboard-body @(User.IsInRole("Staff") ? "staff-dashboard" : User.IsInRole("Admin") ? "admin-dashboard" : User.IsInRole("Owner") ? "owner-dashboard" : "")">
+    <a class="ui-skip-link" href="#mainContent">Skip to content</a>
     <div class="dashboard-shell">
-        <aside class="dashboard-sidebar">
+        <aside class="dashboard-sidebar offcanvas-lg offcanvas-start" tabindex="-1" id="internalSidebar" aria-labelledby="sidebarTitle">
             <div>
-                <div class="sidebar-brand">
+                <div class="sidebar-brand" id="sidebarTitle">
                     <a asp-controller="Home" asp-action="Index">Aries Magic</a>
+                    <button type="button" class="btn-close btn-close-white d-lg-none" data-bs-dismiss="offcanvas" data-bs-target="#internalSidebar" aria-label="Close navigation"></button>
                 </div>
                 <nav class="sidebar-nav">
                     @if (User.Identity != null && User.Identity.IsAuthenticated)
@@ -132,17 +135,17 @@
                             </a>
 
                             <a asp-controller="Payments" asp-action="PendingVerification"
-                               class="sidebar-link @(currentController == "Payments" && currentAction == "PendingVerification" ? "active" : "")">
+                               class="sidebar-link @(currentController == "Payments" && (currentAction == "PendingVerification" || currentAction == "Verify") ? "active" : "")">
                                 <i class="bi bi-credit-card-2-front"></i>
                                 Verify Payments
                             </a>
 
                             <a asp-controller="Payments" asp-action="RefundRequests"
-                               class="sidebar-link @(currentController == "Payments" && currentAction == "RefundRequests" ? "active" : "")">
+                               class="sidebar-link @(currentController == "Payments" && (currentAction == "RefundRequests" || currentAction == "RefundReview") ? "active" : "")">
                                 <i class="bi bi-arrow-counterclockwise"></i>
                                 Refund Requests
                             </a>
-                            
+
                             <a asp-controller="Calendar" asp-action="Index"
                                class="sidebar-link @(currentController == "Calendar" ? "active" : "")">
                                 <i class="bi bi-calendar3"></i>
@@ -176,6 +179,7 @@
         <main class="dashboard-main">
             <header class="dashboard-topbar">
                 <div class="topbar-left">
+                    <button type="button" class="btn btn-outline-secondary ui-menu-toggle" data-bs-toggle="offcanvas" data-bs-target="#internalSidebar" aria-controls="internalSidebar" aria-label="Open navigation"><i class="bi bi-list" aria-hidden="true"></i></button>
                     <h1 class="dashboard-title">@ViewData["Title"]</h1>
                 </div>
 
@@ -184,7 +188,7 @@
                         var unreadNotificationCount = 0;
                         if (!string.IsNullOrEmpty(currentUserId))
                         {
-                            unreadNotificationCount = _context.Notifications 
+                            unreadNotificationCount = _context.Notifications
                             .Count(n => n.UserId == currentUserId && !n.IsRead);
                         }
                     }
@@ -211,7 +215,7 @@
                 </div>
             </header>
 
-            <section class="dashboard-content">
+            <section class="dashboard-content" id="mainContent" tabindex="-1">
                 @RenderBody()
 
                 <div class="modal fade" id="logoutConfirmModal" tabindex="-1" aria-labelledby="logoutConfirmModalLabel" aria-hidden="true">

@@ -5,7 +5,7 @@
     var roles = ViewBag.UserRoles as Dictionary<string, string> ?? new();
 }
 <div class="admin-console">
-<header class="admin-heading"><div><h2>Users</h2><p>Account access, roles and verification.</p></div><button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createStaffModal">Create Staff Account</button></header>
+<header class="admin-heading"><button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createStaffModal">Create Staff Account</button></header>
 @if (TempData["SuccessMessage"] != null) { <div class="alert alert-success" role="status">@TempData["SuccessMessage"]</div> }
 @if (TempData["ErrorMessage"] != null) { <div class="alert alert-danger" role="alert">@TempData["ErrorMessage"]</div> }
 <form method="get" asp-action="Index" class="am-filter-bar"><div class="am-filter-row">

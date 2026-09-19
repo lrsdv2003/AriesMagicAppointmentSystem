@@ -9,6 +9,7 @@ namespace AriesMagicAppointmentSystem.ViewModels
     public class HistoryFilterViewModel
     {
         public string? Search { get; set; }
+        public string? BookingStatus { get; set; }
 
         // "Today" | "ThisWeek" | "ThisMonth" | "Year" | "" (any)
         public string? DateRange { get; set; }
@@ -45,6 +46,7 @@ namespace AriesMagicAppointmentSystem.ViewModels
     public class HistoryRowViewModel
     {
         public int Id { get; set; }
+        public string BookingStatus { get; set; } = "Completed";
         public string BookingCode { get; set; } = string.Empty;
         public string ClientName { get; set; } = string.Empty;
         public string ClientPhone { get; set; } = string.Empty;
@@ -88,6 +90,7 @@ namespace AriesMagicAppointmentSystem.ViewModels
     public class HistoryDetailsViewModel
     {
         public Booking Booking { get; set; } = null!;
+        public BookingFinancialSummaryViewModel? FinancialSummary { get; set; }
         public string BookingCode { get; set; } = string.Empty;
 
         public decimal AmountPaid { get; set; }

@@ -4,14 +4,14 @@
     ViewData["Title"] = "Packages";
 }
 <div class="staff-package-page">
-    <header class="staff-package-hero">
-        <div><span class="staff-interface-eyebrow">Package Reference</span><h1>Packages</h1><p>Pricing, duration, and main inclusions at a glance.</p></div>
+    <header class="ui-toolbar staff-package-hero">
+
         @if (User.CanEditPackages()) {
             <div class="d-flex gap-2 flex-wrap"><a asp-action="Archived" class="btn btn-outline-secondary">Archived Packages</a><a asp-action="Create" class="btn btn-primary">Add Package</a></div>
         }
     </header>
     @if (!Model.Any()) {
-        <div class="staff-package-empty"><h2>No active packages yet</h2><p>There are currently no active packages available.</p></div>
+        <div class="staff-package-empty"><h2>No active packages yet</h2></div>
     } else {
         <div class="staff-package-grid">
             @foreach (var item in Model) { <partial name="_StaffPackageCard" model="item" /> }

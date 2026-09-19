@@ -22,19 +22,19 @@
         _ => "status-read"
     };
     string StatusLabel(string status) => status switch {
-        BookingStatus.AwaitingDownpayment => "Approved · Awaiting Payment",
-        BookingStatus.AwaitingVerification => "Approved · Awaiting Owner Verification",
+        BookingStatus.AwaitingDownpayment => "Approved Â· Awaiting Payment",
+        BookingStatus.AwaitingVerification => "Approved Â· Awaiting Owner Verification",
         _ => status
     };
 }
 <div class="staff-booking-page staff-booking-details-page">
-    <div class="page-header staff-booking-header">
+    <div class="ui-toolbar page-header staff-booking-header">
         <div>
             <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
-                <h1 class="mb-0">Booking Details</h1>
+
                 <span class="status-badge staff-status-badge @StatusClass(Model.Status)">@StatusLabel(Model.Status)</span>
             </div>
-            <p class="page-subtitle mb-0">BK-@Model.CreatedAt.Year-@Model.Id.ToString("D3") · Review the operational details needed to approve or decline this request.</p>
+            <p class="page-subtitle mb-0">BK-@Model.CreatedAt.Year-@Model.Id.ToString("D3") Â</p>
         </div>
         <div class="d-flex gap-2 flex-wrap">
             <form asp-controller="Communications" asp-action="StartBookingConversation" method="post">
@@ -84,7 +84,7 @@
                 <div class="booking-venue-metrics">
                     <div><span>Distance</span><strong>@(Model.DistanceKm.HasValue ? $"{Model.DistanceKm.Value:N1} km" : "Not available")</strong></div>
                     <div><span>Service zone</span><strong>@(string.IsNullOrWhiteSpace(Model.ServiceZone) ? "Not available" : Model.ServiceZone)</strong></div>
-                    <div><span>Travel fee</span><strong>@(Model.TravelFee > 0 ? $"₱{Model.TravelFee:N2}" : "No travel fee")</strong></div>
+                    <div><span>Travel fee</span><strong>@(Model.TravelFee > 0 ? $"â‚±{Model.TravelFee:N2}" : "No travel fee")</strong></div>
                 </div>
             </div>
             <div class="staff-detail-list staff-detail-list-2col">
@@ -96,7 +96,7 @@
             <div class="staff-detail-list">
                 <div><span>Selected Service</span><strong>@(Model.Service?.Name ?? "Not available")</strong></div>
                 <div><span>Selected Package</span><strong>@Model.PackageName</strong></div>
-                <div><span>Package Price</span><strong>₱@Model.FinalPrice.ToString("N2")</strong></div>
+                <div><span>Package Price</span><strong>â‚±@Model.FinalPrice.ToString("N2")</strong></div>
                 <div>
                     <span>Package Adjustments</span>
                     <strong>@(removedInclusions.Any() ? string.Join(", ", removedInclusions.Select(x => $"Removed: {x}")) : "No package adjustments")</strong>
@@ -145,7 +145,7 @@
                     <p class="mb-0">
                         @if (Model.Status == BookingStatus.Confirmed)
                         {
-                            <span>This booking is confirmed and is now managed through Calendar → Upcoming Events.</span>
+                            <span>This booking is confirmed and is now managed through Calendar â†’ Upcoming Events.</span>
                         }
                         else if (Model.Status == BookingStatus.AwaitingDownpayment || Model.Status == BookingStatus.AwaitingVerification)
                         {
@@ -172,7 +172,7 @@
                     <div class="modal-header"><h2 class="modal-title fs-5" id="approveBookingModalLabel">Approve Booking</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
                     <div class="modal-body">
                         <p>Are you sure you want to approve this booking?</p>
-                        <label for="approveInternalNote" class="form-label">Internal Note <span class="text-muted">— Optional</span></label>
+                        <label for="approveInternalNote" class="form-label">Internal Note <span class="text-muted">â€” Optional</span></label>
                         <textarea id="approveInternalNote" name="internalNote" class="form-control" rows="4" maxlength="1000" placeholder="Add an internal operational note if needed."></textarea>
                         <div class="form-text">Internal notes are not shown to the client.</div>
                     </div>
@@ -191,7 +191,7 @@
                     <div class="modal-header"><h2 class="modal-title fs-5" id="declineBookingModalLabel">Decline Booking</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
                     <div class="modal-body">
                         <p>Are you sure you want to decline this booking?</p>
-                        <label for="declineInternalNote" class="form-label">Reason / Internal Note <span class="text-muted">— Optional</span></label>
+                        <label for="declineInternalNote" class="form-label">Reason / Internal Note <span class="text-muted">â€” Optional</span></label>
                         <textarea id="declineInternalNote" name="internalNote" class="form-control" rows="4" maxlength="1000" placeholder="Add an internal reason or operational note if needed."></textarea>
                         <div class="form-text">This note remains internal and is not automatically shown to the client.</div>
                     </div>

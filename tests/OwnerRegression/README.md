@@ -116,3 +116,31 @@ Internal account photos are written under `App_Data/profiles` outside wwwroot an
 for the currently signed-in account through `/InternalProfile/Photo`. Keep this directory writable
 and persistent with the application data during deployment/backup; it is excluded from Git.
 Existing generated photos under uploads/profiles remain readable until replaced or removed.
+
+
+## Shared internal UI and role-aware History
+
+The internal layout opts into `internal-ui.css`, which owns shared typography, spacing, colors,
+controls, tables, badges, panels and navigation. Existing module CSS retains layout-specific
+behavior. The primary font is Segoe UI (Arial/sans-serif fallback), without a web-font request.
+The desktop sidebar and top header stay fixed while main content scrolls. Below 992px the
+same sidebar uses Bootstrap offcanvas, including keyboard focus management and Escape dismissal.
+Client layouts do not opt into this stylesheet.
+
+History now includes Completed, Cancelled, Declined and Expired bookings, with a shared filter
+partial and responsive table. Staff sees operational fields and lifecycle events; Owner also
+sees payment-review state and shared financial summaries. Details are read-only. Staff-supplied
+payment/refund filters and revenue sorting are ignored. Existing date/refund query parameters
+are preserved in pagination and exports. CSV, print and PDF include the final booking status.
+Full booking codes are searchable, paging is bounded, and completion dates prefer the actual
+completion event over the later archival marker. Outstanding-balance notifications go to Owner.
+
+Validation: 236 isolated regression checks; 48 rendered fixtures. Run
+`node tests/OwnerRegression/internal-ui.browser.mjs` with PUPPETEER_MODULE configured as above.
+It covers 39 internal screens at 1440, 1024, 768 and 390px (156 responsive checks), role-safe
+History rendering, read-only details, consistent typography, sidebar contrast, fixed headers,
+mobile navigation focus, filters and the shared profile menu. UI_PAGES accepts comma-separated
+fixture names for targeted runs; SKIP_LAYOUT=1 runs interactions only. Screenshots are viewport
+captures because content scrolls inside the shell. External font/icon requests are blocked in
+fixtures; real authenticated account UAT remains separate from these synthetic checks.
+The existing interface, Admin and profile browser interaction suites also pass.

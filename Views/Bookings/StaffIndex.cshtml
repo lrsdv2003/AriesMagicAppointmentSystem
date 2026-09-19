@@ -24,11 +24,8 @@
     };
 }
 <div class="staff-booking-page">
-    <div class="page-header staff-booking-header">
-        <div>
-            <h1>Booking Requests</h1>
-            <p class="page-subtitle">Review requests that still need Staff attention. Confirmed events move automatically to Calendar → Upcoming Events.</p>
-        </div>
+    <div class="ui-toolbar page-header staff-booking-header">
+
         <a asp-controller="Calendar" asp-action="Index" class="btn btn-outline-primary">
             <i class="bi bi-calendar3"></i> Upcoming Events
         </a>
@@ -81,7 +78,7 @@
                 </select>
             </div>
 <div class="am-filter-actions">
-            <a asp-action="Index" class="btn btn-outline-secondary">Reset</a>
+            <a asp-action="Index" class="btn btn-outline-secondary">Clear Filters</a>
             <button type="submit" class="btn btn-primary"><i class="bi bi-funnel"></i> Apply Filters</button>
         </div></div></div><button type="submit" class="btn btn-primary">Search</button></form>
     </div>

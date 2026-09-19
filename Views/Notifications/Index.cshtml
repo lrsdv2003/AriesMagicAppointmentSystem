@@ -7,7 +7,7 @@
 }
 <section class="notice-page" aria-labelledby="noticeTitle">
     <header class="notice-header">
-        <div><h1 id="noticeTitle">Notifications</h1><p>@unread unread <span aria-hidden="true">&middot;</span> @notifications.Count total</p></div>
+        <div>@if(User.IsInRole("Client")){<h1 id="noticeTitle">Notifications</h1>}else{<span id="noticeTitle" class="visually-hidden">Notifications</span>}<p>@unread unread <span aria-hidden="true">&middot;</span> @notifications.Count total</p></div>
         @if (unread > 0) {
             <form asp-controller="Notifications" asp-action="MarkAllRead" method="post">@Html.AntiForgeryToken()<button type="submit" class="btn btn-outline-secondary">Mark all as read</button></form>
         }

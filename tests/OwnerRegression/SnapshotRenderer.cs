@@ -52,6 +52,8 @@ static class SnapshotRenderer
             ("Payments","RefundReview",refund),
             ("Reports","Index",reports),
             ("Services","Index",new[] {displayPackage}),
+            ("Services","Details",displayPackage),
+            ("Services","Create",new ServiceManageViewModel {Name="New package",Price=10000,DurationInHours=2}),
             ("Services","Edit",new ServiceManageViewModel { Id=displayPackage.Id, Name=displayPackage.Name, Price=displayPackage.Price, DurationInHours=displayPackage.DurationInHours,
                 Inclusions=displayPackage.Inclusions.Select(i=>new ServiceInclusionInputViewModel { Id=i.Id, Name=i.Name, DeductionAmount=i.DeductionAmount, IsRemovable=i.IsRemovable }).ToList() }),
             ("Notifications","Index",notices)
@@ -61,10 +63,13 @@ static class SnapshotRenderer
             ("Bookings","StaffIndex",new BookingManagementViewModel { AvailableServices = [package], BookingStatus = "AllRequests" }),
             ("Bookings","MyBookings",new[] {booking}),
             ("RescheduleRequests","Index",new RescheduleRequestIndexViewModel()),
-            ("History","Index",new HistoryIndexViewModel { AvailableServices = [package], TotalPages = 2, TotalCount = 16, Bookings = [new HistoryRowViewModel { BookingCode = "BK-2026-001" }] }),
+            ("RescheduleRequests","Details",new RescheduleRequestDetailsViewModel {Request=new RescheduleRequest {Id=44,Booking=booking,RequestedDate=DateTime.Today.AddDays(5),RequestedStartTime=DateTime.Today.AddDays(5).AddHours(10),RequestedEndTime=DateTime.Today.AddDays(5).AddHours(12)},Availability=new() {IsAvailable=true}}),
+            ("History","Index",new HistoryIndexViewModel { AvailableServices = [package], TotalPages = 2, TotalCount = 16, Bookings = [new HistoryRowViewModel { Id=1,BookingCode="BK-2026-001",ClientName="Fixture Client",PackageName="History Package",Venue="Fixture Venue",EventDate=DateTime.Today.AddDays(-2),StartTime=DateTime.Today.AddHours(10),EndTime=DateTime.Today.AddHours(12),PaymentStatus="Verified",BookingStatus="Completed" }] }),
             ("SystemActivity","Index",new SystemActivityIndexViewModel { Page = 1, PageSize = 20, TotalCount=21, TotalPages = 2, ActivityTypes=Enum.GetValues<SystemActivityType>().ToList(), Activities = [new SystemActivity {Type=SystemActivityType.PaymentVerified,PerformedByUserName="Test Owner",Description="Payment reviewed after proof comparison.",AffectedRecordType="Payment",AffectedRecordId="42",MetadataJson=System.Text.Json.JsonSerializer.Serialize(new { ActorRole="Owner" })}] }),
             ("TrashHistory","Index",new TrashHistoryIndexViewModel { TotalPages = 2, ArchivedPackages=[new Service {Id=55,Name="Archived Fixture",IsArchived=true}], Bookings = [new TrashHistoryRowViewModel {BookingCode="BK-2026-001",ClientName="Test Client",ArchiveDateRecorded=true,ArchivedAt=DateTime.UtcNow,ArchivedBy="Test Staff"}] }),
             ("Calendar","StaffIndex",new CalendarIndexViewModel { Bookings = Enumerable.Range(0,8).Select(i=>new Booking { Id = 990+i, Status = BookingStatus.Confirmed, EventDate = DateTime.Today.AddDays(i<6?2:1), StartTime = DateTime.Today.AddHours(10), EndTime = DateTime.Today.AddHours(12), PackageName = i%2==0?"Regression Package":"Other Package", PartyVenue = "Fixture Venue" }).ToList() }),
+            ("History","Details",new HistoryDetailsViewModel {Booking=new Booking {Id=booking.Id,Client=booking.Client,Status=BookingStatus.Completed,EventType="Birthday",PartyVenue="Fixture Venue",PackageName=booking.PackageName,EventDate=booking.EventDate,StartTime=booking.StartTime,EndTime=booking.EndTime,FinalPrice=booking.FinalPrice,PaxCount=50},CompletedAt=DateTime.Today.AddDays(-2),BookingCode="BK-2026-001",AmountPaid=3000,RemainingBalance=7000,PaymentStatus="Verified",FinancialSummary=finance,Timeline=[new(){EventType="BookingCompleted",CreatedAt=DateTime.Today.AddDays(-2)},new(){EventType="PaymentVerified",Notes="Private financial marker",CreatedAt=DateTime.Today.AddDays(-3)}]}),
+            ("Bookings","StaffDetails",booking),
             ("UserManagement","Index",Enumerable.Range(1,12).Select(i=>new ApplicationUser {Id="fixture-"+i,FullName="Test User "+i,Email="user"+i+"@example.test",EmailConfirmed=i%2==0,IsActive=i%3!=0}).ToArray()),
             ("UserManagement","Details",new ApplicationUser {Id="fixture-1",FullName="Test Staff",Email="staff@example.test",PhoneNumber="123456789",EmailConfirmed=true}),
             ("Calendar","Index",new CalendarIndexViewModel {Manage=new CalendarManageViewModel {MaxBookingsPerDay=3,BlockedDates=[new BlockedDate {Id=1,Date=DateTime.Today.AddDays(10),Reason="System maintenance"}]}}),
@@ -78,13 +83,14 @@ static class SnapshotRenderer
         var rendered = 0;
         foreach(var page in pages)
         {
-            var defaultRole = page.Controller == "Dashboard" ? page.Action : page.Action == "Admin" || page.Controller == "Calendar" && page.Action == "Index" ? "Admin" : page.Action == "MyBookings" ? "Client" : page.Action == "StaffIndex" || page.Controller == "RescheduleRequests" ? "Staff" : page.Controller is "UserManagement" or "SystemActivity" or "TrashHistory" ? "Admin" : "Owner";
-            var roles = page.Controller == "InternalProfile" ? new[] { "Owner", "Staff", "Admin" } : page.Controller == "Services" && page.Action == "Index" ? new[] { "Owner", "Staff", "Admin" } : page.Controller == "Communications" ? new[] { "Owner", "Admin" } : page.Controller == "Notifications" ? new[] { "Owner", "Client" } : new[] { defaultRole };
+            var defaultRole = page.Controller == "Dashboard" ? page.Action : page.Action == "Admin" || page.Controller == "Calendar" && page.Action == "Index" ? "Admin" : page.Action == "MyBookings" ? "Client" : page.Action is "StaffIndex" or "StaffDetails" || page.Controller == "RescheduleRequests" ? "Staff" : page.Controller is "UserManagement" or "SystemActivity" or "TrashHistory" ? "Admin" : "Owner";
+            var roles = page.Controller == "History" ? new[] {"Owner","Staff"} : page.Controller == "InternalProfile" ? new[] { "Owner", "Staff", "Admin" } : page.Controller == "Services" && page.Action is "Index" or "Details" ? new[] { "Owner", "Staff", "Admin" } : page.Controller == "Communications" ? new[] { "Owner", "Admin" } : page.Controller == "Notifications" ? new[] { "Owner", "Client" } : new[] { defaultRole };
             foreach (var role in roles)
             {
-            foreach(var state in page.Controller == "Dashboard" ? new[]{"populated","empty","error"} : new[]{"populated"})
+            foreach(var state in page.Controller == "Dashboard" ? new[]{"populated","empty","error"} : page.Controller == "History" && page.Action == "Index" ? new[]{"populated","empty"} : new[]{"populated"})
             {
             object fixtureModel = page.Model;
+            if(page.Controller=="History" && page.Action=="Index" && state=="empty") fixtureModel=new HistoryIndexViewModel {Filters=new() {Search="no matches"}};
             if(fixtureModel is InternalProfileViewModel account) account.Role=role;
             if(page.Controller == "Dashboard" && state != "populated") {
                 var original=(RoleDashboardViewModel)page.Model;

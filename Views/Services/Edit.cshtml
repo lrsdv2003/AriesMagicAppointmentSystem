@@ -4,7 +4,7 @@
     ViewData["Title"] = "Edit Package";
 }
 <div class="package-editor">
-    <header class="page-header"><div><h1>Edit Package</h1><p class="page-subtitle">Review package details before saving.</p></div></header>
+
     <form asp-action="Edit" method="post" id="packageEditorForm">
         @Html.AntiForgeryToken()
         <input asp-for="Id" type="hidden" />
@@ -37,7 +37,7 @@
                 <section class="package-editor-section" aria-labelledby="packageAvailability"><h2 id="packageAvailability">Availability</h2><strong>@(Model.IsArchived ? "Archived" : "Active")</strong><p class="form-text mb-0">Availability is managed separately using Archive or Restore.</p></section>
             </div>
             <aside class="package-editor-section package-editor-preview" aria-labelledby="packagePreviewTitle">
-                <span class="staff-interface-eyebrow">Before Saving</span><h2 id="packagePreviewTitle">Package Summary</h2>
+                <h2 id="packagePreviewTitle">Package Summary</h2>
                 <h3 id="previewPackageName">@Model.Name</h3><strong id="previewPackagePrice">&#8369;@Model.Price.ToString("N2")</strong>
                 <p id="previewPackageDuration">@Model.DurationInHours hour(s)</p><span class="staff-package-section-label">Main Inclusions</span><ul id="previewPackageInclusions"></ul>
             </aside>
