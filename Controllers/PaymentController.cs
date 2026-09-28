@@ -79,7 +79,7 @@ namespace AriesMagicAppointmentSystem.Controllers
         }
 
         [Authorize(Roles = "Client")]
-        public async Task<IActionResult> Upload()
+        public async Task<IActionResult> Upload(int? bookingId)
         {
             var appUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
@@ -91,6 +91,13 @@ namespace AriesMagicAppointmentSystem.Controllers
                 Bookings = await GetPayableBookingsAsync(appUserId)
             };
 
+            if (bookingId.HasValue && viewModel.Bookings.Any(b => b.Value == bookingId.Value.ToString()))
+            {
+                viewModel.BookingId = bookingId.Value;
+                var summary = await _financialService.GetSummaryAsync(bookingId.Value);
+                if (summary.RemainingBalance > 0)
+                    viewModel.Amount = Math.Min(FixedDownpaymentAmount, summary.RemainingBalance);
+            }
             return View(viewModel);
         }
 

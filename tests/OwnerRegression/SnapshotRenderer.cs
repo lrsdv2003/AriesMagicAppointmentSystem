@@ -58,6 +58,14 @@ static class SnapshotRenderer
                 Inclusions=displayPackage.Inclusions.Select(i=>new ServiceInclusionInputViewModel { Id=i.Id, Name=i.Name, DeductionAmount=i.DeductionAmount, IsRemovable=i.IsRemovable }).ToList() }),
             ("Notifications","Index",notices)
         };
+        var clientBooking = new Booking { Id=booking.Id, Client=booking.Client, PackageName=displayPackage.Name, Service=displayPackage, Status=BookingStatus.AwaitingDownpayment, EventDate=DateTime.Today.AddDays(7), StartTime=DateTime.Today.AddDays(7).AddHours(10), EndTime=DateTime.Today.AddDays(7).AddHours(12), PartyVenue="Antipolo event venue", EventType="Birthday", ContactPerson="Fixture Client", ContactNumber="09000000000", Motif="Coral", PaxCount=50, FinalPrice=10000, CreatedAt=DateTime.Today };
+        pages = pages.Concat(new (string Controller,string Action,object Model)[] {
+            ("Home","Index",new[]{displayPackage}), ("Home","Packages",new[]{displayPackage}), ("Home","Package",displayPackage),
+            ("Bookings","ClientDashboard",new[]{clientBooking}), ("Bookings","ClientDetails",clientBooking),
+            ("Bookings","Create",new BookingStepTwoViewModel {EventDate=DateTime.Today.AddDays(7),StartTime=new TimeSpan(10,0,0),PaxCount=50,ContactPerson="Fixture Client",ContactNumber="09000000000"}),
+            ("Payments","Upload",new PaymentUploadViewModel {FixedDownpaymentAmount=2000,Amount=2000,GCashQrPath="/images/gcash-qr.jpeg",Bookings=[new(){Value="1",Text="Fixture booking — balance PHP 10,000"}]}),
+            ("Payments","MyUploads",new[]{payment})
+        }).ToArray();
         var filterPages = new (string Controller,string Action,object Model)[] {
             ("Bookings","Index",new BookingManagementViewModel { AvailableServices = [package] }),
             ("Bookings","StaffIndex",new BookingManagementViewModel { AvailableServices = [package], BookingStatus = "AllRequests" }),
@@ -83,7 +91,8 @@ static class SnapshotRenderer
         var rendered = 0;
         foreach(var page in pages)
         {
-            var defaultRole = page.Controller == "Dashboard" ? page.Action : page.Action == "Admin" || page.Controller == "Calendar" && page.Action == "Index" ? "Admin" : page.Action == "MyBookings" ? "Client" : page.Action is "StaffIndex" or "StaffDetails" || page.Controller == "RescheduleRequests" ? "Staff" : page.Controller is "UserManagement" or "SystemActivity" or "TrashHistory" ? "Admin" : "Owner";
+            var isClientPage = page.Controller == "Home" || page.Controller == "Bookings" && new[]{"ClientDashboard","ClientDetails","Create"}.Contains(page.Action) || page.Controller == "Payments" && new[]{"Upload","MyUploads"}.Contains(page.Action);
+            var defaultRole = isClientPage ? "Client" : page.Controller == "Dashboard" ? page.Action : page.Action == "Admin" || page.Controller == "Calendar" && page.Action == "Index" ? "Admin" : page.Action == "MyBookings" ? "Client" : page.Action is "StaffIndex" or "StaffDetails" || page.Controller == "RescheduleRequests" ? "Staff" : page.Controller is "UserManagement" or "SystemActivity" or "TrashHistory" ? "Admin" : "Owner";
             var roles = page.Controller == "History" ? new[] {"Owner","Staff"} : page.Controller == "InternalProfile" ? new[] { "Owner", "Staff", "Admin" } : page.Controller == "Services" && page.Action is "Index" or "Details" ? new[] { "Owner", "Staff", "Admin" } : page.Controller == "Communications" ? new[] { "Owner", "Admin" } : page.Controller == "Notifications" ? new[] { "Owner", "Client" } : new[] { defaultRole };
             foreach (var role in roles)
             {
@@ -112,6 +121,8 @@ static class SnapshotRenderer
             var result = engine.GetView(null, "/Views/"+page.Controller+"/"+page.Action+".cshtml",true);
             if (!result.Success) throw new Exception("Could not find snapshot view");
             var data = new ViewDataDictionary(provider.GetRequiredService<IModelMetadataProvider>(),new ModelStateDictionary()) {Model=fixtureModel};
+            data["WizardPackages"]=new List<Service>{displayPackage}; data["EventTypes"]=new List<string>{"Birthday","Company Events","Bridal Shower","Gender Reveal","School Events","Halloween","Christmas Parties","Easter Events"};
+            data["FinancialSummaries"]=new Dictionary<int,BookingFinancialSummaryViewModel>{[booking.Id]=finance};
             data["FinancialSummary"]=finance; data["ExpectedReceiver"]="Aries Magic"; data["Filter"]="awaiting";
             data["PackageColors"] = new Dictionary<string,string> { ["Regression Package"] = "pink", ["Other Package"] = "blue" };
             data["BlockedDates"] = new[] { new { date=DateTime.Today.AddDays(2).ToString("yyyy-MM-dd"), reason="Fixture blocked date" } };

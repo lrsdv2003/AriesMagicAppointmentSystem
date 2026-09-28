@@ -1,134 +1,19 @@
 @model AriesMagicAppointmentSystem.ViewModels.PaymentUploadViewModel
-
-@{
-    ViewData["Title"] = "Upload Payment";
-}
-
-<div class="client-portal-header">
-    <div>
-        <div class="section-kicker">Client Portal</div>
-        <h1 class="client-portal-title">Upload Payment</h1>
-        <p class="client-portal-text">
-            Pay the minimum down payment or any additional balance amount, then upload your payment proof for OCR-assisted manual verification.
-        </p>
-    </div>
-</div>
-
-<div class="am-wizard-tracker am-static-tracker mb-4">
-    <div class="am-wizard-node is-active" data-node="1">
-        <span class="am-wizard-node-dot">1</span>
-        <span class="am-wizard-node-label">Upload Proof</span>
-    </div>
-    <div class="am-wizard-node is-upcoming" data-node="2">
-        <span class="am-wizard-node-dot">2</span>
-        <span class="am-wizard-node-label">Owner Review</span>
-    </div>
-    <div class="am-wizard-node is-upcoming" data-node="3">
-        <span class="am-wizard-node-dot">3</span>
-        <span class="am-wizard-node-label">Verified &amp; Confirmed</span>
-    </div>
-</div>
-
-<div class="upload-payment-layout">
-    <div class="dashboard-panel">
-        <div class="form-section-title mb-1">Payment Information</div>
-        <p class="page-subtitle mb-4">Minimum initial down payment is ₱2,000. You may pay more, or pay the exact final balance when it is below ₱2,000.</p>
-
-        <form asp-action="Upload" method="post" enctype="multipart/form-data">
-            @Html.AntiForgeryToken()
-            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
-
-            <div class="row g-3">
-                <div class="col-12">
-                    <label asp-for="BookingId" class="form-label">Select Booking</label>
-                    <select asp-for="BookingId" asp-items="Model.Bookings" class="form-select">
-                        <option value="">-- Select Booking --</option>
-                    </select>
-                    <span asp-validation-for="BookingId" class="text-danger"></span>
-                </div>
-
-                <div class="col-md-6">
-                    <label asp-for="Amount" class="form-label">Payment Amount</label>
-                    <input asp-for="Amount" type="number" step="0.01" min="0.01" class="form-control" />
-                    <span asp-validation-for="Amount" class="text-danger"></span>
-                    <div class="form-text">Minimum initial down payment is ₱@Model.FixedDownpaymentAmount.ToString("N2"). The booking selector shows the current outstanding balance.</div>
-                </div>
-
-                <div class="col-md-6">
-                    <label asp-for="PaymentMethod" class="form-label">Payment Method</label>
-                    <select asp-for="PaymentMethod" class="form-select"><option>GCash</option><option>Maya</option><option>Bank Transfer</option><option>Online Banking</option><option>Other</option></select>
-                </div>
-                <div class="col-md-6">
-                    <label asp-for="ProofImage" class="form-label">Payment Proof</label>
-                    <input asp-for="ProofImage" type="file" class="form-control" data-proof-input accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" />
-                    <span asp-validation-for="ProofImage" class="text-danger"></span><div class="proof-preview-shell" data-proof-preview hidden><img alt="Payment proof preview"/><div><button type="button" class="btn btn-sm btn-outline-secondary" data-proof-replace>Replace Image</button><button type="button" class="btn btn-sm btn-outline-danger" data-proof-remove>Remove Image</button></div></div>
-                    <div class="form-text mt-2">Accepted formats: JPG, JPEG, PNG, WEBP. Max size: 5MB.</div>
-                </div>
-            </div>
-
-            <div class="payment-form-note mt-4">
-                Make sure the uploaded screenshot or receipt is clear, complete, and readable to avoid rejection or delays in verification.
-            </div>
-
-            <div class="upload-payment-actions">
-                <button type="submit" class="btn btn-primary btn-lg">Submit Payment Proof</button>
-                <a asp-action="RequestRefund" class="btn btn-outline-danger btn-lg">Request Refund</a>
-                <a asp-action="MyUploads" class="btn btn-outline-secondary btn-lg">Back to My Payments</a>
-            </div>
-        </form>
-    </div>
-
-    <div class="dashboard-panel payment-guide-panel">
-        <div class="form-section-title mb-1">GCash Payment QR</div>
-        <p class="page-subtitle mb-4">Scan this QR code to send the fixed downpayment.</p>
-
-        <div class="text-center mb-4">
-            <img src="@Model.GCashQrPath"
-                 alt="GCash QR Code"
-                 class="payment-qr-image" />
-        </div>
-
-        <div class="payment-guide-note mt-4">
-            Minimum initial down payment: <strong>₱@Model.FixedDownpaymentAmount.ToString("N2")</strong>
-        </div>
-
-        <div class="payment-guide-list mt-4">
-            <div class="payment-guide-card">
-                <div class="payment-guide-icon">1</div>
-                <div>
-                    <strong>Scan the GCash QR</strong>
-                    <p>Send at least ₱2,000 for the initial payment, or the exact remaining balance if it is already below ₱2,000.</p>
-                </div>
-            </div>
-
-            <div class="payment-guide-card">
-                <div class="payment-guide-icon">2</div>
-                <div>
-                    <strong>Take a screenshot</strong>
-                    <p>Save a clear proof of payment after sending the money.</p>
-                </div>
-            </div>
-
-            <div class="payment-guide-card">
-                <div class="payment-guide-icon">3</div>
-                <div>
-                    <strong>Upload proof</strong>
-                    <p>Submit your screenshot and wait for Owner verification.</p>
-                </div>
-            </div>
-
-            <div class="payment-guide-card">
-                <div class="payment-guide-icon">4</div>
-                <div>
-                    <strong>Refund option</strong>
-                    <p>If you sent money but your slot was already taken, submit a refund request.</p>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
+@{ ViewData["Title"] = "Payment"; }
+<header class="cr-page-heading"><div><span class="cr-eyebrow">Confirm your celebration</span><h1>Pay & upload proof</h1><p>Follow the instructions, upload your receipt, then track verification.</p></div><a asp-action="MyUploads" class="btn btn-outline-secondary">My payments</a></header>
+<ol class="cr-steps cr-payment-steps" aria-label="Payment progress"><li class="is-active" aria-current="step">Payment instructions</li><li>Upload proof</li><li>Verification status</li></ol>
+<form asp-action="Upload" method="post" enctype="multipart/form-data" id="clientPaymentForm" novalidate data-has-errors="@(!ViewData.ModelState.IsValid ? "true" : "false")">
+@Html.AntiForgeryToken()
+<div asp-validation-summary="All" class="alert alert-danger" role="alert"></div>
+<section class="cr-card" id="paymentInstructions"><h2>Choose your booking</h2><label asp-for="BookingId" class="form-label">Booking and outstanding balance</label><select asp-for="BookingId" asp-items="Model.Bookings" class="form-select" required><option value="">Select an approved booking</option></select><span asp-validation-for="BookingId" class="text-danger"></span>
+<div class="cr-payment-guide"><div><h3>Send your payment</h3><p>The minimum initial downpayment is <strong>₱@Model.FixedDownpaymentAmount.ToString("N2")</strong>. You may pay more, or the exact remaining balance when it is below ₱2,000.</p><ol><li>Scan the GCash QR using your payment app.</li><li>Confirm the recipient and amount before sending.</li><li>Save a clear screenshot or receipt of the successful transaction.</li></ol><p>Your proof will be reviewed before the payment reduces your balance.</p></div><figure><img src="@Model.GCashQrPath" class="cr-payment-qr" alt="GCash payment QR code"/><figcaption><a href="@Model.GCashQrPath" download="aries-gcash-qr.jpeg">Save QR image</a></figcaption></figure></div>
+<div class="cr-panel-actions"><button type="button" class="btn btn-primary" id="continuePayment">I have paid — upload proof</button></div></section>
+<section class="cr-card" id="paymentProof" hidden><h2 tabindex="-1">Upload your receipt</h2><p>Use a clear, complete screenshot showing the payment details.</p><div class="cr-form-grid"><div><label asp-for="Amount">Amount paid</label><input asp-for="Amount" type="number" step="0.01" min="0.01" class="form-control" required/><span asp-validation-for="Amount" class="text-danger"></span></div><div><label asp-for="PaymentMethod">Payment method</label><select asp-for="PaymentMethod" class="form-select"><option>GCash</option><option>Maya</option><option>Bank Transfer</option><option>Online Banking</option><option>Other</option></select></div><div class="cr-full"><label asp-for="ProofImage">Payment proof</label><input asp-for="ProofImage" type="file" class="form-control" data-proof-input accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" required/><span asp-validation-for="ProofImage" class="text-danger"></span><small>JPG, PNG, or WEBP · maximum 5 MB</small><div class="proof-preview-shell" data-proof-preview hidden><img alt="Your selected payment proof"/><div><button type="button" class="btn btn-sm btn-outline-secondary" data-proof-replace>Replace image</button><button type="button" class="btn btn-sm btn-outline-danger" data-proof-remove>Remove image</button></div></div></div></div><div class="cr-panel-actions"><button type="button" class="btn btn-outline-secondary" id="backPayment">Back to instructions</button><button type="submit" class="btn btn-primary">Submit proof for verification</button></div></section>
+</form>
 @section Scripts {
-    <partial name="_ValidationScriptsPartial" />
-    <script src="~/js/proof-preview.js" asp-append-version="true"></script>
+<partial name="_ValidationScriptsPartial" />
+<script src="~/js/proof-preview.js" asp-append-version="true"></script>
+<script>
+(() => { const form=document.getElementById('clientPaymentForm'),intro=document.getElementById('paymentInstructions'),proof=document.getElementById('paymentProof'),steps=[...document.querySelectorAll('.cr-payment-steps li')];function showProof(show){intro.hidden=show;proof.hidden=!show;steps.forEach((s,i)=>{s.classList.toggle('is-active',i===(show?1:0));s.classList.toggle('is-done',show&&i===0);if(i===(show?1:0))s.setAttribute('aria-current','step');else s.removeAttribute('aria-current');});if(show)proof.querySelector('h2').focus();}document.getElementById('continuePayment').onclick=()=>{const booking=document.getElementById('BookingId');if(booking.reportValidity())showProof(true);};document.getElementById('backPayment').onclick=()=>showProof(false);document.getElementById('ProofImage').addEventListener('change',e=>e.target.setCustomValidity(e.target.files[0]?.size>5*1024*1024?'Choose an image smaller than 5 MB.':''));form.addEventListener('submit',e=>{if(proof.hidden){e.preventDefault();return;}const file=document.getElementById('ProofImage');file.setCustomValidity(file.files[0]?.size>5*1024*1024?'Choose an image smaller than 5 MB.':'');if(!form.checkValidity()){e.preventDefault();form.reportValidity();}});if(form.dataset.hasErrors==='true'&&document.getElementById('BookingId').value)showProof(true);})();
+</script>
 }

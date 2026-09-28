@@ -5,7 +5,7 @@
     var subStep = ViewData["WizardSubStep"] as int? ?? 1;
     var overallActive = physicalStep == 1 ? subStep : subStep + 2;
 
-    var nodeLabels = new[] { "Event Details", "Schedule & Contact", "Package & Customize", "Review & Confirm" };
+    var nodeLabels = new[] { "Event & Venue", "Date & Contact", "Package", "Review" };
 }
 
 <div class="am-wizard-tracker" id="ariesWizardTracker" data-active="@overallActive">

@@ -1,0 +1,8 @@
+@model IEnumerable<AriesMagicAppointmentSystem.Models.Service>
+<div class="cr-public-packages">
+@foreach(var package in Model)
+{
+<article class="cr-package-card"><a asp-controller="Home" asp-action="Package" asp-route-id="@package.Id" tabindex="-1" aria-hidden="true"><img src="~/images/magic-performance-1.jpeg" alt="" loading="lazy" /></a><div><h3>@package.Name</h3><p class="cr-package-price"><span>Starting at</span> ₱@package.Price.ToString("N0")</p><p>@package.DurationInHours hours of event entertainment</p><ul>@foreach(var inclusion in package.Inclusions.OrderBy(i=>i.Id).Take(3)){<li>@inclusion.Name</li>}</ul><a asp-controller="Home" asp-action="Package" asp-route-id="@package.Id" class="btn btn-outline-primary">View details <span class="visually-hidden">for @package.Name</span></a></div></article>
+}
+</div>
+@if(!Model.Any()){<div class="cr-card"><p>Packages are being updated. Please check back soon.</p></div>}

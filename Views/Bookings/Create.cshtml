@@ -1,0 +1,80 @@
+@model AriesMagicAppointmentSystem.ViewModels.BookingStepTwoViewModel
+@using AriesMagicAppointmentSystem.Models
+@using System.Text.Json
+@{
+    ViewData["Title"] = "Book your event";
+    var packages = ViewBag.WizardPackages as List<Service> ?? new();
+    var eventTypes = ViewBag.EventTypes as List<string> ?? new();
+    var packageData = packages.Select(p => new { p.Id, p.Name, p.Price, p.DurationInHours, Inclusions = p.Inclusions.OrderBy(i => i.Id).Select(i => new { i.Id, i.Name, i.IsRemovable }) });
+}
+<header class="cr-page-heading"><div><span class="cr-eyebrow">Your celebration starts here</span><h1>Book your event</h1><p>Check your venue and schedule, then make the show yours.</p></div><a asp-action="Dashboard" class="btn btn-outline-secondary">My dashboard</a></header>
+@if (!packages.Any()) { <div class="cr-card"><h2>Packages are being updated</h2><p>Please check back soon to start your booking.</p></div> }
+else
+{
+<form asp-action="SubmitBooking" method="post" id="clientBookingWizard" novalidate data-search-url="@Url.Action("SearchVenue")" data-venue-url="@Url.Action("CheckVenueServiceability")" data-schedule-url="@Url.Action("CheckScheduleAvailability")">
+    @Html.AntiForgeryToken()
+    <div asp-validation-summary="All" class="alert alert-danger" role="alert"></div>
+    <ol class="cr-steps" aria-label="Booking progress">
+        @foreach (var step in new[] { "Location & Date", "Package", "Event Details", "Review" }) { <li><span>@step</span></li> }
+    </ol>
+    <div class="cr-wizard-layout">
+    <div>
+    <section class="cr-card cr-wizard-panel" data-step="0" aria-labelledby="locationTitle">
+        <h2 id="locationTitle" tabindex="-1">Where and when?</h2><p>Choose a date at least three days from today.</p>
+        <div class="cr-form-grid">
+            <div class="cr-full"><label asp-for="PartyVenue">Venue or full address</label><div class="input-group"><input asp-for="PartyVenue" class="form-control" required autocomplete="off" placeholder="Search your venue, city, or full address"/><button type="button" class="btn btn-outline-primary" id="findVenue">Search</button></div><div id="venueResults" class="cr-search-results" aria-label="Venue search results"></div></div>
+            <div><label asp-for="EventDate">Event date</label><input asp-for="EventDate" type="date" min="@DateTime.Today.AddDays(3).ToString("yyyy-MM-dd")" class="form-control" required /></div>
+            <div><label asp-for="StartTime">Start time</label><input asp-for="StartTime" type="time" class="form-control" required /></div>
+        </div>
+        <div id="locationResult" class="cr-notice mt-3" role="status" aria-live="polite">Select a search result, then check your location and date.</div>
+        <button type="button" class="btn btn-primary mt-3" id="checkLocation">Check location & date</button>
+        <div class="cr-panel-actions"><button type="button" class="btn btn-primary" data-next>Continue to packages</button></div>
+    </section>
+    <section class="cr-card cr-wizard-panel" data-step="1" aria-labelledby="packageTitle" hidden>
+        <h2 id="packageTitle" tabindex="-1">Choose your package</h2><p>Packages are checked against your selected time.</p>
+        <div class="cr-package-options">
+        @foreach (var package in packages)
+        {
+            <label class="cr-package-option" data-package-option="@package.Id"><input type="radio" name="ServiceId" value="@package.Id" checked="@(Model.ServiceId == package.Id)" required /><span><strong>@package.Name</strong><small>@package.DurationInHours hours · ₱@package.Price.ToString("N2")</small><span>@package.Description</span></span></label>
+        }
+        </div>
+        <div id="customizePackage" class="mt-4" hidden><h3>Make it yours</h3><p>Remove up to two eligible inclusions for a single ₱2,000 discount.</p><div id="packageInclusions"></div></div>
+        <div class="cr-panel-actions"><button type="button" class="btn btn-outline-secondary" data-back>Back</button><button type="button" class="btn btn-primary" data-next>Continue to event details</button></div>
+    </section>
+    <section class="cr-card cr-wizard-panel" data-step="2" aria-labelledby="detailsTitle" hidden>
+        <h2 id="detailsTitle" tabindex="-1">Tell us about your event</h2>
+        <div class="cr-form-grid">
+            <div><label asp-for="EventType">Event type</label><select asp-for="EventType" class="form-select" required><option value="">Choose event type</option>@foreach(var type in eventTypes){<option value="@type">@type</option>}</select></div>
+            <div><label asp-for="Motif">Motif or color theme</label><input asp-for="Motif" class="form-control" required /></div>
+            <div data-event-field="theme"><label asp-for="PartyTheme">Party theme</label><input asp-for="PartyTheme" class="form-control" /></div>
+            <div data-event-field="celebrant"><label asp-for="CelebrantName">Celebrant name</label><input asp-for="CelebrantName" class="form-control" /></div>
+            <div data-event-field="age"><label asp-for="Age">Age</label><input asp-for="Age" type="number" min="1" max="120" class="form-control" /></div>
+            <div><label asp-for="PaxCount">Number of guests</label><input asp-for="PaxCount" type="number" min="1" max="10000" class="form-control" required /></div>
+            <div><label asp-for="ContactPerson">Contact person</label><input asp-for="ContactPerson" class="form-control" autocomplete="name" required /></div>
+            <div><label asp-for="ContactNumber">Contact number</label><input asp-for="ContactNumber" type="tel" class="form-control" autocomplete="tel" required /></div>
+        </div>
+        <div class="cr-panel-actions"><button type="button" class="btn btn-outline-secondary" data-back>Back</button><button type="button" class="btn btn-primary" data-next>Review booking</button></div>
+    </section>
+    <section class="cr-card cr-wizard-panel" data-step="3" aria-labelledby="reviewTitle" hidden>
+        <h2 id="reviewTitle" tabindex="-1">Review your booking</h2><p>Check the details before sending your request for staff review.</p>
+        <div id="bookingReview"></div>
+        <details class="cr-terms"><summary>Terms & agreement</summary>
+            <h3>Downpayment</h3><p>A ₱2,000 downpayment is required to secure your reservation. The remaining balance will be paid after the event.</p>
+            <h3>Cancellation policy</h3><p>The client must notify the service provider at least two weeks before the event. Late cancellation may forfeit reimbursement.</p>
+            <h3>Rescheduling</h3><p>Rescheduling due to emergencies, restrictions, or Acts of God is subject to availability.</p>
+            <h3>Service guarantee</h3><p>The service provider shall render the agreed service on the confirmed event date and time.</p>
+            <h3>Media permission</h3><p>Photos and videos will only be published after receiving approval from the client.</p>
+            <h3>First payment, first get</h3><p>Schedules are not reserved until the downpayment is successfully submitted. If multiple clients choose the same schedule, the earliest client to submit a valid payment proof will secure the schedule.</p>
+        </details>
+        <label class="cr-check"><input asp-for="AcceptTerms" required /> <span>I have read and agree to the terms above.</span></label>
+        <div class="cr-panel-actions"><button type="button" class="btn btn-outline-secondary" data-back>Back</button><button type="submit" class="btn btn-primary" id="submitBooking">Submit booking request</button></div>
+    </section>
+    <div id="wizardError" class="alert alert-danger mt-3" role="alert" hidden></div>
+    </div>
+    <aside class="cr-card cr-price-summary" aria-label="Booking price summary"><span class="cr-eyebrow">Your booking</span><h2 id="summaryPackage">Choose a package</h2><dl><div><dt>Package</dt><dd id="summaryBase">—</dd></div><div><dt>Customization discount</dt><dd id="summaryDiscount">—</dd></div><div><dt>Travel fee</dt><dd id="summaryTravel">Check venue first</dd></div><div class="cr-total"><dt>Estimated total</dt><dd id="summaryTotal">—</dd></div></dl><p>Minimum downpayment: <strong>₱2,000</strong>, after staff approval.</p><p class="small">Submitting a request does not reserve the schedule. Availability and the final price are checked again when you submit.</p></aside>
+    </div>
+</form>
+<script type="application/json" id="wizardPackages">@Html.Raw(JsonSerializer.Serialize(packageData))</script>
+<script type="application/json" id="wizardRemoved">@Html.Raw(JsonSerializer.Serialize(Model.RemovedInclusionIds))</script>
+}
+@section Scripts { <script src="~/js/client-booking-wizard.js" asp-append-version="true"></script> }

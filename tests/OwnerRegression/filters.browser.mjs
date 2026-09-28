@@ -28,12 +28,12 @@ try {
         await page.setViewport({width, height: 900});
         for (current of names) {
             await page.goto('http://owner.test/fixture/' + current, {waitUntil:'networkidle0'});
-            assert(await page.$('.am-filter-bar'), current + ' shared filter missing');
+            assert(await page.$(current === 'Bookings-MyBookings' ? '.cr-list-tools' : '.am-filter-bar'), current + ' filter missing');
             const toggle = await page.$('.am-filter-bar [data-bs-toggle="dropdown"]');
             if (toggle) await toggle.click();
             const problems = await page.evaluate(() => {
                 const issues = [];
-                document.querySelectorAll('.am-filter-bar').forEach(bar => {
+                document.querySelectorAll('.am-filter-bar, .cr-list-tools').forEach(bar => {
                     const rect = bar.getBoundingClientRect();
                     if (rect.left < -1 || rect.right > innerWidth + 1) issues.push('bar overflow ' + rect.right);
                     bar.querySelectorAll('input:not([type=hidden]), select, .btn, .am-filter-chips button, .dropdown-menu.show').forEach(el => {
@@ -72,19 +72,15 @@ try {
     }
     current = 'Bookings-MyBookings';
     await page.goto('http://owner.test/fixture/' + current, {waitUntil:'networkidle0'});
-    await page.type('#bookingSearchInput','no-such-package');
-    assert(await page.$eval('#bookingEmptyFilterState',el => !el.classList.contains('d-none')));
-    await page.click('[data-filter="completed"]');
-    assert.equal(new URL(page.url()).searchParams.get('bookingsFilter'),'completed');
-    await page.reload({waitUntil:'networkidle0'});
-    assert.equal(await page.$eval('#bookingSearchInput',el=>el.value),'no-such-package');
-    assert.equal(await page.$eval('[data-filter="completed"]',el=>el.getAttribute('aria-pressed')),'true');
-    await page.click('[data-filter-reset]');
-    assert.equal(await page.$eval('#bookingSearchInput',el=>el.value),'');
-    assert.equal(await page.$eval('[data-filter="all"]',el=>el.getAttribute('aria-pressed')),'true');
-    assert(!new URL(page.url()).searchParams.has('bookingsSearch'));
-    assert(await page.$eval('#bookingEmptyFilterState',el=>el.classList.contains('d-none')));
-    console.log('PASS client combined filters, empty state, refresh, pressed state and reset');
+    await page.type('#bookingSearch','no-such-package');
+    assert(await page.$eval('#bookingListEmpty',el => !el.hidden));
+    await page.select('#bookingGroup','past');
+    assert(await page.$$eval('.cr-booking-item', cards => cards.every(card => card.hidden)));
+    await page.$eval('#bookingSearch',el => { el.value=''; el.dispatchEvent(new Event('input',{bubbles:true})); });
+    assert(await page.$$eval('.cr-booking-item', cards => cards.every(card => card.hidden || card.dataset.group === 'past')));
+    await page.select('#bookingGroup','all');
+    assert(await page.$$eval('.cr-booking-item', cards => cards.every(card => !card.hidden)));
+    console.log('PASS client search, group filters and empty state');
     current = 'Calendar-StaffIndex';
     await page.goto('http://owner.test/fixture/' + current, {waitUntil:'networkidle0'});
     await page.type('#upcomingSearch','Fixture Venue');
@@ -97,4 +93,3 @@ try {
     assert(await page.$eval('#upcomingFilteredEmpty',el=>el.classList.contains('d-none')));
     console.log('PASS calendar combined filters, refresh, empty state and reset');
 } finally { await browser.close(); }
-

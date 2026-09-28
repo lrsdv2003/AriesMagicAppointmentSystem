@@ -259,21 +259,45 @@ namespace AriesMagicAppointmentSystem.Controllers
 
         [Authorize(Roles = "Client")]
         [HttpGet]
-        public async Task<IActionResult> CreateStepOne()
+        public async Task<IActionResult> CreateStepOne(int? serviceId)
         {
             var user = await _userManager.GetUserAsync(User);
-            var model = new BookingStepOneViewModel
+            return await ClientWizardViewAsync(new BookingStepTwoViewModel
             {
-                EventDate = DateTime.Today,
+                EventDate = DateTime.Today.AddDays(3),
+                StartTime = new TimeSpan(10, 0, 0),
                 ContactPerson = user?.FullName ?? string.Empty,
-                ContactNumber = user?.PhoneNumber ?? string.Empty
-            };
+                ContactNumber = user?.PhoneNumber ?? string.Empty,
+                PaxCount = 1,
+                ServiceId = serviceId ?? 0
+            });
+        }
 
+        private async Task<IActionResult> ClientWizardViewAsync(BookingStepTwoViewModel model)
+        {
+            var packages = await _context.Services.AsNoTracking().Include(s => s.Inclusions)
+                .Where(s => !s.IsArchived).OrderBy(s => s.Price).ToListAsync();
+            ViewBag.WizardPackages = packages;
             SetCreateStepOneViewBags();
+            return View("Create", model);
+        }
 
-            ViewBag.UnavailableDates = await GetUnavailableBookingDatesAsync();
-
-            return View(model);
+        [Authorize(Roles = "Client")]
+        [HttpGet]
+        public async Task<IActionResult> CheckScheduleAvailability(DateTime date, TimeSpan startTime, int? serviceId)
+        {
+            if (!ModelState.IsValid || date.Date < DateTime.Today.AddDays(3) || startTime < TimeSpan.Zero || startTime >= TimeSpan.FromDays(1))
+                return Json(new { available = false, message = "Choose a valid time and a date at least 3 days from today." });
+            if (await _context.BlockedDates.AnyAsync(d => d.Date.Date == date.Date) || await HasReachedDailyConfirmedLimit(date))
+                return Json(new { available = false, message = "This date is unavailable. Please choose another date." });
+            var packages = await _context.Services.AsNoTracking().Where(s => !s.IsArchived).ToListAsync();
+            if (serviceId.HasValue && serviceId.Value > 0) packages = packages.Where(s => s.Id == serviceId.Value).ToList();
+            var availableIds = new List<int>();
+            var start = date.Date.Add(startTime);
+            foreach (var package in packages)
+                if (!await HasBookingConflict(start, start.AddHours(package.DurationInHours))) availableIds.Add(package.Id);
+            return Json(new { available = availableIds.Count > 0, availableIds,
+                message = availableIds.Count > 0 ? "This time is available to request. Your booking is subject to review and payment confirmation." : "No package fits this time. Please choose another time." });
         }
 
         [Authorize(Roles = "Client")]
@@ -472,7 +496,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             if (selectedPackage == null)
             {
                 ModelState.AddModelError("ServiceId", "Invalid package selected.");
-                return View("CreateStepTwo", model);
+                return await ClientWizardViewAsync(model);
             }
 
             // Never trust client-posted coordinates, distance, or travel fee. Re-geocode and recalculate on the server.
@@ -484,7 +508,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                 if (selectedVenue == null || !_venueDistanceService.IsValidCoordinate(selectedVenue.Latitude, selectedVenue.Longitude))
                 {
                     ModelState.AddModelError(nameof(model.PartyVenue), "The venue could not be verified. Please return to Step 1 and select a valid venue.");
-                    return View("CreateStepTwo", model);
+                    return await ClientWizardViewAsync(model);
                 }
 
                 model.PartyVenue = selectedVenue.DisplayName;
@@ -500,13 +524,13 @@ namespace AriesMagicAppointmentSystem.Controllers
                 if (!venueDistance.IsServiceable)
                 {
                     ModelState.AddModelError(nameof(model.PartyVenue), GetVenueServiceabilityError(venueDistance));
-                    return View("CreateStepTwo", model);
+                    return await ClientWizardViewAsync(model);
                 }
             }
             catch (Exception)
             {
                 ModelState.AddModelError(nameof(model.PartyVenue), "The venue could not be verified right now. Please try again.");
-                return View("CreateStepTwo", model);
+                return await ClientWizardViewAsync(model);
             }
 
             var isBlocked = await _context.BlockedDates
@@ -526,6 +550,9 @@ namespace AriesMagicAppointmentSystem.Controllers
             {
                 ModelState.AddModelError("StartTime", "You cannot select a past time for today.");
             }
+
+            if (model.StartTime < TimeSpan.Zero || model.StartTime >= TimeSpan.FromDays(1))
+                ModelState.AddModelError(nameof(model.StartTime), "Choose a valid event time.");
 
             ValidateEventSpecificFields(model);
 
@@ -574,7 +601,6 @@ namespace AriesMagicAppointmentSystem.Controllers
             ModelState.Remove(nameof(model.PackageName));
             ModelState.Remove(nameof(model.AvailablePackages));
             ModelState.Remove(nameof(model.Inclusions));
-            ModelState.Remove(nameof(model.RemovedInclusionIds));
             ModelState.Remove(nameof(model.BasePrice));
             ModelState.Remove(nameof(model.FinalPrice));
             ModelState.Remove(nameof(model.RequiredDownpayment));
@@ -591,7 +617,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                         .SelectMany(v => v.Errors)
                         .Select(e => e.ErrorMessage));
 
-                return View("CreateStepTwo", model);
+                return await ClientWizardViewAsync(model);
             }
 
             var appUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -625,13 +651,13 @@ namespace AriesMagicAppointmentSystem.Controllers
             if (await HasReachedDailyConfirmedLimit(model.EventDate))
             {
                 ModelState.AddModelError("", "This date already has the maximum of 3 confirmed bookings.");
-                return View("CreateStepTwo", model);
+                return await ClientWizardViewAsync(model);
             }
 
             if (await HasBookingConflict(startDateTime, endDateTime))
             {
                 ModelState.AddModelError("", "The selected time conflicts with an existing confirmed booking, including the 1-hour buffer.");
-                return View("CreateStepTwo", model);
+                return await ClientWizardViewAsync(model);
             }
 
             var removedInclusionNames = validRemovedInclusions
@@ -681,7 +707,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             {
                 BookingId = booking.Id,
                 EventType = TimelineEventType.BookingCreated,
-                Notes = $"Booking was created by client using the new 2-step booking flow. Venue distance: {venueDistance.DistanceKm:N2} KM, zone: {venueDistance.ServiceZone}, travel fee: ₱{venueDistance.TravelFee:N2}, manual review: {venueDistance.RequiresManualReview}. Removed inclusions: {removedInclusionNames.Count}. Fixed total deduction: ₱{totalDeduction:N2}.",                CreatedAt = DateTime.Now
+                Notes = $"Booking was created by client using the client booking flow. Venue distance: {venueDistance.DistanceKm:N2} KM, zone: {venueDistance.ServiceZone}, travel fee: ₱{venueDistance.TravelFee:N2}, manual review: {venueDistance.RequiresManualReview}. Removed inclusions: {removedInclusionNames.Count}. Fixed total deduction: ₱{totalDeduction:N2}.",                CreatedAt = DateTime.Now
             });
 
             var staffUsers = await _userManager.GetUsersInRoleAsync("Staff");
@@ -721,6 +747,14 @@ namespace AriesMagicAppointmentSystem.Controllers
         }
 
         [Authorize(Roles = "Client")]
+        public async Task<IActionResult> Dashboard()
+        {
+            var result = await MyBookings();
+            if (result is ViewResult view) view.ViewName = "ClientDashboard";
+            return result;
+        }
+
+        [Authorize(Roles = "Client")]
         public async Task<IActionResult> MyBookings()
         {
             var appUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -732,6 +766,15 @@ namespace AriesMagicAppointmentSystem.Controllers
                 .OrderByDescending(b => b.CreatedAt)
                 .ToListAsync();
 
+            var unavailableBookingIds = await GetUnavailableBookingIdsAsync(bookings);
+
+            ViewBag.UnavailableBookingIds = unavailableBookingIds;
+            ViewBag.FinancialSummaries = await _financialService.GetSummariesAsync(bookings.Select(b => b.Id));
+
+            return View(bookings);
+        }
+        private async Task<List<int>> GetUnavailableBookingIdsAsync(IEnumerable<Booking> bookings)
+        {
             var lockingPaymentStatuses = new[]
             {
                 PaymentStatus.Pending,
@@ -764,12 +807,10 @@ namespace AriesMagicAppointmentSystem.Controllers
                 }
             }
 
-            ViewBag.UnavailableBookingIds = unavailableBookingIds;
-            ViewBag.FinancialSummaries = await _financialService.GetSummariesAsync(bookings.Select(b => b.Id));
-
-            return View(bookings);
+            return unavailableBookingIds;
         }
-        [Authorize(Roles = "Staff,Owner")]
+
+        [Authorize(Roles = "Client,Staff,Owner")]
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null) return NotFound();
@@ -780,15 +821,16 @@ namespace AriesMagicAppointmentSystem.Controllers
                 .Include(b => b.Service)
                 .Include(b => b.Payments)
                 .Include(b => b.RescheduleRequests)
-                .FirstOrDefaultAsync(b => b.Id == id);
+                .FirstOrDefaultAsync(b => b.Id == id && (!User.IsInRole("Client") || b.ApplicationUserId == User.FindFirstValue(ClaimTypes.NameIdentifier)));
 
             if (booking == null) return NotFound();
 
             if (User.IsInRole("Staff") || User.IsInRole("Owner"))
                 return View("StaffDetails", booking);
 
+            ViewBag.IsScheduleUnavailable = (await GetUnavailableBookingIdsAsync(new[] { booking })).Contains(booking.Id);
             ViewBag.FinancialSummary = await _financialService.GetSummaryAsync(booking.Id);
-            return View(booking);
+            return View("ClientDetails", booking);
         }
 
         [Authorize(Roles = "Owner")]

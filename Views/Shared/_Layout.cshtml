@@ -6,7 +6,6 @@
     var isClient = User.Identity?.IsAuthenticated == true && User.IsInRole("Client");
     var pageClass = $"client-{currentController.ToLowerInvariant()} client-{currentController.ToLowerInvariant()}-{currentAction.ToLowerInvariant()}";
     var clientUnreadCount = 0;
-    var clientMessageUnreadCount = 0;
     if (isClient)
     {
         var clientUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -14,9 +13,7 @@
         {
             clientUnreadCount = _clientDbContext.Notifications
                 .Count(n => n.UserId == clientUserId && !n.IsRead);
-            clientMessageUnreadCount = _clientDbContext.ConversationParticipants
-                .Count(p => p.UserId == clientUserId && p.Conversation!.Messages.Any(m =>
-                    m.SenderId != clientUserId && (!p.LastReadAt.HasValue || m.SentAt > p.LastReadAt.Value)));
+
         }
     }
 }
@@ -27,7 +24,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#090712" />
+    <meta name="theme-color" content="#fbf8f5" />
     <title>@ViewData["Title"] - Aries Magic</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
@@ -45,6 +42,7 @@
     <link rel="stylesheet" href="~/css/package-cards.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/filters.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/notifications.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/client-refresh.css" asp-append-version="true" />
 </head>
 <body class="client-body @pageClass @(isHome ? "client-home-page" : "client-inner-page")">
     <a class="magic-skip-link" href="#mainContent">Skip to content</a>
@@ -78,47 +76,15 @@
 
                 <div class="collapse navbar-collapse" id="clientNavbar">
                     <ul class="navbar-nav mx-auto client-nav-links">
-                        <li class="nav-item">
-                            <a class="nav-link @(isHome ? "active" : "")" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" asp-controller="Home" asp-action="Index" asp-fragment="experiences">Experiences</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" asp-controller="Home" asp-action="Index" asp-fragment="packages">Packages</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" asp-controller="Home" asp-action="Index" asp-fragment="how-it-works">Booking Journey</a>
-                        </li>
-
-                        @if (isClient)
-                        {
-                            <li class="nav-item d-lg-none">
-                                <a class="nav-link @(currentController == "Bookings" && currentAction == "MyBookings" ? "active" : "")" asp-controller="Bookings" asp-action="MyBookings">My Bookings</a>
-                            </li>
-                            <li class="nav-item d-lg-none">
-                                <a class="nav-link @(currentController == "Payments" ? "active" : "")" asp-controller="Payments" asp-action="MyUploads">Payments</a>
-                            </li>
-                            <li class="nav-item d-lg-none">
-                                <a class="nav-link communication-nav-link @(currentController == "Communications" ? "active" : "")" asp-controller="Communications" asp-action="Index">Messages <span class="communication-unread-badge" @(clientMessageUnreadCount == 0 ? "hidden" : null)>@(clientMessageUnreadCount > 99 ? "99+" : clientMessageUnreadCount)</span></a>
-                            </li>
-                            <li class="nav-item d-lg-none">
-                                <a class="nav-link @(currentController == "Profile" ? "active" : "")" asp-controller="Profile" asp-action="Index">Profile</a>
-                            </li>
-                            <li class="nav-item d-lg-none">
-                                <a class="nav-link @(currentController == "Notifications" ? "active" : "")" asp-controller="Notifications" asp-action="Index">Notifications</a>
-                            </li>
-                        }
+                        <li class="nav-item"><a class="nav-link @(isHome ? "active" : "")" asp-controller="Home" asp-action="Index">Home</a></li>
+                        <li class="nav-item"><a class="nav-link @(currentController == "Home" && (currentAction == "Packages" || currentAction == "Package") ? "active" : "")" asp-controller="Home" asp-action="Packages">Packages</a></li>
+                        <li class="nav-item"><a class="nav-link @(currentController == "Bookings" && currentAction == "CreateStepOne" ? "active" : "")" asp-controller="Bookings" asp-action="CreateStepOne">Availability</a></li>
+                        <li class="nav-item"><a class="nav-link" asp-controller="Home" asp-action="Index" asp-fragment="about">About</a></li>
                     </ul>
 
                     <div class="client-nav-actions">
                         @if (isClient)
                         {
-                            <a asp-controller="Communications" asp-action="Index" class="magic-icon-btn magic-message-btn d-none d-lg-inline-flex position-relative @(currentController == "Communications" ? "active" : "")" aria-label="Messages@(clientMessageUnreadCount > 0 ? $", {clientMessageUnreadCount} unread conversations" : "")" title="Messages">
-                                <i class="bi bi-chat-dots" aria-hidden="true"></i>
-                                <span class="communication-unread-badge" @(clientMessageUnreadCount == 0 ? "hidden" : null)>@(clientMessageUnreadCount > 99 ? "99+" : clientMessageUnreadCount)</span>
-                            </a>
-
                             <a asp-controller="Notifications" asp-action="Index" class="magic-icon-btn d-none d-lg-inline-flex position-relative @(currentController == "Notifications" ? "active" : "")" aria-label="Notifications@(clientUnreadCount > 0 ? $", {clientUnreadCount} unread" : "")" title="Notifications">
                                 <i class="bi bi-bell" aria-hidden="true"></i>
                                 @if (clientUnreadCount > 0)
@@ -129,18 +95,17 @@
                                 }
                             </a>
 
-                            <div class="dropdown d-none d-lg-block">
+                            <div class="dropdown">
                                 <button class="magic-account-btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                                     <span class="magic-account-avatar"><i class="bi bi-person"></i></span>
-                                    <span>My Portal</span>
+                                    <span>My Account</span>
                                 </button>
                                 <ul class="dropdown-menu dropdown-menu-end magic-account-menu">
+                                    <li><a class="dropdown-item" asp-controller="Bookings" asp-action="Dashboard"><i class="bi bi-house"></i> My Dashboard</a></li>
                                     <li><a class="dropdown-item" asp-controller="Bookings" asp-action="MyBookings"><i class="bi bi-calendar2-event"></i> My Bookings</a></li>
-                                    <li><a class="dropdown-item" asp-controller="Communications" asp-action="Index"><i class="bi bi-chat-dots"></i> Messages @if (clientMessageUnreadCount > 0) { <span class="communication-unread-badge ms-auto">@(clientMessageUnreadCount > 99 ? "99+" : clientMessageUnreadCount)</span> }</a></li>
                                     <li><a class="dropdown-item" asp-controller="Payments" asp-action="MyUploads"><i class="bi bi-wallet2"></i> My Payments</a></li>
-                                    <li><a class="dropdown-item" asp-controller="Payments" asp-action="MyRefundRequests"><i class="bi bi-arrow-counterclockwise"></i> Refund Requests</a></li>
-                                    <li><a class="dropdown-item" asp-controller="RescheduleRequests" asp-action="MyRequests"><i class="bi bi-calendar2-week"></i> Reschedules</a></li>
                                     <li><a class="dropdown-item" asp-controller="Profile" asp-action="Index"><i class="bi bi-person-circle"></i> Profile</a></li>
+                                    <li><a class="dropdown-item" asp-controller="Notifications" asp-action="Index"><i class="bi bi-bell"></i> Notifications</a></li>
                                     <li><hr class="dropdown-divider" /></li>
                                     <li>
                                         <form asp-controller="Account" asp-action="Logout" method="post">
@@ -155,10 +120,7 @@
                                 <i class="bi bi-stars"></i><span>Book a Show</span>
                             </a>
 
-                            <form asp-controller="Account" asp-action="Logout" method="post" class="d-lg-none w-100 mt-2">
-                                @Html.AntiForgeryToken()
-                                <button type="submit" class="btn btn-outline-light w-100">Logout</button>
-                            </form>
+
                         }
                         else if (User.Identity?.IsAuthenticated == true)
                         {
@@ -207,16 +169,16 @@
                 <div class="magic-footer-links">
                     <div>
                         <h5>Explore</h5>
-                        <a asp-controller="Home" asp-action="Index" asp-fragment="experiences">Experiences</a>
-                        <a asp-controller="Home" asp-action="Index" asp-fragment="packages">Packages</a>
-                        <a asp-controller="Home" asp-action="Index" asp-fragment="how-it-works">Booking Journey</a>
+                        <a asp-controller="Home" asp-action="Index" asp-fragment="about">About</a>
+                        <a asp-controller="Home" asp-action="Packages">Packages</a>
+                        <a asp-controller="Bookings" asp-action="CreateStepOne">Availability</a>
                     </div>
                     <div>
                         <h5>Client</h5>
                         @if (isClient)
                         {
+                            <a asp-controller="Bookings" asp-action="Dashboard">My Dashboard</a>
                             <a asp-controller="Bookings" asp-action="MyBookings">My Bookings</a>
-                            <a asp-controller="Communications" asp-action="Index">Messages</a>
                             <a asp-controller="Payments" asp-action="MyUploads">Payments</a>
                             <a asp-controller="Profile" asp-action="Index">Profile</a>
                         }

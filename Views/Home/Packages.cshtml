@@ -1,0 +1,4 @@
+@model IEnumerable<AriesMagicAppointmentSystem.Models.Service>
+@{ ViewData["Title"] = "Show packages"; }
+<header class="cr-page-heading"><div><span class="cr-eyebrow">Find your show</span><h1>Packages for your celebration</h1><p>Compare the essentials, then explore the full inclusions.</p></div><a asp-controller="Bookings" asp-action="CreateStepOne" class="btn btn-primary">Check availability</a></header>
+<partial name="_ClientPackageCards" model="Model" />

@@ -5,13 +5,16 @@ namespace AriesMagicAppointmentSystem.ViewModels
     public class BookingStepTwoViewModel
     {
         // Step 1 Data
+        [Required]
         public string EventType { get; set; } = string.Empty;
+        [Required]
         public string Motif { get; set; } = string.Empty;
         public DateTime EventDate { get; set; }
         public TimeSpan StartTime { get; set; }
 
         public string? PartyTheme { get; set; }
 
+        [Required]
         public string PartyVenue { get; set; } = string.Empty;
         public double? VenueLatitude { get; set; }
         public double? VenueLongitude { get; set; }
@@ -23,10 +26,14 @@ namespace AriesMagicAppointmentSystem.ViewModels
 
         public string? CelebrantName { get; set; }
 
+        [Range(1, 120)]
         public int? Age { get; set; }
 
+        [Range(1, 10000)]
         public int PaxCount { get; set; }
+        [Required]
         public string ContactPerson { get; set; } = string.Empty;
+        [Required]
         public string ContactNumber { get; set; } = string.Empty;
 
         // Step 2 Data

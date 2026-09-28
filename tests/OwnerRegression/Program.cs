@@ -89,6 +89,7 @@ try
     var dashboards = await DashboardRegression.RunAsync(db, Check);
     await ProfileRegression.RunAsync(db, Check);
     await HistoryRegression.RunAsync(db, Check);
+    await ClientRegression.RunAsync(db, Check);
     if (args.Contains("--render"))
     {
         await SnapshotRenderer.RenderAsync(options, report, active, pending, service,

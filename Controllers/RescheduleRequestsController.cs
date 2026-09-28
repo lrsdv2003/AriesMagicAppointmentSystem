@@ -30,7 +30,7 @@ namespace AriesMagicAppointmentSystem.Controllers
         }
 
         [Authorize(Roles = "Client")]
-        public async Task<IActionResult> Create()
+        public async Task<IActionResult> Create(int? bookingId)
         {
             var appUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
@@ -42,6 +42,8 @@ namespace AriesMagicAppointmentSystem.Controllers
 
             ViewBag.UnavailableDates = await GetUnavailableRescheduleDatesAsync();
 
+            if (bookingId.HasValue && viewModel.Bookings.Any(b => b.Value == bookingId.Value.ToString()))
+                viewModel.BookingId = bookingId.Value;
             return View(viewModel);
         }
 

@@ -1,0 +1,32 @@
+@model AriesMagicAppointmentSystem.Models.Booking
+@using AriesMagicAppointmentSystem.Models
+@using AriesMagicAppointmentSystem.ViewModels
+@{
+    ViewData["Title"] = "Booking details";
+    var finance = ViewBag.FinancialSummary as BookingFinancialSummaryViewModel;
+    var canCancel = new[] { BookingStatus.Pending, BookingStatus.AwaitingDownpayment, BookingStatus.AwaitingVerification }.Contains(Model.Status);
+    var canReschedule = new[] { BookingStatus.Confirmed, BookingStatus.AwaitingDownpayment, BookingStatus.AwaitingVerification }.Contains(Model.Status);
+    var pendingReschedule = Model.RescheduleRequests.Any(r => r.Status == RescheduleRequestStatus.Pending);
+    var scheduleUnavailable = ViewBag.IsScheduleUnavailable is bool unavailable && unavailable;
+    var canPay = !scheduleUnavailable && finance != null && finance.RemainingBalance > 0 && !finance.HasPendingVerification && !finance.HasAdditionalEvidenceRequired && new[] { BookingStatus.AwaitingDownpayment, BookingStatus.Confirmed, BookingStatus.Completed }.Contains(Model.Status);
+}
+<header class="cr-page-heading"><div><span class="cr-eyebrow">BK-@Model.CreatedAt.Year-@Model.Id.ToString("D3")</span><h1>@Model.PackageName</h1><span class="cr-status">@(scheduleUnavailable ? "Schedule unavailable" : ClientBookingPresentation.Status(Model.Status))</span></div><a asp-action="MyBookings" class="btn btn-outline-secondary">All bookings</a></header>
+<div class="cr-notice mb-4" role="status">@(scheduleUnavailable ? "This time is no longer available. Request another schedule or message staff before making a payment." : ClientBookingPresentation.NextAction(Model,finance))</div>
+<div class="cr-detail-grid"><div>
+<section class="cr-card"><h2>Your event</h2><dl class="cr-facts"><div><dt>Date & time</dt><dd>@Model.EventDate.ToString("MMMM d, yyyy") · @Model.StartTime.ToString("h:mm tt")–@Model.EndTime.ToString("h:mm tt")</dd></div><div><dt>Venue</dt><dd>@Model.PartyVenue</dd></div><div><dt>Event type</dt><dd>@Model.EventType</dd></div><div><dt>Motif</dt><dd>@Model.Motif</dd></div>@if(!string.IsNullOrWhiteSpace(Model.PartyTheme)){<div><dt>Party theme</dt><dd>@Model.PartyTheme</dd></div>}@if(!string.IsNullOrWhiteSpace(Model.CelebrantName)){<div><dt>Celebrant</dt><dd>@Model.CelebrantName @if(Model.Age.HasValue){<span>· Age @Model.Age</span>}</dd></div>}<div><dt>Guests</dt><dd>@Model.PaxCount</dd></div><div><dt>Contact</dt><dd>@Model.ContactPerson · @Model.ContactNumber</dd></div></dl></section>
+<section class="cr-card mt-4"><h2>Need help with this booking?</h2><p>Keep your questions and updates together with staff.</p><form asp-controller="Communications" asp-action="StartBookingConversation" method="post">@Html.AntiForgeryToken()<input type="hidden" name="bookingId" value="@Model.Id"/><button class="btn btn-primary" type="submit">Message staff</button></form></section>
+<section class="cr-card mt-4"><h2>Changes & requests</h2>
+@if(pendingReschedule){<p>A reschedule request is awaiting staff review.</p><a asp-controller="RescheduleRequests" asp-action="MyRequests" class="btn btn-outline-secondary">View request status</a>}
+else if(canReschedule){<p>Rescheduling is subject to availability and staff approval. Choose a date at least three days ahead.</p><a asp-controller="RescheduleRequests" asp-action="Create" asp-route-bookingId="@Model.Id" class="btn btn-outline-secondary">Request reschedule</a>}
+@if(canCancel){<details class="cr-terms"><summary>Cancel this booking</summary><p>Cancellation is available while your booking is awaiting review, downpayment, or payment verification. Cancellation does not automatically issue a refund.</p><a asp-action="Cancel" asp-route-id="@Model.Id" class="btn btn-outline-danger">Review cancellation</a></details>}
+@if(Model.Status == BookingStatus.AwaitingVerification){<details class="cr-terms"><summary>Request a refund</summary><p>Refund requests are reviewed by the owner. Submit payment proof and the reason for your request.</p><a asp-controller="Payments" asp-action="RequestRefund" asp-route-bookingId="@Model.Id" class="btn btn-outline-secondary">Request refund</a></details>}
+@if(!canCancel&&!canReschedule){<p>Online changes are unavailable for this booking status. Message staff if you need help.</p>}
+<div class="cr-inline-actions"><a asp-controller="RescheduleRequests" asp-action="MyRequests" class="btn btn-outline-secondary">Reschedule request history</a><a asp-controller="Payments" asp-action="MyRefundRequests" class="btn btn-outline-secondary">Refund request history</a></div>
+</section>
+</div><aside>
+<section class="cr-card cr-price-summary"><h2>Payment & balance</h2><dl><div><dt>Booking total</dt><dd>₱@((finance?.BookingTotal ?? Model.FinalPrice).ToString("N2"))</dd></div><div><dt>Verified payments</dt><dd>₱@((finance?.TotalVerifiedPayments ?? 0).ToString("N2"))</dd></div><div class="cr-total"><dt>Remaining balance</dt><dd>₱@((finance?.RemainingBalance ?? Model.FinalPrice).ToString("N2"))</dd></div></dl><p>@(finance?.PaymentStatus ?? "Unpaid")</p><p class="small">Only verified payments reduce the balance.</p>
+@if(canPay){<a asp-controller="Payments" asp-action="Upload" asp-route-bookingId="@Model.Id" class="btn btn-primary w-100">Upload payment proof</a>}
+@if(finance?.HasAdditionalEvidenceRequired == true){<a asp-controller="Payments" asp-action="MyUploads" class="btn btn-primary w-100">Replace payment proof</a>}
+<a asp-controller="Payments" asp-action="MyUploads" class="btn btn-outline-secondary w-100 mt-2">Payment history</a>
+</section>
+</aside></div>
