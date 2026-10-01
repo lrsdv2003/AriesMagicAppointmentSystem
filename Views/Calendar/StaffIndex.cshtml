@@ -33,7 +33,7 @@
     <header class="ui-toolbar staff-calendar-hero">
 
         <a asp-controller="Bookings" asp-action="Index" class="btn btn-outline-primary">
-            <i class="bi bi-journal-check"></i> Booking Requests
+            <i class="bi bi-journal-check" aria-hidden="true"></i> Booking Requests
         </a>
     </header>
     <section class="staff-calendar-panel" aria-labelledby="calendarHeading">
@@ -43,9 +43,9 @@
                 <p>Select a date with events to open the booking preview.</p>
             </div>
             <div class="staff-calendar-nav" aria-label="Calendar navigation">
-                <button type="button" class="btn btn-outline-secondary" id="calPrev" aria-label="Previous month"><i class="bi bi-chevron-left"></i></button>
+                <button type="button" class="btn btn-outline-secondary" id="calPrev" aria-label="Previous month"><i class="bi bi-chevron-left" aria-hidden="true"></i></button>
                 <button type="button" class="btn btn-outline-secondary" id="calToday">Today</button>
-                <button type="button" class="btn btn-outline-secondary" id="calNext" aria-label="Next month"><i class="bi bi-chevron-right"></i></button>
+                <button type="button" class="btn btn-outline-secondary" id="calNext" aria-label="Next month"><i class="bi bi-chevron-right" aria-hidden="true"></i></button>
             </div>
         </div>
         <div class="staff-calendar-month-row">
@@ -66,7 +66,7 @@
             <span class="spinner-border spinner-border-sm"></span> Loading event schedule...
         </div>
         <div class="staff-calendar-error d-none" id="calendarError" role="alert">
-            <i class="bi bi-exclamation-triangle"></i>
+            <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
             <span>Unable to load the event schedule. Please try again.</span>
             <button type="button" class="btn btn-sm btn-outline-danger" id="calendarRetry">Retry</button>
         </div>
@@ -86,13 +86,13 @@
         </div>
         @if (!upcoming.Any())
         {
-            <div class="staff-upcoming-empty"><i class="bi bi-calendar2-check"></i><span>No upcoming confirmed events.</span></div>
+            <div class="staff-upcoming-empty"><i class="bi bi-calendar2-check" aria-hidden="true"></i><span>No upcoming confirmed events.</span></div>
         }
         else
         {
             <div class="staff-upcoming-table-wrap">
                 <table class="table staff-upcoming-table" id="upcomingTable">
-                    <thead><tr><th>Booking</th><th>Client</th><th>Event Date & Time</th><th>Package</th><th>Location</th><th class="text-end">Action</th></tr></thead>
+                    <thead><tr><th scope="col">Booking</th><th scope="col">Client</th><th scope="col">Event Date & Time</th><th scope="col">Package</th><th scope="col">Location</th><th scope="col" class="text-end">Action</th></tr></thead>
                     <tbody>
                     @foreach (var booking in upcoming)
                     {
@@ -120,13 +120,13 @@
                     <article class="staff-upcoming-card js-upcoming-row" data-search="@(bookingCode) @(booking.Client?.FullName) @(booking.PartyVenue)" data-package="@packageName">
                         <div class="staff-upcoming-card-head"><strong>@bookingCode</strong><span class="package-badge package-@colorKey">@packageName</span></div>
                         <span>@(booking.Client?.FullName ?? "Unknown client")</span>
-                        <span><i class="bi bi-calendar-event"></i> @booking.EventDate.ToString("MMM dd, yyyy") · @booking.StartTime.ToString("hh:mm tt")</span>
-                        <span><i class="bi bi-geo-alt"></i> @booking.PartyVenue</span>
+                        <span><i class="bi bi-calendar-event" aria-hidden="true"></i> @booking.EventDate.ToString("MMM dd, yyyy") · @booking.StartTime.ToString("hh:mm tt")</span>
+                        <span><i class="bi bi-geo-alt" aria-hidden="true"></i> @booking.PartyVenue</span>
                         <a asp-controller="Bookings" asp-action="Details" asp-route-id="@booking.Id" class="btn btn-sm btn-outline-primary">View Details</a>
                     </article>
                 }
             </div>
-            <div class="staff-upcoming-empty d-none" id="upcomingFilteredEmpty" role="status"><i class="bi bi-search"></i><span>No upcoming bookings match your search.</span></div>
+            <div class="staff-upcoming-empty d-none" id="upcomingFilteredEmpty" role="status"><i class="bi bi-search" aria-hidden="true"></i><span>No upcoming bookings match your search.</span></div>
         }
     </section>
 </div>
@@ -140,7 +140,7 @@
             <div class="modal-body">
                 <div id="previewLoading" class="staff-preview-state"><span class="spinner-border spinner-border-sm"></span> Loading booking...</div>
                 <div id="previewError" class="staff-preview-state staff-preview-error d-none" role="alert">
-                    <i class="bi bi-exclamation-triangle"></i>
+                    <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
                     <span>Unable to load the event schedule. Please try again.</span>
                     <button type="button" class="btn btn-sm btn-outline-danger" id="previewRetry">Retry</button>
                 </div>
@@ -161,8 +161,8 @@
             </div>
             <div class="modal-footer staff-preview-footer">
                 <div class="staff-preview-browse">
-                    <button type="button" class="btn btn-outline-secondary" id="previewPrevious" aria-label="Previous booking"><i class="bi bi-arrow-left"></i> Previous</button>
-                    <button type="button" class="btn btn-outline-secondary" id="previewNext" aria-label="Next booking">Next <i class="bi bi-arrow-right"></i></button>
+                    <button type="button" class="btn btn-outline-secondary" id="previewPrevious" aria-label="Previous booking"><i class="bi bi-arrow-left" aria-hidden="true"></i> Previous</button>
+                    <button type="button" class="btn btn-outline-secondary" id="previewNext" aria-label="Next booking">Next <i class="bi bi-arrow-right" aria-hidden="true"></i></button>
                 </div>
                 <a href="#" class="btn btn-primary" id="previewDetails">View Full Details</a>
             </div>

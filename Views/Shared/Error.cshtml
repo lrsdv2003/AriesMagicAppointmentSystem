@@ -1,31 +1,14 @@
 @model ErrorViewModel
 @{
-    ViewData["Title"] = "Something Went Wrong";
+    ViewData["Title"] = "Unable to complete request";
+    var internalUser = User.IsInRole("Staff") || User.IsInRole("Admin") || User.IsInRole("Owner");
+    Layout = internalUser ? "_DashboardLayout" : "_Layout";
+    var destination = User.IsInRole("Owner") ? "Owner" : User.IsInRole("Admin") ? "Admin" : "Staff";
 }
-
-<div class="client-portal-header">
-    <div>
-        <div class="section-kicker">System Notice</div>
-        <h1 class="client-portal-title">Something went wrong.</h1>
-        <p class="client-portal-text">We could not complete that request. You can return to the home page or try your previous action again.</p>
-    </div>
-    <div>
-        <a asp-controller="Home" asp-action="Index" class="btn btn-primary">Back to Home</a>
-    </div>
-</div>
-
-<div class="dashboard-panel client-error-page-panel">
-    <div class="client-error-page-icon" aria-hidden="true"><i class="bi bi-exclamation-triangle"></i></div>
-    <div>
-        <h2>Request could not be completed</h2>
-        <p>Please try again. If the issue continues, return to the client portal and start the action again.</p>
-
-        @if (Model.ShowRequestId)
-        {
-            <p class="client-error-request-id mb-0">
-                <strong>Request ID</strong>
-                <code>@Model.RequestId</code>
-            </p>
-        }
-    </div>
-</div>
+<section class="ui-panel cr-card" role="alert">
+    @if (!internalUser) { <h1>Unable to complete request</h1> }
+    <p>Please try again. If the issue continues, share the request ID with support.</p>
+    @if (Model.ShowRequestId) { <p>Request ID: <code>@Model.RequestId</code></p> }
+    @if (internalUser) { <a asp-controller="Dashboard" asp-action="@destination" class="btn btn-primary">Back to dashboard</a> }
+    else { <a asp-controller="Home" asp-action="Index" class="btn btn-primary">Back to home</a> }
+</section>

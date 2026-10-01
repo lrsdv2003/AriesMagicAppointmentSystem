@@ -5,7 +5,7 @@
 
 <div class="otp-page">
     <div class="otp-card">
-        <div class="otp-icon" aria-hidden="true"><i class="bi bi-envelope-check"></i></div>
+        <div class="otp-icon" aria-hidden="true"><i class="bi bi-envelope-check" aria-hidden="true"></i></div>
         <div class="otp-heading">
             <span class="otp-eyebrow">Secure account verification</span>
             <h1>Verify Your Email</h1>
@@ -37,7 +37,7 @@
             </fieldset>
             <span asp-validation-for="Code" class="text-danger d-block text-center mt-2"></span>
             <button type="submit" class="btn btn-primary otp-primary-btn" id="verifyOtpButton" @(Model.AttemptsLocked ? "disabled" : null)>
-                <span class="normal-label"><i class="bi bi-shield-check"></i> Verify Email</span>
+                <span class="normal-label"><i class="bi bi-shield-check" aria-hidden="true"></i> Verify Email</span>
                 <span class="loading-label d-none">Verifying...</span>
             </button>
         </form>
@@ -45,15 +45,15 @@
         <div class="otp-meta" aria-live="polite">
             @if (Model.ExpiresAtUtc.HasValue && Model.HasActiveCode)
             {
-                <span><i class="bi bi-clock"></i> Code expires in <strong id="expiryCountdown">--:--</strong></span>
+                <span><i class="bi bi-clock" aria-hidden="true"></i> Code expires in <strong id="expiryCountdown">--:--</strong></span>
             }
             else if (Model.AttemptsLocked)
             {
-                <span><i class="bi bi-shield-exclamation"></i> Request a new code to continue.</span>
+                <span><i class="bi bi-shield-exclamation" aria-hidden="true"></i> Request a new code to continue.</span>
             }
             else
             {
-                <span><i class="bi bi-info-circle"></i> Request a new code if the previous one expired.</span>
+                <span><i class="bi bi-info-circle" aria-hidden="true"></i> Request a new code if the previous one expired.</span>
             }
         </div>
 
@@ -82,7 +82,7 @@
                     <div class="form-text">Changing the email invalidates the current code and sends a new one.</div>
                 </form>
             </details>
-            <a asp-action="Login"><i class="bi bi-arrow-left"></i> Back to Login</a>
+            <a asp-action="Login"><i class="bi bi-arrow-left" aria-hidden="true"></i> Back to Login</a>
         </div>
     </div>
 </div>

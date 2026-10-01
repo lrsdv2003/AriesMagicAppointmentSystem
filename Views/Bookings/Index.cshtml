@@ -35,7 +35,7 @@
 
 <div class="am-filter-container">
     <form method="get" asp-action="Index" class="am-filter-bar am-filter-row">
-        
+
         <!-- SEARCH INPUT -->
         <div class="am-filter-search">
             <input aria-label="Search records" type="text" name="search" value="@Model.Search" class="form-control rounded-pill px-3"
@@ -44,13 +44,13 @@
 
         <!-- DROPDOWN FILTER WRAPPER -->
         <div class="filter-dropdown-wrapper dropdown">
-            <button class="btn btn-outline-secondary rounded-pill px-3 d-flex align-items-center gap-2 dropdown-toggle" 
-                    type="button" 
-                    id="filterToggleBtn" 
-                    data-bs-toggle="dropdown" 
-                    data-bs-auto-close="outside" 
+            <button class="btn btn-outline-secondary rounded-pill px-3 d-flex align-items-center gap-2 dropdown-toggle"
+                    type="button"
+                    id="filterToggleBtn"
+                    data-bs-toggle="dropdown"
+                    data-bs-auto-close="outside"
                     aria-expanded="false">
-                <i class="bi bi-funnel"></i> Filters
+                <i class="bi bi-funnel" aria-hidden="true"></i> Filters
                 @if (hasActiveFilter)
                 {
                     <span class="filter-active-dot"></span>
@@ -63,7 +63,7 @@
 
                 <!-- SCROLLABLE FILTER CONTENT AREA -->
                 <div class="filter-popover-body overflow-y-auto pe-1 mb-3" style="max-height: 280px;">
-                    
+
                     <!-- BOOKING STATUS -->
                     <div class="mb-3">
                         <label class="form-label" for="BookingsIndexbookingStatus">Booking Status</label>
@@ -144,9 +144,9 @@
     @if (!Model.Bookings.Any())
     {
         <div class="empty-state">
-            <i class="bi bi-search fs-2"></i>
+            <i class="bi bi-search fs-2" aria-hidden="true"></i>
             <h3>No bookings found</h3>
-            
+
         </div>
     }
     else
@@ -155,8 +155,8 @@
             <table class="table align-middle booking-management-table">
                 <thead>
                     <tr>
-                        <th>Booking ID</th><th>Client Name</th><th>Package</th><th>Event Date</th>
-                        <th>Booking Status</th><th>Payment Status</th><th class="text-end">Actions</th>
+                        <th scope="col">Booking ID</th><th scope="col">Client Name</th><th scope="col">Package</th><th scope="col">Event Date</th>
+                        <th scope="col">Booking Status</th><th scope="col">Payment Status</th><th scope="col" class="text-end">Actions</th>
                     </tr>
                 </thead>
                 <tbody>

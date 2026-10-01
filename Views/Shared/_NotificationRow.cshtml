@@ -6,7 +6,7 @@
     var hasTarget = !string.IsNullOrWhiteSpace(Model.Link) && Url.IsLocalUrl(Model.Link) && User.CanFollowModuleLink(Model.Link);
 }
 <article class="notice-row @(Model.IsRead ? "notice-read" : "notice-unread") notice-@presentation.Accent">
-    <span class="notice-icon" aria-hidden="true"><i class="bi @presentation.Icon"></i></span>
+    <span class="notice-icon" aria-hidden="true"><i class="bi @presentation.Icon" aria-hidden="true"></i></span>
     <div class="notice-copy">
         <div class="notice-meta"><span class="notice-category">@presentation.Label</span><span class="notice-state">@(Model.IsRead ? "Read" : "Unread")</span><time datetime="@Model.CreatedAt.ToString("o")" title="@Model.CreatedAt.ToString("MMM d, yyyy h:mm tt")">@NotificationPresentation.TimeLabel(Model.CreatedAt, DateTime.Now)</time></div>
         <h2>@Model.Title</h2>

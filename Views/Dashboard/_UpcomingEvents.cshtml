@@ -20,7 +20,7 @@
     @if (Model.UpcomingEvents.Count == 0)
     {
         <div class="dashboard-empty-state">
-            <i class="bi bi-calendar2-check"></i>
+            <i class="bi bi-calendar2-check" aria-hidden="true"></i>
             <p>No upcoming confirmed events.</p>
         </div>
     }
@@ -56,7 +56,7 @@
                         <small>@booking.PartyVenue</small>
                     </div>
 
-                    <i class="bi bi-chevron-right"></i>
+                    <i class="bi bi-chevron-right" aria-hidden="true"></i>
                 </a>
             }
         </div>

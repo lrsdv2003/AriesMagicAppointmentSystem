@@ -25,7 +25,7 @@ external email delivery, or live client messaging.
 
 ## Shared filter regression checks
 
-The render option now includes Client, Staff, Admin and Owner interface fixtures (34 pages total).
+The render option now includes Client, Staff, Admin and Owner interface fixtures (68 pages total).
 Run the browser checks from the repository root with Puppeteer and Chromium installed:
 
     node tests/OwnerRegression/filters.browser.mjs
@@ -33,7 +33,7 @@ Run the browser checks from the repository root with Puppeteer and Chromium inst
 If Puppeteer is installed outside this repository, set PUPPETEER_MODULE to its module URL.
 The browser test intercepts all requests and serves only synthetic HTML and local static assets.
 It checks 13 filter screens at desktop/mobile sizes, labels, touch targets, combined GET
-serialization, reset links, and Client local filter persistence/empty states. It does not
+serialization, reset links, and Client combined search/group filters and empty states. It does not
 claim to exercise live authentication or every controller query against production data.
 
 ## Package, calendar and notification checks
@@ -144,3 +144,25 @@ fixture names for targeted runs; SKIP_LAYOUT=1 runs interactions only. Screensho
 captures because content scrolls inside the shell. External font/icon requests are blocked in
 fixtures; real authenticated account UAT remains separate from these synthetic checks.
 The existing interface, Admin and profile browser interaction suites also pass.
+
+
+## Cross-role UI quality checks
+
+After rendering the fixtures, run the DOM suite with Node and jsdom:
+
+    node tests/OwnerRegression/ui.dom.mjs
+
+If jsdom is installed outside the repository, set JSDOM_MODULE to the file URL of
+its lib/api.js entry point. The suite runs no browser and makes no external requests.
+It checks labels, dialog titles, unique IDs, UTF-8 display text, antiforgery fields,
+package inclusion binding after deletion, chat duplicate sends and draft preservation,
+and booking wizard progression, discount limits, terms, and location invalidation.
+
+The shared app-ui.css defines typography, semantic status colors, controls, focus,
+responsive dialogs, and chat layout for all four roles. Package creation and editing
+share _PackageEditor; the client status cards use _StatusBadge.
+
+Visual sign-off is separate: the current execution environment could not access the
+local app with its preview browser. Browser screenshots, real layout at 1920/1440/768/390px,
+keyboard focus trapping, and live end-to-end integrations remain to be checked before
+deployment. Passing the DOM suite does not prove pixel layout or screen-reader behavior.

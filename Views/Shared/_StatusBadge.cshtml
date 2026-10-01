@@ -1,9 +1,9 @@
 @model string
 @{
     var tone = Model switch {
-        "Approved" or "Verified" or "Active" or "Confirmed" or "Fully Paid" => "success",
-        "Pending" or "AwaitingDownpayment" or "AwaitingVerification" or "Verification Pending" or "UnderReview" or "RefundProcessing" => "warning",
-        "Rejected" or "Declined" or "Cancelled" or "Failed" or "Locked" => "danger",
+        "Approved" or "Verified" or "Active" or "Confirmed" or "Fully Paid" or "Serviceable" => "success",
+        "Pending" or "AwaitingDownpayment" or "AwaitingVerification" or "Verification Pending" or "UnderReview" or "RefundProcessing" or "Awaiting staff review" or "Downpayment needed" or "Awaiting payment verification" or "Awaiting review" or "Awaiting payment" or "Payment under review" or "AdditionalEvidenceRequired" or "Additional Evidence Required" => "warning",
+        "Rejected" or "Declined" or "Cancelled" or "Failed" or "Locked" or "Blocked" or "Unavailable" or "Schedule unavailable" => "danger",
         _ => "neutral"
     };
 }

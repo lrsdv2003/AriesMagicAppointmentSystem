@@ -23,7 +23,7 @@
 <div class="staff-reschedule-page">
     <div class="ui-toolbar page-header staff-reschedule-header">
 
-        <a asp-controller="Calendar" asp-action="Index" class="btn btn-outline-primary"><i class="bi bi-calendar3"></i> Calendar</a>
+        <a asp-controller="Calendar" asp-action="Index" class="btn btn-outline-primary"><i class="bi bi-calendar3" aria-hidden="true"></i> Calendar</a>
     </div>
 
     @if (TempData["Success"] != null)
@@ -57,7 +57,7 @@
             </select>
 <div class="am-filter-actions">
             <a asp-action="Index" asp-route-status="@Model.StatusFilter" class="btn btn-outline-secondary">Clear Filters</a>
-            <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i> Apply Filters</button>
+            <button type="submit" class="btn btn-primary"><i class="bi bi-search" aria-hidden="true"></i> Apply Filters</button>
         </div></div></div><button type="submit" class="btn btn-primary">Search</button></form>
     </div>
 
@@ -72,7 +72,7 @@
         @if (!Model.Requests.Any())
         {
             <div class="empty-state staff-reschedule-empty">
-                <i class="bi bi-calendar2-check"></i>
+                <i class="bi bi-calendar2-check" aria-hidden="true"></i>
                 <h3>@(Model.StatusFilter == RescheduleRequestStatus.Pending ? "No pending reschedule requests." : "No matching reschedule requests found.")</h3>
                 <p>@(Model.StatusFilter == RescheduleRequestStatus.Pending ? "There is nothing waiting for Staff review right now." : "Try another search or status filter.")</p>
             </div>
@@ -83,12 +83,12 @@
                 <table class="table align-middle staff-reschedule-table">
                     <thead>
                         <tr>
-                            <th>Booking</th>
-                            <th>Client</th>
-                            <th>Original Date &amp; Time</th>
-                            <th>Requested Date &amp; Time</th>
-                            <th>Details</th>
-                            <th class="text-end">Actions</th>
+                            <th scope="col">Booking</th>
+                            <th scope="col">Client</th>
+                            <th scope="col">Original Date &amp; Time</th>
+                            <th scope="col">Requested Date &amp; Time</th>
+                            <th scope="col">Details</th>
+                            <th scope="col" class="text-end">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -121,17 +121,17 @@
                                     <small>@requestedDisplay.Split('|')[1]</small>
                                     @if (request.Status == RescheduleRequestStatus.Pending)
                                     {
-                                        <span class="reschedule-availability @AvailabilityClass(item.Availability.State)"><i class="bi @(item.Availability.IsAvailable ? "bi-check-circle" : "bi-exclamation-triangle")"></i> @item.Availability.State</span>
+                                        <span class="reschedule-availability @AvailabilityClass(item.Availability.State)"><i class="bi @(item.Availability.IsAvailable ? "bi-check-circle" : "bi-exclamation-triangle")" aria-hidden="true"></i> @item.Availability.State</span>
                                     }
                                 </div>
                             </td>
-                            <td><a asp-action="Details" asp-route-id="@request.Id" class="btn btn-sm btn-outline-secondary"><i class="bi bi-eye"></i> View Details</a></td>
+                            <td><a asp-action="Details" asp-route-id="@request.Id" class="btn btn-sm btn-outline-secondary"><i class="bi bi-eye" aria-hidden="true"></i> View Details</a></td>
                             <td class="text-end">
                                 <div class="staff-reschedule-actions">
                                     @if (request.Status == RescheduleRequestStatus.Pending && canDecide)
                                     {
-                                        <button type="button" class="btn btn-sm btn-success js-reschedule-approve" data-request-id="@request.Id" data-booking-code="@bookingCode" data-original="@originalDisplay.Replace("|", " · ")" data-requested="@requestedDisplay.Replace("|", " · ")" data-bs-toggle="modal" data-bs-target="#approveRescheduleModal" disabled="@(!item.Availability.IsAvailable)" title="@(item.Availability.IsAvailable ? "Approve reschedule" : item.Availability.Message)"><i class="bi bi-check-lg"></i> Approve</button>
-                                        <button type="button" class="btn btn-sm btn-outline-danger js-reschedule-reject" data-request-id="@request.Id" data-booking-code="@bookingCode" data-requested="@requestedDisplay.Replace("|", " · ")" data-bs-toggle="modal" data-bs-target="#rejectRescheduleModal"><i class="bi bi-x-lg"></i> Reject</button>
+                                        <button type="button" class="btn btn-sm btn-success js-reschedule-approve" data-request-id="@request.Id" data-booking-code="@bookingCode" data-original="@originalDisplay.Replace("|", " · ")" data-requested="@requestedDisplay.Replace("|", " · ")" data-bs-toggle="modal" data-bs-target="#approveRescheduleModal" disabled="@(!item.Availability.IsAvailable)" title="@(item.Availability.IsAvailable ? "Approve reschedule" : item.Availability.Message)"><i class="bi bi-check-lg" aria-hidden="true"></i> Approve</button>
+                                        <button type="button" class="btn btn-sm btn-outline-danger js-reschedule-reject" data-request-id="@request.Id" data-booking-code="@bookingCode" data-requested="@requestedDisplay.Replace("|", " · ")" data-bs-toggle="modal" data-bs-target="#rejectRescheduleModal"><i class="bi bi-x-lg" aria-hidden="true"></i> Reject</button>
                                     }
                                     else if (request.Status == RescheduleRequestStatus.Pending)
                                     {
@@ -169,7 +169,7 @@
                             <div class="reschedule-schedule requested"><span>Requested</span><strong>@requestedText</strong>@if (request.Status == RescheduleRequestStatus.Pending){<span class="reschedule-availability @AvailabilityClass(item.Availability.State)">@item.Availability.State</span>}</div>
                         </div>
                         <div class="staff-reschedule-card-actions">
-                            <a asp-action="Details" asp-route-id="@request.Id" class="btn btn-sm btn-outline-secondary"><i class="bi bi-eye"></i> Details</a>
+                            <a asp-action="Details" asp-route-id="@request.Id" class="btn btn-sm btn-outline-secondary"><i class="bi bi-eye" aria-hidden="true"></i> Details</a>
                             @if (request.Status == RescheduleRequestStatus.Pending && canDecide)
                             {
                                 <button type="button" class="btn btn-sm btn-success js-reschedule-approve" data-request-id="@request.Id" data-booking-code="@bookingCode" data-original="@originalText" data-requested="@requestedText" data-bs-toggle="modal" data-bs-target="#approveRescheduleModal" disabled="@(!item.Availability.IsAvailable)" title="@(item.Availability.IsAvailable ? "Approve reschedule" : item.Availability.Message)">Approve</button>

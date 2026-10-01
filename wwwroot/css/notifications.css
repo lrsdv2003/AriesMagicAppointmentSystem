@@ -24,7 +24,7 @@
 .notice-booking,.notice-calendar{--notice-accent:#1e40af;--notice-soft:#dbeafe}
 .notice-message,.notice-reschedule{--notice-accent:#115e59;--notice-soft:#ccfbf1}
 .notice-empty{padding:1.5rem;border:1px solid #e2e8f0;border-radius:14px;background:#fff;text-align:center}
-body.client-body .notice-header h1{color:#f8fafc}
+body.client-body .notice-header h1{color:var(--app-text)}
 @media(max-width:600px){.notice-header{align-items:flex-start;flex-direction:column;gap:.6rem}.notice-row{grid-template-columns:28px minmax(0,1fr);padding:.85rem;gap:.6rem}.notice-icon{width:28px;height:28px}.notice-action{grid-column:2;justify-self:start;padding-left:0}.notice-header h1{font-size:1.35rem}}
 body.client-body .notice-row .notice-copy h2{color:#1e293b!important;font-family:inherit}
 body.client-body .notice-row .notice-copy p{color:#475569!important}

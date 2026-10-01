@@ -28,9 +28,6 @@
     <title>@ViewData["Title"] - Aries Magic</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/tokens.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/aries-client-theme.css" asp-append-version="true" />
@@ -43,6 +40,7 @@
     <link rel="stylesheet" href="~/css/filters.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/notifications.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/client-refresh.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/app-ui.css" asp-append-version="true" />
 </head>
 <body class="client-body @pageClass @(isHome ? "client-home-page" : "client-inner-page")">
     <a class="magic-skip-link" href="#mainContent">Skip to content</a>
@@ -71,7 +69,7 @@
                 </a>
 
                 <button class="navbar-toggler magic-navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#clientNavbar" aria-controls="clientNavbar" aria-expanded="false" aria-label="Toggle navigation">
-                    <i class="bi bi-list"></i>
+                    <i class="bi bi-list" aria-hidden="true"></i>
                 </button>
 
                 <div class="collapse navbar-collapse" id="clientNavbar">
@@ -97,35 +95,35 @@
 
                             <div class="dropdown">
                                 <button class="magic-account-btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                    <span class="magic-account-avatar"><i class="bi bi-person"></i></span>
+                                    <span class="magic-account-avatar"><i class="bi bi-person" aria-hidden="true"></i></span>
                                     <span>My Account</span>
                                 </button>
                                 <ul class="dropdown-menu dropdown-menu-end magic-account-menu">
-                                    <li><a class="dropdown-item" asp-controller="Bookings" asp-action="Dashboard"><i class="bi bi-house"></i> My Dashboard</a></li>
-                                    <li><a class="dropdown-item" asp-controller="Bookings" asp-action="MyBookings"><i class="bi bi-calendar2-event"></i> My Bookings</a></li>
-                                    <li><a class="dropdown-item" asp-controller="Payments" asp-action="MyUploads"><i class="bi bi-wallet2"></i> My Payments</a></li>
-                                    <li><a class="dropdown-item" asp-controller="Profile" asp-action="Index"><i class="bi bi-person-circle"></i> Profile</a></li>
-                                    <li><a class="dropdown-item" asp-controller="Notifications" asp-action="Index"><i class="bi bi-bell"></i> Notifications</a></li>
+                                    <li><a class="dropdown-item" asp-controller="Bookings" asp-action="Dashboard"><i class="bi bi-house" aria-hidden="true"></i> My Dashboard</a></li>
+                                    <li><a class="dropdown-item" asp-controller="Bookings" asp-action="MyBookings"><i class="bi bi-calendar2-event" aria-hidden="true"></i> My Bookings</a></li>
+                                    <li><a class="dropdown-item" asp-controller="Payments" asp-action="MyUploads"><i class="bi bi-wallet2" aria-hidden="true"></i> My Payments</a></li>
+                                    <li><a class="dropdown-item" asp-controller="Profile" asp-action="Index"><i class="bi bi-person-circle" aria-hidden="true"></i> Profile</a></li>
+                                    <li><a class="dropdown-item" asp-controller="Notifications" asp-action="Index"><i class="bi bi-bell" aria-hidden="true"></i> Notifications</a></li>
                                     <li><hr class="dropdown-divider" /></li>
                                     <li>
                                         <form asp-controller="Account" asp-action="Logout" method="post">
                                             @Html.AntiForgeryToken()
-                                            <button type="submit" class="dropdown-item"><i class="bi bi-box-arrow-right"></i> Logout</button>
+                                            <button type="submit" class="dropdown-item"><i class="bi bi-box-arrow-right" aria-hidden="true"></i> Logout</button>
                                         </form>
                                     </li>
                                 </ul>
                             </div>
 
                             <a asp-controller="Bookings" asp-action="CreateStepOne" class="btn magic-primary-cta">
-                                <i class="bi bi-stars"></i><span>Book a Show</span>
+                                <i class="bi bi-stars" aria-hidden="true"></i><span>Book a Show</span>
                             </a>
 
 
                         }
                         else if (User.Identity?.IsAuthenticated == true)
                         {
-                            var dashboardController = User.IsInRole("Owner") ? "Reports" : User.IsInRole("Admin") ? "UserManagement" : "Bookings";
-                            <a asp-controller="@dashboardController" asp-action="Index" class="btn magic-primary-cta">Go to Dashboard</a>
+                            var dashboardAction = User.IsInRole("Owner") ? "Owner" : User.IsInRole("Admin") ? "Admin" : "Staff";
+                            <a asp-controller="Dashboard" asp-action="@dashboardAction" class="btn magic-primary-cta">Go to Dashboard</a>
                             <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
                                 @Html.AntiForgeryToken()
                                 <button type="submit" class="magic-text-btn">Logout</button>
@@ -142,7 +140,7 @@
         </nav>
     </header>
 
-    <main id="mainContent" class="client-main">
+    <main tabindex="-1" id="mainContent" class="client-main">
         @if (isHome || currentController == "Communications")
         {
             @RenderBody()
@@ -160,7 +158,7 @@
             <div class="magic-footer-top">
                 <div class="magic-footer-brand">
                     <a class="client-brand" asp-controller="Home" asp-action="Index">
-                        <span class="brand-mark" aria-hidden="true"><i class="bi bi-stars"></i></span>
+                        <span class="brand-mark" aria-hidden="true"><i class="bi bi-stars" aria-hidden="true"></i></span>
                         <span class="brand-copy"><strong>Aries Magic</strong><small>Moments become memories.</small></span>
                     </a>
                     <p>Professional magic, interactive entertainment, and a smoother way to plan the show your celebration deserves.</p>
@@ -208,5 +206,6 @@
     }
     @await RenderSectionAsync("Scripts", required: false)
     <script src="~/js/filters.js" asp-append-version="true"></script>
+    <script src="~/js/app-ui.js" asp-append-version="true"></script>
 </body>
 </html>

@@ -83,7 +83,7 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
-  font-family: "Inter", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  font-family:var(--app-font, "Segoe UI", Arial, sans-serif);
 }
 
 a {

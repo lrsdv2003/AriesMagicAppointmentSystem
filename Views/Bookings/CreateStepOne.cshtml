@@ -623,7 +623,7 @@
                         </div>
                         <div class="venue-journey">
                             <div class="venue-journey-stop"><i class="bi bi-geo-alt-fill" aria-hidden="true"></i><div><span>${result.usesPreviousEventLocation ? "Previous event" : "Starting point"}</span><strong title="${startingPoint}">${startingPoint}</strong></div></div>
-                            <div class="venue-journey-line" aria-hidden="true"><i class="bi bi-arrow-down"></i></div>
+                            <div class="venue-journey-line" aria-hidden="true"><i class="bi bi-arrow-down" aria-hidden="true"></i></div>
                             <div class="venue-journey-stop venue-journey-destination"><i class="bi bi-flag-fill" aria-hidden="true"></i><div><span>${result.usesPreviousEventLocation ? "New client venue" : "Destination"}</span><strong title="${destination}">${destination}</strong></div></div>
                         </div>
                         <div class="venue-metric-grid">
@@ -1979,7 +1979,7 @@
 
                                         idx < nodeIndex
 
-                                            ? '<i class="bi bi-check-lg"></i>'
+                                            ? '<i class="bi bi-check-lg" aria-hidden="true"></i>'
 
                                             : idx;
 

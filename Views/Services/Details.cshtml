@@ -10,13 +10,13 @@
                 <div class="d-flex align-items-center gap-2 flex-wrap">
 
                     <span class="staff-package-status @(Model.IsArchived ? "inactive" : "")">
-                        <i class="bi @(Model.IsArchived ? "bi-pause-circle-fill" : "bi-check-circle-fill")"></i>
+                        <i class="bi @(Model.IsArchived ? "bi-pause-circle-fill" : "bi-check-circle-fill")" aria-hidden="true"></i>
                         @(Model.IsArchived ? "Inactive" : "Active")
                     </span>
                 </div>
 
             </div>
-            <div class="ui-inline">@if(User.CanEditPackages()){<a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary">Edit Package</a>}<a asp-action="Index" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Back to Packages</a></div>
+            <div class="ui-inline">@if(User.CanEditPackages()){<a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary">Edit Package</a>}<a asp-action="Index" class="btn btn-outline-secondary"><i class="bi bi-arrow-left" aria-hidden="true"></i> Back to Packages</a></div>
         </header>
 
         <div class="staff-package-detail-grid">
@@ -53,7 +53,7 @@
                     <ul class="staff-package-full-inclusions">
                         @foreach (var inclusion in Model.Inclusions.OrderBy(i => i.Id))
                         {
-                            <li><i class="bi bi-check2-circle"></i><span>@inclusion.Name</span></li>
+                            <li><i class="bi bi-check2-circle" aria-hidden="true"></i><span>@inclusion.Name</span></li>
                         }
                     </ul>
                 }

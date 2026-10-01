@@ -6,7 +6,7 @@
 <article class="staff-package-card">
     <div class="staff-package-card-head">
         <div class="staff-package-title-wrap">
-            <span class="staff-package-status">@(Model.IsArchived ? "Archived" : "Active")</span>
+            <partial name="_StatusBadge" model="@(Model.IsArchived ? "Archived" : "Active")" />
             <h2>@Model.Name</h2>
         </div>
         <strong class="staff-package-price">&#8369;@Model.Price.ToString("N2")</strong>

@@ -60,7 +60,7 @@ body.client-body .am-spotlight-actions .btn-light { background: #d86454 !importa
 /* Shared client foundations and legacy component adaptation. */
 body.client-body { --magic-success:#216b43; --magic-warning:#805c13; --magic-danger:#b42b3b; --bs-link-hover-color:#92392d; color-scheme:light; }
 body.client-body .magic-ambient, body.client-body .am-page-loader { display:none!important; }
-body.client-body h1, body.client-body h2, body.client-body h3, body.client-body h4, body.client-body h5 { font-family:'DM Sans',system-ui,sans-serif!important; letter-spacing:-.025em; font-weight:600; }
+body.client-body h1, body.client-body h2, body.client-body h3, body.client-body h4, body.client-body h5 { font-family:var(--app-font)!important; letter-spacing:-.025em; font-weight:600; }
 body.client-body .magic-primary-cta,body.client-body .btn-primary { background:#bc493a!important; border-color:#bc493a!important; color:white!important; }
 body.client-body .btn-outline-primary,body.client-body .btn-outline-secondary,body.client-body .btn-outline-light { background:transparent!important; border-color:#c6b4ac!important; color:#5f3b31!important; }
 body.client-body .btn-outline-primary:hover,body.client-body .btn-outline-secondary:hover,body.client-body .btn-outline-light:hover { background:#fff0e9!important; color:#92392d!important; }

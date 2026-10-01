@@ -64,7 +64,13 @@ static class SnapshotRenderer
             ("Bookings","ClientDashboard",new[]{clientBooking}), ("Bookings","ClientDetails",clientBooking),
             ("Bookings","Create",new BookingStepTwoViewModel {EventDate=DateTime.Today.AddDays(7),StartTime=new TimeSpan(10,0,0),PaxCount=50,ContactPerson="Fixture Client",ContactNumber="09000000000"}),
             ("Payments","Upload",new PaymentUploadViewModel {FixedDownpaymentAmount=2000,Amount=2000,GCashQrPath="/images/gcash-qr.jpeg",Bookings=[new(){Value="1",Text="Fixture booking — balance PHP 10,000"}]}),
-            ("Payments","MyUploads",new[]{payment})
+            ("Payments","MyUploads",new[]{payment}),
+            ("Profile","Index",new ProfileViewModel {FullName="Fixture Client",Email="client@example.test",CreatedAt=DateTime.Today.AddYears(-1)}),
+            ("Payments","RequestRefund",new RefundRequestViewModel()),
+            ("Payments","MyRefundRequests",Array.Empty<RefundRequest>()),
+            ("RescheduleRequests","MyRequests",Array.Empty<RescheduleRequest>()),
+            ("RescheduleRequests","Create",new RescheduleRequestCreateViewModel()),
+            ("Services","Archived",Array.Empty<Service>())
         }).ToArray();
         var filterPages = new (string Controller,string Action,object Model)[] {
             ("Bookings","Index",new BookingManagementViewModel { AvailableServices = [package] }),
@@ -91,14 +97,20 @@ static class SnapshotRenderer
         var rendered = 0;
         foreach(var page in pages)
         {
-            var isClientPage = page.Controller == "Home" || page.Controller == "Bookings" && new[]{"ClientDashboard","ClientDetails","Create"}.Contains(page.Action) || page.Controller == "Payments" && new[]{"Upload","MyUploads"}.Contains(page.Action);
+            var isClientPage = page.Controller == "Home" || page.Controller == "Profile" || page.Controller == "RescheduleRequests" && page.Action is "Create" or "MyRequests" || page.Controller == "Bookings" && new[]{"ClientDashboard","ClientDetails","Create"}.Contains(page.Action) || page.Controller == "Payments" && new[]{"Upload","MyUploads","RequestRefund","MyRefundRequests"}.Contains(page.Action);
             var defaultRole = isClientPage ? "Client" : page.Controller == "Dashboard" ? page.Action : page.Action == "Admin" || page.Controller == "Calendar" && page.Action == "Index" ? "Admin" : page.Action == "MyBookings" ? "Client" : page.Action is "StaffIndex" or "StaffDetails" || page.Controller == "RescheduleRequests" ? "Staff" : page.Controller is "UserManagement" or "SystemActivity" or "TrashHistory" ? "Admin" : "Owner";
-            var roles = page.Controller == "History" ? new[] {"Owner","Staff"} : page.Controller == "InternalProfile" ? new[] { "Owner", "Staff", "Admin" } : page.Controller == "Services" && page.Action is "Index" or "Details" ? new[] { "Owner", "Staff", "Admin" } : page.Controller == "Communications" ? new[] { "Owner", "Admin" } : page.Controller == "Notifications" ? new[] { "Owner", "Client" } : new[] { defaultRole };
+            var roles = page.Controller == "History" ? new[] {"Owner","Staff"} : page.Controller == "InternalProfile" ? new[] { "Owner", "Staff", "Admin" } : page.Controller == "Services" && page.Action is "Index" or "Details" ? new[] { "Owner", "Staff", "Admin" } : page.Controller == "Communications" ? new[] { "Owner", "Admin", "Staff", "Client" } : page.Controller == "Notifications" ? new[] { "Owner", "Client" } : new[] { defaultRole };
             foreach (var role in roles)
             {
-            foreach(var state in page.Controller == "Dashboard" ? new[]{"populated","empty","error"} : page.Controller == "History" && page.Action == "Index" ? new[]{"populated","empty"} : new[]{"populated"})
+            foreach(var state in page.Controller == "Communications" ? new[]{"populated","empty"} : page.Controller == "Dashboard" ? new[]{"populated","empty","error"} : page.Controller == "History" && page.Action == "Index" ? new[]{"populated","empty"} : new[]{"populated"})
             {
             object fixtureModel = page.Model;
+            if(page.Controller == "Communications") fixtureModel=new CommunicationCenterViewModel {
+                IsInternalUser=role!="Client",
+                SelectedConversation=state=="empty" ? null : new ConversationDetailViewModel {Id=1,Title="Booking question",BookingId=booking.Id,CanSend=true,Participants=[new(){UserId="fixture-staff",Name="Fixture Staff",Role="Staff",Initials="FS"}],Messages=[new(){Id=1,SenderName="Fixture Staff",Content="Your booking update is ready.",SentAt=DateTime.Now}]},
+                Conversations=state=="empty" ? [] : [new(){Id=1,Title="Booking question",DisplayName="Fixture Staff",LatestMessage="Your booking update is ready.",LastActivityAt=DateTime.Now}],
+                InternalUsers=role=="Client" ? [] : [new(){UserId="fixture-staff",Name="Fixture Staff",Role="Staff"}]
+            };
             if(page.Controller=="History" && page.Action=="Index" && state=="empty") fixtureModel=new HistoryIndexViewModel {Filters=new() {Search="no matches"}};
             if(fixtureModel is InternalProfileViewModel account) account.Role=role;
             if(page.Controller == "Dashboard" && state != "populated") {
@@ -121,6 +133,7 @@ static class SnapshotRenderer
             var result = engine.GetView(null, "/Views/"+page.Controller+"/"+page.Action+".cshtml",true);
             if (!result.Success) throw new Exception("Could not find snapshot view");
             var data = new ViewDataDictionary(provider.GetRequiredService<IModelMetadataProvider>(),new ModelStateDictionary()) {Model=fixtureModel};
+            data["EditModel"]=new EditProfileViewModel {FullName="Fixture Client",Email="client@example.test"};
             data["WizardPackages"]=new List<Service>{displayPackage}; data["EventTypes"]=new List<string>{"Birthday","Company Events","Bridal Shower","Gender Reveal","School Events","Halloween","Christmas Parties","Easter Events"};
             data["FinancialSummaries"]=new Dictionary<int,BookingFinancialSummaryViewModel>{[booking.Id]=finance};
             data["FinancialSummary"]=finance; data["ExpectedReceiver"]="Aries Magic"; data["Filter"]="awaiting";

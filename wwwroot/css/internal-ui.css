@@ -2,9 +2,9 @@
    Staff, Owner and Admin use these same tokens; Client pages do not opt in. */
 html.internal-shell{height:100%;overflow:hidden}
 body.internal-ui {
-  --ui-font:"Segoe UI",Arial,sans-serif;
-  --ui-bg:#f6f8fb;--ui-surface:#fff;--ui-text:#243247;--ui-muted:#526174;
-  --ui-border:#dce3ec;--ui-accent:#5b3cc4;--ui-accent-hover:#482caa;
+  --ui-font:var(--app-font);
+  --ui-bg:var(--app-bg);--ui-surface:var(--app-surface);--ui-text:var(--app-text);--ui-muted:var(--app-muted);
+  --ui-border:var(--app-border);--ui-accent:var(--app-primary);--ui-accent-hover:var(--app-primary-hover);
   --ui-success:#166534;--ui-warning:#854d0e;--ui-danger:#a51d2d;
   --ui-radius:12px;--ui-control-radius:8px;
   --ui-space-1:4px;--ui-space-2:8px;--ui-space-3:12px;--ui-space-4:16px;--ui-space-6:24px;

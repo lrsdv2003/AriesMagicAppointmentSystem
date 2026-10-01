@@ -20,7 +20,7 @@
     @if (Model.RecentBookings.Count == 0)
     {
         <div class="dashboard-empty-state">
-            <i class="bi bi-inbox"></i>
+            <i class="bi bi-inbox" aria-hidden="true"></i>
             <p>No booking records yet.</p>
         </div>
     }
@@ -36,7 +36,7 @@
                    class="dashboard-record-item">
 
                     <div class="dashboard-record-icon">
-                        <i class="bi bi-journal-text"></i>
+                        <i class="bi bi-journal-text" aria-hidden="true"></i>
                     </div>
 
                     <div class="dashboard-record-copy">

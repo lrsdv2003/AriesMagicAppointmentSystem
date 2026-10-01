@@ -61,7 +61,7 @@
 
         <div class="row g-3 mt-1">
             <div class="col-12">
-                <label asp-for="BookingId" class="form-label">Select Booking</label>
+                <label for="bookingSelect" asp-for="BookingId" class="form-label">Select Booking</label>
                 <select asp-for="BookingId" asp-items="Model.Bookings" class="form-select" id="bookingSelect">
                     <option value="">-- Select Booking --</option>
                 </select>
@@ -69,7 +69,7 @@
             </div>
 
             <div class="col-md-6">
-                <label asp-for="RequestedDate" class="form-label">Requested Date</label>
+                <label for="requestedDateInput" asp-for="RequestedDate" class="form-label">Requested Date</label>
                 <input asp-for="RequestedDate"
                        type="text"
                        class="form-control"
@@ -79,7 +79,7 @@
             </div>
 
             <div class="col-md-6">
-                <label asp-for="RequestedStartTime" class="form-label">Requested Start Time</label>
+                <label for="requestedStartTimeInput" asp-for="RequestedStartTime" class="form-label">Requested Start Time</label>
                 <input asp-for="RequestedStartTime" type="time" class="form-control" id="requestedStartTimeInput" />
                 <span asp-validation-for="RequestedStartTime" class="text-danger"></span>
             </div>

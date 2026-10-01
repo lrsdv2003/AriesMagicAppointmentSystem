@@ -52,7 +52,7 @@
         <form asp-controller="Communications" asp-action="StartBookingConversation" method="post">
             @Html.AntiForgeryToken()
             <input type="hidden" name="bookingId" value="@Model.Id" />
-            <button type="submit" class="btn btn-primary"><i class="bi bi-chat-dots"></i> Booking Conversation</button>
+            <button type="submit" class="btn btn-primary"><i class="bi bi-chat-dots" aria-hidden="true"></i> Booking Conversation</button>
         </form>
         <a asp-action="Index" class="btn btn-outline-secondary">Back to Bookings</a>
     </div>
@@ -97,7 +97,7 @@
         <div class="dashboard-stat-card @(finance.RemainingBalance > 0 ? "stat-warning" : "stat-success")"><span class="dashboard-stat-label">Balance Due</span><strong>₱@finance.RemainingBalance.ToString("N2")</strong><small>@(Model.Status == "Completed" && finance.RemainingBalance > 0 ? "Completed — Balance Outstanding" : "Verified payments only")</small></div>
         <div class="dashboard-stat-card"><span class="dashboard-stat-label">Net Collected</span><strong>₱@finance.NetCollected.ToString("N2")</strong><small>After completed refunds</small></div>
     </div>
-    @if (finance.Ledger.Any()) { <div class="table-responsive mt-3"><table class="table align-middle"><thead><tr><th>Date</th><th>Transaction</th><th>Amount</th><th>Status</th><th>Method</th></tr></thead><tbody>@foreach(var tx in finance.Ledger){<tr><td>@tx.Date.ToString("MMM dd, yyyy")</td><td>@tx.TransactionType</td><td>₱@tx.Amount.ToString("N2")</td><td>@tx.Status</td><td>@tx.PaymentMethod</td></tr>}</tbody></table></div> }
+    @if (finance.Ledger.Any()) { <div class="table-responsive mt-3"><table class="table align-middle"><thead><tr><th scope="col">Date</th><th scope="col">Transaction</th><th scope="col">Amount</th><th scope="col">Status</th><th scope="col">Method</th></tr></thead><tbody>@foreach(var tx in finance.Ledger){<tr><td>@tx.Date.ToString("MMM dd, yyyy")</td><td>@tx.TransactionType</td><td>₱@tx.Amount.ToString("N2")</td><td>@tx.Status</td><td>@tx.PaymentMethod</td></tr>}</tbody></table></div> }
 </div>
 }
 
@@ -216,21 +216,21 @@
                             @if (Model.RequiresManualReview)
                             {
                                 <span class="text-warning">
-                                    <i class="bi bi-exclamation-triangle-fill"></i>
+                                    <i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>
                                     MANUAL REVIEW
                                 </span>
                             }
                             else if (Model.IsServiceable)
                             {
                                 <span class="text-success">
-                                    <i class="bi bi-check-circle-fill"></i>
+                                    <i class="bi bi-check-circle-fill" aria-hidden="true"></i>
                                     SERVICEABLE
                                 </span>
                             }
                             else
                             {
                                 <span class="text-danger">
-                                    <i class="bi bi-x-circle-fill"></i>
+                                    <i class="bi bi-x-circle-fill" aria-hidden="true"></i>
                                     OUTSIDE SERVICE AREA
                                 </span>
                             }
@@ -457,10 +457,10 @@
                 @if (isPending)
                 {
                     <a asp-action="Decline" asp-route-id="@Model.Id" class="btn btn-outline-danger">
-                        <i class="bi bi-x-lg"></i> Decline
+                        <i class="bi bi-x-lg" aria-hidden="true"></i> Decline
                     </a>
                     <a asp-action="Approve" asp-route-id="@Model.Id" class="btn btn-success">
-                        <i class="bi bi-check-lg"></i> Approve Booking
+                        <i class="bi bi-check-lg" aria-hidden="true"></i> Approve Booking
                     </a>
                 }
 
@@ -470,13 +470,13 @@
                             data-bs-toggle="dropdown"
                             aria-expanded="false"
                             title="More actions">
-                        <i class="bi bi-three-dots"></i>
+                        <i class="bi bi-three-dots" aria-hidden="true"></i>
                         <span>More Actions</span>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end">
                         <li>
                             <a class="dropdown-item" asp-action="AddNote" asp-route-id="@Model.Id">
-                                <i class="bi bi-journal-plus"></i> Add Internal Note
+                                <i class="bi bi-journal-plus" aria-hidden="true"></i> Add Internal Note
                             </a>
                         </li>
                     </ul>

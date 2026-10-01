@@ -47,7 +47,7 @@ body.client-body {
 
   background: var(--magic-bg) !important;
   color: var(--magic-text-body) !important;
-  font-family: "DM Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+  font-family:var(--app-font, "Segoe UI", Arial, sans-serif)!important;
   line-height: 1.55;
 }
 
@@ -129,7 +129,7 @@ body.client-body .client-brand {
   margin: 0 1.2rem 0 0;
   padding: 0;
   color: var(--magic-text-strong) !important;
-  font-family: "DM Sans", sans-serif !important;
+  font-family:var(--app-font, "Segoe UI", Arial, sans-serif)!important;
   font-size: inherit !important;
   font-weight: 600 !important;
   letter-spacing: 0 !important;
@@ -163,7 +163,7 @@ body.client-body .brand-copy {
 
 body.client-body .brand-copy strong {
   color: var(--magic-text-strong) !important;
-  font-family: "Fraunces", Georgia, serif !important;
+  font-family:var(--app-font, "Segoe UI", Arial, sans-serif)!important;
   font-size: 1.12rem !important;
   font-weight: 600 !important;
   letter-spacing: .01em !important;
@@ -173,7 +173,7 @@ body.client-body .brand-copy strong {
 body.client-body .brand-copy small {
   margin-top: .28rem !important;
   color: var(--magic-text-muted) !important;
-  font-family: "DM Sans", sans-serif !important;
+  font-family:var(--app-font, "Segoe UI", Arial, sans-serif)!important;
   font-size: .61rem !important;
   font-weight: 500;
   letter-spacing: .08em !important;
@@ -192,7 +192,7 @@ body.client-body .client-nav-links .nav-link {
   border-radius: 10px !important;
   background: transparent !important;
   color: var(--magic-text-body) !important;
-  font-family: "DM Sans", sans-serif !important;
+  font-family:var(--app-font, "Segoe UI", Arial, sans-serif)!important;
   font-size: .88rem !important;
   font-weight: 600 !important;
   line-height: 1.2;
@@ -298,7 +298,7 @@ body.client-body .magic-icon-btn .notification-badge {
   border-radius: 999px !important;
   background: #d94b63 !important;
   color: #fff !important;
-  font-family: "DM Sans", sans-serif !important;
+  font-family:var(--app-font, "Segoe UI", Arial, sans-serif)!important;
   font-size: .62rem !important;
   font-weight: 800 !important;
   line-height: 1 !important;
@@ -463,7 +463,7 @@ body.client-body .form-label {
   display: inline-block;
   margin-bottom: .45rem !important;
   color: #cbc4d2 !important;
-  font-family: "DM Sans", sans-serif !important;
+  font-family:var(--app-font, "Segoe UI", Arial, sans-serif)!important;
   font-size: .78rem !important;
   font-weight: 700 !important;
   line-height: 1.35;
@@ -508,7 +508,7 @@ body.client-body .row.g-3 {
 body.client-body .form-section-title {
   margin: 0 0 1rem !important;
   color: var(--magic-text-strong) !important;
-  font-family: "Fraunces", Georgia, serif !important;
+  font-family:var(--app-font, "Segoe UI", Arial, sans-serif)!important;
   font-size: 1.25rem !important;
   font-weight: 500 !important;
   line-height: 1.25;
@@ -523,7 +523,7 @@ body.client-body .btn {
   gap: .45rem;
   padding: .62rem 1rem;
   border-radius: 999px !important;
-  font-family: "DM Sans", sans-serif !important;
+  font-family:var(--app-font, "Segoe UI", Arial, sans-serif)!important;
   font-size: .88rem;
   font-weight: 700 !important;
   line-height: 1.2;
@@ -646,7 +646,7 @@ body.client-body .auth-card-header {
 body.client-body .auth-card-header h2 {
   margin: 0 0 .45rem !important;
   color: var(--magic-text-strong) !important;
-  font-family: "Fraunces", Georgia, serif !important;
+  font-family:var(--app-font, "Segoe UI", Arial, sans-serif)!important;
   font-size: clamp(1.75rem,2.5vw,2.15rem) !important;
   font-weight: 500 !important;
   line-height: 1.15 !important;
@@ -952,7 +952,7 @@ body.client-body .magic-footer-links {
 body.client-body .magic-footer-links h5 {
   margin: 0 0 .9rem !important;
   color: var(--magic-text-strong) !important;
-  font-family: "DM Sans", sans-serif !important;
+  font-family:var(--app-font, "Segoe UI", Arial, sans-serif)!important;
   font-size: .75rem !important;
   font-weight: 800 !important;
   letter-spacing: .12em !important;
@@ -1256,7 +1256,7 @@ body.client-body .client-error-page-icon {
 }
 body.client-body .client-error-page-panel h2 {
   margin: 0 0 .45rem;
-  font-family: "Fraunces", Georgia, serif;
+  font-family:var(--app-font, "Segoe UI", Arial, sans-serif);
   font-size: 1.35rem;
   font-weight: 500;
 }

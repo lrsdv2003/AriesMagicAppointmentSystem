@@ -11,7 +11,7 @@
   const conversationId = Number(root.dataset.conversationId || 0);
   const messagesUrl = root.dataset.messagesUrl || "/Communications/MessagesSince";
   let lastMessageId = Number(root.dataset.lastMessageId || 0);
-  let polling = false;
+  let polling = false, sending = false;
 
   const scrollToBottom = (smooth = false) => {
     if (!history) return;
@@ -125,7 +125,7 @@
     };
     input.addEventListener("input", resizeInput);
     input.addEventListener("keydown", (event) => {
-      if (event.key === "Enter" && !event.shiftKey) {
+      if (event.key === "Enter" && !event.shiftKey && !event.isComposing) {
         event.preventDefault();
         if (composer && input.value.trim()) composer.requestSubmit();
       }
@@ -135,7 +135,10 @@
   if (composer && input) {
     composer.addEventListener("submit", async (event) => {
       event.preventDefault();
-      if (!input.value.trim()) return;
+      if (sending || !input.value.trim()) return;
+      sending = true;
+      const draft = input.value;
+      composer.setAttribute("aria-busy", "true");
       const button = composer.querySelector("button[type='submit']");
       if (button) button.disabled = true;
       if (status) status.textContent = "Sending...";
@@ -146,8 +149,8 @@
           credentials: "same-origin",
           headers: { "X-Requested-With": "XMLHttpRequest" }
         });
-        if (!response.ok) throw new Error("Unable to send message");
-        input.value = "";
+        if (!response.ok || response.redirected) throw new Error("Unable to send message");
+        if (input.value === draft) input.value = "";
         input.style.height = "auto";
         const requestType = composer.querySelector("select[name='requestType']");
         const actionLink = composer.querySelector("input[name='actionLink']");
@@ -155,10 +158,11 @@
         if (actionLink) actionLink.value = "";
         if (status) status.textContent = "Sent";
         await pollMessages();
-        setTimeout(() => { if (status) status.textContent = "Messages are saved to this conversation history."; }, 1800);
+
       } catch {
         if (status) status.textContent = "Message could not be sent. Please try again.";
       } finally {
+        sending = false; composer.removeAttribute("aria-busy");
         if (button) button.disabled = false;
         input.focus();
       }
