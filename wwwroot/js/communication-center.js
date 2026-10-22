@@ -12,10 +12,21 @@
   const messagesUrl = root.dataset.messagesUrl || "/Communications/MessagesSince";
   let lastMessageId = Number(root.dataset.lastMessageId || 0);
   let polling = false, sending = false;
+  const isClient = root.classList.contains("comm-page-client");
+  const latest = document.getElementById("commLatest");
+  const connection = document.getElementById("commConnectionStatus");
+  const retry = document.getElementById("commRetry");
+  const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+  const nearBottom = () => !history || history.scrollHeight - history.scrollTop - history.clientHeight < (isClient ? 100 : 140);
+  const connectionState = (failed) => {
+    if (connection) connection.textContent = failed ? "Connection interrupted. Retrying automatically…" : "Messages up to date";
+    if (retry) retry.hidden = !failed;
+  };
 
   const scrollToBottom = (smooth = false) => {
     if (!history) return;
-    history.scrollTo({ top: history.scrollHeight, behavior: smooth ? "smooth" : "auto" });
+    history.scrollTo({ top: history.scrollHeight, behavior: smooth && !reducedMotion ? "smooth" : "auto" });
+    if (latest) latest.hidden = true;
   };
 
   const formatDate = (value) => {
@@ -49,6 +60,7 @@
     role.textContent = message.senderRole || "User";
     const time = document.createElement("time");
     time.textContent = formatDate(message.sentAt);
+    if (!Number.isNaN(new Date(message.sentAt).getTime())) time.dateTime = new Date(message.sentAt).toISOString();
     meta.append(name, role, time);
     article.append(meta);
 
@@ -103,16 +115,19 @@
         credentials: "same-origin",
         headers: { "X-Requested-With": "XMLHttpRequest" }
       });
-      if (!response.ok) return;
+      if (!response.ok || response.redirected) { if (isClient) throw new Error("Connection unavailable"); return; }
       const messages = await response.json();
+      if (!Array.isArray(messages)) throw new Error("Invalid message response");
+      if (isClient) connectionState(false);
       if (Array.isArray(messages) && messages.length) {
-        const nearBottom = history ? history.scrollHeight - history.scrollTop - history.clientHeight < 140 : true;
+        const shouldScroll = nearBottom();
         messages.forEach(appendMessage);
-        if (nearBottom) scrollToBottom(true);
+        if (shouldScroll) scrollToBottom(true);
+        else if (latest) latest.hidden = false;
         window.dispatchEvent(new CustomEvent("aries:communication-updated"));
       }
     } catch {
-      // Polling is intentionally quiet; the next interval retries automatically.
+      if (isClient) connectionState(true);
     } finally {
       polling = false;
     }
@@ -125,7 +140,7 @@
     };
     input.addEventListener("input", resizeInput);
     input.addEventListener("keydown", (event) => {
-      if (event.key === "Enter" && !event.shiftKey && !event.isComposing) {
+      if (event.key === "Enter" && !event.shiftKey && !event.isComposing && !(isClient && window.matchMedia?.("(pointer: coarse)").matches)) {
         event.preventDefault();
         if (composer && input.value.trim()) composer.requestSubmit();
       }
@@ -158,18 +173,37 @@
         if (actionLink) actionLink.value = "";
         if (status) status.textContent = "Sent";
         await pollMessages();
+        if (isClient) scrollToBottom();
 
       } catch {
         if (status) status.textContent = "Message could not be sent. Please try again.";
       } finally {
         sending = false; composer.removeAttribute("aria-busy");
         if (button) button.disabled = false;
-        input.focus();
+        input.focus({preventScroll:isClient});
       }
     });
   }
 
   scrollToBottom(false);
+  latest?.addEventListener("click", () => { scrollToBottom(); input?.focus({preventScroll:true}); });
+  retry?.addEventListener("click", pollMessages);
+  history?.addEventListener("scroll", () => { if (latest && nearBottom()) latest.hidden = true; }, {passive:true});
+  if (isClient) {
+    const workspace = root.querySelector(".comm-workspace");
+    const sizeWorkspace = () => {
+      const viewport = window.visualViewport;
+      const height = (viewport?.height || window.innerHeight) - Math.max(0, workspace.getBoundingClientRect().top - (viewport?.offsetTop || 0)) - 16;
+      root.style.setProperty("--comm-available-height", Math.max(180, Math.min(height, 760)) + "px");
+    };
+    sizeWorkspace();
+    window.addEventListener("resize", sizeWorkspace, {passive:true});
+    window.addEventListener("scroll", sizeWorkspace, {passive:true});
+    window.visualViewport?.addEventListener("resize", sizeWorkspace, {passive:true});
+    window.visualViewport?.addEventListener("scroll", sizeWorkspace, {passive:true});
+    input?.addEventListener("focus", sizeWorkspace);
+    if (conversationId) pollMessages();
+  }
   if (conversationId) {
     window.setInterval(pollMessages, 4000);
     document.addEventListener("visibilitychange", () => { if (!document.hidden) pollMessages(); });

@@ -27,6 +27,7 @@
     </div>
 }
 
+<header class="cr-page-heading"><div><span class="cr-eyebrow">Your account / Personal details</span><h1>A little about you.</h1><p>Keep your contact details current and manage your account security.</p></div></header>
 <div class="client-profile-page">
     <!-- Header -->
     <div class="profile-hero">
@@ -45,7 +46,7 @@
                 </button>
             </div>
             <div class="profile-hero-copy">
-                <h1 class="profile-name">@Model.FullName</h1>
+                <h2 class="profile-name">@Model.FullName</h2>
                 <p class="profile-email"><i class="bi bi-envelope me-1" aria-hidden="true"></i>@Model.Email</p>
                 <div class="profile-meta">
                     <span class="profile-badge"><i class="bi bi-patch-check me-1" aria-hidden="true"></i>Client</span>
@@ -92,7 +93,7 @@
                 <strong>@completeness%</strong>
             </div>
             <div class="progress profile-progress">
-                <div class="progress-bar" role="progressbar" style="width: @completeness%" aria-valuenow="@completeness" aria-valuemin="0" aria-valuemax="100"></div>
+                <div class="progress-bar" role="progressbar" aria-label="Profile completion" style="width: @completeness%" aria-valuenow="@completeness" aria-valuemin="0" aria-valuemax="100"></div>
             </div>
             @if (completeness < 100)
             {

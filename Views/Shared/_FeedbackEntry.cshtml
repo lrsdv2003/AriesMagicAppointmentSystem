@@ -1,0 +1,9 @@
+@model AriesMagicAppointmentSystem.Models.Booking
+@using System.Security.Claims
+@using Microsoft.EntityFrameworkCore
+@inject AriesMagicAppointmentSystem.Data.ApplicationDbContext FeedbackDb
+@if(User.IsInRole("Client")&&!string.IsNullOrEmpty(User.FindFirstValue(ClaimTypes.NameIdentifier))&&Model.ApplicationUserId==User.FindFirstValue(ClaimTypes.NameIdentifier)){
+ var feedbackId=await FeedbackDb.EventFeedbacks.Where(f=>f.BookingId==Model.Id&&f.ClientId==Model.ApplicationUserId).Select(f=>(int?)f.Id).SingleOrDefaultAsync();
+ @if(feedbackId.HasValue){<a asp-controller="Feedback" asp-action="Details" asp-route-id="@feedbackId" class="btn btn-outline-secondary">View your feedback</a>}
+ else if(AriesMagicAppointmentSystem.Services.FeedbackPolicy.Eligible(Model)){<a asp-controller="Feedback" asp-action="Create" asp-route-bookingId="@Model.Id" class="btn btn-primary">Share your experience</a>}
+}

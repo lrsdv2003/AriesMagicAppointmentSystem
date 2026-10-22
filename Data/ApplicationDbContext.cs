@@ -30,10 +30,42 @@ namespace AriesMagicAppointmentSystem.Data
         public DbSet<ConversationParticipant> ConversationParticipants { get; set; }
         public DbSet<Message> Messages { get; set; }
         public DbSet<EmailVerification> EmailVerifications { get; set; }
+        public DbSet<EmailOutboxMessage> EmailOutboxMessages { get; set; }
+        public DbSet<EventFeedback> EventFeedbacks { get; set; }
+        public DbSet<FeedbackMedia> FeedbackMedia { get; set; }
+        public DbSet<FeedbackPublicationEvent> FeedbackPublicationEvents { get; set; }
+        public DbSet<FeedbackInvitation> FeedbackInvitations { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
+            builder.Entity<EventFeedback>().HasIndex(f=>f.BookingId).IsUnique();
+            builder.Entity<EventFeedback>().HasIndex(f=>new {f.ClientId,f.SubmittedAtUtc});
+            builder.Entity<EventFeedback>().HasIndex(f=>new {f.ModerationStatus,f.Featured});
+            builder.Entity<EventFeedback>().HasOne(f=>f.Booking).WithMany().HasForeignKey(f=>f.BookingId).OnDelete(DeleteBehavior.NoAction);
+            builder.Entity<EventFeedback>().HasOne<ApplicationUser>().WithMany().HasForeignKey(f=>f.ClientId).OnDelete(DeleteBehavior.NoAction);
+            builder.Entity<EventFeedback>().ToTable(t=>{
+                t.HasCheckConstraint("CK_Feedback_Ratings","[OverallRating] BETWEEN 1 AND 5 AND [PerformanceRating] BETWEEN 1 AND 5 AND [BookingRating] BETWEEN 1 AND 5");
+                t.HasCheckConstraint("CK_Feedback_Publication","[Featured] = 0 OR ([TextConsent] = 1 AND [WithdrawnAtUtc] IS NULL AND [ModerationStatus] = 'Approved' AND LEN([Experience]) > 0)");
+                t.HasCheckConstraint("CK_Feedback_Status","[ModerationStatus] IN ('Pending','Approved','Private','Withdrawn')");
+            });
+            builder.Entity<FeedbackMedia>().HasOne(m=>m.Feedback).WithMany(f=>f.Media).HasForeignKey(m=>m.FeedbackId).OnDelete(DeleteBehavior.NoAction);
+            builder.Entity<FeedbackMedia>().HasIndex(m=>m.StorageKey).IsUnique();
+            builder.Entity<FeedbackMedia>().ToTable(t=>t.HasCheckConstraint("CK_FeedbackMedia_Public","[PublicApproved] = 0 OR ([ProcessingStatus] = 'Ready' AND [ScannedAtUtc] IS NOT NULL)"));
+            builder.Entity<FeedbackPublicationEvent>().HasOne(e=>e.Feedback).WithMany(f=>f.PublicationEvents).HasForeignKey(e=>e.FeedbackId).OnDelete(DeleteBehavior.NoAction);
+            builder.Entity<FeedbackPublicationEvent>().HasIndex(e=>new {e.FeedbackId,e.AtUtc});
+            builder.Entity<FeedbackInvitation>().HasKey(i=>i.BookingId);
+            builder.Entity<FeedbackInvitation>().HasOne(i=>i.Booking).WithMany().HasForeignKey(i=>i.BookingId).OnDelete(DeleteBehavior.NoAction);
+            builder.Entity<EmailOutboxMessage>().HasIndex(x => x.EventKey).IsUnique();
+            builder.Entity<EmailOutboxMessage>().HasIndex(x => new { x.DeliveredAtUtc, x.FailedAtUtc, x.NextAttemptAtUtc });
+            builder.Entity<Payment>().ToTable(t => t.HasCheckConstraint("CK_Payments_PositiveAmount", "[Amount] > 0"));
+            builder.Entity<RefundRequest>().ToTable(t => {
+                t.HasCheckConstraint("CK_RefundRequests_PositiveAmount", "[Amount] > 0");
+                t.HasCheckConstraint("CK_RefundRequests_ApprovedAmount", "[ApprovedAmount] IS NULL OR ([ApprovedAmount] > 0 AND [ApprovedAmount] <= [Amount])");
+            });
+            builder.Entity<Payment>().HasOne(p => p.Booking).WithMany(b => b.Payments).HasForeignKey(p => p.BookingId).OnDelete(DeleteBehavior.NoAction);
+            builder.Entity<RefundRequest>().HasOne(r => r.Booking).WithMany().HasForeignKey(r => r.BookingId).OnDelete(DeleteBehavior.NoAction);
+            builder.Entity<Booking>().HasIndex(b => new { b.EventDate, b.StartTime, b.EndTime });
 
             builder.Entity<User>().ToTable("Users");
 

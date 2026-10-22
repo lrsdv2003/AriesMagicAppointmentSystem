@@ -6,7 +6,7 @@
     var unavailableDatesJson = System.Text.Json.JsonSerializer.Serialize(unavailableDates);
 }
 
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+<link rel="stylesheet" href="~/lib/flatpickr/flatpickr.min.css" asp-append-version="true" />
 
 <div class="client-portal-header">
     <div>
@@ -100,7 +100,7 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
+    <script src="~/lib/flatpickr/flatpickr.min.js" asp-append-version="true"></script>
 
     <script>
         document.addEventListener("DOMContentLoaded", function () {

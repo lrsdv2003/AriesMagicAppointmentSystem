@@ -25,8 +25,8 @@
     <div class="comm-page-header @(useCompactInternal ? "ui-toolbar" : "")">
         @if (isClient) {
         <div>
-            <span class="comm-kicker"><i class="bi bi-chat-heart" aria-hidden="true"></i> Communication Center</span>
-            <h1>@(useCompactInternal ? "Messages" : "Messages & Coordination")</h1>
+            <span class="comm-kicker">Your account / Conversations</span>
+            <h1>Let’s talk about your event.</h1>
             <p>@(isClient ? "Keep every booking question and update connected to your event." : useCompactInternal ? "Message clients and team members from one focused workspace." : "Coordinate client concerns, bookings, schedules, and team operations in one place.")</p>
         </div>
         }
@@ -53,7 +53,7 @@
                 <div class="comm-panel-title-row">
                     <div>
                         <span class="comm-eyebrow">Inbox</span>
-                        <h2>Conversations</h2>
+                        <h2>@(isClient ? "Your messages" : "Conversations")</h2>
                     </div>
                     @if (Model.UnreadConversationCount > 0)
                     {
@@ -63,6 +63,7 @@
 
                 <form method="get" asp-action="Index" class="am-filter-bar am-filter-row">
                     <input type="hidden" name="filter" value="@Model.Filter" />
+                    @if (isClient) { <input type="hidden" name="view" value="inbox" /> }
                     <div class="am-filter-search">
                         <i class="bi bi-search" aria-hidden="true"></i>
                         <input type="search" name="q" value="@Model.Search" placeholder="Search messages, names, booking #..." aria-label="Search conversations" />
@@ -70,8 +71,8 @@
                 <button type="submit" class="btn btn-primary">Search</button><a asp-action="Index" class="btn btn-light">Reset</a></form>
 
                 <div class="comm-filter-strip am-filter-chips" aria-label="Conversation filters">
-                    <a asp-action="Index" asp-route-filter="all" asp-route-q="@Model.Search" class="@(Model.Filter == "all" ? "active" : "")">All</a>
-                    <a asp-action="Index" asp-route-filter="unread" asp-route-q="@Model.Search" class="@(Model.Filter == "unread" ? "active" : "")">Unread</a>
+                    <a asp-action="Index" asp-route-filter="all" asp-route-view="@(isClient ? "inbox" : null)" asp-route-q="@Model.Search" class="@(Model.Filter == "all" ? "active" : "")">All</a>
+                    <a asp-action="Index" asp-route-filter="unread" asp-route-view="@(isClient ? "inbox" : null)" asp-route-q="@Model.Search" class="@(Model.Filter == "unread" ? "active" : "")">Unread</a>
                     @if (Model.IsInternalUser)
                     {
                         <a asp-action="Index" asp-route-filter="client" asp-route-q="@Model.Search" class="@(Model.Filter == "client" ? "active" : "")">Clients</a>
@@ -80,8 +81,8 @@
                     }
                     else
                     {
-                        <a asp-action="Index" asp-route-filter="booking" asp-route-q="@Model.Search" class="@(Model.Filter == "booking" ? "active" : "")">Bookings</a>
-                        <a asp-action="Index" asp-route-filter="support" asp-route-q="@Model.Search" class="@(Model.Filter == "support" ? "active" : "")">Support</a>
+                        <a asp-action="Index" asp-route-filter="booking" asp-route-view="inbox" asp-route-q="@Model.Search" class="@(Model.Filter == "booking" ? "active" : "")">Bookings</a>
+                        <a asp-action="Index" asp-route-filter="support" asp-route-view="inbox" asp-route-q="@Model.Search" class="@(Model.Filter == "support" ? "active" : "")">Support</a>
                     }
                 </div>
 
@@ -94,7 +95,7 @@
                 }
             </div>
 
-            <div class="comm-conversation-list">
+            <div class="comm-conversation-list" tabindex="@(isClient ? "0" : null)" role="@(isClient ? "region" : null)" aria-label="@(isClient ? "Your conversation list" : null)">
                 @if (Model.Conversations.Count == 0)
                 {
                     <div class="comm-list-empty">
@@ -143,10 +144,10 @@
                 <div class="comm-chat-empty">
                     <div class="comm-empty-orbit"><i class="bi bi-chat-dots" aria-hidden="true"></i></div>
                     <span class="comm-eyebrow">Your conversations</span>
-                    <h2>Select a conversation to start messaging.</h2>
+                    <h2>@(isClient ? "A good plan starts with a conversation." : "Select a conversation to start messaging.")</h2>
                     @if (!useCompactInternal)
                     {
-                        <p>Choose a message thread from the left to view its history and continue the discussion.</p>
+                        <p>Choose a conversation or use Aries Magic Support to ask a question.</p>
                     }
                     @if (isClient)
                     {
@@ -157,7 +158,7 @@
             else
             {
                 <header class="comm-chat-header">
-                    <a asp-action="Index" asp-route-filter="@Model.Filter" asp-route-q="@Model.Search" class="comm-mobile-back" aria-label="Back to conversations"><i class="bi bi-arrow-left" aria-hidden="true"></i></a>
+                    <a asp-action="Index" asp-route-id="" asp-route-view="@(isClient ? "inbox" : null)" asp-route-filter="@Model.Filter" asp-route-q="@Model.Search" class="comm-mobile-back" aria-label="Back to conversations"><i class="bi bi-arrow-left" aria-hidden="true"></i></a>
                     <div class="comm-chat-title">
                         <span class="comm-avatar comm-avatar-lg">@(otherParticipant?.Initials ?? "AM")</span>
                         <div>
@@ -176,6 +177,11 @@
                     }
                 </header>
 
+                @if (isClient)
+                {
+                    <div class="cx-chat-connection"><span id="commConnectionStatus" role="status" aria-live="polite">Checking for updates…</span><button type="button" id="commRetry" hidden>Retry connection</button></div>
+                }
+
                 @if (selected.Booking != null && !isClient && !useCompactInternal)
                 {
                     <div class="comm-booking-context">
@@ -188,7 +194,7 @@
                     </div>
                 }
 
-                <div class="comm-message-history" id="commMessageHistory" role="log" aria-label="Conversation messages" aria-live="polite" aria-relevant="additions">
+                <div class="comm-message-history" id="commMessageHistory" role="log" tabindex="0" aria-label="Conversation messages" aria-live="polite" aria-relevant="additions">
                     <div class="comm-history-start"><span>Conversation started</span></div>
                     @foreach (var message in selected.Messages)
                     {
@@ -227,6 +233,11 @@
                     }
                 </div>
 
+                @if (isClient)
+                {
+                    <button type="button" id="commLatest" class="cx-chat-latest" hidden>New messages · Go to latest ↓</button>
+                }
+
                 @if (selected.CanSend)
                 {
                     <form asp-action="SendMessage" method="post" id="commComposer" class="comm-composer">
@@ -252,7 +263,7 @@
                         }
                         <div class="comm-composer-row">
                             <label for="commMessageInput" class="visually-hidden">Message</label><textarea name="messageContent" id="commMessageInput" rows="1" maxlength="4000" placeholder="Write a message..." required></textarea>
-                            <button class="comm-send-btn" type="submit" aria-label="Send message"><i class="bi bi-send-fill" aria-hidden="true"></i></button>
+                            <button class="comm-send-btn" type="submit" aria-label="Send message">@if(isClient){<span>Send</span>}else{<i class="bi bi-send-fill" aria-hidden="true"></i>}</button>
                         </div>
                         <div class="comm-composer-note"><span id="commComposerStatus" role="status" aria-live="polite"></span><span><kbd>Enter</kbd> send - <kbd>Shift</kbd>+<kbd>Enter</kbd> new line</span></div>
                     </form>

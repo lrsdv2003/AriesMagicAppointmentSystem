@@ -11,11 +11,13 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AriesMagicAppointmentSystem.Controllers
 {
+    [RequestSizeLimit(5 * 1024 * 1024 + 65536)]
     public class PaymentsController : Controller
     {
         private readonly ApplicationDbContext _context;
         private readonly IWebHostEnvironment _environment;
         private readonly IEmailService _emailService;
+        private readonly EmailOutbox _emailOutbox;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly ContractPdfService _contractPdfService;
         private readonly IOcrVerificationService _ocrService;
@@ -51,6 +53,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             _context = context;
             _environment = environment;
             _emailService = emailService;
+            _emailOutbox = new EmailOutbox(context);
             _userManager = userManager;
             _contractPdfService = contractPdfService;
             _ocrService = ocrService;
@@ -70,7 +73,8 @@ namespace AriesMagicAppointmentSystem.Controllers
                 HttpContext.RequestServices.GetRequiredService<ILogger<PaymentsController>>()
                     .LogError(result.Exception, "Owner financial action failed");
                 result.ExceptionHandled = true;
-                result.Result = StatusCode(500, new { error = "Unable to finish this action. Refresh to check the current status." });
+                result.Result = StatusCode(DatabaseConflictFilter.IsConflict(result.Exception) ? 409 : 500,
+                    new { error = "Unable to finish this action. Refresh to check the current status." });
             }
             else if (result.Result is RedirectToActionResult redirect)
             {
@@ -104,6 +108,7 @@ namespace AriesMagicAppointmentSystem.Controllers
         [HttpPost]
         [Authorize(Roles = "Client")]
         [ValidateAntiForgeryToken]
+        [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("uploads")]
         public async Task<IActionResult> Upload(PaymentUploadViewModel model)
         {
             var appUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -117,6 +122,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                 return View(model);
             }
 
+            await using var transaction = await _context.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
             var booking = await _context.Bookings
                 .Include(b => b.Service)
                 .FirstOrDefaultAsync(b => b.Id == model.BookingId && b.ApplicationUserId == appUserId);
@@ -225,6 +231,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             if (financialBefore.TotalVerifiedPayments <= 0)
                 await NotifyAffectedClientsAboutLockedScheduleAsync(booking);
             await NotifyInternalReviewersAsync("New Payment Verification Required", $"A payment proof was submitted for Booking #BK-{booking.Id}. OCR result: {ocr.VerificationResult}.", $"/Payments/Verify/{payment.Id}");
+            await transaction.CommitAsync();
 
             TempData["Success"] = model.Amount > financialBefore.RemainingBalance
                 ? $"Payment amount exceeds the remaining balance of ₱{financialBefore.RemainingBalance:N2}. Manual review required; the balance will not change unless an authorized reviewer resolves the discrepancy."
@@ -250,7 +257,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             return View(payments);
         }
 
-        [Authorize]
+        [Authorize(Roles = "Client,Owner")]
         public async Task<IActionResult> PaymentProof(int id)
         {
             var payment = await _context.Payments.AsNoTracking().Include(p => p.Booking).FirstOrDefaultAsync(p => p.Id == id);
@@ -261,7 +268,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             return ServeFinancialProof(payment.ProofImagePath);
         }
 
-        [Authorize]
+        [Authorize(Roles = "Client,Owner")]
         public async Task<IActionResult> RefundProof(int id, bool confirmation = false)
         {
             var refund = await _context.RefundRequests.AsNoTracking().Include(r => r.Booking).FirstOrDefaultAsync(r => r.Id == id);
@@ -279,6 +286,8 @@ namespace AriesMagicAppointmentSystem.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RequestAdditionalEvidence(int id, string? reason)
         {
+            if (reason?.Length > 1000) return BadRequest("Evidence instructions must be at most 1,000 characters.");
+            await using var transaction = await _context.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
             var payment = await _context.Payments.Include(p => p.Booking).FirstOrDefaultAsync(p => p.Id == id);
             if (payment == null) return NotFound();
             if (payment.Status is PaymentStatus.Verified or PaymentStatus.Rejected)
@@ -292,6 +301,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             if (!string.IsNullOrWhiteSpace(payment.Booking?.ApplicationUserId))
                 await CreateNotificationAsync(payment.Booking.ApplicationUserId, "Additional Payment Proof Required", "We were unable to fully verify your payment proof. Please upload a clearer screenshot or provide additional payment information.", "/Payments/MyUploads");
             await LogActivityAsync(SystemActivityType.PaymentAdditionalEvidenceRequested, $"Owner requested additional evidence for payment #{id}.", id.ToString(), "Payment", new { PreviousStatus = previousStatus, NewStatus = payment.Status, OwnerUserId = payment.VerifiedByUserId, OwnerName = payment.VerifiedByUserName, ReviewNotes = payment.ReviewerNote });
+            await transaction.CommitAsync();
             TempData["Success"] = "Client was asked to submit additional payment evidence.";
             return RedirectToAction(nameof(Verify), new { id });
         }
@@ -299,8 +309,10 @@ namespace AriesMagicAppointmentSystem.Controllers
         [HttpPost]
         [Authorize(Roles = "Client")]
         [ValidateAntiForgeryToken]
+        [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("uploads")]
         public async Task<IActionResult> ReplaceProof(int id, IFormFile proofImage)
         {
+            await using var transaction = await _context.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
             var uid = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var payment = await _context.Payments.Include(p => p.Booking).FirstOrDefaultAsync(p => p.Id == id && p.Booking != null && p.Booking.ApplicationUserId == uid);
             if (payment == null) return NotFound();
@@ -320,6 +332,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             await _context.SaveChangesAsync();
             await NotifyInternalReviewersAsync("Updated Payment Proof Submitted", $"Replacement evidence for Booking #BK-{payment.BookingId}. OCR result: {ocr.VerificationResult}.", $"/Payments/Verify/{payment.Id}");
             await LogActivityAsync(SystemActivityType.PaymentProofSubmitted, $"Replacement payment proof submitted for payment #{id}.", id.ToString(), "Payment");
+            await transaction.CommitAsync();
             TempData["Success"] = "Your new payment proof was submitted and is awaiting Owner verification.";
             return RedirectToAction(nameof(MyUploads));
         }
@@ -424,7 +437,9 @@ namespace AriesMagicAppointmentSystem.Controllers
                 var occupied = await _context.Bookings.CountAsync(b => b.Status == BookingStatus.Confirmed
                     && b.Id != booking.Id && b.EventDate.Date == booking.EventDate.Date);
                 var blocked = await _context.BlockedDates.AnyAsync(d => d.Date.Date == booking.EventDate.Date);
-                if (blocked || occupied >= BookingRules.MaximumDailyBookings)
+                var conflicts = await _context.Bookings.AnyAsync(b => b.Id != booking.Id && b.Status == BookingStatus.Confirmed
+                    && booking.StartTime < b.EndTime.AddHours(1) && booking.EndTime.AddHours(1) > b.StartTime);
+                if (blocked || conflicts || occupied >= BookingRules.MaximumDailyBookings)
                 {
                     TempData["Error"] = "This date is unavailable. Resolve the booking schedule before verifying payment.";
                     return RedirectToAction(nameof(Verify), new { id });
@@ -463,8 +478,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             }
 
             await _context.SaveChangesAsync();
-            await transaction.CommitAsync();
-
+            await LogActivityAsync(SystemActivityType.PaymentVerified, $"Payment #{payment.Id} approved by Owner after OCR-assisted review.", payment.Id.ToString(), "Payment", new { PreviousStatus = previousStatus, NewStatus = payment.Status, OwnerUserId = payment.VerifiedByUserId, OwnerName = payment.VerifiedByUserName, ReviewNotes = payment.ReviewerNote, payment.Amount });
             var financialAfter = await _financialService.GetSummaryAsync(payment.BookingId);
             if (payment.Booking != null && !string.IsNullOrWhiteSpace(payment.Booking.ApplicationUserId))
             {
@@ -491,7 +505,8 @@ namespace AriesMagicAppointmentSystem.Controllers
                     var contractPdf =
                         _contractPdfService.GenerateContractPdf(bookingWithClient);
 
-                    await _emailService.SendEmailWithAttachmentAsync(
+                    await _emailOutbox.EnqueueAsync(
+                        $"payment-verified:{payment.Id}",
                         bookingWithClient.Client.Email,
                         "Aries Magic - Booking Confirmation and Contract Agreement",
                         $@"
@@ -505,7 +520,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                 }
             }
 
-            await LogActivityAsync(SystemActivityType.PaymentVerified, $"Payment #{payment.Id} approved by Owner after OCR-assisted review.", payment.Id.ToString(), "Payment", new { PreviousStatus = previousStatus, NewStatus = payment.Status, OwnerUserId = payment.VerifiedByUserId, OwnerName = payment.VerifiedByUserName, ReviewNotes = payment.ReviewerNote, payment.Amount });
+            await transaction.CommitAsync();
             return RedirectToAction(nameof(PendingVerification));
         }
         [HttpPost, ActionName("Reject")]
@@ -520,6 +535,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             }
             rejectionReason = rejectionReason.Trim();
 
+            await using var transaction = await _context.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
             var payment = await _context.Payments
                 .Include(p => p.Booking)
                 .FirstOrDefaultAsync(p => p.Id == id);
@@ -565,17 +581,19 @@ namespace AriesMagicAppointmentSystem.Controllers
 
                 if (bookingWithClient != null && bookingWithClient.Client != null)
                 {
-                    await _emailService.SendEmailAsync(
+                    await _emailOutbox.EnqueueAsync(
+                        $"payment-rejected:{payment.Id}",
                         bookingWithClient.Client.Email,
                         "Payment Rejected",
                         $@"
                         <h2>Your Payment Was Rejected</h2>
                         <p>Your payment proof was rejected.</p>
-                        <p>Reason: {rejectionReason}</p>
+                        <p>Reason: {System.Net.WebUtility.HtmlEncode(rejectionReason)}</p>
                         <p>Please upload a new proof of downpayment.</p>");
                 }
             }
             await LogActivityAsync(SystemActivityType.PaymentRejected, $"Payment #{payment.Id} rejected by Owner after manual review.", payment.Id.ToString(), "Payment", new { PreviousStatus = previousStatus, NewStatus = payment.Status, OwnerUserId = payment.VerifiedByUserId, OwnerName = payment.VerifiedByUserName, ReviewNotes = rejectionReason, payment.Amount });
+            await transaction.CommitAsync();
             TempData["Success"] = rejectionFinancial.TotalVerifiedPayments <= 0 ? "Payment rejected and booking returned to downpayment." : "Additional payment rejected. Existing verified balance was not changed.";
             return RedirectToAction(nameof(PendingVerification));
         }
@@ -598,8 +616,10 @@ namespace AriesMagicAppointmentSystem.Controllers
         [HttpPost]
         [Authorize(Roles = "Client")]
         [ValidateAntiForgeryToken]
+        [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("uploads")]
         public async Task<IActionResult> RequestRefund(RefundRequestViewModel model)
         {
+            await using var transaction = await _context.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
             var appUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
             model.FixedRefundAmount = FixedDownpaymentAmount;
@@ -696,6 +716,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             await _context.SaveChangesAsync();
             await NotifyInternalReviewersAsync("New Refund Request", $"Refund request RF-{refundRequest.Id:D4} for Booking #BK-{booking.Id} requires review. OCR result: {refundOcr.VerificationResult}.", $"/Payments/RefundReview/{refundRequest.Id}");
             await LogActivityAsync(SystemActivityType.RefundRequested, $"Refund request #{refundRequest.Id} submitted for booking #{booking.Id}.", refundRequest.Id.ToString(), "RefundRequest", new { refundOcr.VerificationResult });
+            await transaction.CommitAsync();
             TempData["Success"] = "Your refund request has been submitted and is awaiting Owner review.";
             return RedirectToAction(nameof(MyRefundRequests));
         }
@@ -749,6 +770,7 @@ namespace AriesMagicAppointmentSystem.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ApproveRefund(int id)
         {
+            await using var transaction = await _context.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
             var refund = await _context.RefundRequests
                 .Include(r => r.Booking)
                 .Include(r => r.OriginalPayment)
@@ -765,6 +787,16 @@ namespace AriesMagicAppointmentSystem.Controllers
             if (refund.OriginalPayment == null || refund.OriginalPayment.Status != PaymentStatus.Verified || refund.Amount <= 0)
             {
                 TempData["Error"] = "A refund requires a verified original payment and a positive amount.";
+                return RedirectToAction(nameof(RefundReview), new { id });
+            }
+            var reserved = await _context.RefundRequests
+                .Where(r => r.Id != id && r.OriginalPaymentId == refund.OriginalPaymentId &&
+                    (r.Status == RefundStatus.Approved || r.Status == RefundStatus.RefundProcessing || r.Status == RefundStatus.Refunded))
+                .SumAsync(r => (decimal?)(r.ApprovedAmount ?? r.Amount)) ?? 0m;
+            var refundable = Math.Max(0m, refund.OriginalPayment.Amount - reserved);
+            if (refund.Amount > refundable || refund.OriginalPayment.BookingId != refund.BookingId)
+            {
+                TempData["Error"] = "The requested refund exceeds the unrefunded original payment amount.";
                 return RedirectToAction(nameof(RefundReview), new { id });
             }
             var previousStatus = refund.Status;
@@ -786,6 +818,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             }
 
             await LogActivityAsync(SystemActivityType.RefundApproved, $"Refund #{refund.Id} approved by Owner.", refund.Id.ToString(), "RefundRequest", new { PreviousStatus = previousStatus, NewStatus = refund.Status, OwnerUserId = refund.ReviewedByUserId, OwnerName = refund.ReviewedByUserName, ReviewNotes = refund.AdminRemarks, ApprovedAmount = refund.ApprovedAmount });
+            await transaction.CommitAsync();
             TempData["Success"] = "Refund request approved by Owner.";
             return RedirectToAction(nameof(RefundRequests));
         }
@@ -793,8 +826,10 @@ namespace AriesMagicAppointmentSystem.Controllers
         [HttpPost]
         [Authorize(Roles = "Owner")]
         [ValidateAntiForgeryToken]
+        [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("uploads")]
         public async Task<IActionResult> UploadRefundProof(int id, IFormFile refundProofImage)
         {
+            await using var transaction = await _context.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
             var refund = await _context.RefundRequests
                 .Include(r => r.Booking)
                 .Include(r => r.OriginalPayment)
@@ -820,6 +855,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             await _context.SaveChangesAsync();
             await AnalyzeRefundProofAsync(refund, saved.PhysicalPath, OcrVerificationPurposes.RefundConfirmation);
             await LogActivityAsync(SystemActivityType.OcrAnalysisCompleted, $"Refund confirmation OCR completed for refund #{refund.Id} by Owner.", refund.Id.ToString(), "RefundRequest", new { PreviousStatus = previousStatus, NewStatus = refund.Status, OwnerUserId = refund.ReviewedByUserId, OwnerName = refund.ReviewedByUserName, ReviewNotes = refund.AdminRemarks });
+            await transaction.CommitAsync();
             TempData["Success"] = "Refund proof uploaded and analyzed. Review the OCR result before completing the refund.";
             return RedirectToAction(nameof(RefundReview), new { id });
         }
@@ -829,6 +865,7 @@ namespace AriesMagicAppointmentSystem.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> MarkAsRefunded(int id)
         {
+            await using var transaction = await _context.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
             var refund = await _context.RefundRequests
                 .Include(r => r.Booking)
                 .Include(r => r.OcrVerifications)
@@ -854,6 +891,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             if (refund.Booking != null && !string.IsNullOrWhiteSpace(refund.Booking.ApplicationUserId))
                 await CreateNotificationAsync(refund.Booking.ApplicationUserId, "Refund Completed", "Your refund has been completed after manual verification of the refund proof.", "/Payments/MyRefundRequests");
             await LogActivityAsync(SystemActivityType.RefundProcessed, $"Refund #{refund.Id} completed by Owner after manual OCR-assisted verification.", refund.Id.ToString(), "RefundRequest", new { PreviousStatus = previousStatus, NewStatus = refund.Status, OwnerUserId = refund.ReviewedByUserId, OwnerName = refund.ReviewedByUserName, ReviewNotes = refund.AdminRemarks, CompletedAmount = refund.ApprovedAmount ?? refund.Amount });
+            await transaction.CommitAsync();
             TempData["Success"] = "Refund marked as completed.";
             return RedirectToAction(nameof(RefundReview), new { id });
         }
@@ -869,6 +907,8 @@ namespace AriesMagicAppointmentSystem.Controllers
                 return RedirectToAction(nameof(RefundReview), new { id });
             }
             rejectionReason = rejectionReason.Trim();
+
+            await using var transaction = await _context.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
 
             var refund = await _context.RefundRequests
                 .Include(r => r.Booking)
@@ -901,6 +941,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             }
 
             await LogActivityAsync(SystemActivityType.RefundRejected, $"Refund #{refund.Id} rejected by Owner.", refund.Id.ToString(), "RefundRequest", new { PreviousStatus = previousStatus, NewStatus = refund.Status, OwnerUserId = refund.ReviewedByUserId, OwnerName = refund.ReviewedByUserName, ReviewNotes = refund.AdminRemarks });
+            await transaction.CommitAsync();
             TempData["Success"] = "Refund request rejected by Owner.";
             return RedirectToAction(nameof(RefundRequests));
         }
@@ -936,32 +977,8 @@ namespace AriesMagicAppointmentSystem.Controllers
             return null;
         }
 
-        private async Task<bool> HasValidImageSignatureAsync(IFormFile file)
-        {
-            byte[] header = new byte[12];
-
-            await using var stream = file.OpenReadStream();
-            var bytesRead = await stream.ReadAsync(header, 0, header.Length);
-
-            if (bytesRead < 4)
-                return false;
-
-            // JPG/JPEG
-            if (header[0] == 0xFF && header[1] == 0xD8 && header[2] == 0xFF)
-                return true;
-
-            // PNG
-            if (header[0] == 0x89 && header[1] == 0x50 && header[2] == 0x4E && header[3] == 0x47)
-                return true;
-
-            // WEBP: RIFF....WEBP
-            if (bytesRead >= 12 &&
-                header[0] == 0x52 && header[1] == 0x49 && header[2] == 0x46 && header[3] == 0x46 &&
-                header[8] == 0x57 && header[9] == 0x45 && header[10] == 0x42 && header[11] == 0x50)
-                return true;
-
-            return false;
-        }
+        private Task<bool> HasValidImageSignatureAsync(IFormFile file)
+            => ImageUploadValidation.HasMatchingSignatureAsync(file);
 
         private async Task<List<SelectListItem>> GetRefundableBookingsAsync(string? appUserId)
         {
@@ -1054,7 +1071,7 @@ namespace AriesMagicAppointmentSystem.Controllers
         private async Task<(string StoredPath, string PhysicalPath)> SavePrivateProofAsync(IFormFile file, string category)
         {
             var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
-            var root = Path.Combine(_environment.ContentRootPath, "App_Data", "financial-proofs", category);
+            var root = Path.Combine(PrivateProofRoot(), category);
             Directory.CreateDirectory(root);
             var name = $"{Guid.NewGuid():N}{extension}";
             var fullPath = Path.Combine(root, name);
@@ -1113,12 +1130,15 @@ namespace AriesMagicAppointmentSystem.Controllers
             await _context.SaveChangesAsync();
         }
 
+        private string PrivateProofRoot() => Path.GetFullPath(Path.Combine(
+            _configuration["PrivateStorage:RootPath"] ?? Path.Combine(_environment.ContentRootPath, "App_Data"), "financial-proofs"));
+
         private string ResolvePrivateProofPath(string relativePath)
         {
             var normalized = relativePath.Replace('/', Path.DirectorySeparatorChar).TrimStart(Path.DirectorySeparatorChar);
-            var root = Path.GetFullPath(Path.Combine(_environment.ContentRootPath, "App_Data", "financial-proofs"));
+            var root = PrivateProofRoot();
             var full = Path.GetFullPath(Path.Combine(root, normalized));
-            if (!full.StartsWith(root, StringComparison.OrdinalIgnoreCase)) throw new InvalidOperationException("Invalid proof path.");
+            if (!full.StartsWith(root + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)) throw new InvalidOperationException("Invalid proof path.");
             return full;
         }
 
@@ -1130,7 +1150,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                 var relative = storedPath.TrimStart('/').Replace('/', Path.DirectorySeparatorChar);
                 var root = Path.GetFullPath(_environment.WebRootPath);
                 fullPath = Path.GetFullPath(Path.Combine(root, relative));
-                if (!fullPath.StartsWith(root, StringComparison.OrdinalIgnoreCase)) return Forbid();
+                if (!fullPath.StartsWith(root + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)) return Forbid();
             }
             else
             {
@@ -1177,7 +1197,8 @@ namespace AriesMagicAppointmentSystem.Controllers
                 if (affectedBooking.Client != null &&
                     !string.IsNullOrWhiteSpace(affectedBooking.Client.Email))
                 {
-                    await _emailService.SendEmailAsync(
+                    await _emailOutbox.EnqueueAsync(
+                        $"schedule-locked:{paidBooking.Id}:{affectedBooking.Id}",
                         affectedBooking.Client.Email,
                         "Schedule No Longer Available",
                         $@"

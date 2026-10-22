@@ -8,7 +8,7 @@
     <div class="auth-shell">
         <div class="auth-left">
             <div class="auth-brand-badge">Aries Magic</div>
-            <h1 class="auth-hero-title">Welcome Back</h1>
+            <h2 class="auth-hero-title">Good to have<br />you back.</h2>
             <p class="auth-hero-text">
                 Sign in to manage your bookings, upload payment proof, track updates,
                 and continue your event booking journey with Aries Magic.
@@ -44,8 +44,8 @@
         <div class="auth-right">
             <div class="auth-card">
                 <div class="auth-card-header">
-                    <h2>Login to Your Account</h2>
-                    <p>Access your client account and continue your booking process.</p>
+                    <h1>Your plans, together.</h1>
+                    <p>Sign in to pick up where you left off.</p>
                 </div>
 
                 <form asp-action="Login" method="post">
@@ -54,13 +54,13 @@
 
                     <div class="mb-3">
                         <label asp-for="Email" class="form-label"></label>
-                        <input asp-for="Email" class="form-control" placeholder="Enter your email" />
+                        <input asp-for="Email" autocomplete="username" class="form-control" placeholder="Enter your email" />
                         <span asp-validation-for="Email" class="text-danger"></span>
                     </div>
 
                     <div class="mb-3">
                         <label asp-for="Password" class="form-label"></label>
-                        <input asp-for="Password" class="form-control" placeholder="Enter your password" />
+                        <input asp-for="Password" autocomplete="current-password" class="form-control" placeholder="Enter your password" />
                         <span asp-validation-for="Password" class="text-danger"></span>
                     </div>
 
@@ -73,7 +73,7 @@
                         <a asp-action="ForgotPassword" class="auth-link">Forgot Password?</a>
                     </div>
 
-                    <button type="submit" class="btn btn-primary w-100 auth-submit-btn">Login</button>
+                    <button type="submit" class="btn btn-primary w-100 auth-submit-btn">Sign in</button>
                 </form>
 
                 <div class="auth-divider">

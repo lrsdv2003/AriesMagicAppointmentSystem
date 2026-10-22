@@ -39,6 +39,9 @@ static class SnapshotRenderer
         Directory.CreateDirectory(output);
         var displayPackage = new Service { Id = package.Id, Name = package.Name, Price = package.Price, DurationInHours = package.DurationInHours,
             Inclusions = Enumerable.Range(1,5).Select(i => new ServiceInclusion { Id = i, Name = "Inclusion " + i, DeductionAmount = i * 100, IsRemovable = i != 1 }).ToList() };
+        var publicPackages = new[] { displayPackage,
+            new Service {Id=10001,Name="Fixture Package Two",Price=15000,DurationInHours=3,Inclusions=displayPackage.Inclusions},
+            new Service {Id=10002,Name="Fixture Package Three",Price=20000,DurationInHours=4,Inclusions=displayPackage.Inclusions} };
         var notices = new[] {
             new Notification { Id=1, Title="Payment Verification Required", Message="Payment proof for BK-2026-001 is ready for review.", Link="/Payments/Verify/1", CreatedAt=DateTime.Now.AddMinutes(-5) },
             new Notification { Id=2, Title="New Refund Request", Message="Refund request RF-0002 needs review.", Link="/Payments/RefundReview/2", CreatedAt=DateTime.Now.AddHours(-2) },
@@ -59,8 +62,27 @@ static class SnapshotRenderer
             ("Notifications","Index",notices)
         };
         var clientBooking = new Booking { Id=booking.Id, Client=booking.Client, PackageName=displayPackage.Name, Service=displayPackage, Status=BookingStatus.AwaitingDownpayment, EventDate=DateTime.Today.AddDays(7), StartTime=DateTime.Today.AddDays(7).AddHours(10), EndTime=DateTime.Today.AddDays(7).AddHours(12), PartyVenue="Antipolo event venue", EventType="Birthday", ContactPerson="Fixture Client", ContactNumber="09000000000", Motif="Coral", PaxCount=50, FinalPrice=10000, CreatedAt=DateTime.Today };
+        var feedbackBooking=new Booking {Id=booking.Id,Client=booking.Client,PackageName=displayPackage.Name,Status=BookingStatus.Completed,IsCompletedLocked=true,
+            EventDate=DateTime.Today.AddDays(-7),StartTime=DateTime.Today.AddDays(-7).AddHours(10),EndTime=DateTime.Today.AddDays(-7).AddHours(12),EventType="Birthday"};
+        var feedback=new EventFeedback {Id=700,BookingId=booking.Id,Booking=feedbackBooking,ClientId="fixture-feedback-client",OverallRating=5,PerformanceRating=4,BookingRating=5,
+            Experience="Synthetic feedback fixture for visual review.",Suggestions="Private suggestion fixture.",PublicDisplayName="Consented fixture name",TextConsent=true,NameConsent=true,MediaConsent=true,
+            ConsentedAtUtc=DateTime.UtcNow,Version=[0,0,0,0,0,0,0,1],
+            Media=[new(){Id=701,DisplayFilename="event-photo.jpg",ProcessingStatus="Ready",ScannedAtUtc=DateTime.UtcNow},new(){Id=702,DisplayFilename="awaiting-scan.jpg",ProcessingStatus="Quarantined"}]};
         pages = pages.Concat(new (string Controller,string Action,object Model)[] {
-            ("Home","Index",new[]{displayPackage}), ("Home","Packages",new[]{displayPackage}), ("Home","Package",displayPackage),
+            ("Feedback","Create",new FeedbackInput {BookingId=booking.Id,EventLabel=displayPackage.Name}),
+            ("Feedback","Index",new ClientFeedbackPage([feedback],[feedbackBooking],1,1)),
+            ("Feedback","Details",feedback),
+            ("Testimonials","Index",new FeedbackListPage([feedback],1,1,1,"Pending","")),
+            ("Testimonials","Review",feedback),
+            ("Home","Index",publicPackages), ("Home","Packages",publicPackages), ("Home","Package",displayPackage),
+            ("Home","Privacy",new object()),
+            ("Account","Login",new LoginViewModel()),
+            ("Account","Register",new RegisterViewModel()),
+            ("Account","ForgotPassword",new ForgotPasswordViewModel()),
+            ("Account","ResetPassword",new ResetPasswordViewModel()),
+            ("Account","VerifyEmail",new VerifyEmailViewModel {MaskedEmail="c***@example.test"}),
+            ("Account","EmailVerified",new object()),
+            ("Account","AccessDenied",new object()),
             ("Bookings","ClientDashboard",new[]{clientBooking}), ("Bookings","ClientDetails",clientBooking),
             ("Bookings","Create",new BookingStepTwoViewModel {EventDate=DateTime.Today.AddDays(7),StartTime=new TimeSpan(10,0,0),PaxCount=50,ContactPerson="Fixture Client",ContactNumber="09000000000"}),
             ("Payments","Upload",new PaymentUploadViewModel {FixedDownpaymentAmount=2000,Amount=2000,GCashQrPath="/images/gcash-qr.jpeg",Bookings=[new(){Value="1",Text="Fixture booking — balance PHP 10,000"}]}),
@@ -97,17 +119,18 @@ static class SnapshotRenderer
         var rendered = 0;
         foreach(var page in pages)
         {
-            var isClientPage = page.Controller == "Home" || page.Controller == "Profile" || page.Controller == "RescheduleRequests" && page.Action is "Create" or "MyRequests" || page.Controller == "Bookings" && new[]{"ClientDashboard","ClientDetails","Create"}.Contains(page.Action) || page.Controller == "Payments" && new[]{"Upload","MyUploads","RequestRefund","MyRefundRequests"}.Contains(page.Action);
-            var defaultRole = isClientPage ? "Client" : page.Controller == "Dashboard" ? page.Action : page.Action == "Admin" || page.Controller == "Calendar" && page.Action == "Index" ? "Admin" : page.Action == "MyBookings" ? "Client" : page.Action is "StaffIndex" or "StaffDetails" || page.Controller == "RescheduleRequests" ? "Staff" : page.Controller is "UserManagement" or "SystemActivity" or "TrashHistory" ? "Admin" : "Owner";
-            var roles = page.Controller == "History" ? new[] {"Owner","Staff"} : page.Controller == "InternalProfile" ? new[] { "Owner", "Staff", "Admin" } : page.Controller == "Services" && page.Action is "Index" or "Details" ? new[] { "Owner", "Staff", "Admin" } : page.Controller == "Communications" ? new[] { "Owner", "Admin", "Staff", "Client" } : page.Controller == "Notifications" ? new[] { "Owner", "Client" } : new[] { defaultRole };
+            var isClientPage = page.Controller == "Feedback" || page.Controller == "Home" || page.Controller == "Profile" || page.Controller == "RescheduleRequests" && page.Action is "Create" or "MyRequests" || page.Controller == "Bookings" && new[]{"ClientDashboard","ClientDetails","Create"}.Contains(page.Action) || page.Controller == "Payments" && new[]{"Upload","MyUploads","RequestRefund","MyRefundRequests"}.Contains(page.Action);
+            var defaultRole = isClientPage ? "Client" : page.Controller == "Testimonials" ? "Staff" : page.Controller == "Dashboard" ? page.Action : page.Action == "Admin" || page.Controller == "Calendar" && page.Action == "Index" ? "Admin" : page.Action == "MyBookings" ? "Client" : page.Action is "StaffIndex" or "StaffDetails" || page.Controller == "RescheduleRequests" ? "Staff" : page.Controller is "UserManagement" or "SystemActivity" or "TrashHistory" ? "Admin" : "Owner";
+            var roles = page.Controller == "Account" ? new[] {"Guest"} : page.Controller == "Home" && page.Action == "Index" ? new[] {"Client","Guest"} : page.Controller == "History" ? new[] {"Owner","Staff"} : page.Controller == "InternalProfile" ? new[] { "Owner", "Staff", "Admin" } : page.Controller == "Services" && page.Action is "Index" or "Details" ? new[] { "Owner", "Staff", "Admin" } : page.Controller == "Communications" ? new[] { "Owner", "Admin", "Staff", "Client" } : page.Controller == "Notifications" ? new[] { "Owner", "Client" } : new[] { defaultRole };
             foreach (var role in roles)
             {
-            foreach(var state in page.Controller == "Communications" ? new[]{"populated","empty"} : page.Controller == "Dashboard" ? new[]{"populated","empty","error"} : page.Controller == "History" && page.Action == "Index" ? new[]{"populated","empty"} : new[]{"populated"})
+            foreach(var state in page.Controller == "Home" && page.Action == "Index" ? new[]{"populated","published"} : page.Controller == "Communications" ? (role=="Client" ? new[]{"populated","empty","inbox"} : new[]{"populated","empty"}) : page.Controller == "Dashboard" ? new[]{"populated","empty","error"} : page.Controller == "History" && page.Action == "Index" || page.Controller == "Bookings" && page.Action is "ClientDashboard" or "MyBookings" ? new[]{"populated","empty"} : new[]{"populated"})
             {
             object fixtureModel = page.Model;
+            if (page.Controller == "Bookings" && state == "empty") fixtureModel = Array.Empty<Booking>();
             if(page.Controller == "Communications") fixtureModel=new CommunicationCenterViewModel {
                 IsInternalUser=role!="Client",
-                SelectedConversation=state=="empty" ? null : new ConversationDetailViewModel {Id=1,Title="Booking question",BookingId=booking.Id,CanSend=true,Participants=[new(){UserId="fixture-staff",Name="Fixture Staff",Role="Staff",Initials="FS"}],Messages=[new(){Id=1,SenderName="Fixture Staff",Content="Your booking update is ready.",SentAt=DateTime.Now}]},
+                SelectedConversation=state is "empty" or "inbox" ? null : new ConversationDetailViewModel {Id=1,Title="Booking question",BookingId=booking.Id,CanSend=true,Participants=[new(){UserId="fixture-staff",Name="Fixture Staff",Role="Staff",Initials="FS"}],Messages=[new(){Id=1,SenderName="Fixture Staff",Content="Your booking update is ready.",SentAt=DateTime.Now}]},
                 Conversations=state=="empty" ? [] : [new(){Id=1,Title="Booking question",DisplayName="Fixture Staff",LatestMessage="Your booking update is ready.",LastActivityAt=DateTime.Now}],
                 InternalUsers=role=="Client" ? [] : [new(){UserId="fixture-staff",Name="Fixture Staff",Role="Staff"}]
             };
@@ -123,7 +146,7 @@ static class SnapshotRenderer
             }
             var http = new DefaultHttpContext {
                 RequestServices = provider,
-                User = new ClaimsPrincipal(new ClaimsIdentity(new[] {new Claim(ClaimTypes.Role,role),new Claim(ClaimTypes.Name,"Regression Owner")}, "Fixture"))
+                User = role == "Guest" ? new ClaimsPrincipal(new ClaimsIdentity()) : new ClaimsPrincipal(new ClaimsIdentity(new[] {new Claim(ClaimTypes.Role,role),new Claim(ClaimTypes.Name,"Regression Owner")}, "Fixture"))
             };
             http.Request.Scheme = "http"; http.Request.Host = new HostString("owner.test");
             var route = new RouteData();
@@ -141,10 +164,14 @@ static class SnapshotRenderer
             data["BlockedDates"] = new[] { new { date=DateTime.Today.AddDays(2).ToString("yyyy-MM-dd"), reason="Fixture blocked date" } };
             data["UserRoles"] = Enumerable.Range(1,12).ToDictionary(i=>"fixture-"+i,i=>new[]{"Client","Staff","Owner","Admin"}[i%4]);
             data["Roles"]="Staff";data["CanManage"]=true;
+            if(page.Controller=="Home" && state=="published") data["PublicTestimonials"]=new[] {
+                new ClientTestimonial("Synthetic visual test: a wonderful celebration from the first welcome to the final applause.","Consented fixture name","Birthday celebration",true,true,true) {OverallRating=5,PublicImageIds=[701]},
+                new ClientTestimonial("Synthetic visual test: our guests loved being part of the show.","Verified client","Completed event",true,true,true) {OverallRating=4}
+            };
             using var writer = new StringWriter();
             var viewContext = new ViewContext(context,result.View,data,new TempDataDictionary(http,new EmptyTempData()),writer,new HtmlHelperOptions());
             await result.View.RenderAsync(viewContext);
-            await File.WriteAllTextAsync(Path.Combine(output,page.Controller+"-"+page.Action+(role != defaultRole ? "-"+role : "")+(state=="populated" ? "" : "-"+state)+".html"),writer.ToString());
+            await File.WriteAllTextAsync(Path.Combine(output,page.Controller+"-"+page.Action+(role != defaultRole && page.Controller != "Account" ? "-"+role : "")+(state=="populated" ? "" : "-"+state)+".html"),writer.ToString());
             rendered++;
             }
             }

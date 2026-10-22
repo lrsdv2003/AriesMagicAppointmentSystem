@@ -31,8 +31,10 @@ foreach(var name in new[] { "VerifyConfirmed", "RejectConfirmed", "RequestAdditi
     Check(method.GetCustomAttributes<ValidateAntiForgeryTokenAttribute>().Any(), name + " requires anti-forgery");
 }
 var database = "AriesOwnerRegression_" + Guid.NewGuid().ToString("N");
+var localInstance = Environment.GetEnvironmentVariable("ARIES_TEST_LOCALDB_INSTANCE") ?? "MSSQLLocalDB";
+if (!System.Text.RegularExpressions.Regex.IsMatch(localInstance, "^[A-Za-z][A-Za-z0-9_-]{0,63}$")) throw new Exception("Invalid local test instance name.");
 var options = new DbContextOptionsBuilder<ApplicationDbContext>()
-    .UseSqlServer(@"Server=(localdb)\MSSQLLocalDB;Database=" + database + ";Trusted_Connection=True;TrustServerCertificate=True").Options;
+    .UseSqlServer(@"Server=(localdb)\" + localInstance + ";Database=" + database + ";Trusted_Connection=True;TrustServerCertificate=True").Options;
 await using var db = new ApplicationDbContext(options);
 try
 {
@@ -90,6 +92,8 @@ try
     await ProfileRegression.RunAsync(db, Check);
     await HistoryRegression.RunAsync(db, Check);
     await ClientRegression.RunAsync(db, Check);
+    await SecurityRegression.RunAsync(db, Check);
+    await SecurityHttpRegression.RunAsync(db, Check);
     if (args.Contains("--render"))
     {
         await SnapshotRenderer.RenderAsync(options, report, active, pending, service,

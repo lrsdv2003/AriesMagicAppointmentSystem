@@ -43,7 +43,7 @@ namespace AriesMagicAppointmentSystem.ViewModels
         [Required]
         [DataType(DataType.Password)]
         [Display(Name = "New Password")]
-        [StringLength(100, MinimumLength = 6, ErrorMessage = "Password must be at least 6 characters.")]
+        [StringLength(100, MinimumLength = 12, ErrorMessage = "Password must be at least 12 characters.")]
         public string NewPassword { get; set; } = string.Empty;
 
         [Required]

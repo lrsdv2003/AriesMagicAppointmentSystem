@@ -8,7 +8,7 @@
     <div class="auth-shell">
         <div class="auth-left">
             <div class="auth-brand-badge">Aries Magic</div>
-            <h1 class="auth-hero-title">Create Your Client Account</h1>
+            <h2 class="auth-hero-title">Something good<br />starts here.</h2>
             <p class="auth-hero-text">
                 Register to start booking event packages, customize your package inclusions,
                 monitor your booking progress, and receive important updates through email.
@@ -44,8 +44,8 @@
         <div class="auth-right">
             <div class="auth-card auth-card-large">
                 <div class="auth-card-header">
-                    <h2>Create Client Account</h2>
-                    <p>Fill in your details to register and begin your booking process.</p>
+                    <h1>Let’s make a plan.</h1>
+                    <p>Create your account to request a show and keep every detail together.</p>
                 </div>
 
                 <form asp-action="Register" method="post">
@@ -55,7 +55,7 @@
                     <div class="row g-3">
                         <div class="col-12">
                             <label asp-for="FullName" class="form-label"></label>
-                            <input asp-for="FullName" class="form-control" placeholder="Enter your full name" />
+                            <input asp-for="FullName" autocomplete="name" class="form-control" placeholder="Enter your full name" />
                             <span asp-validation-for="FullName" class="text-danger"></span>
                         </div>
 
@@ -67,19 +67,19 @@
 
                         <div class="col-md-6">
                             <label asp-for="Email" class="form-label"></label>
-                            <input asp-for="Email" class="form-control" placeholder="Enter your email" />
+                            <input asp-for="Email" autocomplete="email" class="form-control" placeholder="Enter your email" />
                             <span asp-validation-for="Email" class="text-danger"></span>
                         </div>
 
                         <div class="col-md-6">
                             <label asp-for="Password" class="form-label"></label>
-                            <input asp-for="Password" class="form-control" placeholder="Create password" />
+                            <input asp-for="Password" autocomplete="new-password" class="form-control" placeholder="Create password" />
                             <span asp-validation-for="Password" class="text-danger"></span>
                         </div>
 
                         <div class="col-md-6">
                             <label asp-for="ConfirmPassword" class="form-label"></label>
-                            <input asp-for="ConfirmPassword" class="form-control" placeholder="Confirm password" />
+                            <input asp-for="ConfirmPassword" autocomplete="new-password" class="form-control" placeholder="Confirm password" />
                             <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
                         </div>
                     </div>

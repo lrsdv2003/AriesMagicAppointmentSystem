@@ -29,7 +29,7 @@ namespace AriesMagicAppointmentSystem.Services
 
         public async Task<int> ArchiveDueBookingsAsync()
         {
-            var now = DateTime.Now;
+            var now = FeedbackPolicy.BusinessNow;
             var archivedCount = 0;
 
             // 1) Confirmed bookings whose event has already ended automatically become Completed.
@@ -118,6 +118,7 @@ namespace AriesMagicAppointmentSystem.Services
                 await _context.SaveChangesAsync();
             }
 
+            await FeedbackInvitationService.QueueAsync(_context);
             return archivedCount;
         }
 

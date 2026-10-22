@@ -17,7 +17,7 @@ namespace AriesMagicAppointmentSystem.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.11")
+                .HasAnnotation("ProductVersion", "9.0.21")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -262,6 +262,8 @@ namespace AriesMagicAppointmentSystem.Migrations
 
                     b.HasIndex("ServiceId");
 
+                    b.HasIndex("EventDate", "StartTime", "EndTime");
+
                     b.ToTable("Bookings");
                 });
 
@@ -392,6 +394,72 @@ namespace AriesMagicAppointmentSystem.Migrations
                     b.ToTable("DateBookingLimits");
                 });
 
+            modelBuilder.Entity("AriesMagicAppointmentSystem.Models.EmailOutboxMessage", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<byte[]>("Attachment")
+                        .HasColumnType("varbinary(max)");
+
+                    b.Property<string>("AttachmentName")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("Attempts")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DeliveredAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("EventKey")
+                        .IsRequired()
+                        .HasMaxLength(160)
+                        .HasColumnType("nvarchar(160)");
+
+                    b.Property<DateTime?>("FailedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("HtmlBody")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("LastFailureType")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime?>("LockedUntilUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("NextAttemptAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Recipient")
+                        .IsRequired()
+                        .HasMaxLength(320)
+                        .HasColumnType("nvarchar(320)");
+
+                    b.Property<string>("Subject")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EventKey")
+                        .IsUnique();
+
+                    b.HasIndex("DeliveredAtUtc", "FailedAtUtc", "NextAttemptAtUtc");
+
+                    b.ToTable("EmailOutboxMessages");
+                });
+
             modelBuilder.Entity("AriesMagicAppointmentSystem.Models.EmailVerification", b =>
                 {
                     b.Property<int>("Id")
@@ -432,6 +500,238 @@ namespace AriesMagicAppointmentSystem.Migrations
                         .IsUnique();
 
                     b.ToTable("EmailVerifications");
+                });
+
+            modelBuilder.Entity("AriesMagicAppointmentSystem.Models.EventFeedback", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BookingId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("BookingRating")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ClientId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime?>("ConsentedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Experience")
+                        .IsRequired()
+                        .HasMaxLength(1500)
+                        .HasColumnType("nvarchar(1500)");
+
+                    b.Property<bool>("Featured")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("MediaConsent")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("ModerationStatus")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<bool>("NameConsent")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("OverallRating")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PerformanceRating")
+                        .HasColumnType("int");
+
+                    b.Property<string>("PublicDisplayName")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("nvarchar(60)");
+
+                    b.Property<DateTime?>("PublishedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("ReviewedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ReviewedBy")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("SubmittedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Suggestions")
+                        .IsRequired()
+                        .HasMaxLength(1500)
+                        .HasColumnType("nvarchar(1500)");
+
+                    b.Property<bool>("TextConsent")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("UnpublishedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<byte[]>("Version")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<DateTime?>("WithdrawnAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BookingId")
+                        .IsUnique();
+
+                    b.HasIndex("ClientId", "SubmittedAtUtc");
+
+                    b.HasIndex("ModerationStatus", "Featured");
+
+                    b.ToTable("EventFeedbacks", t =>
+                        {
+                            t.HasCheckConstraint("CK_Feedback_Publication", "[Featured] = 0 OR ([TextConsent] = 1 AND [WithdrawnAtUtc] IS NULL AND [ModerationStatus] = 'Approved' AND LEN([Experience]) > 0)");
+
+                            t.HasCheckConstraint("CK_Feedback_Ratings", "[OverallRating] BETWEEN 1 AND 5 AND [PerformanceRating] BETWEEN 1 AND 5 AND [BookingRating] BETWEEN 1 AND 5");
+
+                            t.HasCheckConstraint("CK_Feedback_Status", "[ModerationStatus] IN ('Pending','Approved','Private','Withdrawn')");
+                        });
+                });
+
+            modelBuilder.Entity("AriesMagicAppointmentSystem.Models.FeedbackInvitation", b =>
+                {
+                    b.Property<int>("BookingId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("BookingId");
+
+                    b.ToTable("FeedbackInvitations");
+                });
+
+            modelBuilder.Entity("AriesMagicAppointmentSystem.Models.FeedbackMedia", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<string>("DisplayFilename")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
+
+                    b.Property<double?>("DurationSeconds")
+                        .HasColumnType("float");
+
+                    b.Property<int>("FeedbackId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Height")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<string>("ProcessingStatus")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<bool>("PublicApproved")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("ScannedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<long>("Size")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("StorageKey")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
+
+                    b.Property<DateTime>("UploadedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<byte[]>("Version")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<int>("Width")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FeedbackId");
+
+                    b.HasIndex("StorageKey")
+                        .IsUnique();
+
+                    b.ToTable("FeedbackMedia", t =>
+                        {
+                            t.HasCheckConstraint("CK_FeedbackMedia_Public", "[PublicApproved] = 0 OR ([ProcessingStatus] = 'Ready' AND [ScannedAtUtc] IS NOT NULL)");
+                        });
+                });
+
+            modelBuilder.Entity("AriesMagicAppointmentSystem.Models.FeedbackPublicationEvent", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<string>("ActorId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("AtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("FeedbackId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FeedbackId", "AtUtc");
+
+                    b.ToTable("FeedbackPublicationEvents");
                 });
 
             modelBuilder.Entity("AriesMagicAppointmentSystem.Models.Message", b =>
@@ -670,7 +970,10 @@ namespace AriesMagicAppointmentSystem.Migrations
 
                     b.HasIndex("BookingId");
 
-                    b.ToTable("Payments");
+                    b.ToTable("Payments", t =>
+                        {
+                            t.HasCheckConstraint("CK_Payments_PositiveAmount", "[Amount] > 0");
+                        });
                 });
 
             modelBuilder.Entity("AriesMagicAppointmentSystem.Models.RefundRequest", b =>
@@ -750,7 +1053,12 @@ namespace AriesMagicAppointmentSystem.Migrations
 
                     b.HasIndex("OriginalPaymentId");
 
-                    b.ToTable("RefundRequests");
+                    b.ToTable("RefundRequests", t =>
+                        {
+                            t.HasCheckConstraint("CK_RefundRequests_ApprovedAmount", "[ApprovedAmount] IS NULL OR ([ApprovedAmount] > 0 AND [ApprovedAmount] <= [Amount])");
+
+                            t.HasCheckConstraint("CK_RefundRequests_PositiveAmount", "[Amount] > 0");
+                        });
                 });
 
             modelBuilder.Entity("AriesMagicAppointmentSystem.Models.RescheduleRequest", b =>
@@ -1258,6 +1566,56 @@ namespace AriesMagicAppointmentSystem.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("AriesMagicAppointmentSystem.Models.EventFeedback", b =>
+                {
+                    b.HasOne("AriesMagicAppointmentSystem.Models.Booking", "Booking")
+                        .WithMany()
+                        .HasForeignKey("BookingId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("AriesMagicAppointmentSystem.Models.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("ClientId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Booking");
+                });
+
+            modelBuilder.Entity("AriesMagicAppointmentSystem.Models.FeedbackInvitation", b =>
+                {
+                    b.HasOne("AriesMagicAppointmentSystem.Models.Booking", "Booking")
+                        .WithMany()
+                        .HasForeignKey("BookingId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Booking");
+                });
+
+            modelBuilder.Entity("AriesMagicAppointmentSystem.Models.FeedbackMedia", b =>
+                {
+                    b.HasOne("AriesMagicAppointmentSystem.Models.EventFeedback", "Feedback")
+                        .WithMany("Media")
+                        .HasForeignKey("FeedbackId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Feedback");
+                });
+
+            modelBuilder.Entity("AriesMagicAppointmentSystem.Models.FeedbackPublicationEvent", b =>
+                {
+                    b.HasOne("AriesMagicAppointmentSystem.Models.EventFeedback", "Feedback")
+                        .WithMany("PublicationEvents")
+                        .HasForeignKey("FeedbackId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Feedback");
+                });
+
             modelBuilder.Entity("AriesMagicAppointmentSystem.Models.Message", b =>
                 {
                     b.HasOne("AriesMagicAppointmentSystem.Models.Conversation", "Conversation")
@@ -1308,7 +1666,7 @@ namespace AriesMagicAppointmentSystem.Migrations
                     b.HasOne("AriesMagicAppointmentSystem.Models.Booking", "Booking")
                         .WithMany("Payments")
                         .HasForeignKey("BookingId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.Navigation("Booking");
@@ -1319,7 +1677,7 @@ namespace AriesMagicAppointmentSystem.Migrations
                     b.HasOne("AriesMagicAppointmentSystem.Models.Booking", "Booking")
                         .WithMany()
                         .HasForeignKey("BookingId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.HasOne("AriesMagicAppointmentSystem.Models.Payment", "OriginalPayment")
@@ -1430,6 +1788,13 @@ namespace AriesMagicAppointmentSystem.Migrations
                     b.Navigation("Messages");
 
                     b.Navigation("Participants");
+                });
+
+            modelBuilder.Entity("AriesMagicAppointmentSystem.Models.EventFeedback", b =>
+                {
+                    b.Navigation("Media");
+
+                    b.Navigation("PublicationEvents");
                 });
 
             modelBuilder.Entity("AriesMagicAppointmentSystem.Models.Payment", b =>

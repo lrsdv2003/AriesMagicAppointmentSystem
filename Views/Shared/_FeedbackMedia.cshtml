@@ -1,0 +1,5 @@
+@model IEnumerable<AriesMagicAppointmentSystem.Models.FeedbackMedia>
+<div class="feedback-previews">
+@foreach(var media in Model){<figure class="feedback-media"><figcaption>@media.DisplayFilename · @media.ProcessingStatus</figcaption>@if(media.ProcessingStatus=="Ready"&&media.ScannedAtUtc!=null){<a asp-controller="FeedbackMedia" asp-action="Private" asp-route-id="@media.Id" target="_blank" rel="noopener"><img src="@Url.Action("Private","FeedbackMedia",new {id=media.Id})" alt="Your submitted event photograph" width="600" height="400" loading="lazy" /><span>Open photo <span class="visually-hidden">(new tab)</span></span></a>}else{<p>Preview unavailable until security processing is complete. Unprocessed files are never served.</p>}</figure>}
+</div>
+@if(!Model.Any()){<p>No photos were submitted.</p>}

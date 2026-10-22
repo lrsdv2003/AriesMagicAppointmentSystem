@@ -24,10 +24,11 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#fbf8f5" />
+    <meta name="theme-color" content="#671e35" />
+    <meta name="description" content="Explore Aries Magic entertainment packages, check your venue and date, and manage your event booking in one place." />
     <title>@ViewData["Title"] - Aries Magic</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <link rel="stylesheet" href="~/lib/bootstrap-icons/font/bootstrap-icons.min.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/tokens.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/aries-client-theme.css" asp-append-version="true" />
@@ -41,6 +42,8 @@
     <link rel="stylesheet" href="~/css/notifications.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/client-refresh.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/app-ui.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/client-experience.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/feedback.css" asp-append-version="true" />
 </head>
 <body class="client-body @pageClass @(isHome ? "client-home-page" : "client-inner-page")">
     <a class="magic-skip-link" href="#mainContent">Skip to content</a>
@@ -64,12 +67,12 @@
                     </span>
                     <span class="brand-copy">
                         <strong>Aries Magic</strong>
-                        <small>Magic Artist & Event Entertainment</small>
+                        <small>Entertainment worth gathering for</small>
                     </span>
                 </a>
 
                 <button class="navbar-toggler magic-navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#clientNavbar" aria-controls="clientNavbar" aria-expanded="false" aria-label="Toggle navigation">
-                    <i class="bi bi-list" aria-hidden="true"></i>
+                    <span aria-hidden="true">☰</span>
                 </button>
 
                 <div class="collapse navbar-collapse" id="clientNavbar">
@@ -78,6 +81,7 @@
                         <li class="nav-item"><a class="nav-link @(currentController == "Home" && (currentAction == "Packages" || currentAction == "Package") ? "active" : "")" asp-controller="Home" asp-action="Packages">Packages</a></li>
                         <li class="nav-item"><a class="nav-link @(currentController == "Bookings" && currentAction == "CreateStepOne" ? "active" : "")" asp-controller="Bookings" asp-action="CreateStepOne">Availability</a></li>
                         <li class="nav-item"><a class="nav-link" asp-controller="Home" asp-action="Index" asp-fragment="about">About</a></li>
+                        <li class="nav-item"><a class="nav-link" asp-controller="Home" asp-action="Index" asp-fragment="gallery">Gallery</a></li>
                     </ul>
 
                     <div class="client-nav-actions">
@@ -102,6 +106,8 @@
                                     <li><a class="dropdown-item" asp-controller="Bookings" asp-action="Dashboard"><i class="bi bi-house" aria-hidden="true"></i> My Dashboard</a></li>
                                     <li><a class="dropdown-item" asp-controller="Bookings" asp-action="MyBookings"><i class="bi bi-calendar2-event" aria-hidden="true"></i> My Bookings</a></li>
                                     <li><a class="dropdown-item" asp-controller="Payments" asp-action="MyUploads"><i class="bi bi-wallet2" aria-hidden="true"></i> My Payments</a></li>
+                                    <li><a class="dropdown-item" asp-controller="Communications" asp-action="Index" asp-route-view="inbox"><i class="bi bi-chat-dots" aria-hidden="true"></i> Messages</a></li>
+                                    <li><a class="dropdown-item" asp-controller="Feedback" asp-action="Index">My feedback</a></li>
                                     <li><a class="dropdown-item" asp-controller="Profile" asp-action="Index"><i class="bi bi-person-circle" aria-hidden="true"></i> Profile</a></li>
                                     <li><a class="dropdown-item" asp-controller="Notifications" asp-action="Index"><i class="bi bi-bell" aria-hidden="true"></i> Notifications</a></li>
                                     <li><hr class="dropdown-divider" /></li>
@@ -115,7 +121,7 @@
                             </div>
 
                             <a asp-controller="Bookings" asp-action="CreateStepOne" class="btn magic-primary-cta">
-                                <i class="bi bi-stars" aria-hidden="true"></i><span>Book a Show</span>
+                                <span>Book a show ↗</span>
                             </a>
 
 
@@ -132,13 +138,29 @@
                         else
                         {
                             <a asp-controller="Account" asp-action="Login" class="magic-text-btn">Sign in</a>
-                            <a asp-controller="Account" asp-action="Register" class="btn magic-primary-cta">Plan Your Event</a>
+                            <a asp-controller="Bookings" asp-action="CreateStepOne" class="btn magic-primary-cta">Plan your event ↗</a>
                         }
                     </div>
                 </div>
             </div>
         </nav>
     </header>
+
+    @if (isClient && !isHome && currentController != "Home")
+    {
+        <nav class="cx-account-nav" aria-label="Your account">
+            <div class="container">
+                <a asp-controller="Bookings" asp-action="Dashboard" aria-current="@(currentAction is "Dashboard" or "ClientDashboard" ? "page" : null)">Overview</a>
+                <a asp-controller="Bookings" asp-action="MyBookings" aria-current="@(currentAction == "MyBookings" ? "page" : null)">Bookings</a>
+                <a asp-controller="Payments" asp-action="MyUploads" aria-current="@(currentController == "Payments" ? "page" : null)">Payments</a>
+                <a asp-controller="RescheduleRequests" asp-action="MyRequests" aria-current="@(currentController == "RescheduleRequests" ? "page" : null)">Rescheduling</a>
+                <a asp-controller="Communications" asp-action="Index" asp-route-view="inbox" aria-current="@(currentController == "Communications" ? "page" : null)">Messages</a>
+                <a asp-controller="Notifications" asp-action="Index" aria-current="@(currentController == "Notifications" ? "page" : null)">Updates</a>
+                <a asp-controller="Profile" asp-action="Index" aria-current="@(currentController == "Profile" ? "page" : null)">Profile</a>
+                <a asp-controller="Feedback" asp-action="Index" aria-current="@(currentController == "Feedback" ? "page" : null)">Feedback</a>
+            </div>
+        </nav>
+    }
 
     <main tabindex="-1" id="mainContent" class="client-main">
         @if (isHome || currentController == "Communications")
@@ -161,24 +183,26 @@
                         <span class="brand-mark" aria-hidden="true"><i class="bi bi-stars" aria-hidden="true"></i></span>
                         <span class="brand-copy"><strong>Aries Magic</strong><small>Moments become memories.</small></span>
                     </a>
-                    <p>Professional magic, interactive entertainment, and a smoother way to plan the show your celebration deserves.</p>
+                    <p>A little wonder. A shared memory.<br />Entertainment for the people you bring together.</p>
                 </div>
 
                 <div class="magic-footer-links">
                     <div>
-                        <h5>Explore</h5>
+                        <h2 class="cx-footer-heading">Discover</h2>
                         <a asp-controller="Home" asp-action="Index" asp-fragment="about">About</a>
                         <a asp-controller="Home" asp-action="Packages">Packages</a>
                         <a asp-controller="Bookings" asp-action="CreateStepOne">Availability</a>
+                        <a asp-controller="Home" asp-action="Index" asp-fragment="gallery">Gallery</a>
                     </div>
                     <div>
-                        <h5>Client</h5>
+                        <h2 class="cx-footer-heading">Your plans</h2>
                         @if (isClient)
                         {
                             <a asp-controller="Bookings" asp-action="Dashboard">My Dashboard</a>
                             <a asp-controller="Bookings" asp-action="MyBookings">My Bookings</a>
                             <a asp-controller="Payments" asp-action="MyUploads">Payments</a>
                             <a asp-controller="Profile" asp-action="Index">Profile</a>
+                            <a asp-controller="Communications" asp-action="Index" asp-route-view="inbox">Messages</a>
                         }
                         else
                         {
@@ -187,19 +211,20 @@
                         }
                     </div>
                 </div>
+                <div class="cx-footer-invitation"><span class="cx-kicker">An occasion in mind?</span><p>Let’s set<br /><em>the scene.</em></p><a asp-controller="Bookings" asp-action="CreateStepOne" class="cx-text-link">Find your date <span aria-hidden="true">↗</span></a></div>
             </div>
 
             <div class="footer-bottom">
-                <span>&copy; 2026 Aries Magic. All rights reserved.</span>
-                <span>Magic Artist Scheduling & Booking</span>
+                <span>&copy; @DateTime.Now.Year Aries Magic. All rights reserved.</span>
+                <a asp-controller="Home" asp-action="Privacy">Privacy</a>
             </div>
         </div>
     </footer>
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/aries-client.js" asp-append-version="true"></script>
     <script src="~/js/magic-client-v2.js" asp-append-version="true"></script>
+    <script src="~/js/client-experience.js" asp-append-version="true"></script>
     @if (User.Identity?.IsAuthenticated == true)
     {
         <script src="~/js/communication-global.js" asp-append-version="true"></script>

@@ -7,7 +7,7 @@
     var eventTypes = ViewBag.EventTypes as List<string> ?? new();
     var packageData = packages.Select(p => new { p.Id, p.Name, p.Price, p.DurationInHours, Inclusions = p.Inclusions.OrderBy(i => i.Id).Select(i => new { i.Id, i.Name, i.IsRemovable }) });
 }
-<header class="cr-page-heading"><div><span class="cr-eyebrow">Your celebration starts here</span><h1>Book your event</h1><p>Check your venue and schedule, then make the show yours.</p></div><a asp-action="Dashboard" class="btn btn-outline-secondary">My dashboard</a></header>
+<header class="cr-page-heading"><div><span class="cr-eyebrow">Your celebration / Four simple steps</span><h1>Let’s set the scene.</h1><p>Start with where and when. We’ll bring your package, details, and price together before you submit.</p></div><a asp-action="Dashboard" class="btn btn-outline-secondary">My dashboard</a></header>
 @if (!packages.Any()) { <div class="cr-card"><h2>Packages are being updated</h2><p>Please check back soon to start your booking.</p></div> }
 else
 {
@@ -22,7 +22,7 @@ else
     <section class="cr-card cr-wizard-panel" data-step="0" aria-labelledby="locationTitle">
         <h2 id="locationTitle" tabindex="-1">Where and when?</h2><p>Choose a date at least three days from today.</p>
         <div class="cr-form-grid">
-            <div class="cr-full"><label asp-for="PartyVenue">Venue or full address</label><div class="input-group"><input asp-for="PartyVenue" class="form-control" required autocomplete="off" placeholder="Search your venue, city, or full address"/><button type="button" class="btn btn-outline-primary" id="findVenue">Search</button></div><div id="venueResults" class="cr-search-results" aria-label="Venue search results"></div></div>
+            <div class="cr-full"><label asp-for="PartyVenue">Venue or full address</label><div class="input-group"><input asp-for="PartyVenue" class="form-control" required autocomplete="off" placeholder="Search your venue, city, or full address"/><button type="button" class="btn btn-outline-primary" id="findVenue">Search</button></div><div id="venueResults" class="cr-search-results" role="region" aria-label="Venue search results"></div></div>
             <div><label asp-for="EventDate">Event date</label><input asp-for="EventDate" type="date" min="@DateTime.Today.AddDays(3).ToString("yyyy-MM-dd")" class="form-control" required /></div>
             <div><label asp-for="StartTime">Start time</label><input asp-for="StartTime" type="time" class="form-control" required /></div>
         </div>

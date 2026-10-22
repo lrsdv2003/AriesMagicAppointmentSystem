@@ -306,7 +306,7 @@
 }
 .client-body .form-control::placeholder { color: #6f6879 !important; }
 .client-body .form-control:focus,
-.client-body .form-select:focus { border-color: rgba(230,199,122,.47) !important; background-color: rgba(255,255,255,.06) !important; box-shadow: 0 0 0 .18rem rgba(230,199,122,.07) !important; }
+.client-body .form-select:focus { border-color: rgba(230,199,122,.47) !important; background-color: var(--cx-control-bg, var(--magic-control-bg)) !important; box-shadow: 0 0 0 .18rem rgba(230,199,122,.07) !important; }
 .client-body .form-select option { background: #151020; color: #fff; }
 .client-body .form-check-input { background-color: rgba(255,255,255,.05); border-color: rgba(255,255,255,.22); }
 .client-body .form-check-input:checked { background-color: var(--magic-violet); border-color: var(--magic-violet); }

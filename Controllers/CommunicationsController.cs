@@ -19,7 +19,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             _context = context;
         }
 
-        public async Task<IActionResult> Index(int? id, string filter = "all", string? q = null)
+        public async Task<IActionResult> Index(int? id, string filter = "all", string? q = null, string? view = null)
         {
             var userId = CurrentUserId();
             if (userId == null) return Challenge();
@@ -72,7 +72,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                 model.InternalUsers = await GetInternalUserOptionsAsync(userId);
             }
 
-            var selectedId = id.HasValue && items.Any(x => x.Id == id.Value)
+            var selectedId = !isInternal && view == "inbox" ? (int?)null : id.HasValue && items.Any(x => x.Id == id.Value)
                 ? id.Value
                 : items.FirstOrDefault()?.Id;
 

@@ -1,0 +1,29 @@
+@model AriesMagicAppointmentSystem.ViewModels.FeedbackInput
+@inject Microsoft.Extensions.Options.IOptions<AriesMagicAppointmentSystem.Services.FeedbackMediaOptions> MediaOptions
+@{ ViewData["Title"]="Share your experience"; var limits=MediaOptions.Value; }
+<header class="cr-page-heading"><div><span class="cr-eyebrow">After the applause / @Model.EventLabel</span><h1>How was your celebration?</h1><p>Three quick ratings, a few words if you wish, and a memory to share.</p></div><a asp-action="Index" class="btn btn-outline-secondary">My feedback</a></header>
+<form asp-action="Create" method="post" enctype="multipart/form-data" id="clientFeedbackForm" class="feedback-form" data-max-files="@limits.MaxImages" data-max-bytes="@limits.MaxImageBytes">
+@Html.AntiForgeryToken()
+<input asp-for="BookingId" type="hidden" />
+<div asp-validation-summary="All" id="feedbackFormErrors" class="alert alert-danger" role="alert" tabindex="-1"></div>
+<section class="cr-card"><h2>The experience</h2><p>All three ratings are required. Choose one answer per question.</p>
+@foreach(var question in new[]{("OverallRating","How would you rate your overall experience?"),("PerformanceRating","How satisfied were you with the entertainment or performance?"),("BookingRating","How easy was the booking process?")})
+{
+ var value=question.Item1=="OverallRating"?Model.OverallRating:question.Item1=="PerformanceRating"?Model.PerformanceRating:Model.BookingRating;
+ <fieldset class="feedback-rating"><legend>@question.Item2</legend><div class="feedback-rating-options">
+ @for(var rating=1;rating<=5;rating++){<label><input type="radio" name="@question.Item1" value="@rating" checked="@(value==rating)" required /><span>@rating</span><small>@(rating==1?"Very poor":rating==2?"Poor":rating==3?"Fair":rating==4?"Good":"Excellent")</small></label>}
+ </div></fieldset>
+}
+</section>
+<section class="cr-card"><h2>In your own words</h2><label asp-for="Experience" class="form-label">What did you enjoy most? <span class="text-muted">(optional, up to 1,500 characters)</span></label><textarea asp-for="Experience" class="form-control" rows="4" maxlength="1500" aria-describedby="experienceHelp"></textarea><p id="experienceHelp" class="form-text">This is the only written answer that may become a public testimonial, if you opt in below.</p>
+<label asp-for="Suggestions" class="form-label mt-4">Is there anything we could improve? <span class="text-muted">(optional)</span></label><textarea asp-for="Suggestions" class="form-control" rows="3" maxlength="1500" aria-describedby="suggestionsHelp"></textarea><p id="suggestionsHelp" class="form-text">Private operational feedback. Suggestions are never included in public testimonials.</p></section>
+<section class="cr-card"><h2>A memory from your event</h2><label asp-for="Files" class="form-label">Optional event photos</label><input asp-for="Files" type="file" multiple class="form-control" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" aria-describedby="mediaHelp" /><p id="mediaHelp" class="form-text">Up to @limits.MaxImages JPEG, PNG, or WebP photos, @(@limits.MaxImageBytes/1024/1024) MB each. Photos are processed and scanned before preview or publication. Files must be selected again after a regular page submission fails.</p><div id="feedbackPreviews" class="feedback-previews" role="region" aria-label="Selected photo previews"></div><p class="cr-notice">Video uploads are currently unavailable while the isolated video processing controls are pending. Your feedback and photos can still be submitted.</p></section>
+<section class="cr-card"><h2>Your words. Your choice.</h2><p>Public sharing is optional and does not affect submitting feedback. Nothing is published without Staff approval.</p>
+<label class="cr-check"><input asp-for="TextConsent" /><span>I permit my written experience answer and overall rating to be featured publicly. My suggestions, booking number, venue, email, and phone number stay private.</span></label>
+<label class="cr-check"><input asp-for="NameConsent" /><span>I permit the display name below to appear with my testimonial. Otherwise, use “Verified client”.</span></label>
+<label asp-for="PublicDisplayName" class="form-label">Public display name <span class="text-muted">(optional unless name sharing is selected)</span></label><input asp-for="PublicDisplayName" class="form-control" maxlength="60" autocomplete="off" placeholder="For example, a first name or initials" />
+<label class="cr-check"><input asp-for="MediaConsent" /><span>I permit Staff to select processed event photos for public display with my testimonial, and confirm I have permission to share them.</span></label>
+<p class="form-text">You can withdraw all public-sharing consent from your feedback details at any time. Withdrawal promptly hides the testimonial and its public media.</p></section>
+<div class="feedback-submit"><div id="feedbackUploadStatus" role="status" aria-live="polite"></div><progress id="feedbackUploadProgress" max="100" value="0" aria-label="Feedback upload progress" hidden></progress><button type="submit" class="btn btn-primary">Send my feedback</button></div>
+</form>
+@section Scripts {<script src="~/js/feedback.js" asp-append-version="true"></script>}

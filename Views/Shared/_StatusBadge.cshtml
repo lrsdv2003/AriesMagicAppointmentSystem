@@ -6,5 +6,6 @@
         "Rejected" or "Declined" or "Cancelled" or "Failed" or "Locked" or "Blocked" or "Unavailable" or "Schedule unavailable" => "danger",
         _ => "neutral"
     };
+    if (User.IsInRole("Client") && Model is "Completed" or "Paid") tone = "success";
 }
 <span class="ui-badge ui-badge-@tone">@AriesMagicAppointmentSystem.ViewModels.AdminActivityPresentation.Label(Model)</span>

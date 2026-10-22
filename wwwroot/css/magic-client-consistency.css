@@ -489,9 +489,8 @@ body.client-body .form-select option { background: #151020 !important; color: va
 body.client-body .form-control:focus,
 body.client-body .form-select:focus {
   border-color: rgba(230,199,122,.48) !important;
-  background: rgba(255,255,255,.06) !important;
+  background: var(--cx-control-bg, var(--magic-control-bg)) !important;
   box-shadow: 0 0 0 .18rem rgba(230,199,122,.075) !important;
-  outline: none !important;
 }
 
 body.client-body textarea.form-control { min-height: 118px !important; resize: vertical; }

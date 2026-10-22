@@ -1,5 +1,22 @@
 # Owner regression checks
 
+## Pre-deployment security additions (22 October 2026)
+
+The harness also runs `SecurityRegression` and `SecurityHttpRegression`: matching image signatures,
+cumulative refund reservations, repeated financial actions, overlapping schedules, simultaneous SQL
+confirmation attempts for the last daily slot, and real MVC HTTP authorization/antiforgery responses
+for all four roles. Header-based authentication is registered only in the isolated test host, never
+in the application. The suite with `--render` now reports 289 checks and 68 fixture pages.
+
+`security.http.mjs` separately exercises the real application pipeline. Run it only against a local
+probe at `http://127.0.0.1:5189` configured with Development environment,
+`BackgroundJobs__Enabled=false`, `Database__InitializeOnStartup=false`, and an unreachable test SQL
+connection. It deliberately expects unhealthy database readiness and exhausts the account rate limit.
+It does not test successful authentication or external providers. See `AUDIT_REPORT.md` for results
+and remaining acceptance requirements.
+
+    node tests/OwnerRegression/security.http.mjs
+
 Run from the repository root on Windows with .NET 9 and SQL Server LocalDB:
 
     dotnet run --project tests/OwnerRegression/OwnerRegression.csproj
@@ -162,7 +179,12 @@ The shared app-ui.css defines typography, semantic status colors, controls, focu
 responsive dialogs, and chat layout for all four roles. Package creation and editing
 share _PackageEditor; the client status cards use _StatusBadge.
 
-Visual sign-off is separate: the current execution environment could not access the
-local app with its preview browser. Browser screenshots, real layout at 1920/1440/768/390px,
-keyboard focus trapping, and live end-to-end integrations remain to be checked before
-deployment. Passing the DOM suite does not prove pixel layout or screen-reader behavior.
+Browser fixture verification now uses installed Edge with Puppeteer. The feedback
+delivery rendered 87 synthetic pages, passed 555 DOM checks, and exercised feedback
+at 1440/768/390px, including local photo previews, duplicate-submit prevention,
+validation recovery, and Staff confirmation. Run `feedback.browser.mjs` after rendering;
+set `AXE_CORE_PATH` for automated WCAG checks. `client-experience.browser.mjs` also
+supports `CLIENT_PAGES=Home-Index-published,Home-Index-Guest-published` for the consented
+public showcase fixtures. See `FEEDBACK_FEATURE.md` for results and deployment gaps.
+Real-user sign-off, live provider checks, and assistive-technology testing remain
+separate; DOM/browser fixtures do not establish full screen-reader usability.

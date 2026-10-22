@@ -19,3 +19,13 @@ App_Data/financial-proofs/
 
 # Private internal account photos
 App_Data/profiles/
+
+# Deployment secrets and local configuration
+appsettings.Production.json
+appsettings.Staging.json
+*.publishsettings
+*.pubxml.user
+.env
+.env.*
+*.pfx
+*.p12

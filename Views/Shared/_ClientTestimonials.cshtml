@@ -1,0 +1,21 @@
+@model IEnumerable<AriesMagicAppointmentSystem.ViewModels.ClientTestimonial>
+@{ var approved = Model.Where(t => t.CanPublish).Take(3).ToList(); }
+<section class="cx-section container cx-testimonials" aria-labelledby="clientStoriesTitle">
+    <div class="cx-section-head">
+        <div><span class="cx-kicker">After the applause / Client stories</span><h2 id="clientStoriesTitle">The moments<br /><em>you take home.</em></h2></div>
+        <p>A space for verified feedback, shared with permission after the event.</p>
+    </div>
+    <div class="cx-testimonial-grid">
+        @if (approved.Count > 0)
+        {
+            @foreach (var story in approved)
+            {
+                <figure class="cx-testimonial"><span class="cx-kicker">Verified client feedback</span>@if(story.OverallRating.HasValue){<span class="cx-story-rating" aria-label="Overall experience: @story.OverallRating out of 5">@story.OverallRating / 5 · Overall experience</span>}<blockquote>@story.Excerpt</blockquote>@foreach(var imageId in story.PublicImageIds){<img class="cx-story-photo" src="@Url.Action("Public","FeedbackMedia",new {id=imageId})" alt="Approved event photograph shared with client permission" width="600" height="400" loading="lazy" />}<figcaption><strong>@story.PublicName</strong><span>@story.EventLabel</span></figcaption></figure>
+            }
+        }
+        else
+        {
+            <article class="cx-testimonial cx-testimonial-featured"><h3>Your celebration,<br /><em>in your words.</em></h3><p>No public stories yet. We only share feedback from completed events with client permission and Staff approval.</p></article>
+        }
+    </div>
+</section>

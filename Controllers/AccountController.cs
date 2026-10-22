@@ -9,6 +9,7 @@ using System.Text;
 
 namespace AriesMagicAppointmentSystem.Controllers
 {
+    [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("account")]
     public class AccountController : Controller
     {
         private readonly SignInManager<ApplicationUser> _signInManager;
@@ -177,7 +178,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                 return RedirectToAction(nameof(Login));
             }
 
-            if (string.IsNullOrWhiteSpace(currentPassword) || !await _userManager.CheckPasswordAsync(user, currentPassword))
+            if (string.IsNullOrWhiteSpace(currentPassword) || !await CheckPasswordWithLockoutAsync(user, currentPassword))
             {
                 TempData["VerificationError"] = "Enter your current password to change the email address.";
                 return RedirectToAction(nameof(VerifyEmail), new { userId = user.Id });
@@ -241,6 +242,18 @@ namespace AriesMagicAppointmentSystem.Controllers
             model.AttemptsLocked = state.AttemptsLocked;
         }
 
+        private async Task<bool> CheckPasswordWithLockoutAsync(ApplicationUser user, string password)
+        {
+            if (await _userManager.IsLockedOutAsync(user)) return false;
+            if (!await _userManager.CheckPasswordAsync(user, password))
+            {
+                await _userManager.AccessFailedAsync(user);
+                return false;
+            }
+            await _userManager.ResetAccessFailedCountAsync(user);
+            return true;
+        }
+
         private static string MaskEmail(string email)
         {
             var at = email.IndexOf('@');
@@ -287,7 +300,7 @@ namespace AriesMagicAppointmentSystem.Controllers
 
             if (!user.EmailConfirmed)
             {
-                if (!await _userManager.CheckPasswordAsync(user, model.Password))
+                if (!await CheckPasswordWithLockoutAsync(user, model.Password))
                 {
                     ModelState.AddModelError(string.Empty, "Incorrect Email or Password.");
                     return View(model);
@@ -301,10 +314,12 @@ namespace AriesMagicAppointmentSystem.Controllers
                 user.UserName!,
                 model.Password,
                 model.RememberMe,
-                lockoutOnFailure: false);
+                lockoutOnFailure: true);
 
             if (result.Succeeded)
             {
+                user.LastLoginAt = DateTime.UtcNow;
+                await _userManager.UpdateAsync(user);
                 if (!string.IsNullOrWhiteSpace(returnUrl) &&
                     Url.IsLocalUrl(returnUrl))
                 {
@@ -408,14 +423,23 @@ namespace AriesMagicAppointmentSystem.Controllers
                 Request.Scheme);
 
             var message = $@"
-                <p>Hello {user.FullName},</p>
+                <p>Hello {System.Net.WebUtility.HtmlEncode(user.FullName)},</p>
                 <p>You requested to reset your password.</p>
                 <p>
-                    <a href='{resetLink}'>Click here to reset your password</a>
+                    <a href='{System.Net.WebUtility.HtmlEncode(resetLink)}'>Click here to reset your password</a>
                 </p>
                 <p>If you did not request this, you may ignore this email.</p>";
 
-            await _emailService.SendEmailAsync(user.Email!, "Reset Your Password", message);
+            try
+            {
+                await _emailService.SendEmailAsync(user.Email!, "Reset Your Password", message);
+            }
+            catch (Exception ex)
+            {
+                HttpContext.RequestServices.GetRequiredService<ILogger<AccountController>>()
+                    .LogError("Password reset delivery failed ({FailureType}); trace {TraceId}.", ex.GetType().Name, HttpContext.TraceIdentifier);
+                // Keep the same public result for existing and nonexistent accounts.
+            }
 
             TempData["SuccessMessage"] = "If an account with that email exists, a password reset link has been sent.";
             return RedirectToAction(nameof(Login));

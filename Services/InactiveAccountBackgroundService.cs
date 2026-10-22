@@ -46,10 +46,11 @@ namespace AriesMagicAppointmentSystem.Services
 
                         if (result.Succeeded)
                         {
+                            await userManager.UpdateSecurityStampAsync(user);
                             disabledCount++;
                             _logger.LogInformation(
-                                "Automatically disabled inactive account: {UserId} ({Email}) - last login: {LastLogin}",
-                                user.Id, user.Email, user.LastLoginAt);
+                                "Automatically disabled inactive account: {UserId}",
+                                user.Id);
                         }
                     }
 

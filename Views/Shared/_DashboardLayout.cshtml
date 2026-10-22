@@ -41,6 +41,7 @@
     <link rel="stylesheet" href="~/css/staff-calendar.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/internal-ui.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/app-ui.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/feedback.css" asp-append-version="true" />
 </head>
 <body class="internal-ui dashboard-body @(User.IsInRole("Staff") ? "staff-dashboard" : User.IsInRole("Admin") ? "admin-dashboard" : User.IsInRole("Owner") ? "owner-dashboard" : "")">
     <a class="ui-skip-link" href="#mainContent">Skip to content</a>
@@ -86,6 +87,7 @@
                                 <i class="bi bi-clock-history" aria-hidden="true"></i>
                                 History
                             </a>
+                            <a asp-controller="Testimonials" asp-action="Index" class="sidebar-link @(currentController == "Testimonials" ? "active" : "")"><i class="bi bi-chat-square-quote" aria-hidden="true"></i> Testimonials & Feedback</a>
                         }
 
                         @if (User.IsInRole("Admin"))

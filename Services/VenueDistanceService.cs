@@ -110,6 +110,7 @@ namespace AriesMagicAppointmentSystem.Services
             var a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2)
                     + Math.Cos(ToRadians(lat1)) * Math.Cos(ToRadians(lat2))
                     * Math.Sin(dLon / 2) * Math.Sin(dLon / 2);
+            a = Math.Clamp(a, 0d, 1d);
             var c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
             return EarthRadiusKm * c;
         }

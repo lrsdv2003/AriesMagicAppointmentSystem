@@ -1116,17 +1116,17 @@ a.dashboard-stat-card:hover {
 .client-body input.form-control:-webkit-autofill,
 .client-body input.form-control:-webkit-autofill:hover,
 .client-body input.form-control:-webkit-autofill:focus {
-  -webkit-text-fill-color: #f5f1e8;
-  caret-color: #f5f1e8;
-  -webkit-box-shadow: 0 0 0 1000px #181520 inset !important;
-  box-shadow: 0 0 0 1000px #181520 inset !important;
+  -webkit-text-fill-color: var(--cx-control-text, #302328);
+  caret-color: var(--cx-control-text, #302328);
+  -webkit-box-shadow: 0 0 0 1000px var(--cx-control-bg, #fffdf8) inset !important;
+  box-shadow: 0 0 0 1000px var(--cx-control-bg, #fffdf8) inset !important;
 }
 
 .client-body input.form-control:autofill {
-  background-color: #181520;
-  color: #f5f1e8;
-  caret-color: #f5f1e8;
-  box-shadow: 0 0 0 1000px #181520 inset !important;
+  background-color: var(--cx-control-bg, #fffdf8);
+  color: var(--cx-control-text, #302328);
+  caret-color: var(--cx-control-text, #302328);
+  box-shadow: 0 0 0 1000px var(--cx-control-bg, #fffdf8) inset !important;
 }
 
 textarea.form-control {

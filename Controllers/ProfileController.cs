@@ -131,6 +131,8 @@ namespace AriesMagicAppointmentSystem.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [RequestSizeLimit(2 * 1024 * 1024 + 65536)]
+        [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("uploads")]
         public async Task<IActionResult> UploadPhoto(IFormFile? profileImage)
         {
             var user = await _userManager.GetUserAsync(User);
@@ -157,7 +159,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             // delete old photo
             if (!string.IsNullOrWhiteSpace(user.ProfilePicturePath))
             {
-                var oldFile = Path.Combine(_env.WebRootPath, user.ProfilePicturePath.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
+                var oldFile = ResolveProfilePath(user.ProfilePicturePath);
                 if (System.IO.File.Exists(oldFile)) try { System.IO.File.Delete(oldFile); } catch { }
             }
 
@@ -177,7 +179,7 @@ namespace AriesMagicAppointmentSystem.Controllers
 
             if (!string.IsNullOrWhiteSpace(user.ProfilePicturePath))
             {
-                var oldFile = Path.Combine(_env.WebRootPath, user.ProfilePicturePath.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
+                var oldFile = ResolveProfilePath(user.ProfilePicturePath);
                 if (System.IO.File.Exists(oldFile)) try { System.IO.File.Delete(oldFile); } catch { }
                 user.ProfilePicturePath = null;
                 await _userManager.UpdateAsync(user);
@@ -210,6 +212,14 @@ namespace AriesMagicAppointmentSystem.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        private string? ResolveProfilePath(string storedPath)
+        {
+            if (!storedPath.StartsWith("/uploads/profiles/", StringComparison.Ordinal)) return null;
+            var root = Path.GetFullPath(Path.Combine(_env.WebRootPath, "uploads", "profiles")) + Path.DirectorySeparatorChar;
+            var fullPath = Path.GetFullPath(Path.Combine(_env.WebRootPath, storedPath.TrimStart('/').Replace('/', Path.DirectorySeparatorChar)));
+            return fullPath.StartsWith(root, StringComparison.OrdinalIgnoreCase) ? fullPath : null;
+        }
+
         private async Task<string?> ValidateImageAsync(IFormFile? file)
         {
             if (file == null || file.Length == 0) return "Please select an image file.";
@@ -221,16 +231,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             return null;
         }
 
-        private async Task<bool> HasValidImageSignatureAsync(IFormFile file)
-        {
-            byte[] header = new byte[12];
-            await using var stream = file.OpenReadStream();
-            var read = await stream.ReadAsync(header, 0, header.Length);
-            if (read < 4) return false;
-            if (header[0] == 0xFF && header[1] == 0xD8 && header[2] == 0xFF) return true;
-            if (header[0] == 0x89 && header[1] == 0x50 && header[2] == 0x4E && header[3] == 0x47) return true;
-            if (read >= 12 && header[0] == 0x52 && header[1] == 0x49 && header[2] == 0x46 && header[3] == 0x46 && header[8] == 0x57 && header[9] == 0x45 && header[10] == 0x42 && header[11] == 0x50) return true;
-            return false;
-        }
+        private Task<bool> HasValidImageSignatureAsync(IFormFile file)
+            => AriesMagicAppointmentSystem.Services.ImageUploadValidation.HasMatchingSignatureAsync(file);
     }
 }

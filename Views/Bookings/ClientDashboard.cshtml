@@ -9,7 +9,7 @@
     var active = bookings.Where(b => b.EventDate.Date >= DateTime.Today && !unavailable.Contains(b.Id) && new[] { BookingStatus.Pending, BookingStatus.AwaitingDownpayment, BookingStatus.AwaitingVerification, BookingStatus.Confirmed }.Contains(b.Status)).OrderBy(b => b.EventDate).ThenBy(b => b.StartTime).ToList();
     var next = active.FirstOrDefault();
 }
-<header class="cr-page-heading"><div><span class="cr-eyebrow">Your client dashboard</span><h1>Your next celebration</h1><p>Keep your event details and next steps in one place.</p></div><a asp-action="CreateStepOne" class="btn btn-primary">Book another event</a></header>
+<header class="cr-page-heading"><div><span class="cr-eyebrow">Your plans / Overview</span><h1>Something to look forward to.</h1><p>Your next celebration, the details that matter, and what happens next.</p></div><a asp-action="CreateStepOne" class="btn btn-primary">Plan another event ↗</a></header>
 @if (next != null)
 {
     var finance = finances.GetValueOrDefault(next.Id);
