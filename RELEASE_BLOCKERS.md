@@ -26,3 +26,7 @@ Evidence: `AUDIT_REPORT.md`, `DEPLOYMENT_RUNBOOK.md`, `.tmp-owner-build/release-
 
 See FEEDBACK_FEATURE.md for the delivered workflow and verification. Configure persistent private media storage outside the app/web roots, verify native image processing on the selected host, and connect/test a private ClamAV service before enabling public photo operations. Unscanned photos remain quarantined. MP4 uploads and publication remain disabled until an isolated video processor is implemented and verified. The new additive feedback migration requires reviewed deployment and backup procedures. No Azure target or storage account has been selected; prior blockers remain open.
 
+## Local recovery follow-up (22 October 2026)
+
+`RECOVERY_REPORT.md` records the effective LocalDB schema repair, verified backups, preserved data totals, and an additional safely backed-up migration of the same-named localhost database. System-wide .NET/ASP.NET Core 9.0.21 is now installed and selected. Startup and health checks detect pending migrations. The current real Identity/MVC/SQL suite passes 178 checks. These close the reproduced local runtime/schema failure, not provider credential rotation, live Azure/staging, production restore, or other external release gates.
+

@@ -64,7 +64,7 @@ try {
         await Promise.all([page.waitForNavigation({waitUntil:'networkidle0'}),page.$eval('form.am-filter-bar', form => form.requestSubmit())]);
         for (const [key,value] of expected) assert.equal(submitted.searchParams.get(key),value,current + ' preserves ' + key);
         assert(!submitted.searchParams.has('page'), 'new filters should reset pagination');
-        const reset = await page.$eval('form.am-filter-bar', form => [...form.querySelectorAll('a')].find(a => a.textContent.trim() === 'Reset')?.getAttribute('href'));
+        const reset = await page.$eval('form.am-filter-bar', form => [...form.querySelectorAll('a')].find(a => /^(Reset|Clear(?: filters)?)$/i.test(a.textContent.trim()))?.getAttribute('href'));
         assert(reset, current + ' reset link missing');
         const params = new URL(reset,'http://owner.test').searchParams;
         assert(!params.has('search') && !params.has('q') && !params.has('Search'), 'reset must clear search');
@@ -83,11 +83,12 @@ try {
     console.log('PASS client search, group filters and empty state');
     current = 'Calendar-StaffIndex';
     await page.goto('http://owner.test/fixture/' + current, {waitUntil:'networkidle0'});
-    await page.type('#upcomingSearch','Fixture Venue');
+    const calendarTerm = await page.$eval('.js-upcoming-row[data-package="Regression Package"]',el=>el.dataset.search.trim().split(/\s+/)[0]);
+    await page.type('#upcomingSearch',calendarTerm);
     await page.click('[data-package-filter="Other Package"]');
     assert(await page.$eval('#upcomingFilteredEmpty',el=>!el.classList.contains('d-none')));
     await page.reload({waitUntil:'networkidle0'});
-    assert.equal(await page.$eval('#upcomingSearch',el=>el.value),'Fixture Venue');
+    assert.equal(await page.$eval('#upcomingSearch',el=>el.value),calendarTerm);
     assert.equal(await page.$eval('[data-package-filter="Other Package"]',el=>el.getAttribute('aria-pressed')),'true');
     await page.click('[data-filter-reset]');
     assert(await page.$eval('#upcomingFilteredEmpty',el=>el.classList.contains('d-none')));

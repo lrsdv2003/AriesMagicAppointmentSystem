@@ -25,12 +25,15 @@ namespace AriesMagicAppointmentSystem.Controllers
             if (userId == null) return Challenge();
 
             var isInternal = IsInternalUser();
+            // Search retains full message matching; ordinary inbox loads only each latest preview.
+            var previewLimit = string.IsNullOrWhiteSpace(q) ? 1 : int.MaxValue;
             var memberships = await _context.ConversationParticipants
+                .AsNoTrackingWithIdentityResolution()
                 .Where(p => p.UserId == userId)
                 .Include(p => p.Conversation!).ThenInclude(c => c.Booking!).ThenInclude(b => b.Client)
                 .Include(p => p.Conversation!).ThenInclude(c => c.Booking!).ThenInclude(b => b.Service)
                 .Include(p => p.Conversation!).ThenInclude(c => c.Participants).ThenInclude(p => p.User)
-                .Include(p => p.Conversation!).ThenInclude(c => c.Messages)
+                .Include(p => p.Conversation!).ThenInclude(c => c.Messages.OrderByDescending(m => m.SentAt).ThenByDescending(m => m.Id).Take(previewLimit))
                 .AsSplitQuery()
                 .ToListAsync();
 
@@ -55,8 +58,14 @@ namespace AriesMagicAppointmentSystem.Controllers
                 memberships = memberships.Where(p => ConversationMatches(p.Conversation!, term)).ToList();
             }
 
-            var items = memberships.Select(m => BuildListItem(m, userId, roleMap)).ToList();
-            items = ApplyFilter(items, memberships, filter).OrderByDescending(x => x.LastActivityAt).ToList();
+            var counts = await _context.ConversationParticipants.Where(p => p.UserId == userId)
+                .Select(p => new {
+                    p.ConversationId,
+                    Unread = p.Conversation!.Messages.Count(m => m.SenderId != userId && (!p.LastReadAt.HasValue || m.SentAt > p.LastReadAt.Value)),
+                    Open = p.Conversation!.Messages.Any(m => m.MessageType == MessageTypes.ActionRequest && m.RequestStatus == MessageRequestStatuses.Open)
+                }).ToDictionaryAsync(p => p.ConversationId, HttpContext.RequestAborted);
+            var items = memberships.Select(m => BuildListItem(m, userId, roleMap, counts[m.ConversationId].Unread, counts[m.ConversationId].Open)).ToList();
+            items = ApplyFilter(items, filter).OrderByDescending(x => x.LastActivityAt).ToList();
 
             var model = new CommunicationCenterViewModel
             {
@@ -414,7 +423,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                 .Include(c => c.Booking)!.ThenInclude(b => b!.Client)
                 .Include(c => c.Booking)!.ThenInclude(b => b!.Service)
                 .Include(c => c.Participants).ThenInclude(p => p.User)
-                .Include(c => c.Messages).ThenInclude(m => m.Sender)
+                .Include(c => c.Messages.OrderByDescending(m => m.SentAt).ThenByDescending(m => m.Id).Take(250)).ThenInclude(m => m.Sender)
                 .AsSplitQuery()
                 .FirstOrDefaultAsync(c => c.Id == conversationId);
             if (conversation == null) return null;
@@ -455,7 +464,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                     Initials = Initials(p.User?.FullName ?? p.User?.Email ?? "User"),
                     LastLoginAt = p.User?.LastLoginAt
                 }).ToList(),
-                Messages = conversation.Messages.OrderBy(m => m.SentAt).TakeLast(250).Select(m => new CommunicationMessageViewModel
+                Messages = conversation.Messages.OrderBy(m => m.SentAt).ThenBy(m => m.Id).Select(m => new CommunicationMessageViewModel
                 {
                     Id = m.Id,
                     SenderId = m.SenderId,
@@ -475,10 +484,10 @@ namespace AriesMagicAppointmentSystem.Controllers
             };
         }
 
-        private ConversationListItemViewModel BuildListItem(ConversationParticipant membership, string userId, Dictionary<string, string> roleMap)
+        private ConversationListItemViewModel BuildListItem(ConversationParticipant membership, string userId, Dictionary<string, string> roleMap, int unreadCount, bool hasOpenRequest)
         {
             var conversation = membership.Conversation!;
-            var latest = conversation.Messages.OrderByDescending(m => m.SentAt).FirstOrDefault();
+            var latest = conversation.Messages.OrderByDescending(m => m.SentAt).ThenByDescending(m => m.Id).FirstOrDefault();
             var title = BuildConversationTitle(conversation, userId, roleMap);
             var others = conversation.Participants.Where(p => p.UserId != userId).ToList();
             var primaryOther = others.FirstOrDefault(p => roleMap.GetValueOrDefault(p.UserId) == "Client") ?? others.FirstOrDefault();
@@ -503,13 +512,13 @@ namespace AriesMagicAppointmentSystem.Controllers
                 BookingId = conversation.BookingId,
                 LatestMessage = preview,
                 LastActivityAt = latest?.SentAt ?? conversation.UpdatedAt,
-                UnreadCount = conversation.Messages.Count(m => m.SenderId != userId && (!membership.LastReadAt.HasValue || m.SentAt > membership.LastReadAt.Value)),
+                UnreadCount = unreadCount,
                 Initials = Initials(primaryOther?.User?.FullName ?? displayName),
-                HasOpenRequest = conversation.Messages.Any(m => m.MessageType == MessageTypes.ActionRequest && m.RequestStatus == MessageRequestStatuses.Open)
+                HasOpenRequest = hasOpenRequest
             };
         }
 
-        private static List<ConversationListItemViewModel> ApplyFilter(List<ConversationListItemViewModel> items, List<ConversationParticipant> memberships, string filter)
+        private static List<ConversationListItemViewModel> ApplyFilter(List<ConversationListItemViewModel> items, string filter)
         {
             filter = (filter ?? "all").ToLowerInvariant();
             return filter switch

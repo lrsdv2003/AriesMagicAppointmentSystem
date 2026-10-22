@@ -1,4 +1,5 @@
 using AriesMagicAppointmentSystem.Data;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 namespace AriesMagicAppointmentSystem.Services;
@@ -9,9 +10,11 @@ public sealed class DatabaseHealthCheck(ApplicationDbContext database) : IHealth
     {
         try
         {
-            return await database.Database.CanConnectAsync(cancellationToken)
-                ? HealthCheckResult.Healthy()
-                : HealthCheckResult.Unhealthy("Database unavailable.");
+            if (!await database.Database.CanConnectAsync(cancellationToken))
+                return HealthCheckResult.Unhealthy("Database unavailable.");
+            return (await database.Database.GetPendingMigrationsAsync(cancellationToken)).Any()
+                ? HealthCheckResult.Unhealthy("Database schema requires migration.")
+                : HealthCheckResult.Healthy();
         }
         catch
         {

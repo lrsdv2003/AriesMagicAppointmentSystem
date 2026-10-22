@@ -47,6 +47,7 @@ try {
   await page.focus('.dash-quick-grid a');
   assert.equal(await page.$eval('.dash-quick-grid a',el=>getComputedStyle(el).outlineStyle),'solid','Keyboard focus is visible');
   await page.evaluate(()=>scrollTo(0,800));
+  assert.equal(await page.evaluate(()=>scrollY),0,'Dashboard scroll stays within the content panel for '+role);
   assert(Math.abs(await page.$eval('.dashboard-topbar',el=>el.getBoundingClientRect().top))<2,'Sticky header for '+role);
  }
  await go('Dashboard-Staff');

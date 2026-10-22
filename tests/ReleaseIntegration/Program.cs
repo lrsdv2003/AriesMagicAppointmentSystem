@@ -62,6 +62,7 @@ internal static class ReleaseIntegrationRunner
         try
         {
             Check(Environment.Version >= new Version(9,0,21), "Integration process runs on patched .NET 9.0.21 or later");
+            await RecoveryRegressionTests.SchemaAsync(connection,smtp.Port,mapUrl,root,Check);
             await db.Database.MigrateAsync();
             Check(!(await db.Database.GetPendingMigrationsAsync()).Any(), "Entire EF migration chain applies to an empty isolated SQL database");
             var script=await File.ReadAllTextAsync(".tmp-owner-build/release-migrations.sql");
@@ -204,6 +205,7 @@ internal static class ReleaseIntegrationRunner
             mapFails=false;
             Check(await db.Notifications.AnyAsync(x=>x.UserId==booking.ApplicationUserId),"Client receives persisted workflow notifications");
             await FeedbackFeatureTests.RunAsync(connection,smtp.Port,mapUrl,root,passwords,otherPassword,Check);
+            await RecoveryRegressionTests.ChatAsync(connection,Check);
             using(var response=await Post(staff,"/Account/Logout",staffToken)) Check(response.StatusCode==HttpStatusCode.Redirect,"Real logout expires authentication cookie");
             using(var response=await staff.GetAsync("/Dashboard/Staff")) Check(response.StatusCode==HttpStatusCode.Redirect && response.Headers.Location!.ToString().Contains("Login"),"Logged-out cookie cannot reopen protected page");
 

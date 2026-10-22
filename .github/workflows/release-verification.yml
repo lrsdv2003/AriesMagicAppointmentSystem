@@ -29,6 +29,8 @@ jobs:
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           dotnet restore tests/OwnerRegression/OwnerRegression.csproj
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          dotnet build AriesMagicAppointmentSystem.csproj -c Debug --no-restore
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
           dotnet build tests/ReleaseIntegration/ReleaseIntegration.csproj -c Release --no-restore
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           dotnet build tests/OwnerRegression/OwnerRegression.csproj -c Release --no-restore

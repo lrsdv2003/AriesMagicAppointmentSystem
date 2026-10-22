@@ -10,7 +10,7 @@ in the application. The suite with `--render` now reports 289 checks and 68 fixt
 
 `security.http.mjs` separately exercises the real application pipeline. Run it only against a local
 probe at `http://127.0.0.1:5189` configured with Development environment,
-`BackgroundJobs__Enabled=false`, `Database__InitializeOnStartup=false`, and an unreachable test SQL
+`BackgroundJobs__Enabled=false`, `Database__InitializeOnStartup=false`, `Database__ValidateOnStartup=false`, and an unreachable test SQL
 connection. It deliberately expects unhealthy database readiness and exhausts the account rate limit.
 It does not test successful authentication or external providers. See `AUDIT_REPORT.md` for results
 and remaining acceptance requirements.

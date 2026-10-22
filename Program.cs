@@ -186,6 +186,19 @@ using (var scope = app.Services.CreateScope())
         await IdentitySeeder.SeedAsync(services);
         await ServiceSeeder.SeedAsync(dbContext);
     }
+
+    if (builder.Configuration.GetValue("Database:ValidateOnStartup", true))
+    {
+        try
+        {
+            if ((await dbContext.Database.GetPendingMigrationsAsync()).Any())
+                throw new InvalidOperationException("Database schema has pending migrations. Back up the effective database, review and apply the forward migration script, then restart. Development user-secrets and environment variables can override appsettings.json. See RECOVERY_REPORT.md.");
+        }
+        catch (SqlException)
+        {
+            throw new InvalidOperationException("Database startup validation failed. Check the effective connection configuration and SQL service availability. Connection values are omitted. See RECOVERY_REPORT.md.");
+        }
+    }
 }
 
 app.Run();

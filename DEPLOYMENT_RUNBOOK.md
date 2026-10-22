@@ -139,5 +139,7 @@ Change `AUDIT_REPORT.md` to READY only after the real provider/account/runtime/A
 
 ## Feedback feature addition
 
+Local recovery follow-up: see `RECOVERY_REPORT.md`. Startup now validates pending migrations by default and readiness includes schema currency. Confirm the effective SQL server/database privately, including user-secret and environment overrides, before backup or migration. Rehearse the forward script on a new restore; do not reset databases or enable automatic production migration. Use a clean publish directory to avoid stale deleted assets.
+
 Before deploying post-event feedback, follow FEEDBACK_FEATURE.md for the additive migration, private persistent media root, ClamAV networking/signature checks, worker configuration, consent/role smoke tests, and backup coverage. Video acceptance remains disabled. Verify real scanner responses and storage persistence on the selected hosting target; local fixtures do not close these deployment gates.
 
