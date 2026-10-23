@@ -1,5 +1,9 @@
 # Owner regression checks
 
+## Wonder Studio client design
+
+After rendering fixtures, `node tests/OwnerRegression/wonder.browser.mjs` checks 33 Client pages at 320/390/768/1280/1920px, fonts/media/brand tokens, JavaScript errors, and isolation of all three internal roles. Set `AXE_CORE_PATH` to check WCAG A/AA rules at both 320px and 1280px. Use the existing `PUPPETEER_MODULE` and `PUPPETEER_EXECUTABLE_PATH` environment overrides when needed. Screenshots and findings are written to `%TEMP%/AriesOwnerSnapshots`. See `WONDER_STUDIO.md` for the current design specification and verification limits.
+
 ## Pre-deployment security additions (22 October 2026)
 
 The harness also runs `SecurityRegression` and `SecurityHttpRegression`: matching image signatures,

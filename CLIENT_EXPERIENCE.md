@@ -1,5 +1,7 @@
 # Aries Magic client experience
 
+The current approved Playful Premium direction is implemented in [WONDER_STUDIO.md](WONDER_STUDIO.md). Palette, typography, homepage composition, media mapping, and verification below describe the earlier design stages unless updated explicitly.
+
 The subsequent premium refinement is documented in [CLIENT_REFINEMENT.md](CLIENT_REFINEMENT.md), including the current palette, input bug fixes, client inbox behavior, and expanded verification.
 
 ## Direction: The gathering

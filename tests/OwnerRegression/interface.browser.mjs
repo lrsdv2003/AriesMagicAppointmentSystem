@@ -64,7 +64,7 @@ try{
  assert(await page.$('form[action*="MarkAllRead"] input[name="__RequestVerificationToken"]'));
  console.log('PASS notification labels, useful actions and anti-forgery form');
  await go('Notifications-Index-Client');
- assert.equal(await page.$eval('.notice-copy h2',el=>getComputedStyle(el).color),'rgb(30, 41, 59)');
- assert.equal(await page.$eval('.notice-copy p',el=>getComputedStyle(el).color),'rgb(71, 85, 105)');
+ assert.equal(await page.$eval('.notice-copy h2',el=>getComputedStyle(el).color),'rgb(25, 43, 42)');
+ assert.equal(await page.$eval('.notice-copy p',el=>getComputedStyle(el).color),'rgb(87, 102, 99)');
  console.log('PASS Client notification contrast');
 }finally{await browser.close();}

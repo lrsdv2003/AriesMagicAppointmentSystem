@@ -1,6 +1,6 @@
 @model AriesMagicAppointmentSystem.ViewModels.ClientMedia
 <figure class="cx-media" data-media-key="@Model.Key">
-    <img src="@Model.Source" alt="@Model.Alt" loading="@(Model.Key == "hero" ? "eager" : "lazy")" width="1200" height="900" />
+    <img src="@Model.Source" alt="@Model.Alt" loading="@(Model.Key == "hero" ? "eager" : "lazy")" fetchpriority="@(Model.Key == "hero" ? "high" : "auto")" width="@Model.Width" height="@Model.Height" />
     <span class="cx-media-fallback" hidden>Image unavailable<br /><small>The show details are still available below.</small></span>
-    @if (Model.Placeholder) { <figcaption>Art direction preview · @Model.Key</figcaption> }
+    @if (Model.Placeholder) { <figcaption>Illustrative preview · @Model.Key</figcaption> }
 </figure>

@@ -1,5 +1,7 @@
 # Premium client refinement
 
+Historical refinement record. [WONDER_STUDIO.md](WONDER_STUDIO.md) documents the subsequent approved ivory/teal Playful Premium implementation, local fonts, image replacement guide, and current checks.
+
 This pass retains the existing editorial composition, serif headlines, stage artwork, and burgundy identity. Midnight surfaces now anchor the ribbon, final CTA, and footer; champagne adds restrained emphasis. Section rules, aligned containers, and deliberate card variants improve rhythm without rebuilding the site.
 
 ## Palette and roles

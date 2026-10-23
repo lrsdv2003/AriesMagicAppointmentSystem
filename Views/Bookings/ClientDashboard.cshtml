@@ -9,7 +9,7 @@
     var active = bookings.Where(b => b.EventDate.Date >= DateTime.Today && !unavailable.Contains(b.Id) && new[] { BookingStatus.Pending, BookingStatus.AwaitingDownpayment, BookingStatus.AwaitingVerification, BookingStatus.Confirmed }.Contains(b.Status)).OrderBy(b => b.EventDate).ThenBy(b => b.StartTime).ToList();
     var next = active.FirstOrDefault();
 }
-<header class="cr-page-heading"><div><span class="cr-eyebrow">Your plans / Overview</span><h1>Something to look forward to.</h1><p>Your next celebration, the details that matter, and what happens next.</p></div><a asp-action="CreateStepOne" class="btn btn-primary">Plan another event ↗</a></header>
+<header class="cr-page-heading"><div><span class="cr-eyebrow">Your own little wonder studio</span><h1>Your celebrations,<br />all in one place.</h1><p>The next date to look forward to. The details that make it yours.</p></div><a asp-action="CreateStepOne" class="btn btn-primary">Plan another event ↗</a></header>
 @if (next != null)
 {
     var finance = finances.GetValueOrDefault(next.Id);
@@ -20,4 +20,4 @@ else
 {
     <section class="cr-card cr-empty"><h2>A new celebration awaits</h2><p>You have no upcoming active event. Explore the packages or check a venue and date to get started.</p><a asp-controller="Home" asp-action="Packages" class="btn btn-primary">Explore packages</a><a asp-action="CreateStepOne" class="btn btn-outline-secondary">Check availability</a></section>
 }
-<div class="cr-dashboard-links"><a asp-action="MyBookings"><strong>My bookings</strong><span>Upcoming requests and past events</span><i class="bi bi-arrow-right" aria-hidden="true"></i></a><a asp-controller="Payments" asp-action="MyUploads"><strong>My payments</strong><span>Verification updates and payment history</span><i class="bi bi-arrow-right" aria-hidden="true"></i></a><a asp-controller="Profile" asp-action="Index"><strong>My profile</strong><span>Your contact and account details</span><i class="bi bi-arrow-right" aria-hidden="true"></i></a></div>
+<div class="cr-dashboard-links"><a asp-action="MyBookings"><i class="bi bi-calendar-heart" aria-hidden="true"></i><strong>My bookings</strong><span>Your dates, requests, and event details</span></a><a asp-controller="Communications" asp-action="Index" asp-route-view="inbox"><i class="bi bi-chat-heart" aria-hidden="true"></i><strong>Messages</strong><span>A question? Keep the conversation going</span></a><a asp-controller="Payments" asp-action="MyUploads"><i class="bi bi-receipt" aria-hidden="true"></i><strong>My payments</strong><span>Proofs, verification, and payment history</span></a><a asp-controller="Feedback" asp-action="Index"><i class="bi bi-stars" aria-hidden="true"></i><strong>My feedback</strong><span>Your experience, in your own words</span></a><a asp-controller="Profile" asp-action="Index"><i class="bi bi-person" aria-hidden="true"></i><strong>My profile</strong><span>The details that keep us in touch</span></a></div>

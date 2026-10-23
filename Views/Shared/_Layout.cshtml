@@ -24,9 +24,11 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#671e35" />
+    <meta name="theme-color" content="#194F49" />
     <meta name="description" content="Explore Aries Magic entertainment packages, check your venue and date, and manage your event booking in one place." />
     <title>@ViewData["Title"] - Aries Magic</title>
+    <link rel="preload" href="~/fonts/wonder/dm-sans-latin.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="~/fonts/wonder/plus-jakarta-sans-latin.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/lib/bootstrap-icons/font/bootstrap-icons.min.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
@@ -67,7 +69,7 @@
                     </span>
                     <span class="brand-copy">
                         <strong>Aries Magic</strong>
-                        <small>Entertainment worth gathering for</small>
+                        <small>The Wonder Studio</small>
                     </span>
                 </a>
 
@@ -78,8 +80,7 @@
                 <div class="collapse navbar-collapse" id="clientNavbar">
                     <ul class="navbar-nav mx-auto client-nav-links">
                         <li class="nav-item"><a class="nav-link @(isHome ? "active" : "")" asp-controller="Home" asp-action="Index">Home</a></li>
-                        <li class="nav-item"><a class="nav-link @(currentController == "Home" && (currentAction == "Packages" || currentAction == "Package") ? "active" : "")" asp-controller="Home" asp-action="Packages">Packages</a></li>
-                        <li class="nav-item"><a class="nav-link @(currentController == "Bookings" && currentAction == "CreateStepOne" ? "active" : "")" asp-controller="Bookings" asp-action="CreateStepOne">Availability</a></li>
+                        <li class="nav-item"><a class="nav-link @(currentController == "Home" && (currentAction == "Packages" || currentAction == "Package") ? "active" : "")" asp-controller="Home" asp-action="Packages">Experiences</a></li>
                         <li class="nav-item"><a class="nav-link" asp-controller="Home" asp-action="Index" asp-fragment="about">About</a></li>
                         <li class="nav-item"><a class="nav-link" asp-controller="Home" asp-action="Index" asp-fragment="gallery">Gallery</a></li>
                     </ul>
@@ -138,7 +139,7 @@
                         else
                         {
                             <a asp-controller="Account" asp-action="Login" class="magic-text-btn">Sign in</a>
-                            <a asp-controller="Bookings" asp-action="CreateStepOne" class="btn magic-primary-cta">Plan your event ↗</a>
+                            <a asp-controller="Bookings" asp-action="CreateStepOne" class="btn magic-primary-cta">Book your event ↗</a>
                         }
                     </div>
                 </div>
@@ -181,16 +182,16 @@
                 <div class="magic-footer-brand">
                     <a class="client-brand" asp-controller="Home" asp-action="Index">
                         <span class="brand-mark" aria-hidden="true"><i class="bi bi-stars" aria-hidden="true"></i></span>
-                        <span class="brand-copy"><strong>Aries Magic</strong><small>Moments become memories.</small></span>
+                        <span class="brand-copy"><strong>Aries Magic</strong><small>The Wonder Studio</small></span>
                     </a>
-                    <p>A little wonder. A shared memory.<br />Entertainment for the people you bring together.</p>
+                    <p>A little magic. A lot of memories.<br />Live entertainment for the people you bring together.</p>
                 </div>
 
                 <div class="magic-footer-links">
                     <div>
                         <h2 class="cx-footer-heading">Discover</h2>
                         <a asp-controller="Home" asp-action="Index" asp-fragment="about">About</a>
-                        <a asp-controller="Home" asp-action="Packages">Packages</a>
+                        <a asp-controller="Home" asp-action="Packages">Experiences</a>
                         <a asp-controller="Bookings" asp-action="CreateStepOne">Availability</a>
                         <a asp-controller="Home" asp-action="Index" asp-fragment="gallery">Gallery</a>
                     </div>
