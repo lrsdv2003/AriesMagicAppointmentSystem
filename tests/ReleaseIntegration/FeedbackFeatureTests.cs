@@ -115,7 +115,13 @@ static class FeedbackFeatureTests
             check(!html.Contains("PRIVATE SUGGESTIONS MARKER")&&!html.Contains("Private venue marker")&&!html.Contains("client@example.test"),"Public projection excludes suggestions, venue, and account email");
         }
         using(var response=await anonymous.GetAsync("/FeedbackMedia/Public/"+mediaId))check(response.StatusCode==HttpStatusCode.OK&&!response.Headers.CacheControl!.Public&&response.Headers.CacheControl.NoStore,"Only published selected media is served with no-store");
+        using(var response=await anonymous.GetAsync("/Home/About")) {
+            var html=await response.Content.ReadAsStringAsync();
+            check(response.StatusCode==HttpStatusCode.OK&&response.Headers.CacheControl?.NoStore==true&&html.Contains("A memorable fixture celebration.")&&html.Contains("Consented first name"),"About displays only real approved consented feedback with no-store");
+            check(!html.Contains("PRIVATE SUGGESTIONS MARKER")&&!html.Contains("Private venue marker")&&!html.Contains("client@example.test"),"About public feedback excludes private suggestions, venue and email");
+        }
         using(var response=await Review(feedback.Id,"Unfeature"))check(response.StatusCode==HttpStatusCode.Redirect,"Unfeature action succeeds");
+        using(var response=await anonymous.GetAsync("/Home/About"))check(!(await response.Content.ReadAsStringAsync()).Contains("A memorable fixture celebration."),"Unfeatured feedback disappears from About");
         using(var response=await anonymous.GetAsync("/"))check(!(await response.Content.ReadAsStringAsync()).Contains("A memorable fixture celebration."),"Unfeatured content disappears from the showcase");
         using(var response=await Review(feedback.Id,"Feature",chooseMedia:true))check(response.StatusCode==HttpStatusCode.Redirect,"Approved content can be featured again before withdrawal");
         var withdrawalRace=await Task.WhenAll(Post(client,"/Feedback/Withdraw",token,("id",feedback.Id.ToString())),Review(feedback.Id,"Feature",chooseMedia:true));
@@ -123,6 +129,7 @@ static class FeedbackFeatureTests
         check(withdrawalRace[1].StatusCode is HttpStatusCode.Redirect or HttpStatusCode.BadRequest or HttpStatusCode.Conflict,"Concurrent feature action resolves safely");
         foreach(var result in withdrawalRace)result.Dispose();
         using(var response=await anonymous.GetAsync("/FeedbackMedia/Public/"+mediaId))check(response.StatusCode==HttpStatusCode.NotFound,"Withdrawal immediately blocks public media");
+        using(var response=await anonymous.GetAsync("/Home/About"))check(!(await response.Content.ReadAsStringAsync()).Contains("A memorable fixture celebration."),"Withdrawn feedback disappears from About immediately");
         using(var response=await Review(feedback.Id,"Feature",chooseMedia:true))check(response.StatusCode==HttpStatusCode.BadRequest,"Staff cannot override withdrawn consent");
         check(await db.FeedbackPublicationEvents.CountAsync(e=>e.FeedbackId==feedback.Id)>=5,"Publication and withdrawal history persists with actor and timestamp");
         var privateBooking=Make();db.Bookings.Add(privateBooking);await db.SaveChangesAsync();
@@ -133,6 +140,7 @@ static class FeedbackFeatureTests
         using(var response=await Submit(unsafeBooking,experience:"Email me at private@example.test <script>bad</script>",photo:false))check(response.StatusCode==HttpStatusCode.Redirect,"Potentially sensitive answers may be saved privately for review");
         var unsafeFeedback=await db.EventFeedbacks.AsNoTracking().SingleAsync(f=>f.BookingId==unsafeBooking.Id);
         using(var response=await Review(unsafeFeedback.Id,"Approve"))check(response.StatusCode==HttpStatusCode.BadRequest,"Contact details and script-like content cannot be approved");
+        using(var response=await anonymous.GetAsync("/Home/About"))check(!(await response.Content.ReadAsStringAsync()).Contains("private@example.test"),"Unsafe private feedback remains absent from About");
         using(var response=await other.PostAsync("/Feedback/Withdraw",new FormUrlEncodedContent(new Dictionary<string,string>{{"id",feedback.Id.ToString()}})))check(response.StatusCode==HttpStatusCode.BadRequest,"Feedback changes require anti-forgery token");
         using(var response=await Post(other,"/Feedback/Withdraw",otherToken,("id",feedback.Id.ToString())))check(response.StatusCode==HttpStatusCode.NotFound,"Another client cannot withdraw consent");
         using(var response=await Post(client,"/Testimonials/Review",token,("Id",feedback.Id.ToString()),("Decision","Feature"),("Version",stale),("ConfirmPublication","true")))check(response.StatusCode==HttpStatusCode.Redirect,"Client cannot call Staff moderation POST");

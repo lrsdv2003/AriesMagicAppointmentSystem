@@ -1130,8 +1130,16 @@ namespace AriesMagicAppointmentSystem.Controllers
             await _context.SaveChangesAsync();
         }
 
-        private string PrivateProofRoot() => Path.GetFullPath(Path.Combine(
-            _configuration["PrivateStorage:RootPath"] ?? Path.Combine(_environment.ContentRootPath, "App_Data"), "financial-proofs"));
+        private string PrivateProofRoot()
+        {
+            var root = Path.GetFullPath(Path.Combine(
+                _configuration["PrivateStorage:RootPath"] ?? Path.Combine(_environment.ContentRootPath, "App_Data"), "financial-proofs"));
+            var publicRoot = Path.GetFullPath(_environment.WebRootPath).TrimEnd(Path.DirectorySeparatorChar);
+            if (root.Equals(publicRoot, StringComparison.OrdinalIgnoreCase)
+                || root.StartsWith(publicRoot + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+                throw new InvalidOperationException("Financial proof storage must be outside the public web root.");
+            return root;
+        }
 
         private string ResolvePrivateProofPath(string relativePath)
         {

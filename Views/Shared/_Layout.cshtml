@@ -3,8 +3,18 @@
     var currentController = ViewContext.RouteData.Values["controller"]?.ToString() ?? "Home";
     var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? "Index";
     var isHome = currentController == "Home" && currentAction == "Index";
+    var isGallery = currentController == "Home" && currentAction == "Gallery";
+    var isAuth = currentController == "Account" && new[] { "Login", "Register", "VerifyEmail", "EmailVerified", "ForgotPassword", "ResetPassword", "AccessDenied" }.Contains(currentAction);
+    var isBookingExperience = ViewData["BookingExperience"] as bool? == true;
+    var isAbout = currentController == "Home" && currentAction == "About";
+    var isExperiences = currentController == "Home" && (currentAction == "Packages" || currentAction == "Package");
     var isClient = User.Identity?.IsAuthenticated == true && User.IsInRole("Client");
     var pageClass = $"client-{currentController.ToLowerInvariant()} client-{currentController.ToLowerInvariant()}-{currentAction.ToLowerInvariant()}";
+    if (isExperiences) { pageClass += " client-experiences-page"; }
+    if (isAbout) { pageClass += " client-about-page"; }
+    if (isGallery) { pageClass += " client-gallery-page"; }
+    if (isAuth) { pageClass += " client-auth-page"; }
+    if (isBookingExperience) { pageClass += " client-booking-page client-concierge"; }
     var clientUnreadCount = 0;
     if (isClient)
     {
@@ -24,11 +34,12 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#194F49" />
+    <meta name="theme-color" content="#03162B" />
     <meta name="description" content="Explore Aries Magic entertainment packages, check your venue and date, and manage your event booking in one place." />
-    <title>@ViewData["Title"] - Aries Magic</title>
+    <title>@ViewData["Title"] - Aries d’ Magic Artist</title>
     <link rel="preload" href="~/fonts/wonder/dm-sans-latin.woff2" as="font" type="font/woff2" crossorigin />
-    <link rel="preload" href="~/fonts/wonder/plus-jakarta-sans-latin.woff2" as="font" type="font/woff2" crossorigin />
+    @if (isHome || isExperiences || isAbout || isGallery || isAuth || isBookingExperience) { <link rel="preload" href="~/fonts/wonder/libre-caslon-display-latin.woff2" as="font" type="font/woff2" crossorigin /> }
+    else { <link rel="preload" href="~/fonts/wonder/plus-jakarta-sans-latin.woff2" as="font" type="font/woff2" crossorigin /> }
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/lib/bootstrap-icons/font/bootstrap-icons.min.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
@@ -46,6 +57,7 @@
     <link rel="stylesheet" href="~/css/app-ui.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/client-experience.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/feedback.css" asp-append-version="true" />
+@if (isBookingExperience) { <link rel="stylesheet" href="~/css/booking-concierge.css" asp-append-version="true" /> }
 </head>
 <body class="client-body @pageClass @(isHome ? "client-home-page" : "client-inner-page")">
     <a class="magic-skip-link" href="#mainContent">Skip to content</a>
@@ -57,20 +69,14 @@
     <div class="magic-ambient magic-ambient-one" aria-hidden="true"></div>
     <div class="magic-ambient magic-ambient-two" aria-hidden="true"></div>
 
+    @if (isBookingExperience) { <partial name="_ConciergeHeader" /> }
+    else
+    {
     <header class="client-navbar-wrap" id="siteHeader">
         <nav class="navbar navbar-expand-lg client-navbar" aria-label="Main navigation">
             <div class="container magic-nav-container">
-                <a class="navbar-brand client-brand" asp-controller="Home" asp-action="Index" aria-label="Aries Magic home">
-                    <span class="brand-mark" aria-hidden="true">
-                        <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <circle cx="20" cy="20" r="18" stroke="currentColor" stroke-opacity=".28" />
-                            <path d="M20 5.5 22.6 16l10.6 3L22.6 22 20 34.5 17.4 22 6.8 19l10.6-3L20 5.5Z" fill="currentColor" />
-                        </svg>
-                    </span>
-                    <span class="brand-copy">
-                        <strong>Aries Magic</strong>
-                        <small>The Wonder Studio</small>
-                    </span>
+                <a class="navbar-brand client-brand" asp-controller="Home" asp-action="Index" aria-label="Aries d’ Magic Artist home">
+                    <partial name="_WonderBrand" />
                 </a>
 
                 <button class="navbar-toggler magic-navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#clientNavbar" aria-controls="clientNavbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -79,10 +85,10 @@
 
                 <div class="collapse navbar-collapse" id="clientNavbar">
                     <ul class="navbar-nav mx-auto client-nav-links">
-                        <li class="nav-item"><a class="nav-link @(isHome ? "active" : "")" asp-controller="Home" asp-action="Index">Home</a></li>
-                        <li class="nav-item"><a class="nav-link @(currentController == "Home" && (currentAction == "Packages" || currentAction == "Package") ? "active" : "")" asp-controller="Home" asp-action="Packages">Experiences</a></li>
-                        <li class="nav-item"><a class="nav-link" asp-controller="Home" asp-action="Index" asp-fragment="about">About</a></li>
-                        <li class="nav-item"><a class="nav-link" asp-controller="Home" asp-action="Index" asp-fragment="gallery">Gallery</a></li>
+                        <li class="nav-item"><a class="nav-link @(isHome ? "active" : "")" aria-current="@(isHome ? "page" : null)" asp-controller="Home" asp-action="Index">Home</a></li>
+                        <li class="nav-item"><a class="nav-link @(currentController == "Home" && (currentAction == "Packages" || currentAction == "Package") ? "active" : "")" aria-current="@(currentController == "Home" && (currentAction == "Packages" || currentAction == "Package") ? "page" : null)" asp-controller="Home" asp-action="Packages">Experiences</a></li>
+                        <li class="nav-item"><a class="nav-link @(isAbout ? "active" : "")" aria-current="@(isAbout ? "page" : null)" asp-controller="Home" asp-action="About">About</a></li>
+                        <li class="nav-item"><a class="nav-link @(isGallery ? "active" : "")" aria-current="@(isGallery ? "page" : null)" asp-controller="Home" asp-action="Gallery">Gallery</a></li>
                     </ul>
 
                     <div class="client-nav-actions">
@@ -147,7 +153,9 @@
         </nav>
     </header>
 
-    @if (isClient && !isHome && currentController != "Home")
+    }
+
+    @if (isClient && !isHome && currentController != "Home" && !isBookingExperience)
     {
         <nav class="cx-account-nav" aria-label="Your account">
             <div class="container">
@@ -164,7 +172,7 @@
     }
 
     <main tabindex="-1" id="mainContent" class="client-main">
-        @if (isHome || currentController == "Communications")
+        @if (isHome || isAbout || isGallery || isAuth || currentController == "Communications")
         {
             @RenderBody()
         }
@@ -176,13 +184,15 @@
         }
     </main>
 
+    @if (isBookingExperience) { <footer class="cn-footer"><div><span>&copy; @DateTime.Now.Year Aries d’ Magic Artist</span><a asp-controller="Home" asp-action="Privacy">Privacy</a></div></footer> }
+    else
+    {
     <footer class="client-footer">
         <div class="container">
             <div class="magic-footer-top">
                 <div class="magic-footer-brand">
                     <a class="client-brand" asp-controller="Home" asp-action="Index">
-                        <span class="brand-mark" aria-hidden="true"><i class="bi bi-stars" aria-hidden="true"></i></span>
-                        <span class="brand-copy"><strong>Aries Magic</strong><small>The Wonder Studio</small></span>
+                        <partial name="_WonderBrand" />
                     </a>
                     <p>A little magic. A lot of memories.<br />Live entertainment for the people you bring together.</p>
                 </div>
@@ -190,10 +200,10 @@
                 <div class="magic-footer-links">
                     <div>
                         <h2 class="cx-footer-heading">Discover</h2>
-                        <a asp-controller="Home" asp-action="Index" asp-fragment="about">About</a>
+                        <a asp-controller="Home" asp-action="About" aria-current="@(isAbout ? "page" : null)">About</a>
                         <a asp-controller="Home" asp-action="Packages">Experiences</a>
                         <a asp-controller="Bookings" asp-action="CreateStepOne">Availability</a>
-                        <a asp-controller="Home" asp-action="Index" asp-fragment="gallery">Gallery</a>
+                        <a asp-controller="Home" asp-action="Gallery" aria-current="@(isGallery ? "page" : null)">Gallery</a>
                     </div>
                     <div>
                         <h2 class="cx-footer-heading">Your plans</h2>
@@ -216,11 +226,13 @@
             </div>
 
             <div class="footer-bottom">
-                <span>&copy; @DateTime.Now.Year Aries Magic. All rights reserved.</span>
+                <span>&copy; @DateTime.Now.Year Aries d’ Magic Artist. All rights reserved.</span>
                 <a asp-controller="Home" asp-action="Privacy">Privacy</a>
             </div>
         </div>
     </footer>
+
+    }
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>

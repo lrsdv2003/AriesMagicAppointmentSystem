@@ -83,7 +83,7 @@ static class ProfileRegression
                 await controller.UploadPhoto(Photo(new byte[2*1024*1024+1],"large.png","image/png"));
                 check(!controller.ModelState.IsValid && user.ProfilePicturePath==null,"Oversized photo rejected");
                 controller.ModelState.Clear();
-                var png=Convert.FromBase64String("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=");
+                var png=ProductionHardeningRegression.Image();
                 await controller.UploadPhoto(Photo(png,"wrong.jpg","image/jpeg"));
                 check(!controller.ModelState.IsValid && user.ProfilePicturePath==null,"Mismatched extension and signature rejected");
                 controller.ModelState.Clear();

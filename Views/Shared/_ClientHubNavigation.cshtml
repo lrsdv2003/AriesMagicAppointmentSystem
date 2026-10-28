@@ -1,0 +1,19 @@
+@{
+ var controller=ViewContext.RouteData.Values["controller"]?.ToString();var action=ViewContext.RouteData.Values["action"]?.ToString();
+ var unread=ViewData["HubUnread"] as int? ?? 0;
+ var groups=new[]{
+  ("Your space",new[]{("Overview","Bookings","Dashboard","bi-grid-1x2"),("My bookings","Bookings","MyBookings","bi-calendar2-event")}),
+  ("Event management",new[]{("Payments","Payments","MyUploads","bi-wallet2"),("Rescheduling","RescheduleRequests","MyRequests","bi-calendar2-week"),("Messages","Communications","Index","bi-chat-dots"),("Refund requests","Payments","MyRefundRequests","bi-arrow-return-left")}),
+  ("Account & activity",new[]{("Notifications","Notifications","Index","bi-bell"),("My feedback","Feedback","Index","bi-star"),("Profile","Profile","Index","bi-person-circle")})};
+}
+<div class="hub-brand"><a asp-controller="Home" asp-action="Index" class="client-brand" aria-label="Aries d’ Magic Artist home"><partial name="_WonderBrand"/></a><span>Client workspace</span></div>
+<nav class="hub-navigation" aria-label="Client navigation">
+@foreach(var group in groups){<div class="hub-nav-group"><p class="hub-nav-caption">@group.Item1</p>
+@foreach(var link in group.Item2){
+ var active=controller==link.Item2;
+ if(controller=="Bookings") active=(action=="Dashboard"||action=="ClientDashboard")?link.Item3=="Dashboard":link.Item3=="MyBookings";
+ if(controller=="Payments") active=(action=="MyRefundRequests"||action=="RequestRefund")?link.Item3=="MyRefundRequests":link.Item3=="MyUploads";
+ <a asp-controller="@link.Item2" asp-action="@link.Item3" asp-route-view="@(link.Item2=="Communications"?"inbox":null)" aria-current="@(active?"page":null)"><i class="bi @link.Item4" aria-hidden="true"></i><span>@link.Item1</span>@if(link.Item2=="Notifications"&&unread>0){<span class="hub-count" aria-label="@unread unread notifications">@(unread>99?"99+":unread.ToString())</span>}@if(link.Item2=="Communications"){<span class="hub-count communication-unread-badge" hidden>0</span>}</a>
+}</div>}
+</nav>
+<div class="hub-rail-footer"><a asp-controller="Home" asp-action="Index"><i class="bi bi-arrow-up-right" aria-hidden="true"></i> Visit the website</a><form asp-controller="Account" asp-action="Logout" method="post">@Html.AntiForgeryToken()<button type="submit"><i class="bi bi-box-arrow-right" aria-hidden="true"></i> Sign out</button></form></div>

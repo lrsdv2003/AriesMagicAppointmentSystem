@@ -1,0 +1,12 @@
+@model AriesMagicAppointmentSystem.ViewModels.AboutPhoto
+<figure class="wa-photo cx-media">
+    <picture>
+        <source type="image/webp" srcset="@Url.Content("~/images/client/about/" + Model.Key + "-480.webp") 480w, @Url.Content("~/images/client/about/" + Model.Key + "-960.webp") 960w" sizes="@Model.Sizes" />
+        <img src="@Url.Content(Model.Original)" alt="@Model.Alt" width="@Model.Width" height="@Model.Height" loading="@(Model.Priority ? "eager" : "lazy")" fetchpriority="@(Model.Priority ? "high" : "auto")" decoding="async" />
+    </picture>
+    <span class="cx-media-fallback" hidden>Live entertainment. Shared moments.</span>
+    @if (Model.Caption != null || Model.Credit != null)
+    {
+        <figcaption>@Model.Caption @if (Model.Credit != null) { <span class="wa-photo-credit">Photograph: @Model.Credit</span> }</figcaption>
+    }
+</figure>

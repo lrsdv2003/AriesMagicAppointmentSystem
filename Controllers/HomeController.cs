@@ -14,6 +14,21 @@ public class HomeController : Controller
     [ResponseCache(NoStore=true,Location=ResponseCacheLocation.None)]
     public async Task<IActionResult> Index()
     {
+        ViewData["PublicTestimonials"] = await PublicTestimonialsAsync();
+        return View(await PublicPackagesAsync());
+    }
+
+    [ResponseCache(NoStore=true,Location=ResponseCacheLocation.None)]
+    public async Task<IActionResult> About()
+    {
+        ViewData["PublicTestimonials"] = await PublicTestimonialsAsync();
+        return View();
+    }
+
+    public IActionResult Gallery() => View(AriesMagicAppointmentSystem.ViewModels.GalleryPhoto.Collection);
+
+    private async Task<IEnumerable<AriesMagicAppointmentSystem.ViewModels.ClientTestimonial>> PublicTestimonialsAsync()
+    {
         var stories=await AriesMagicAppointmentSystem.Services.FeedbackPolicy.PublicQuery(_context)
             .OrderByDescending(f=>f.PublishedAtUtc).Take(3)
             .Select(f=>new AriesMagicAppointmentSystem.ViewModels.ClientTestimonial(f.Experience,
@@ -21,10 +36,9 @@ public class HomeController : Controller
                     OverallRating=f.OverallRating,
                     PublicImageIds=f.Media.Where(m=>f.MediaConsent&&m.PublicApproved&&m.ProcessingStatus=="Ready"&&m.ScannedAtUtc!=null).OrderBy(m=>m.Id).Select(m=>m.Id).ToList()
                 }).ToListAsync();
-        ViewData["PublicTestimonials"]=stories.Where(s=>AriesMagicAppointmentSystem.Services.FeedbackPolicy.SafePublicText(s.Excerpt)
+        return stories.Where(s=>AriesMagicAppointmentSystem.Services.FeedbackPolicy.SafePublicText(s.Excerpt)
             &&AriesMagicAppointmentSystem.Services.FeedbackPolicy.SafePublicText(s.PublicName))
             .Select(s=>s with {EventLabel=AriesMagicAppointmentSystem.Services.FeedbackPolicy.SafePublicText(s.EventLabel)?s.EventLabel:"Completed event"}).ToList();
-        return View(await PublicPackagesAsync());
     }
     public async Task<IActionResult> Packages() => View(await PublicPackagesAsync());
     public async Task<IActionResult> Package(int id)

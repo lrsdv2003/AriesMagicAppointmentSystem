@@ -27,7 +27,7 @@
     var blockedDatesJson = JsonSerializer.Serialize(ViewBag.BlockedDates ?? new List<object>());
 }
 
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css" />
+@* FullCalendar 6 injects its CSS from the existing pinned JavaScript bundle. *@
 
 <div class="staff-calendar-page">
     <header class="ui-toolbar staff-calendar-hero">

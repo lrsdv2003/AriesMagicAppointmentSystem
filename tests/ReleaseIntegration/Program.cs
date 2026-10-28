@@ -40,8 +40,15 @@ internal static class ReleaseIntegrationRunner
         Check(response.StatusCode == HttpStatusCode.Redirect && response.Headers.TryGetValues("Set-Cookie", out var cookies) && cookies.Any(x => x.Contains(".AspNetCore.Identity.Application=")), role + " real Identity login issues cookie");
         return client;
     }
-    static async Task Main()
+    static async Task Main(string[] args)
     {
+        if(args.SequenceEqual(new[]{"--auth-ui-fixture"})) { await AuthBrowserFixture.RunAsync(); return; }
+        if(args.SequenceEqual(new[]{"--booking-ui-fixture"})) { await BookingBrowserFixture.RunAsync(); return; }
+        if(args.SequenceEqual(new[]{"--client-hub-ui-fixture"})) { await BookingBrowserFixture.RunAsync(hubPreview:true); return; }
+        if(args.SequenceEqual(new[]{"--midnight-ui-fixture"})) { await BookingBrowserFixture.RunAsync(midnightPreview:true); return; }
+        if(args.SequenceEqual(new[]{"--release-review-ui-fixture"})) { await BookingBrowserFixture.RunAsync(releaseReview:true); return; }
+        if(args.SequenceEqual(new[]{"--manual-ui-preview"})) { await BookingBrowserFixture.RunAsync(manualPreview:true); return; }
+        if(args.Length != 0) throw new ArgumentException("Unknown test mode.");
         Environment.SetEnvironmentVariable("BackgroundJobs__Enabled", "false");
         Environment.SetEnvironmentVariable("Database__InitializeOnStartup", "false");
         var database = "AriesReleaseIntegration_" + Guid.NewGuid().ToString("N");
@@ -61,7 +68,7 @@ internal static class ReleaseIntegrationRunner
         var mapUrl = new Uri(map.Services.GetRequiredService<IServer>().Features.Get<IServerAddressesFeature>()!.Addresses.Single());
         try
         {
-            Check(Environment.Version >= new Version(9,0,21), "Integration process runs on patched .NET 9.0.21 or later");
+            Check(Environment.Version.Major == 10, "Integration process runs on .NET 10");
             await RecoveryRegressionTests.SchemaAsync(connection,smtp.Port,mapUrl,root,Check);
             await db.Database.MigrateAsync();
             Check(!(await db.Database.GetPendingMigrationsAsync()).Any(), "Entire EF migration chain applies to an empty isolated SQL database");
@@ -74,6 +81,10 @@ internal static class ReleaseIntegrationRunner
             Check(!(await db.Database.GetPendingMigrationsAsync()).Any(),"Generated forward idempotent SQL script executes twice without schema drift");
             await using var factory = new ReleaseFactory(connection, smtp.Port, mapUrl, root);
             using var scope = factory.Services.CreateScope();
+            using (var healthClient = factory.CreateClient())
+            using (var health = await healthClient.GetAsync("/health"))
+                Check(health.StatusCode == HttpStatusCode.OK && (await health.Content.ReadAsStringAsync()).Trim() == "Healthy",
+                    "Real SQL health endpoint reports healthy after isolated schema validation");
             await IdentitySeeder.SeedAsync(scope.ServiceProvider);
             var users = scope.ServiceProvider.GetRequiredService<Microsoft.AspNetCore.Identity.UserManager<ApplicationUser>>();
             var passwords = new Dictionary<string,string>();
@@ -94,7 +105,7 @@ internal static class ReleaseIntegrationRunner
             using var otherClient=await Login(factory,"OtherClient",otherPassword);
             foreach(var pair in new[]{(client,"/Bookings/MyBookings"),(staff,"/Dashboard/Staff"),(admin,"/Dashboard/Admin"),(owner,"/Dashboard/Owner")})
                 Check((await pair.Item1.GetAsync(pair.Item2)).StatusCode==HttpStatusCode.OK,"Real cookie opens "+pair.Item2);
-            var clientToken=await GetToken(client,"/Bookings/MyBookings");
+            var clientToken=await GetToken(client,"/Account/Login");
             var staffToken=await GetToken(staff,"/Dashboard/Staff");
             var ownerToken=await GetToken(owner,"/Dashboard/Owner");
             using (var support = await Post(client,"/Communications/StartSupport",clientToken))
@@ -124,7 +135,7 @@ internal static class ReleaseIntegrationRunner
             }
             using (var deniedChat=await otherClient.GetAsync("/Communications/MessagesSince?id="+supportId))
                 Check(deniedChat.StatusCode==HttpStatusCode.Forbidden||deniedChat.StatusCode==HttpStatusCode.Redirect,"Unrelated client cannot poll private conversation");
-            var otherChatToken=await GetToken(otherClient,"/Bookings/MyBookings");
+            var otherChatToken=await GetToken(otherClient,"/Account/Login");
             using (var deniedSend=await Post(otherClient,"/Communications/SendMessage",otherChatToken,("conversationId",supportId.ToString()),("messageContent","Not a participant")))
                 Check(deniedSend.StatusCode==HttpStatusCode.Forbidden||deniedSend.StatusCode==HttpStatusCode.Redirect,"Unrelated client cannot send into private conversation");
             using (var noCsrf=await client.PostAsync("/Communications/SendMessage",new FormUrlEncodedContent(new Dictionary<string,string>{{"conversationId",supportId.ToString()},{"messageContent","Missing token"}})))
@@ -142,6 +153,18 @@ internal static class ReleaseIntegrationRunner
             Check(booking.FinalPrice==10000 && booking.TravelFee==0 && booking.VenueLatitude==14.58125,"Database stores trusted server price and actual geocoding response");
             using(var response=await Post(staff,$"/Bookings/Approve/{booking.Id}",staffToken)) Check(response.StatusCode==HttpStatusCode.Redirect,"Staff approval HTTP completes");
             Check(await db.Bookings.AsNoTracking().AnyAsync(b=>b.Id==booking.Id&&b.Status==BookingStatus.AwaitingDownpayment),"Staff approval persists awaiting-downpayment status");
+            using(var contextPage=await client.GetAsync($"/Payments/Upload?bookingId={booking.Id}")) {
+                var html=await contextPage.Content.ReadAsStringAsync();var payload=Regex.Match(html,"id=\"clientBookingContext\">(.*?)</script>",RegexOptions.Singleline).Groups[1].Value;
+                using var doc=System.Text.Json.JsonDocument.Parse(payload);var row=doc.RootElement.EnumerateArray().Single();
+                Check(row.GetProperty("Id").GetInt32()==booking.Id&&row.GetProperty("Balance").GetDecimal()==10000m&&row.GetProperty("Verified").GetDecimal()==0m,"Concierge presentation reads authoritative own-booking financial values");
+            }
+            using(var contextPage=await otherClient.GetAsync($"/Payments/Upload?bookingId={booking.Id}"))Check(!(await contextPage.Content.ReadAsStringAsync()).Contains("id=\"clientBookingContext\""),"Concierge payment metadata does not expose an unrelated booking");
+            using(var contextPage=await client.GetAsync($"/RescheduleRequests/Create?bookingId={booking.Id}")) {
+                var html=await contextPage.Content.ReadAsStringAsync();var payload=Regex.Match(html,"id=\"clientBookingContext\">(.*?)</script>",RegexOptions.Singleline).Groups[1].Value;
+                using var doc=System.Text.Json.JsonDocument.Parse(payload);var row=doc.RootElement.EnumerateArray().Single();
+                Check(row.GetProperty("DurationHours").GetInt32()==package.DurationInHours&&row.GetProperty("Start").GetString()=="09:00","Concierge calendar receives actual own-booking duration and current time");
+            }
+            using(var contextPage=await otherClient.GetAsync($"/RescheduleRequests/Create?bookingId={booking.Id}"))Check(!(await contextPage.Content.ReadAsStringAsync()).Contains("id=\"clientBookingContext\""),"Concierge schedule metadata does not expose an unrelated booking");
             var png=await File.ReadAllBytesAsync("tests/ReleaseIntegration/Fixtures/payment.png");
             async Task<HttpResponseMessage> Upload(decimal amount) {
                 var form=new MultipartFormDataContent(); form.Add(new StringContent(clientToken),"__RequestVerificationToken");
@@ -167,6 +190,7 @@ internal static class ReleaseIntegrationRunner
             using(var response=await otherClient.GetAsync($"/Bookings/Details/{booking.Id}")) Check(response.StatusCode==HttpStatusCode.NotFound,"Unrelated real Client cookie cannot read another booking by direct ID");
             using(var response=await otherClient.GetAsync($"/Payments/PaymentProof/{payment.Id}")) Check(response.StatusCode==HttpStatusCode.Redirect&&response.Headers.Location!.ToString().Contains("AccessDenied"),"Unrelated real Client cookie cannot read another client's financial proof");
             using(var proof=await client.GetAsync($"/Payments/PaymentProof/{payment.Id}")) Check(proof.StatusCode==HttpStatusCode.OK && proof.Headers.CacheControl?.NoStore==true,"Own proof served through protected noncached HTTP route");
+            using(var proof=await owner.GetAsync($"/Payments/PaymentProof/{payment.Id}")) Check(proof.StatusCode==HttpStatusCode.OK && proof.Headers.CacheControl?.NoStore==true && (await proof.Content.ReadAsByteArrayAsync()).SequenceEqual(png),"Real Owner cookie reads exact original private proof bytes through protected HTTP route");
             using(var proof=await staff.GetAsync($"/Payments/PaymentProof/{payment.Id}")) Check(proof.StatusCode==HttpStatusCode.Redirect,"Staff cookie denied private financial proof");
             using(var response=await Post(owner,$"/Payments/Verify/{payment.Id}",ownerToken)) Check(response.StatusCode==HttpStatusCode.Redirect,"Owner verification HTTP commits");
             Check(await db.Bookings.AsNoTracking().AnyAsync(b=>b.Id==booking.Id&&b.Status==BookingStatus.Confirmed),"Verified downpayment confirms booking in SQL");
@@ -258,6 +282,14 @@ internal static class ReleaseIntegrationRunner
     static async Task AuthenticationRecovery(string connection,SmtpFixture smtp,Uri mapUrl,string root,Dictionary<string,string> passwords)
     {
         await using var factory=new ReleaseFactory(connection,smtp.Port,mapUrl,root);
+        using(var galleryClient=factory.CreateClient(new(){AllowAutoRedirect=false})) {
+            using var response=await galleryClient.GetAsync("/Home/Gallery");
+            var gallery=await response.Content.ReadAsStringAsync();
+            Check(response.StatusCode==HttpStatusCode.OK&&gallery.Contains("Moments that make"),"Anonymous HTTP Gallery serves the actual compiled editorial view");
+            Check(Regex.Matches(gallery,"data-portfolio-src=").Count==7&&Regex.Matches(gallery,"data-portfolio-src=\"/images/client/").Count==7,"Gallery includes only seven curated public project photographs");
+            Check(gallery.Contains("/Bookings/CreateStepOne")&&gallery.Contains("aria-current=\"page\" href=\"/Home/Gallery\""),"Gallery preserves booking route and current footer navigation");
+            Check(gallery.Contains("Monarch / Rio Jones Photography")&&!gallery.Contains("/App_Data/")&&!gallery.Contains("/uploads/")&&!gallery.Contains("/FeedbackMedia/"),"Gallery preserves credit and does not expose private or uploaded media paths");
+        }
         using var client=await Login(factory,"Client",passwords["Client"]);
         using var scope=factory.Services.CreateScope();
         var users=scope.ServiceProvider.GetRequiredService<Microsoft.AspNetCore.Identity.UserManager<ApplicationUser>>();

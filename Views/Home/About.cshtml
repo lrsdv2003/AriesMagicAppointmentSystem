@@ -1,0 +1,72 @@
+@using AriesMagicAppointmentSystem.ViewModels
+@{ ViewData["Title"] = "About the artist"; }
+<section class="wa-intro wa-section" aria-labelledby="aboutPageTitle">
+    <div class="container wa-intro-grid">
+        <div class="wa-intro-copy">
+            <span class="wa-kicker">Meet Aries / The Wonder Studio</span>
+            <h1 id="aboutPageTitle">More than a show.<br />It’s a <em>shared experience.</em></h1>
+            <p>Magic, laughter, and the people who make it special. Live entertainment for the moments you bring everyone together.</p>
+            <div class="wa-actions"><a asp-action="Packages" class="wa-button wa-button-outline">Find your kind of wonder <span aria-hidden="true">→</span></a></div>
+            <span class="wa-intro-note">A little magic. A lot of memories.</span>
+        </div>
+        <div class="wa-intro-portrait">
+            <partial name="_AboutPhoto" model='new AboutPhoto("artist", "~/images/client/about/artist.jpeg", "Aries in a red jacket holding a yellow and white snake at a celebration", 1320, 1980, "(max-width: 767px) 260px, 340px", true, "Aries d’ Magic Artist", "Monarch / Rio Jones Photography")' />
+        </div>
+    </div>
+</section>
+<section class="wa-artist wa-section" aria-labelledby="artistStoryTitle">
+    <div class="container">
+        <div class="wa-artist-grid">
+            <partial name="_AboutPhoto" model='new AboutPhoto("stage", "~/images/client/wonder-studio/hero-performance.jpeg", "Aries performing with a flaming wand on a theatre stage", 1672, 941, "(max-width: 767px) calc(100vw - 48px), (max-width: 1279px) 45vw, 570px")' />
+            <div><span class="wa-kicker">The magic behind the moments</span><h2 id="artistStoryTitle">A little surprise.<br /><em>A room brought together.</em></h2><p>Aries brings magic, audience participation, and comedy to celebrations. There’s a place for watching closely, joining the laughter, and sharing the unexpected.</p><p>Explore the experiences to find the performance and inclusions that suit your occasion.</p><a asp-action="Packages" class="wa-text-link">Explore the experiences <span aria-hidden="true">→</span></a></div>
+        </div>
+        <div class="wa-features">
+            <div><span class="wa-feature-number" aria-hidden="true">01</span><h3>Live magic entertainment</h3><p>The anticipation of a performance unfolding, and a surprise to share.</p></div>
+            <div><span class="wa-feature-number" aria-hidden="true">02</span><h3>An audience in the moment</h3><p>Watch, laugh, and take part. Find the entertainment included in each package.</p></div>
+            <div><span class="wa-feature-number" aria-hidden="true">03</span><h3>Your kind of celebration</h3><p>Birthdays, school events, and company gatherings. Bring your favourite people.</p></div>
+        </div>
+    </div>
+</section>
+<section class="wa-room wa-section" aria-labelledby="roomTitle">
+    <div class="container wa-room-grid">
+        <div><span class="wa-kicker">A change of atmosphere</span><h2 id="roomTitle">A room full<br />of <em>possibility.</em></h2><p>The laughter. The anticipation. The moment everyone leans in. The people are as much a part of the experience as the performance.</p><a href="#aboutMoments" class="wa-text-link">See the moments <span aria-hidden="true">↓</span></a></div>
+        <partial name="_AboutPhoto" model='new AboutPhoto("audience", "~/images/client/wonder-studio/audience-wonder.jpeg", "Aries sharing a bird performance with an audience of children and adults at a celebration", 2048, 1365, "(max-width: 767px) calc(100vw - 48px), (max-width: 1279px) 50vw, 620px")' />
+    </div>
+</section>
+<section class="wa-journey wa-section" aria-labelledby="aboutJourneyTitle">
+    <div class="container">
+        <div class="wa-section-heading"><div><span class="wa-kicker">A simple beginning</span><h2 id="aboutJourneyTitle">Less figuring it out.<br /><em>More looking forward.</em></h2></div><p>Your venue, experience, and event details come together in the existing booking journey.</p></div>
+        <ol class="wa-process">
+            <li><span aria-hidden="true">01</span><h3>Explore the experiences</h3><p>Compare packages and their listed inclusions. Find the entertainment for your occasion.</p></li>
+            <li><span aria-hidden="true">02</span><h3>Set the scene</h3><p>Choose your venue and a date at least three days ahead. Check serviceability and availability.</p></li>
+            <li><span aria-hidden="true">03</span><h3>Send your request</h3><p>Review the price and travel estimate, then submit for Staff approval. A request alone does not reserve the date.</p></li>
+            <li><span aria-hidden="true">04</span><h3>Follow the next step</h3><p>After approval, follow your downpayment instructions and upload proof. Owner verification completes confirmation.</p></li>
+        </ol>
+        <div class="wa-faq" role="group" aria-label="Booking questions">
+            <details><summary>Does my request reserve the date?<span aria-hidden="true">+</span></summary><p>Your request goes through review and the payment confirmation process. Follow the status and instructions in your booking.</p></details>
+            <details><summary>When do I upload payment proof?<span aria-hidden="true">+</span></summary><p>Wait for Staff approval, then follow the downpayment instructions. The Owner verifies your proof before the booking is confirmed.</p></details>
+        </div>
+    </div>
+</section>
+<section class="wa-moments wa-section" id="aboutMoments" aria-labelledby="aboutMomentsTitle">
+    <div class="container">
+        <div class="wa-section-heading"><div><span class="wa-kicker">A glimpse of the feeling</span><h2 id="aboutMomentsTitle">Real moments.<br /><em>Shared experiences.</em></h2></div><p>Selected moments from Aries Magic events. Explore each package for its exact inclusions.</p></div>
+        <p class="wa-gallery-hint">Scroll through the moments <span aria-hidden="true">→</span></p>
+        <div class="wa-gallery-grid ws-gallery-grid" role="group" aria-label="Event photographs. Scroll horizontally on small screens for more." tabindex="0">
+            @foreach (var photo in new[] {
+                new AboutPhoto("illusion", "~/images/client/about/illusion.jpeg", "Aries performing an illusion with a young volunteer on a decorated birthday stage", 2048, 1365, "(max-width: 767px) 80vw, 390px", Caption: "The surprise"),
+                new AboutPhoto("participation", "~/images/client/about/participation.jpeg", "Aries holding a yellow and white snake as children and guests take part", 2048, 1365, "(max-width: 767px) 80vw, 390px", Caption: "The shared moment"),
+                new AboutPhoto("celebration", "~/images/client/wonder-studio/celebration.jpeg", "Aries and fellow entertainers with children at a decorated celebration", 1600, 1057, "(max-width: 767px) 80vw, 390px", Caption: "The celebration") })
+            {
+                <button type="button" class="wa-gallery-item ws-gallery-item" data-gallery-src="@Url.Content(photo.Original)" data-gallery-alt="@photo.Alt" aria-label="Enlarge photograph: @photo.Alt">
+                    <picture><source type="image/webp" srcset="@Url.Content("~/images/client/about/"+photo.Key+"-480.webp") 480w, @Url.Content("~/images/client/about/"+photo.Key+"-960.webp") 960w" sizes="@photo.Sizes" /><img src="@Url.Content(photo.Original)" alt="@photo.Alt" width="@photo.Width" height="@photo.Height" loading="lazy" decoding="async" /></picture>
+                    <span class="wa-gallery-caption"><strong>@photo.Caption</strong><span aria-hidden="true">↗</span></span>
+                </button>
+            }
+        </div>
+    </div>
+</section>
+@{ var publicStories = ViewData["PublicTestimonials"] as IEnumerable<ClientTestimonial> ?? Array.Empty<ClientTestimonial>(); }
+<partial name="_AboutTestimonials" model="publicStories" />
+<section class="wa-closing" aria-labelledby="aboutClosingTitle"><div class="container"><div class="wa-closing-panel"><div><span class="wa-kicker">Your people. Your occasion.</span><h2 id="aboutClosingTitle">Let’s create something<br /><em>unforgettable.</em></h2><p>Start with a place and a date. Bring the magic to your next celebration.</p></div><a asp-controller="Bookings" asp-action="CreateStepOne" class="wa-button wa-button-primary">Let’s plan your event <span aria-hidden="true">→</span></a></div></div></section>
+<dialog id="clientGallery" class="wa-gallery-dialog" aria-labelledby="galleryTitle"><div class="cx-dialog-bar"><h2 id="galleryTitle">A moment to remember</h2><button type="button" class="wa-button wa-button-outline" data-gallery-close>Close <span aria-hidden="true">×</span></button></div><img alt="" width="2048" height="1365" /><p data-gallery-status role="status" hidden>This photograph could not be loaded. Please close the viewer and try again.</p></dialog>

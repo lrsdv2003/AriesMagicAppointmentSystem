@@ -1,0 +1,6 @@
+@foreach(var key in new[] { "SuccessMessage", "ErrorMessage", "VerificationSuccess", "VerificationError" }) {
+    if(TempData[key] is string message) {
+        var error = key is "ErrorMessage" or "VerificationError";
+        <div class="au-notice @(error ? "au-notice-error" : "au-notice-success")" role="@(error ? "alert" : "status")">@message</div>
+    }
+}

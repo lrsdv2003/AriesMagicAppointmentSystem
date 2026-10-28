@@ -169,7 +169,7 @@ public sealed class InternalProfileController(UserManager<ApplicationUser> users
             ".png" => photo.ContentType == "image/png" && data.Take(8).SequenceEqual(new byte[] {137,80,78,71,13,10,26,10}),
             ".webp" => photo.ContentType == "image/webp" && System.Text.Encoding.ASCII.GetString(data,0,4) == "RIFF" && System.Text.Encoding.ASCII.GetString(data,8,4) == "WEBP",
             _ => false };
-        return valid ? data : null;
+        return valid && await ImageUploadValidation.HasMatchingSignatureAsync(photo) ? data : null;
     }
     private void DeletePhoto(string? path) { if (path != null) try { System.IO.File.Delete(path); } catch (IOException ex) { logger.LogWarning(ex, "Old profile photo cleanup failed."); } }
     private void Errors(IdentityResult result) { foreach (var error in result.Errors) ModelState.AddModelError("", error.Description); }

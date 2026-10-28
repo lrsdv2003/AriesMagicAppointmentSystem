@@ -7,7 +7,7 @@
     var isOwner = User.IsInRole("Owner");
     var useCompactInternal = isStaff || isOwner || User.IsInRole("Admin");
     var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-    Layout = isClient ? "_Layout" : "_DashboardLayout";
+    Layout = isClient ? "_ClientHubLayout" : "_DashboardLayout";
     ViewData["Title"] = "Messages";
     var selected = Model.SelectedConversation;
     var otherParticipant = selected?.Participants.FirstOrDefault(p => p.UserId != currentUserId);
@@ -15,6 +15,9 @@
     var canCompleteRequests = User.IsInRole("Owner");
 }
 
+@if(isClient){<partial name="_ClientConversationHub" model="Model"/>}
+else
+{
 <div id="communicationCenter"
      class="comm-page @(isClient ? "comm-page-client" : "comm-page-dashboard") comm-page-staff @(selected != null ? "comm-has-selection" : "")"
      data-conversation-id="@(selected?.Id ?? 0)"
@@ -275,6 +278,8 @@
     </div>
 </div>
 
+
+}
 @if (Model.IsInternalUser)
 {
     <div class="modal fade" id="newConversationModal" aria-labelledby="newConversationTitle" tabindex="-1" aria-hidden="true">

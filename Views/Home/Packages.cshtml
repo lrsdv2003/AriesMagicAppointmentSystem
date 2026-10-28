@@ -1,4 +1,22 @@
 @model IEnumerable<AriesMagicAppointmentSystem.Models.Service>
 @{ ViewData["Title"] = "Explore experiences"; }
-<header class="cr-page-heading"><div><span class="cr-eyebrow">The experience collection</span><h1>Find your kind<br />of <em>wonder.</em></h1><p>Explore the packages, see what’s included, and choose the show that feels right for your celebration.</p></div><a asp-controller="Bookings" asp-action="CreateStepOne" class="btn btn-primary">Find your date ↗</a></header>
-<partial name="_ClientPackageCards" model="Model" />
+<section class="we-intro" aria-labelledby="experiencesTitle">
+    <div class="we-intro-copy">
+        <span class="we-kicker">The experiences collection</span>
+        <h1 id="experiencesTitle">Find your kind<br />of <em>wonder.</em></h1>
+        <p>Every celebration has its own story. Compare the packages, explore what’s included, and find the experience for yours.</p>
+        <a asp-controller="Bookings" asp-action="CreateStepOne" class="we-text-link">Start with your venue &amp; date <span aria-hidden="true">→</span></a>
+    </div>
+    <figure class="we-editorial-photo">
+        <img src="~/images/client/wonder-studio/audience-wonder.jpeg" alt="Aries performing with a bird as an audience watches at a celebration" width="2048" height="1365" fetchpriority="high" />
+        <figcaption>A moment from an Aries Magic performance. Each package’s listed inclusions define what’s included.</figcaption>
+    </figure>
+</section>
+<section class="we-collection" aria-labelledby="collectionTitle">
+    <div class="we-collection-heading"><h2 id="collectionTitle">The show starts with <em>your choice.</em></h2><p>Compare price, duration, and inclusions.</p></div>
+    <partial name="_ClientPackageCards" model="Model" />
+</section>
+<section class="we-next-step" aria-labelledby="nextStepTitle">
+    <div><span class="we-kicker">A simple beginning</span><h2 id="nextStepTitle">Your celebration.<br /><em>Your next step.</em></h2></div>
+    <div><p>Start with your venue and date. The booking journey checks serviceability and availability, then shows your price and any travel estimate before you submit.</p><a asp-controller="Bookings" asp-action="CreateStepOne" class="we-button we-button-outline">Find your date <span aria-hidden="true">→</span></a></div>
+</section>

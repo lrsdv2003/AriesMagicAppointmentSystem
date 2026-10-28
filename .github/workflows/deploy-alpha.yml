@@ -1,0 +1,73 @@
+name: Prepare / manually deploy closed alpha
+on:
+  workflow_dispatch:
+    inputs:
+      deploy:
+        description: 'Transfer to the existing site after protected Environment approval'
+        type: boolean
+        default: false
+      recovery_reference:
+        description: 'Non-sensitive ID of current site/SQL/private-data/key recovery evidence (required for transfer)'
+        type: string
+        default: ''
+permissions:
+  contents: read
+concurrency:
+  group: aries-alpha-deployment
+  cancel-in-progress: false
+jobs:
+  verify:
+    uses: ./.github/workflows/ci.yml
+  package:
+    needs: verify
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          global-json-file: global.json
+      - name: Build reviewed file-only package (no database connection)
+        shell: pwsh
+        run: |
+          ./scripts/New-MyAspPublish.ps1 -OutputPath .tmp-owner-build/ci-publish
+          . ./scripts/AlphaPayload.ps1
+          $payload = @(Get-AlphaPayload .tmp-owner-build/ci-publish)
+          $payload | ConvertTo-Json -Depth 4 | Set-Content .tmp-owner-build/alpha-payload.json
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: alpha-${{ github.sha }}
+          path: |
+            .tmp-owner-build/ci-publish/
+            .tmp-owner-build/alpha-payload.json
+          retention-days: 7
+          if-no-files-found: error
+  deploy:
+    if: ${{ inputs.deploy && github.ref == 'refs/heads/main' && vars.ALPHA_DEPLOYMENT_ENABLED == 'true' && vars.ALPHA_PRESERVATION_VERIFIED == 'true' && vars.ALPHA_ENVIRONMENT_APPROVAL_CONFIGURED == 'true' }}
+    needs: package
+    runs-on: windows-latest
+    timeout-minutes: 40
+    environment:
+      name: alpha
+      url: https://ariesmagicartist-001-site1.htempurl.com/
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          name: alpha-${{ github.sha }}
+          path: .tmp-owner-build/approved-artifact
+      - name: Controlled explicit-TLS FTPS replacement
+        shell: pwsh
+        env:
+          MYASP_FTPS_HOST: ${{ secrets.MYASP_FTPS_HOST }}
+          MYASP_FTPS_USERNAME: ${{ secrets.MYASP_FTPS_USERNAME }}
+          MYASP_FTPS_PASSWORD: ${{ secrets.MYASP_FTPS_PASSWORD }}
+          ALPHA_RECOVERY_REFERENCE: ${{ inputs.recovery_reference }}
+          ALPHA_EXECUTION_APPROVED: 'true'
+          ALPHA_ROLLBACK_FTP_ROOT: ${{ vars.ALPHA_ROLLBACK_FTP_ROOT }}
+        run: |
+          ./scripts/Install-AlphaTransferTool.ps1
+          ./scripts/Invoke-AlphaFtpsDeployment.ps1 -PublishPath .tmp-owner-build/approved-artifact/ci-publish -ExpectedManifest .tmp-owner-build/approved-artifact/alpha-payload.json -ToolPath .tmp-owner-build/alpha-transfer-tool -RunId '${{ github.run_id }}-${{ github.run_attempt }}' -Execute

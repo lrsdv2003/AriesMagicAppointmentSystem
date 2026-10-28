@@ -1,0 +1,20 @@
+@model string
+@{ var registration = Model == "register"; }
+<aside class="au-editorial" aria-label="@(registration ? "Your event plans" : "Welcome back")">
+    <span class="au-kicker">@(registration ? "Create your account" : "Welcome back")</span>
+    <p class="au-editorial-title">@if(registration){<text>Let’s make<br /><em>a plan.</em></text>}else{<text>Good to have<br /><em>you back.</em></text>}</p>
+    <p class="au-editorial-copy">@(registration ? "Create your account to request a show and keep every detail together." : "Sign in to manage your bookings, upload payment proof, and continue planning your event.")</p>
+    <div class="au-features">
+        @foreach(var feature in registration ? new[] {
+            (Icon:"calendar2-check",Title:"Easy online booking",Text:"Choose an experience and share your event details."),
+            (Icon:"credit-card-2-front",Title:"Organized payment workflow",Text:"Follow your booking instructions and upload payment proof."),
+            (Icon:"shield-check",Title:"Protected client access",Text:"Verify your email and keep account recovery within reach.")
+        } : new[] {
+            (Icon:"calendar2-check",Title:"Track booking status",Text:"Follow your request and see what comes next."),
+            (Icon:"shield-check",Title:"Secure account recovery",Text:"Use email verification and password recovery when needed."),
+            (Icon:"ticket-perforated",Title:"Simple booking flow",Text:"Keep your package, venue, and event details together.")
+        }) {
+            <div class="au-feature"><span class="au-feature-icon" aria-hidden="true"><i class="bi bi-@feature.Icon"></i></span><div><h2>@feature.Title</h2><p>@feature.Text</p></div></div>
+        }
+    </div>
+</aside>

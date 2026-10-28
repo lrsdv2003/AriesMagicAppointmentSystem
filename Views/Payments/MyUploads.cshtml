@@ -1,187 +1,42 @@
 @model IEnumerable<AriesMagicAppointmentSystem.Models.Payment>
+@using AriesMagicAppointmentSystem.Models
 @using AriesMagicAppointmentSystem.ViewModels
-
 @{
-    ViewData["Title"] = "My Payments";
-    var payments = Model.OrderByDescending(x => x.UploadedAt).ToList();
+    Layout = "_ClientHubLayout"; ViewData["Title"] = "Payment activity";
+    var payments = Model.OrderByDescending(p => p.UploadedAt).ToList();
     var financials = ViewBag.FinancialSummaries as Dictionary<int, BookingFinancialSummaryViewModel> ?? new();
 }
-
-<div class="client-portal-header">
-    <div>
-        <div class="section-kicker">Client Portal</div>
-        <h1 class="client-portal-title">My Payments</h1>
-        <p class="client-portal-text">Review your uploaded payment proofs and monitor their verification status.</p>
-    </div>
-    <div class="cx-page-actions">
-        <a asp-action="MyRefundRequests" class="btn btn-outline-secondary">Refund requests</a>
-        <a asp-action="Upload" class="btn btn-primary btn-lg">Upload payment proof</a>
-    </div>
-</div>
-
-<div class="client-portal-stats">
-    <div class="client-portal-stat-card">
-        <span class="client-portal-stat-label">Total Uploads</span>
-        <strong class="client-portal-stat-value">@payments.Count</strong>
-        <span class="client-portal-stat-note">All payment proofs uploaded under your account</span>
-    </div>
-
-    <div class="client-portal-stat-card">
-        <span class="client-portal-stat-label">Verified</span>
-        <strong class="client-portal-stat-value">
-            @payments.Count(x => x.Status == AriesMagicAppointmentSystem.Models.PaymentStatus.Verified)
-        </strong>
-        <span class="client-portal-stat-note">Payments already approved by the Owner</span>
-    </div>
-
-    <div class="client-portal-stat-card">
-        <span class="client-portal-stat-label">Awaiting payment verification</span>
-        <strong class="client-portal-stat-value">
-            @payments.Count(x => x.Status == AriesMagicAppointmentSystem.Models.PaymentStatus.Pending)
-        </strong>
-        <span class="client-portal-stat-note">Uploads waiting for the Owner's final review</span>
-    </div>
-</div>
-
-@if (TempData["Success"] != null)
-{
-    <div class="client-success-banner mb-4">
-        <div class="client-success-icon">✓</div>
-        <div>
-            <div class="client-success-title">Proof submitted — verification pending</div>
-            <div class="client-success-text">@TempData["Success"]</div>
-        </div>
-    </div>
-}
-@if (TempData["Error"] != null)
-{
-    <div class="client-error-banner mb-4">
-        <div class="client-error-icon">!</div>
-        <div>
-            <div class="client-error-title">Payment Update</div>
-            <div class="client-error-text">@TempData["Error"]</div>
-        </div>
-    </div>
-}
-
+<div class="cn-page cn-payment-page">
+<header class="cn-page-heading"><div><p class="cn-kicker">Receipts & verification</p><h1>Payment activity.</h1></div><a asp-action="Upload" class="cn-button cn-primary">Upload receipt</a></header>
+@if (TempData["Success"] is string success) { <div class="cn-success" role="status"><strong>Receipt received</strong>@success</div> }
+@if (TempData["Error"] is string error) { <div class="cn-error-summary" role="alert">@error</div> }
 @if (!payments.Any())
 {
-    <div class="empty-state client-empty-state">
-        <h3>No payments uploaded yet</h3>
-        <p>You have not uploaded any payment proof yet.</p>
-        <a asp-action="Upload" class="btn btn-primary mt-2">Upload Payment</a>
-    </div>
+    <section class="cn-empty"><h2>No receipts yet.</h2><p>After your booking is approved, upload a receipt here to start Owner verification.</p><a asp-controller="Bookings" asp-action="MyBookings" class="cn-text-link">View my bookings</a></section>
 }
 else
 {
-    <div class="client-booking-grid">
-        @foreach (var item in payments)
+<div class="cn-records">
+@foreach (var item in payments)
+{
+    financials.TryGetValue(item.BookingId, out var finance);
+    var packageName = item.Booking?.PackageName ?? item.Booking?.Service?.Name ?? "Package";
+    var statusLabel = item.Status == PaymentStatus.Pending ? "Awaiting payment verification" : item.Status == PaymentStatus.AdditionalEvidenceRequired ? "Clearer receipt needed" : item.Status;
+    var next = item.Status switch { PaymentStatus.Pending => "Your receipt is with the Owner. No action is needed while it is reviewed; your balance updates after verification.", PaymentStatus.Verified => "The Owner verified this payment. It is included in your verified payments below.", PaymentStatus.AdditionalEvidenceRequired => "The Owner needs a clearer image. Replace the receipt below to continue the review.", PaymentStatus.Rejected => "This receipt was rejected. Open your booking or upload another eligible payment proof.", _ => "Open your booking for the latest next steps." };
+    <article class="cn-record cn-payment-record">
+        <div class="cn-record-head"><div><span class="cn-reference">@if(item.Booking != null){<span>BK-@item.Booking.CreatedAt.Year-@item.Booking.Id.ToString("D3")</span>}</span><h2>@packageName</h2><partial name="_StatusBadge" model="statusLabel"/></div><div><p>Receipt amount</p><p class="cn-amount">₱@item.Amount.ToString("N2")</p></div></div>
+        <div class="cn-next-step">@next</div>
+        @if (finance != null) { <dl class="cn-inline-finance"><div><dt>Booking total</dt><dd>₱@finance.BookingTotal.ToString("N2")</dd></div><div><dt>Required downpayment</dt><dd>₱@finance.RequiredDownpayment.ToString("N2")</dd></div><div><dt>Verified payments</dt><dd>₱@finance.TotalVerifiedPayments.ToString("N2")</dd></div><div><dt>Remaining balance</dt><dd>₱@finance.RemainingBalance.ToString("N2")</dd></div></dl> }
+        <details class="cn-disclosure"><summary>Receipt & transaction details</summary><div class="cn-receipt"><a href="@Url.Action("PaymentProof", "Payments", new {id=item.Id})" target="_blank" rel="noopener"><img src="@Url.Action("PaymentProof", "Payments", new {id=item.Id})" alt="Private receipt for payment @item.Id" loading="lazy"/></a><div><p>Uploaded @item.UploadedAt.ToString("MMM d, yyyy · h:mm tt")</p><p>Method: @item.PaymentMethod</p><a href="@Url.Action("PaymentProof", "Payments", new {id=item.Id})" target="_blank" rel="noopener" class="cn-text-link">Open private receipt</a></div></div></details>
+        @if (item.Status == PaymentStatus.AdditionalEvidenceRequired)
         {
-            financials.TryGetValue(item.BookingId, out var finance);
-            var statusLabel = item.Status == AriesMagicAppointmentSystem.Models.PaymentStatus.Pending ? "Awaiting payment verification" : item.Status == AriesMagicAppointmentSystem.Models.PaymentStatus.AdditionalEvidenceRequired ? "Additional Evidence Required" : item.Status;
-            var statusClass = item.Status switch
-            {
-                "Pending" => "status-pending",
-                "Verified" => "status-verified",
-                "Rejected" => "status-rejected",
-                "AdditionalEvidenceRequired" => "status-pending",
-                _ => "status-read"
-            };
-
-            var packageName = item.Booking?.PackageName ?? item.Booking?.Service?.Name ?? "Package";
-
-            <div class="client-booking-card">
-                <div class="client-booking-top">
-                    <div>
-                        <div class="client-booking-code">Payment Upload</div>
-                        <h3 class="client-booking-package">@packageName</h3>
-                        <div class="client-booking-created text-muted small">
-                            Uploaded on @item.UploadedAt.ToString("MMM dd, yyyy hh:mm tt")
-                        </div>
-                    </div>
-
-                    <span class="status-badge @statusClass">@statusLabel</span>
-                </div>
-
-                <div class="client-booking-meta">
-                    <div class="client-booking-meta-box">
-                        <span class="client-booking-meta-label">Amount Paid</span>
-                        <span class="client-booking-meta-value">₱@item.Amount.ToString("N2")</span>
-                    </div>
-
-                    <div class="client-booking-meta-box">
-                        <span class="client-booking-meta-label">Booking Date</span>
-                        <span class="client-booking-meta-value">
-                            @(item.Booking?.EventDate.ToString("MMMM dd, yyyy") ?? "N/A")
-                        </span>
-                    </div>
-                </div>
-
-                <div class="payment-proof-preview mt-2">
-                    <img src="@Url.Action("PaymentProof", "Payments", new { id = item.Id })" alt="Payment Proof" class="payment-proof-image" />
-                </div>
-
-                <div class="client-booking-details">
-                    <div class="client-booking-detail-row">
-                        <span>Package</span>
-                        <strong>@packageName</strong>
-                    </div>
-                    <div class="client-booking-detail-row">
-                        <span>Review Status</span>
-                        <strong>@statusLabel</strong>
-                    </div>
-                    @if (finance != null) {
-                    <div class="client-booking-detail-row"><span>Booking Total</span><strong>₱@finance.BookingTotal.ToString("N2")</strong></div>
-                    <div class="client-booking-detail-row"><span>Total Verified</span><strong>₱@finance.TotalVerifiedPayments.ToString("N2")</strong></div>
-                    <div class="client-booking-detail-row"><span>Remaining Balance</span><strong>₱@finance.RemainingBalance.ToString("N2")</strong></div>
-                    <div class="client-booking-detail-row"><span>Payment Status</span><strong>@finance.PaymentStatus</strong></div>
-                    }
-                    <div class="client-booking-detail-row">
-                        <span>Booking Reference</span>
-                        <strong>
-                            @if (item.Booking != null)
-                            {
-                                @:BK-@item.Booking.CreatedAt.Year-@item.Booking.Id.ToString("D3")
-                            }
-                            else
-                            {
-                                @:N/A
-                            }
-                        </strong>
-                    </div>
-                </div>
-
-                <div class="client-booking-note">
-                    @if (item.Status == AriesMagicAppointmentSystem.Models.PaymentStatus.Pending)
-                    {
-                        <span>Your payment proof is awaiting Owner verification. Your balance will not change until the Owner approves it.</span>
-                    }
-                    else if (item.Status == AriesMagicAppointmentSystem.Models.PaymentStatus.Verified)
-                    {
-                        <span>Your payment proof was verified successfully.</span>
-                    }
-                    else if (item.Status == AriesMagicAppointmentSystem.Models.PaymentStatus.Rejected)
-                    {
-                        <span>Your payment proof was rejected. Please upload a new payment proof with a clear and readable image.</span>
-                    }
-                    else
-                    {
-                        <span>Check this payment record regularly for status updates.</span>
-                    }
-                </div>
-
-                <div class="client-booking-footer">
-                    <div class="client-booking-footer-actions">
-                        @if (item.Status == AriesMagicAppointmentSystem.Models.PaymentStatus.AdditionalEvidenceRequired)
-                        {
-                            <form asp-action="ReplaceProof" method="post" enctype="multipart/form-data" class="w-100">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@item.Id"/><div class="small text-warning mb-2">@(item.ReviewerNote ?? "A clearer screenshot is required.")</div><input class="form-control form-control-sm mb-2" type="file" name="proofImage" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" required/><button class="btn btn-primary w-100">Submit New Screenshot</button></form>
-                        }
-                        else if (item.Status == AriesMagicAppointmentSystem.Models.PaymentStatus.Rejected)
-                        { <a asp-action="Upload" class="btn btn-primary">Upload Again</a> }
-                        else { <button type="button" class="btn btn-outline-secondary" disabled>No Action Needed</button> }
-                    </div>
-                </div>
-            </div>
+            <form asp-action="ReplaceProof" method="post" enctype="multipart/form-data" data-booking-submit class="cn-replacement">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@item.Id"/><p class="cn-help">@(item.ReviewerNote ?? "A clearer screenshot is required.")</p><div class="cn-field"><label for="replacement-@item.Id">Replacement payment proof</label><input id="replacement-@item.Id" class="cn-file-input" type="file" name="proofImage" data-booking-file accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" required/><p class="cn-help">JPG, PNG, or WEBP · up to 5 MB. Replacing proof does not verify payment.</p></div><div class="cn-actions"><button type="submit" class="cn-button cn-primary">Send clearer receipt</button></div></form>
         }
-    </div>
+        <div class="cn-record-actions"><a asp-controller="Bookings" asp-action="Details" asp-route-id="@item.BookingId">View booking</a>@if(item.Status == PaymentStatus.Rejected){<a asp-action="Upload" asp-route-bookingId="@item.BookingId">Upload another receipt</a>}</div>
+    </article>
 }
+</div>
+}
+<div class="cn-links"><a asp-action="MyRefundRequests">Refund requests</a><a asp-controller="Bookings" asp-action="MyBookings">My bookings</a></div>
+</div>
+@section Scripts { <script src="~/js/booking-experience.js" asp-append-version="true"></script> }

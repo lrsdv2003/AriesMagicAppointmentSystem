@@ -1,266 +1,36 @@
 @model AriesMagicAppointmentSystem.ViewModels.RescheduleRequestCreateViewModel
-
-@{
-    ViewData["Title"] = "Request Reschedule";
-    var unavailableDates = ViewBag.UnavailableDates as List<string> ?? new List<string>();
-    var unavailableDatesJson = System.Text.Json.JsonSerializer.Serialize(unavailableDates);
+@using System.Text.Json
+@{ ViewData["Title"] = "Request reschedule"; ViewData["BookingExperience"] = true; }
+<div class="cn-page cn-reschedule-page">
+<header class="cn-page-heading"><div><p class="cn-kicker">A change of plans</p><h1>Choose a new date.</h1></div><a asp-action="MyRequests" class="cn-text-link">My requests</a></header>
+@if (!Model.Bookings.Any())
+{
+    <section class="cn-empty"><h2>No booking is available for rescheduling.</h2><p>Open your bookings to check their status and available actions.</p><a asp-controller="Bookings" asp-action="MyBookings" class="cn-button cn-primary">View my bookings</a></section>
 }
-
-<link rel="stylesheet" href="~/lib/flatpickr/flatpickr.min.css" asp-append-version="true" />
-
-<div class="client-portal-header">
-    <div>
-        <div class="section-kicker">Client Portal</div>
-        <h1 class="client-portal-title">Request Reschedule</h1>
-        <p class="client-portal-text">Choose a new preferred schedule for your existing booking.</p>
-    </div>
+else
+{
+<form asp-action="Create" method="post" id="clientRescheduleForm" data-booking-submit data-availability-url="@Url.Action("CheckRescheduleDateAvailability")" data-ranges-url="@Url.Action("GetUnavailableTimeRanges")">
+@Html.AntiForgeryToken()
+<div asp-validation-summary="All" class="cn-error-summary" role="alert" tabindex="-1"></div>
+<div class="cn-current-booking"><div class="cn-field"><label asp-for="BookingId">Booking to reschedule</label><select asp-for="BookingId" asp-items="Model.Bookings" class="cn-input" required aria-describedby="currentSchedule BookingIdError"><option value="">Select your booking</option></select><span asp-validation-for="BookingId" id="BookingIdError" class="cn-field-error"></span></div><p id="currentSchedule" class="cn-current-schedule" aria-live="polite">Select a booking to see its current schedule.</p></div>
+<div class="cn-reschedule-layout">
+<section class="cn-panel cn-calendar-panel" aria-labelledby="newDateTitle"><div class="cn-panel-heading"><h2 id="newDateTitle">1. Pick a new date</h2><p>At least three days ahead. Blocked dates cannot be selected.</p></div>
+<div id="rescheduleCalendar" data-calendar-for="RequestedDate" hidden></div>
+<details class="cn-date-entry" id="manualDate" open><summary>Enter a date manually</summary><div class="cn-field"><label asp-for="RequestedDate">New requested date</label><input asp-for="RequestedDate" type="date" min="@DateTime.Today.AddDays(3).ToString("yyyy-MM-dd")" class="cn-input" required aria-describedby="RequestedDateError"/><span asp-validation-for="RequestedDate" id="RequestedDateError" class="cn-field-error"></span></div></details>
+<p class="cn-help">Date capacity and complete schedule availability are checked separately.</p>
+</section>
+<section class="cn-panel cn-time-panel" aria-labelledby="newTimeTitle"><div class="cn-panel-heading"><h2 id="newTimeTitle">2. Set the time</h2><p id="rescheduleDuration">Your package duration stays the same.</p></div>
+<div class="cn-field"><label asp-for="RequestedStartTime">New start time</label><input asp-for="RequestedStartTime" type="time" class="cn-input" required aria-describedby="timeHelp RequestedStartTimeError"/><span asp-validation-for="RequestedStartTime" id="RequestedStartTimeError" class="cn-field-error"></span><p class="cn-help" id="timeHelp">The required one-hour buffer is preserved.</p></div>
+<div id="rescheduleAvailability" class="cn-notice" role="status" aria-live="polite">Choose your booking and date to check capacity.</div><div id="rescheduleRanges" class="cn-time-ranges"></div>
+<button type="button" class="cn-edit" id="checkReschedule">Refresh availability</button>
+<div class="cn-field cn-reason"><label asp-for="Reason">Reason for the change</label><textarea asp-for="Reason" class="cn-input" rows="2" required placeholder="Briefly tell Staff why you need a new schedule"></textarea><span asp-validation-for="Reason" id="ReasonError" class="cn-field-error"></span></div>
+<div class="cn-approval-note"><strong>Staff approval is required.</strong><span>Your current schedule stays in place until the request is approved.</span></div>
+<div class="cn-actions"><button type="submit" class="cn-button cn-primary" id="submitRescheduleBtn">Request this schedule <span aria-hidden="true">→</span></button></div>
+</section>
 </div>
-
-<div class="dashboard-panel mb-4">
-    <div class="form-section-title mb-2">Availability Guide</div>
-    <p class="availability-help mb-3">
-        Some dates may be unavailable because they are already full or blocked by the scheduling team.
-        Availability uses the selected package duration and the system's required <strong>1-hour buffer</strong> after the event.
-    </p>
-
-    <div class="availability-legend">
-        <div class="availability-legend-item">
-            <span class="availability-dot available"></span>
-            <span>Available date</span>
-        </div>
-        <div class="availability-legend-item">
-            <span class="availability-dot unavailable"></span>
-            <span>Unavailable date</span>
-        </div>
-    </div>
-</div>
-
-<div class="dashboard-panel">
-    <form asp-action="Create" method="post">
-        @Html.AntiForgeryToken()
-
-        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
-
-        <div id="dateAvailabilityAlert" class="alert alert-warning d-none mb-3">
-            This selected date is unavailable for reschedule because it is either blocked or already at full capacity.
-        </div>
-
-        <div id="dateSlotsInfo" class="alert alert-info d-none mb-3"></div>
-
-        <div id="timeConflictAlert" class="alert alert-danger d-none mb-3">
-            The selected start time conflicts with an existing booking schedule.
-        </div>
-
-        <div id="unavailableTimeRangesBox" class="dashboard-panel mt-3 d-none">
-            <div class="time-range-box-title">Unavailable Time Ranges</div>
-            <p class="availability-help mb-2">
-                These time ranges are unavailable because of confirmed bookings and the required 1-hour buffer.
-            </p>
-            <div id="unavailableTimeRangesList" class="time-range-chip-list"></div>
-        </div>
-
-        <div class="row g-3 mt-1">
-            <div class="col-12">
-                <label for="bookingSelect" asp-for="BookingId" class="form-label">Select Booking</label>
-                <select asp-for="BookingId" asp-items="Model.Bookings" class="form-select" id="bookingSelect">
-                    <option value="">-- Select Booking --</option>
-                </select>
-                <span asp-validation-for="BookingId" class="text-danger"></span>
-            </div>
-
-            <div class="col-md-6">
-                <label for="requestedDateInput" asp-for="RequestedDate" class="form-label">Requested Date</label>
-                <input asp-for="RequestedDate"
-                       type="text"
-                       class="form-control"
-                       id="requestedDateInput"
-                       autocomplete="off" />
-                <span asp-validation-for="RequestedDate" class="text-danger"></span>
-            </div>
-
-            <div class="col-md-6">
-                <label for="requestedStartTimeInput" asp-for="RequestedStartTime" class="form-label">Requested Start Time</label>
-                <input asp-for="RequestedStartTime" type="time" class="form-control" id="requestedStartTimeInput" />
-                <span asp-validation-for="RequestedStartTime" class="text-danger"></span>
-            </div>
-
-            <div class="col-12">
-                <label asp-for="Reason" class="form-label">Reason</label>
-                <textarea asp-for="Reason" class="form-control" rows="4" placeholder="Explain why you want to request a reschedule"></textarea>
-                <span asp-validation-for="Reason" class="text-danger"></span>
-            </div>
-        </div>
-
-        <div class="upload-payment-actions mt-4">
-            <button type="submit" class="btn btn-primary btn-lg" id="submitRescheduleBtn">Submit Request</button>
-            <a asp-action="MyRequests" class="btn btn-outline-secondary btn-lg">Back to My Requests</a>
-        </div>
-    </form>
-</div>
-
-@section Scripts {
-    <partial name="_ValidationScriptsPartial" />
-    <script src="~/lib/flatpickr/flatpickr.min.js" asp-append-version="true"></script>
-
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            const unavailableDates = @Html.Raw(unavailableDatesJson);
-            const alertBox = document.getElementById("dateAvailabilityAlert");
-            const slotsInfo = document.getElementById("dateSlotsInfo");
-            const timeConflictAlert = document.getElementById("timeConflictAlert");
-            const submitBtn = document.getElementById("submitRescheduleBtn");
-            const dateInput = document.getElementById("requestedDateInput");
-            const timeInput = document.getElementById("requestedStartTimeInput");
-            const bookingSelect = document.getElementById("bookingSelect");
-            const timeRangesBox = document.getElementById("unavailableTimeRangesBox");
-            const timeRangesList = document.getElementById("unavailableTimeRangesList");
-
-            let currentUnavailableRanges = [];
-
-            function timeToMinutes(timeStr) {
-                if (!timeStr) return -1;
-                const [hours, minutes] = timeStr.split(":").map(Number);
-                return (hours * 60) + minutes;
-            }
-
-            function checkTimeConflict() {
-                const selectedTime = timeInput.value;
-
-                if (!selectedTime || currentUnavailableRanges.length === 0) {
-                    timeConflictAlert.classList.add("d-none");
-                    submitBtn.disabled = false;
-                    return;
-                }
-
-                const selectedMinutes = timeToMinutes(selectedTime);
-
-                const hasConflict = currentUnavailableRanges.some(range => {
-                    const start = timeToMinutes(range.start);
-                    const end = timeToMinutes(range.end);
-                    return selectedMinutes >= start && selectedMinutes < end;
-                });
-
-                if (hasConflict) {
-                    timeConflictAlert.classList.remove("d-none");
-                    submitBtn.disabled = true;
-                } else {
-                    timeConflictAlert.classList.add("d-none");
-                    submitBtn.disabled = false;
-                }
-            }
-
-            async function loadUnavailableTimeRanges(selectedDate) {
-                timeRangesList.innerHTML = "";
-                currentUnavailableRanges = [];
-                timeRangesBox.classList.add("d-none");
-                timeConflictAlert.classList.add("d-none");
-
-                if (!selectedDate) return;
-
-                const selectedBookingId = bookingSelect.value || "";
-
-                try {
-                    const response = await fetch(`/RescheduleRequests/GetUnavailableTimeRanges?date=${selectedDate}&excludeBookingId=${selectedBookingId}`);
-                    const data = await response.json();
-
-                    currentUnavailableRanges = data || [];
-
-                    if (currentUnavailableRanges.length > 0) {
-                        currentUnavailableRanges.forEach(range => {
-                            const chip = document.createElement("div");
-                            chip.className = "time-range-chip";
-                            chip.textContent = range.display;
-                            timeRangesList.appendChild(chip);
-                        });
-
-                        timeRangesBox.classList.remove("d-none");
-                    }
-
-                    checkTimeConflict();
-                } catch (error) {
-                    timeRangesBox.classList.add("d-none");
-                }
-            }
-
-            async function loadDateAvailability(selectedDate) {
-                if (!selectedDate) {
-                    alertBox.classList.add("d-none");
-                    slotsInfo.classList.add("d-none");
-                    timeRangesBox.classList.add("d-none");
-                    timeConflictAlert.classList.add("d-none");
-                    submitBtn.disabled = false;
-                    return;
-                }
-
-                try {
-                    const selectedBookingId = bookingSelect.value || "";
-                    const response = await fetch(`/RescheduleRequests/CheckRescheduleDateAvailability?date=${selectedDate}&bookingId=${selectedBookingId}`);
-                    const data = await response.json();
-
-                    if (data.isBlocked) {
-                        const reasonText = data.blockReason ? ` Reason: ${data.blockReason}` : "";
-                        alertBox.textContent = `This selected date is blocked by the admin.${reasonText}`;
-                        alertBox.classList.remove("d-none");
-                        slotsInfo.classList.add("d-none");
-                        timeRangesBox.classList.add("d-none");
-                        timeConflictAlert.classList.add("d-none");
-                        submitBtn.disabled = true;
-                        return;
-                    }
-
-                    if (data.isFull) {
-                        alertBox.textContent = "This selected date is fully booked.";
-                        alertBox.classList.remove("d-none");
-                        slotsInfo.classList.add("d-none");
-                        timeRangesBox.classList.add("d-none");
-                        timeConflictAlert.classList.add("d-none");
-                        submitBtn.disabled = true;
-                        return;
-                    }
-
-                    alertBox.classList.add("d-none");
-                    slotsInfo.classList.remove("slots-alert-good", "slots-alert-warning", "slots-alert-danger");
-
-                    if (data.remainingSlots <= 0) {
-                        slotsInfo.textContent = "No slots left for this date.";
-                        slotsInfo.classList.add("slots-alert-danger");
-                    } else if (data.remainingSlots === 1) {
-                        slotsInfo.textContent = "Only 1 slot remains for this date.";
-                        slotsInfo.classList.add("slots-alert-warning");
-                    } else {
-                        slotsInfo.textContent = `${data.remainingSlots} slots are still available out of ${data.maxPerDay}.`;
-                        slotsInfo.classList.add("slots-alert-good");
-                    }
-
-                    slotsInfo.classList.remove("d-none");
-
-                    await loadUnavailableTimeRanges(selectedDate);
-                } catch (error) {
-                    slotsInfo.classList.add("d-none");
-                    timeRangesBox.classList.add("d-none");
-                }
-            }
-
-            flatpickr("#requestedDateInput", {
-                dateFormat: "Y-m-d",
-                minDate: new Date().fp_incr(3),
-                disable: unavailableDates,
-                defaultDate: dateInput.value || null,
-                onChange: async function (selectedDates, dateStr) {
-                    await loadDateAvailability(dateStr);
-                },
-                onReady: async function (selectedDates, dateStr) {
-                    await loadDateAvailability(dateStr);
-                }
-            });
-
-            timeInput.addEventListener("change", checkTimeConflict);
-
-            bookingSelect.addEventListener("change", async function () {
-                if (dateInput.value) {
-                    await loadDateAvailability(dateInput.value);
-                }
-            });
-        });
-    </script>
+</form>
+@await Component.InvokeAsync("BookingContext", new { allowedIds = Model.Bookings.Select(b => b.Value) })
+<script type="application/json" id="rescheduleBlockedDates">@Html.Raw(JsonSerializer.Serialize(ViewBag.UnavailableDates as List<string> ?? new()))</script>
 }
+</div>
+@section Scripts { <partial name="_ValidationScriptsPartial"/><script src="~/js/booking-experience.js" asp-append-version="true"></script><script src="~/js/concierge-calendar.js" asp-append-version="true"></script> }

@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.DataProtection;
 using System.Net;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
@@ -20,6 +21,7 @@ static class SecurityHttpRegression
         // Fixture authentication exists only in this executable, never in the application.
         var builder = WebApplication.CreateBuilder();
         builder.Logging.ClearProviders();
+        builder.Services.AddDataProtection().UseEphemeralDataProtectionProvider();
         builder.Services.AddAuthentication("Fixture").AddScheme<AuthenticationSchemeOptions, FixtureAuthentication>("Fixture", _ => { });
         builder.Services.AddAuthorization();
         builder.Services.AddControllersWithViews().AddApplicationPart(typeof(PaymentsController).Assembly).AddControllersAsServices();

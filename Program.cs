@@ -9,6 +9,16 @@ using System.Threading.RateLimiting;
 using Microsoft.Data.SqlClient;
 
 var builder = WebApplication.CreateBuilder(args);
+if (!builder.Environment.IsDevelopment()) ProductionSafeLogging.Configure(builder.Services);
+CertificateDataProtection.Configure(builder.Services, builder.Configuration, builder.Environment);
+
+builder.Services.AddAntiforgery(options =>
+{
+    options.Cookie.HttpOnly = true;
+    options.Cookie.SameSite = SameSiteMode.Strict;
+    options.Cookie.SecurePolicy = builder.Environment.IsDevelopment()
+        ? CookieSecurePolicy.SameAsRequest : CookieSecurePolicy.Always;
+});
 
 builder.Services.AddControllersWithViews(options => {
     options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute());
@@ -35,10 +45,13 @@ if (!builder.Environment.IsDevelopment())
     try {
         var sql = new SqlConnectionStringBuilder(connection);
         secureConnection = !sql.TrustServerCertificate && !string.IsNullOrWhiteSpace(sql.InitialCatalog)
+            && !string.IsNullOrWhiteSpace(sql.DataSource)
             && !sql.Encrypt.ToString().Equals("Optional", StringComparison.OrdinalIgnoreCase)
             && !sql.Encrypt.ToString().Equals("False", StringComparison.OrdinalIgnoreCase)
             && !sql.DataSource.Contains("(localdb)", StringComparison.OrdinalIgnoreCase)
             && !sql.DataSource.Contains("localhost", StringComparison.OrdinalIgnoreCase);
+    } catch (ArgumentException) {
+        throw new InvalidOperationException("Invalid production SQL connection-string syntax. Connection values are omitted.");
     } catch { secureConnection = false; }
     if (!secureConnection) throw new InvalidOperationException("Production SQL requires an encrypted remote connection with certificate validation and an explicit database.");
     var hosts = builder.Configuration["AllowedHosts"];
@@ -128,6 +141,7 @@ builder.Services.ConfigureApplicationCookie(options =>
 builder.Services.Configure<SecurityStampValidatorOptions>(options => options.ValidationInterval = TimeSpan.FromMinutes(1));
 
 var app = builder.Build();
+CertificateDataProtection.ValidateStartup(app.Services);
 app.Logger.LogInformation("Selected application runtime {RuntimeVersion}; environment {EnvironmentName}.", Environment.Version, app.Environment.EnvironmentName);
 
 if (!app.Environment.IsDevelopment())
@@ -146,11 +160,13 @@ app.Use(async (context, next) =>
     context.Response.Headers["X-Frame-Options"] = "DENY";
     context.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
     context.Response.Headers["Content-Security-Policy"] = "frame-ancestors 'none'; object-src 'none'; base-uri 'self'";
+    if (PublicFileProtection.TryDeny(context)) return;
     // Legacy financial proofs must only be served through the authorized controller.
     if (context.Request.Path.StartsWithSegments("/uploads") &&
         (!context.Request.Path.StartsWithSegments("/uploads/profiles", out var profilePath)
         || profilePath.Value is not { } profileFile
         || profileFile.Length < 2
+        || !new[] { ".jpg", ".jpeg", ".png", ".webp" }.Contains(Path.GetExtension(profileFile).ToLowerInvariant())
         || profileFile[1..].Contains('/') || profileFile.Contains('\\') || profileFile.Contains("..", StringComparison.Ordinal)))
     {
         context.Response.StatusCode = StatusCodes.Status404NotFound;
@@ -189,15 +205,8 @@ using (var scope = app.Services.CreateScope())
 
     if (builder.Configuration.GetValue("Database:ValidateOnStartup", true))
     {
-        try
-        {
-            if ((await dbContext.Database.GetPendingMigrationsAsync()).Any())
-                throw new InvalidOperationException("Database schema has pending migrations. Back up the effective database, review and apply the forward migration script, then restart. Development user-secrets and environment variables can override appsettings.json. See RECOVERY_REPORT.md.");
-        }
-        catch (SqlException)
-        {
-            throw new InvalidOperationException("Database startup validation failed. Check the effective connection configuration and SQL service availability. Connection values are omitted. See RECOVERY_REPORT.md.");
-        }
+        await DatabaseStartupValidator.ValidateAsync(
+            services.GetRequiredService<DbContextOptions<ApplicationDbContext>>(), app.Logger);
     }
 }
 

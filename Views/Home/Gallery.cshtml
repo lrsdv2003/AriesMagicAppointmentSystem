@@ -1,0 +1,29 @@
+@using AriesMagicAppointmentSystem.ViewModels
+@model IReadOnlyList<GalleryPhoto>
+@{ ViewData["Title"] = "Gallery"; }
+<section class="wg-intro" aria-labelledby="galleryPageTitle"><div class="container">
+    <span class="wg-kicker">The moments collection</span>
+    <div class="wg-intro-grid"><h1 id="galleryPageTitle">Moments that make<br />the <em>magic real.</em></h1><p>A glimpse of the laughter, surprise, and people who make every celebration their own.</p></div>
+    <nav class="wg-index" aria-label="Explore the photographs"><a href="#performance">01 <span>Performance</span><span aria-hidden="true">↓</span></a><a href="#connection">02 <span>Connection</span><span aria-hidden="true">↓</span></a><a href="#celebration">03 <span>Celebration</span><span aria-hidden="true">↓</span></a></nav>
+</div></section>
+<section class="wg-section wg-performance" id="performance" aria-labelledby="performanceTitle"><div class="container">
+    <div class="wg-section-heading"><h2 id="performanceTitle"><span class="wg-number" aria-hidden="true">01</span> The performance</h2><p>The anticipation. The reveal. A moment in the spotlight.</p></div>
+    <div class="wg-opening">@foreach(var photo in Model.Where(p=>p.Group=="performance")){<partial name="_GalleryPhoto" model="photo" />}</div>
+</div></section>
+<section class="wg-section wg-connection" id="connection" aria-labelledby="connectionTitle"><div class="container">
+    <div class="wg-section-heading"><h2 id="connectionTitle"><span class="wg-number" aria-hidden="true">02</span> The connection</h2><p>Watching closely. Joining in. Sharing the unexpected.</p></div>
+    <div class="wg-connection-grid">@foreach(var photo in Model.Where(p=>p.Group=="connection")){<partial name="_GalleryPhoto" model="photo" />}</div>
+</div></section>
+<section class="wg-section wg-celebration" id="celebration" aria-labelledby="celebrationTitle"><div class="container">
+    <div class="wg-section-heading"><h2 id="celebrationTitle"><span class="wg-number" aria-hidden="true">03</span> The celebration</h2><p>All the little moments that bring a room together.</p></div>
+    <div class="wg-ending">@foreach(var photo in Model.Where(p=>p.Group=="celebration")){<partial name="_GalleryPhoto" model="photo" />}</div>
+    <p class="wg-context">A selection from Aries Magic events. Explore the experiences for each package’s current inclusions.</p>
+</div></section>
+<section class="wg-closing" aria-labelledby="galleryClosingTitle"><div class="container"><div class="wg-closing-panel"><div><span class="wg-kicker">Make room for your moment</span><h2 id="galleryClosingTitle">Your people.<br /><em>Your next celebration.</em></h2><p>Start with a venue and a date. Let’s plan the entertainment together.</p></div><a asp-controller="Bookings" asp-action="CreateStepOne" class="wg-button wg-button-primary">Let’s plan your event <span aria-hidden="true">→</span></a></div></div></section>
+<dialog id="portfolioViewer" class="wg-viewer" aria-labelledby="portfolioTitle" aria-describedby="portfolioHelp">
+    <div class="wg-viewer-top"><span class="wg-viewer-counter" data-portfolio-counter></span><button type="button" class="wg-button" data-portfolio-close autofocus>Close <span aria-hidden="true">×</span></button></div>
+    <div class="wg-viewer-stage" data-portfolio-stage aria-busy="false"><img alt="" width="2048" height="1365" hidden /><p class="wg-viewer-status" role="status" aria-live="polite" data-portfolio-status></p></div>
+    <div class="wg-viewer-bottom"><button type="button" class="wg-button wg-viewer-direction" data-portfolio-prev aria-label="Previous photograph"><span aria-hidden="true">←</span><span>Previous</span></button><div class="wg-viewer-caption"><h2 id="portfolioTitle">Event photograph</h2><p data-portfolio-credit hidden></p></div><button type="button" class="wg-button wg-viewer-direction" data-portfolio-next aria-label="Next photograph"><span>Next</span><span aria-hidden="true">→</span></button></div>
+    <p id="portfolioHelp" class="wg-viewer-help">Use the arrow keys or swipe to explore. Escape closes the viewer.</p>
+</dialog>
+@section Scripts { <script src="~/js/gallery-portfolio.js" asp-append-version="true"></script> }

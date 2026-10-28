@@ -2,7 +2,7 @@
 
 ## Wonder Studio client design
 
-After rendering fixtures, `node tests/OwnerRegression/wonder.browser.mjs` checks 33 Client pages at 320/390/768/1280/1920px, fonts/media/brand tokens, JavaScript errors, and isolation of all three internal roles. Set `AXE_CORE_PATH` to check WCAG A/AA rules at both 320px and 1280px. Use the existing `PUPPETEER_MODULE` and `PUPPETEER_EXECUTABLE_PATH` environment overrides when needed. Screenshots and findings are written to `%TEMP%/AriesOwnerSnapshots`. See `WONDER_STUDIO.md` for the current design specification and verification limits.
+After rendering fixtures, `node tests/OwnerRegression/wonder.browser.mjs` checks 54 Client/edge fixtures at 320/390/768/1280/1920px, fonts/media/brand tokens, JavaScript errors, and isolation of all three internal roles. This includes authentication validation/recovery/locked states, Gallery guest/client and About empty/published states. Set `AXE_CORE_PATH` to check WCAG A/AA rules at both 320px and 1280px; `WONDER_AXE_PAGES` accepts a comma-separated fixture-name selection. Use the existing `PUPPETEER_MODULE` and `PUPPETEER_EXECUTABLE_PATH` environment overrides when needed. Screenshots and findings are written to `%TEMP%/AriesOwnerSnapshots`. See `CLIENT_UI_REDESIGN_REPORT.md` Section 16 for current results and verification limits; the older `WONDER_STUDIO.md` compositions are historical.
 
 ## Pre-deployment security additions (22 October 2026)
 
@@ -21,7 +21,7 @@ and remaining acceptance requirements.
 
     node tests/OwnerRegression/security.http.mjs
 
-Run from the repository root on Windows with .NET 9 and SQL Server LocalDB:
+Run from the repository root on Windows with .NET 10 and SQL Server LocalDB:
 
     dotnet run --project tests/OwnerRegression/OwnerRegression.csproj
 
@@ -169,6 +169,12 @@ The existing interface, Admin and profile browser interaction suites also pass.
 
 ## Cross-role UI quality checks
 
+Phase 7 Client hub: the complete regression/rendering suite passes **509** checks, including 17 new presentation-only next-action cases; DOM passes **876**. Existing backend/role/financial/consent checks remain. `ClientHubRegression` verifies payable/blocked/pending/evidence/reschedule/closed/completed actions against the existing gates; it does not authorize operations. Actual own/other Client HTTP checks are separate.
+
+The broad browser suite passes 277 layout/brand/font/role checks. For the 32 scoped axe states used in Phase 7, set `WONDER_AXE_PAGES` to `Bookings-ClientDashboard,Bookings-MyBookings,Bookings-ClientDetails,Payments-MyUploads,Profile-Index,Notifications-Index-Client,Communications-Index-Client,Feedback-Create,Feedback-Index,Feedback-Details,Bookings-Create,Payments-Upload,RescheduleRequests-Create,RescheduleRequests-MyRequests,Payments-RequestRefund,Payments-MyRefundRequests`. The pre-existing unscoped published-Homepage quotation contrast finding remains tracked in report Section 16; it is not hidden by a claim of full-site accessibility compliance.
+
+Shared internal Notifications/Communications branches were checked with `UI_PAGES=Communications-Index,Communications-Index-Admin,Notifications-Index` in `internal-ui.browser.mjs`: 12 responsive checks plus existing navigation/header/focus/History/account interactions pass. No internal-role redesign was performed. See report Section 17 for screenshots, all seven Client widths, isolated SQL/browser mutations, source/package preservation and manual-review limits.
+
 After rendering the fixtures, run the DOM suite with Node and jsdom:
 
     node tests/OwnerRegression/ui.dom.mjs
@@ -192,3 +198,14 @@ supports `CLIENT_PAGES=Home-Index-published,Home-Index-Guest-published` for the 
 public showcase fixtures. See `FEEDBACK_FEATURE.md` for results and deployment gaps.
 Real-user sign-off, live provider checks, and assistive-technology testing remain
 separate; DOM/browser fixtures do not establish full screen-reader usability.
+
+Phase 6 rework adds the opt-in Concierge shell and meaningful DOM checks for fractional pricing/single discount, overnight schedule display, one moved price subtree, associated validation, immediate duplicate protection, cancelled/restored retries, file-preview type/size/encoding/URL lifecycle and calendar lead time/blocked/full refresh/navigation/async focus. Render the real Razor fixtures first; `ui.dom.mjs` passes **816** checks. Native picker/keyboard and connected HTTP/SQL behavior use the separate fixture in `tests/ClientVisual/README.md`.
+
+Final broad layout check: 277 checks on all 54 Client/edge fixtures and internal-role isolation, with 26 scoped axe scans at 320/1280px. Set:
+
+```powershell
+$env:WONDER_AXE_PAGES='Home-Index-Guest,Home-About-Guest,Home-About-Guest-published,Home-Gallery-Guest,Home-Packages,Home-Package,Bookings-Create,Bookings-MyBookings,Bookings-ClientDetails,Payments-Upload,Payments-MyUploads,RescheduleRequests-Create,RescheduleRequests-MyRequests'
+node tests/OwnerRegression/wonder.browser.mjs
+```
+
+An **additional unscoped** scan reports the existing published-Homepage testimonial quotation contrast issue at 320/1280px. Current and complete pre-rework CSS produce the same colors; that approved Homepage was preserved. See `.tmp-owner-build/concierge-broad-unscoped-accessibility.json`, `concierge-published-contrast-baseline.json` and report Section 16. Do not describe the scoped run as an all-site accessibility pass. No internal-role/business/security source was redesigned.

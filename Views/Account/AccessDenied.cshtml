@@ -1,11 +1,4 @@
-@{
-    ViewData["Title"] = "Access Denied";
-}
-
-<section class="auth-section">
-    <div class="auth-card client-empty-state auth-card-narrow">
-        <h1 class="mb-2">Access Denied</h1>
-        <p class="page-subtitle mb-3">You do not have permission to access this page.</p>
-        <a asp-controller="Home" asp-action="Index" class="btn btn-primary">Back to Home</a>
-    </div>
-</section>
+@{ ViewData["Title"] = "Access denied"; }
+<section class="au-page au-compact"><div class="container"><div class="au-panel au-outcome">
+    <span class="au-symbol" aria-hidden="true"><i class="bi bi-shield-lock"></i></span><span class="au-kicker">Account access</span><h1>Access denied</h1><p>You do not have permission to access this page.</p><a asp-controller="Home" asp-action="Index" class="au-button au-primary">Back to Home <span aria-hidden="true">→</span></a>
+</div></div></section>

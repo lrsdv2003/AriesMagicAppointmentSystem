@@ -1,91 +1,21 @@
 @model AriesMagicAppointmentSystem.ViewModels.LoginViewModel
-
-@{
-    ViewData["Title"] = "Login";
-}
-
-<div class="auth-page">
-    <div class="auth-shell">
-        <div class="auth-left">
-            <div class="auth-brand-badge">Aries Magic</div>
-            <h2 class="auth-hero-title">Good to have<br />you back.</h2>
-            <p class="auth-hero-text">
-                Sign in to manage your bookings, upload payment proof, track updates,
-                and continue your event booking journey with Aries Magic.
-            </p>
-
-            <div class="auth-feature-list">
-                <div class="auth-feature-item">
-                    <span class="auth-feature-icon"><i class="bi bi-magic" aria-hidden="true"></i></span>
-                    <div>
-                        <strong>Track Booking Status</strong>
-                        <p>Stay updated on your request from submission to confirmation.</p>
-                    </div>
-                </div>
-
-                <div class="auth-feature-item">
-                    <span class="auth-feature-icon"><i class="bi bi-envelope-check" aria-hidden="true"></i></span>
-                    <div>
-                        <strong>Email-based Security</strong>
-                        <p>Use secure account recovery and email verification features.</p>
-                    </div>
-                </div>
-
-                <div class="auth-feature-item">
-                    <span class="auth-feature-icon"><i class="bi bi-stars" aria-hidden="true"></i></span>
-                    <div>
-                        <strong>Simple Booking Flow</strong>
-                        <p>Book packages, customize inclusions, and manage event details online.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="auth-right">
-            <div class="auth-card">
-                <div class="auth-card-header">
-                    <h1>Your plans, together.</h1>
-                    <p>Sign in to pick up where you left off.</p>
-                </div>
-
-                <form asp-action="Login" method="post">
-                    @Html.AntiForgeryToken()
-                    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
-
-                    <div class="mb-3">
-                        <label asp-for="Email" class="form-label"></label>
-                        <input asp-for="Email" autocomplete="username" class="form-control" placeholder="Enter your email" />
-                        <span asp-validation-for="Email" class="text-danger"></span>
-                    </div>
-
-                    <div class="mb-3">
-                        <label asp-for="Password" class="form-label"></label>
-                        <input asp-for="Password" autocomplete="current-password" class="form-control" placeholder="Enter your password" />
-                        <span asp-validation-for="Password" class="text-danger"></span>
-                    </div>
-
-                    <div class="auth-form-row mb-4">
-                        <div class="form-check">
-                            <input asp-for="RememberMe" class="form-check-input" />
-                            <label asp-for="RememberMe" class="form-check-label"></label>
-                        </div>
-
-                        <a asp-action="ForgotPassword" class="auth-link">Forgot Password?</a>
-                    </div>
-
-                    <button type="submit" class="btn btn-primary w-100 auth-submit-btn">Sign in</button>
-                </form>
-
-                <div class="auth-divider">
-                    <span>New here?</span>
-                </div>
-
-                <a asp-action="Register" class="btn btn-outline-primary w-100">Create Client Account</a>
-            </div>
-        </div>
+@{ ViewData["Title"] = "Sign in"; }
+<section class="au-page"><div class="container au-split">
+    <partial name="_AuthIntro" model='"login"' />
+    <div class="au-panel">
+        <div class="au-panel-heading"><img src="~/images/client/wonder-studio/brand-original.jpeg" alt="" width="56" height="56" /><h1>Welcome back</h1><p>Sign in to your account.</p></div>
+        <partial name="_AuthNotices" />
+        <form asp-action="Login" method="post" data-auth-form>
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="returnUrl" value="@ViewData["ReturnUrl"]" />
+            <div asp-validation-summary="ModelOnly" class="au-validation text-danger" role="alert" tabindex="-1"></div>
+            <div class="au-field"><label asp-for="Email" class="form-label">Email address</label><input asp-for="Email" autocomplete="username" class="form-control au-input" placeholder="Enter your email" aria-describedby="EmailError" /><span asp-validation-for="Email" id="EmailError" class="text-danger"></span></div>
+            <div class="au-field"><label asp-for="Password" class="form-label"></label><div class="au-password"><input asp-for="Password" autocomplete="current-password" class="form-control au-input" placeholder="Enter your password" aria-describedby="PasswordError" /><button type="button" class="au-reveal" data-password-target="Password" aria-controls="Password" aria-label="Show password" aria-pressed="false" hidden><i class="bi bi-eye" aria-hidden="true"></i></button></div><span asp-validation-for="Password" id="PasswordError" class="text-danger"></span></div>
+            <div class="au-options"><div class="au-remember"><input asp-for="RememberMe" class="form-check-input" /><label asp-for="RememberMe">Remember me</label></div><a asp-action="ForgotPassword">Forgot password?</a></div>
+            <button type="submit" class="au-button au-primary" data-auth-label="Signing in…">Sign in <span aria-hidden="true">→</span></button>
+            <p class="au-submit-status visually-hidden" role="status" data-auth-status></p>
+        </form>
+        <div class="au-divider"><span>New here?</span></div><a asp-action="Register" class="au-button au-secondary">Create a new account</a>
     </div>
-</div>
-
-@section Scripts {
-    <partial name="_ValidationScriptsPartial" />
-}
+</div></section>
+@section Scripts { <partial name="_AuthScripts" /> }

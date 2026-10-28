@@ -1,0 +1,7 @@
+{
+  "ConnectionStrings": { "DefaultConnection": "Server=(localdb)\\MSSQLLocalDB;Database=AriesMagic_LocalDevelopment;Integrated Security=True;TrustServerCertificate=True" },
+  "Database": { "InitializeOnStartup": false, "ValidateOnStartup": true },
+  "BackgroundJobs": { "Enabled": false },
+  "EmailSettings": { "Host": "127.0.0.1", "Port": 2525, "SenderEmail": "sender@example.test", "Username": "", "Password": "", "EnableSsl": false },
+  "AllowedHosts": "localhost;127.0.0.1"
+}

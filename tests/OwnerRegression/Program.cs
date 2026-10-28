@@ -19,6 +19,11 @@ void Check(bool condition, string name)
     checks++;
     Console.WriteLine("PASS: " + name);
 }
+ClientHubRegression.Run(Check);
+await DatabaseStartupRegression.RunAsync(Check);
+await ProductionHardeningRegression.RunAsync(Check);
+await DeploymentReadinessRegression.RunAsync(Check);
+await StaticFileSecurityRegression.RunAsync(Check);
 foreach(var value in new[] { "unsuccessful", "unpaid", "not completed", "pending", "failed", "" })
     Check(!OcrComparison.IsSuccessful(value), "Reject positive OCR match for " + value);
 Check(OcrComparison.IsSuccessful("Completed"), "Completed status matches");
@@ -39,6 +44,7 @@ await using var db = new ApplicationDbContext(options);
 try
 {
     await db.Database.EnsureCreatedAsync();
+    await DeploymentReadinessRegression.ValidateInventoryAsync(db, Check);
     var client = new User { FullName = "Regression Client", Email = "regression@example.test", Role = "Client" };
     var service = new Service { Name = "Regression Package", Price = 10000, DurationInHours = 2 };
     var active = new Booking { Client = client, Service = service, PackageName = service.Name, EventDate = new(2025,1,20), StartTime = new(2025,1,20,10,0,0), EndTime = new(2025,1,20,12,0,0), FinalPrice = 10000, Status = BookingStatus.Confirmed };
@@ -92,6 +98,7 @@ try
     await ProfileRegression.RunAsync(db, Check);
     await HistoryRegression.RunAsync(db, Check);
     await ClientRegression.RunAsync(db, Check);
+    await CatalogInclusionRegression.RunAsync(db, Check);
     await SecurityRegression.RunAsync(db, Check);
     await SecurityHttpRegression.RunAsync(db, Check);
     if (args.Contains("--render"))
@@ -101,6 +108,7 @@ try
             finance, dashboards);
         Check(true, "Owner pages render with isolated fixture data");
     }
+    await PaymentProofStorageRegression.RunAsync(db, Check);
     Console.WriteLine("SUCCESS: " + checks + " Owner regression checks passed.");
 }
 finally

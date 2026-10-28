@@ -1,0 +1,27 @@
+@model IEnumerable<AriesMagicAppointmentSystem.Models.Service>
+@{ var packages = Model.Take(3).ToList(); }
+<div class="ws-package-grid">
+@foreach (var package in packages)
+{
+    <article class="ws-package">
+        <h3>@package.Name</h3>
+        <p class="ws-package-duration">@package.DurationInHours hours <span aria-hidden="true">/</span> Live entertainment</p>
+        <p class="ws-package-price"><span class="visually-hidden">Package price: </span>₱@package.Price.ToString("N0")</p>
+        @if (!string.IsNullOrWhiteSpace(package.Description)) { <p class="ws-package-description">@package.Description</p> }
+        @if (package.Inclusions.Any())
+        {
+            <ul class="ws-package-inclusions" aria-label="Selected inclusions">
+            @foreach (var inclusion in package.Inclusions.OrderBy(i => i.Id).Take(3)) { <li>@inclusion.Name</li> }
+            </ul>
+        }
+        <div class="ws-package-links">
+            <a asp-controller="Home" asp-action="Package" asp-route-id="@package.Id" class="ws-link">View details<span class="visually-hidden">: @package.Name</span></a>
+            <a asp-controller="Bookings" asp-action="CreateStepOne" asp-route-serviceId="@package.Id" class="ws-package-choose">Select package <span aria-hidden="true">→</span><span class="visually-hidden">: @package.Name</span></a>
+        </div>
+    </article>
+}
+@if (packages.Count == 0)
+{
+    <div class="ws-catalog-empty"><h3>The next show is taking shape.</h3><p>Packages are being updated. Please check back soon.</p></div>
+}
+</div>

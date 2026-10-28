@@ -16,6 +16,8 @@ App_Data/financial-proofs/
 
 # Temporary Owner validation output
 .tmp-owner-build/
+publish/
+publish-test/
 
 # Private internal account photos
 App_Data/profiles/
@@ -29,3 +31,64 @@ appsettings.Staging.json
 .env.*
 *.pfx
 *.p12
+publish-*/
+
+# Data Protection envelopes are runtime secrets, never source control.
+**/key-*.xml
+**/revocation-*.xml
+
+# Private runtime data, backups, tooling and generated evidence.
+App_Data/
+**/node_modules/
+.tmp*/
+artifacts/
+TestResults/
+playwright-report/
+test-results/
+logs/
+backups/
+backup/
+*.bak
+*.bkp
+*.backup
+*.trn
+*.bacpac
+*.mdf
+*.ldf
+*.pem
+*.key
+*.log
+*.zip
+*.7z
+*.dmp
+*.dll
+*.exe
+*.pdb
+*.trx
+*.db
+*.sqlite
+*.sqlite3
+*.credentials.json
+*.secrets.json
+!.env.example
+
+# Machine-specific preview / live-operation evidence stays local.
+/*_PREVIEW.md
+/LIVE_*.md
+/CONTROLLED_ALPHA_DEPLOYMENT_REPORT.md
+/ALPHA_DEPLOYMENT_BLOCKER_ASSESSMENT.md
+/ALPHA_SUPPORT_CONFIRMED_READINESS.md
+/CONFIGURATION_URL_INVESTIGATION.md
+/DEPLOYMENT_READINESS_REPORT.md
+/H4_DATA_PROTECTION_VERIFICATION.md
+/H4_PFX_IMPLEMENTATION_PLAN.md
+/MYASP_ALPHA_READ_ONLY_VERIFICATION_REQUEST.md
+/MYASP_DEPLOYMENT_REPORT.md
+/PAYMENT_PROOF_404_INVESTIGATION.md
+/PRODUCTION_SECURITY_AUDIT.md
+/UNIFIED_ALPHA_BETA_ACCEPTANCE_CHECKLIST.md
+/UNIFIED_ALPHA_BETA_DEPLOYMENT_REPORT.md
+/CLIENT_UI_REDESIGN_REPORT.md
+/GALLERY_ASSET_MANIFEST.md
+/index.html
+/GITHUB_UPDATE_REPORT.md

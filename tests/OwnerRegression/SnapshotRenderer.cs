@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.DataProtection;
 using System.Security.Claims;
 using AriesMagicAppointmentSystem.Controllers;
 using AriesMagicAppointmentSystem.Data;
@@ -29,9 +30,12 @@ static class SnapshotRenderer
             WebRootPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot")
         });
         builder.Logging.ClearProviders();
+        builder.Services.AddDataProtection().UseEphemeralDataProtectionProvider();
         builder.Services.AddControllersWithViews().AddApplicationPart(typeof(PaymentsController).Assembly);
         builder.Services.AddScoped(_ => new ApplicationDbContext(options));
+        builder.Services.AddScoped<AriesMagicAppointmentSystem.Services.IPaymentFinancialService, AriesMagicAppointmentSystem.Services.PaymentFinancialService>();
         builder.Services.AddSingleton<IUrlHelperFactory, SnapshotUrls>();
+        builder.Services.Configure<Microsoft.AspNetCore.Identity.IdentityOptions>(o=>{o.Password.RequiredLength=12;o.Password.RequireDigit=false;o.Password.RequireLowercase=false;o.Password.RequireUppercase=false;o.Password.RequireNonAlphanumeric=false;});
         await using var app = builder.Build();
         using var scope = app.Services.CreateScope();
         var provider = scope.ServiceProvider;
@@ -74,13 +78,13 @@ static class SnapshotRenderer
             ("Feedback","Details",feedback),
             ("Testimonials","Index",new FeedbackListPage([feedback],1,1,1,"Pending","")),
             ("Testimonials","Review",feedback),
-            ("Home","Index",publicPackages), ("Home","Packages",publicPackages), ("Home","Package",displayPackage),
+            ("Home","Index",publicPackages), ("Home","About",new object()), ("Home","Gallery",GalleryPhoto.Collection), ("Home","Packages",publicPackages), ("Home","Package",displayPackage),
             ("Home","Privacy",new object()),
             ("Account","Login",new LoginViewModel()),
             ("Account","Register",new RegisterViewModel()),
             ("Account","ForgotPassword",new ForgotPasswordViewModel()),
             ("Account","ResetPassword",new ResetPasswordViewModel()),
-            ("Account","VerifyEmail",new VerifyEmailViewModel {MaskedEmail="c***@example.test"}),
+            ("Account","VerifyEmail",new VerifyEmailViewModel {UserId="synthetic-user",MaskedEmail="c***@example.test",HasActiveCode=true,ExpiresAtUtc=DateTime.UtcNow.AddMinutes(8),ResendSecondsRemaining=37}),
             ("Account","EmailVerified",new object()),
             ("Account","AccessDenied",new object()),
             ("Bookings","ClientDashboard",new[]{clientBooking}), ("Bookings","ClientDetails",clientBooking),
@@ -91,7 +95,7 @@ static class SnapshotRenderer
             ("Payments","RequestRefund",new RefundRequestViewModel()),
             ("Payments","MyRefundRequests",Array.Empty<RefundRequest>()),
             ("RescheduleRequests","MyRequests",Array.Empty<RescheduleRequest>()),
-            ("RescheduleRequests","Create",new RescheduleRequestCreateViewModel()),
+            ("RescheduleRequests","Create",new RescheduleRequestCreateViewModel {RequestedDate=DateTime.Today.AddDays(7),Bookings=[new(){Value="1",Text="Synthetic booking — current schedule"}]}),
             ("Services","Archived",Array.Empty<Service>())
         }).ToArray();
         var filterPages = new (string Controller,string Action,object Model)[] {
@@ -121,12 +125,20 @@ static class SnapshotRenderer
         {
             var isClientPage = page.Controller == "Feedback" || page.Controller == "Home" || page.Controller == "Profile" || page.Controller == "RescheduleRequests" && page.Action is "Create" or "MyRequests" || page.Controller == "Bookings" && new[]{"ClientDashboard","ClientDetails","Create"}.Contains(page.Action) || page.Controller == "Payments" && new[]{"Upload","MyUploads","RequestRefund","MyRefundRequests"}.Contains(page.Action);
             var defaultRole = isClientPage ? "Client" : page.Controller == "Testimonials" ? "Staff" : page.Controller == "Dashboard" ? page.Action : page.Action == "Admin" || page.Controller == "Calendar" && page.Action == "Index" ? "Admin" : page.Action == "MyBookings" ? "Client" : page.Action is "StaffIndex" or "StaffDetails" || page.Controller == "RescheduleRequests" ? "Staff" : page.Controller is "UserManagement" or "SystemActivity" or "TrashHistory" ? "Admin" : "Owner";
-            var roles = page.Controller == "Account" ? new[] {"Guest"} : page.Controller == "Home" && page.Action == "Index" ? new[] {"Client","Guest"} : page.Controller == "History" ? new[] {"Owner","Staff"} : page.Controller == "InternalProfile" ? new[] { "Owner", "Staff", "Admin" } : page.Controller == "Services" && page.Action is "Index" or "Details" ? new[] { "Owner", "Staff", "Admin" } : page.Controller == "Communications" ? new[] { "Owner", "Admin", "Staff", "Client" } : page.Controller == "Notifications" ? new[] { "Owner", "Client" } : new[] { defaultRole };
+            var roles = page.Controller == "Account" ? new[] {"Guest"} : page.Controller == "Home" && (page.Action == "Index" || page.Action == "About" || page.Action == "Gallery") ? new[] {"Client","Guest"} : page.Controller == "History" ? new[] {"Owner","Staff"} : page.Controller == "InternalProfile" ? new[] { "Owner", "Staff", "Admin" } : page.Controller == "Services" && page.Action is "Index" or "Details" ? new[] { "Owner", "Staff", "Admin" } : page.Controller == "Communications" ? new[] { "Owner", "Admin", "Staff", "Client" } : page.Controller == "Notifications" ? new[] { "Owner", "Client" } : new[] { defaultRole };
             foreach (var role in roles)
             {
-            foreach(var state in page.Controller == "Home" && page.Action == "Index" ? new[]{"populated","published"} : page.Controller == "Communications" ? (role=="Client" ? new[]{"populated","empty","inbox"} : new[]{"populated","empty"}) : page.Controller == "Dashboard" ? new[]{"populated","empty","error"} : page.Controller == "History" && page.Action == "Index" || page.Controller == "Bookings" && page.Action is "ClientDashboard" or "MyBookings" ? new[]{"populated","empty"} : new[]{"populated"})
+            foreach(var state in page.Controller == "Account" && page.Action == "Login" ? new[]{"populated","error","recovery-sent","reset-success","invalid-link","locked"} : page.Controller == "Account" && page.Action == "VerifyEmail" ? new[]{"populated","error","locked","expired"} : page.Controller == "Account" && page.Action is "Register" or "ResetPassword" ? new[]{"populated","error"} : page.Controller == "Home" && (page.Action == "Index" || page.Action == "About") ? new[]{"populated","published"} : page.Controller == "Home" && page.Action == "Packages" ? new[]{"populated","empty","edge"} : page.Controller == "Communications" ? (role=="Client" ? new[]{"populated","empty","inbox"} : new[]{"populated","empty"}) : page.Controller == "Dashboard" ? new[]{"populated","empty","error"} : page.Controller == "History" && page.Action == "Index" || page.Controller == "Bookings" && page.Action is "ClientDashboard" or "MyBookings" ? new[]{"populated","empty"} : new[]{"populated"})
             {
             object fixtureModel = page.Model;
+            if(page.Controller=="Account" && page.Action=="VerifyEmail" && state is "locked" or "expired") fixtureModel=new VerifyEmailViewModel {UserId="synthetic-user",MaskedEmail="c***@example.test",HasActiveCode=false,AttemptsLocked=state=="locked"};
+            if (page.Controller == "Home" && page.Action == "Packages" && state == "empty") fixtureModel = Array.Empty<Service>();
+            if (page.Controller == "Home" && page.Action == "Packages" && state == "edge") fixtureModel = new[] {
+                new Service { Id=32001, Name="Edited <experience> & a longer catalog name", Price=12345.67m, DurationInHours=1,
+                    Description="Synthetic catalog description with <markup> & text; every value must be encoded.",
+                    Inclusions=Enumerable.Range(1,8).Select(i=>new ServiceInclusion {Id=i,Name="Synthetic inclusion "+i}).ToList() },
+                new Service { Id=32002, Name="Package with no published inclusions", Price=8765, DurationInHours=4 }
+            };
             if (page.Controller == "Bookings" && state == "empty") fixtureModel = Array.Empty<Booking>();
             if(page.Controller == "Communications") fixtureModel=new CommunicationCenterViewModel {
                 IsInternalUser=role!="Client",
@@ -168,8 +180,20 @@ static class SnapshotRenderer
                 new ClientTestimonial("Synthetic visual test: a wonderful celebration from the first welcome to the final applause.","Consented fixture name","Birthday celebration",true,true,true) {OverallRating=5,PublicImageIds=[701]},
                 new ClientTestimonial("Synthetic visual test: our guests loved being part of the show.","Verified client","Completed event",true,true,true) {OverallRating=4}
             };
+                        if(page.Controller=="Account" && state=="error") {
+                if(page.Action=="VerifyEmail")data.ModelState.AddModelError("Code","Incorrect verification code. Please try again. 4 attempt(s) remaining.");
+                else if(page.Action=="Register")data.ModelState.AddModelError("PhoneNumber","Phone number must start with 09 and contain 11 digits.");
+                else data.ModelState.AddModelError("",page.Action=="Login" ? "Incorrect Email or Password." : "Invalid token.");
+            }
+            if(page.Controller=="Account" && page.Action=="Login" && state=="locked")data.ModelState.AddModelError("","Your account is locked.");
+            var tempData=new TempDataDictionary(http,new EmptyTempData());
+            if(page.Controller=="Account" && page.Action=="Login") {
+                if(state=="recovery-sent")tempData["SuccessMessage"]="If an account with that email exists, a password reset link has been sent.";
+                if(state=="reset-success")tempData["SuccessMessage"]="Your password has been reset successfully. You may now log in.";
+                if(state=="invalid-link")tempData["ErrorMessage"]="Invalid password reset request.";
+            }
             using var writer = new StringWriter();
-            var viewContext = new ViewContext(context,result.View,data,new TempDataDictionary(http,new EmptyTempData()),writer,new HtmlHelperOptions());
+            var viewContext = new ViewContext(context,result.View,data,tempData,writer,new HtmlHelperOptions());
             await result.View.RenderAsync(viewContext);
             await File.WriteAllTextAsync(Path.Combine(output,page.Controller+"-"+page.Action+(role != defaultRole && page.Controller != "Account" ? "-"+role : "")+(state=="populated" ? "" : "-"+state)+".html"),writer.ToString());
             rendered++;

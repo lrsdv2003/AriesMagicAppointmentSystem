@@ -1,10 +1,10 @@
 param(
-    [string]$Version = '9.0.21',
-    [string]$Destination = (Join-Path $PSScriptRoot '../.tmp-owner-build/dotnet-9.0.21')
+    [string]$Version = '10.0.13',
+    [string]$Destination = (Join-Path $PSScriptRoot '../.tmp-owner-build/dotnet-10.0.13')
 )
 $ErrorActionPreference = 'Stop'
-if ($Version -notmatch '^9\.0\.\d+$') { throw 'This installer supports .NET 9 servicing releases only.' }
-$metadata = Invoke-RestMethod 'https://builds.dotnet.microsoft.com/dotnet/release-metadata/9.0/releases.json'
+if ($Version -notmatch '^10\.0\.\d+$') { throw 'This installer supports .NET 10 servicing releases only.' }
+$metadata = Invoke-RestMethod 'https://builds.dotnet.microsoft.com/dotnet/release-metadata/10.0/releases.json'
 $release = $metadata.releases | Where-Object { $_.'release-version' -eq $Version } | Select-Object -First 1
 $file = $release.'aspnetcore-runtime'.files | Where-Object { $_.rid -eq 'win-x64' -and $_.name -like '*.zip' } | Select-Object -First 1
 if (!$file -or !([uri]$file.url).Host.Equals('builds.dotnet.microsoft.com')) { throw 'Official runtime archive not found.' }

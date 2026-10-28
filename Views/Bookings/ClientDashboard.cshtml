@@ -1,23 +1,36 @@
 @model IEnumerable<AriesMagicAppointmentSystem.Models.Booking>
 @using AriesMagicAppointmentSystem.Models
 @using AriesMagicAppointmentSystem.ViewModels
+@using AriesMagicAppointmentSystem.Services
+@using System.Security.Claims
+@using Microsoft.EntityFrameworkCore
+@inject AriesMagicAppointmentSystem.Data.ApplicationDbContext HubDb
 @{
-    ViewData["Title"] = "My dashboard";
-    var bookings = Model.ToList();
-    var finances = ViewBag.FinancialSummaries as Dictionary<int, BookingFinancialSummaryViewModel> ?? new();
-    var unavailable = ViewBag.UnavailableBookingIds as List<int> ?? new();
-    var active = bookings.Where(b => b.EventDate.Date >= DateTime.Today && !unavailable.Contains(b.Id) && new[] { BookingStatus.Pending, BookingStatus.AwaitingDownpayment, BookingStatus.AwaitingVerification, BookingStatus.Confirmed }.Contains(b.Status)).OrderBy(b => b.EventDate).ThenBy(b => b.StartTime).ToList();
-    var next = active.FirstOrDefault();
+ Layout="_ClientHubLayout";ViewData["Title"]="Overview";
+ var bookings=Model.ToList();var finances=ViewBag.FinancialSummaries as Dictionary<int,BookingFinancialSummaryViewModel>??new();var unavailable=ViewBag.UnavailableBookingIds as List<int>??new();
+ var uid=User.FindFirstValue(ClaimTypes.NameIdentifier);
+ var display=string.IsNullOrEmpty(uid)?null:await HubDb.Users.AsNoTracking().Where(u=>u.Id==uid).Select(u=>u.FullName).FirstOrDefaultAsync();
+ var firstName=display?.Split(' ',StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
+ var active=bookings.Where(b=>b.EventDate.Date>=DateTime.Today&&new[]{BookingStatus.Pending,BookingStatus.AwaitingDownpayment,BookingStatus.AwaitingVerification,BookingStatus.Confirmed}.Contains(b.Status)).OrderBy(b=>b.EventDate).ThenBy(b=>b.StartTime).ToList();
+ var pendingIds=string.IsNullOrEmpty(uid)?new List<int>():await HubDb.RescheduleRequests.AsNoTracking().Where(r=>r.Booking!=null&&r.Booking.ApplicationUserId==uid&&r.Status==RescheduleRequestStatus.Pending).Select(r=>r.BookingId).ToListAsync();
+ var attention=active.FirstOrDefault(b=>unavailable.Contains(b.Id)||finances.GetValueOrDefault(b.Id)?.HasAdditionalEvidenceRequired==true||(!pendingIds.Contains(b.Id)&&ClientHubAction.CanPay(b,finances.GetValueOrDefault(b.Id),false)));
+ var next=attention??active.FirstOrDefault()??bookings.OrderByDescending(b=>b.EventDate).FirstOrDefault();
+ var notifications=string.IsNullOrEmpty(uid)?new List<Notification>():await HubDb.Notifications.AsNoTracking().Where(n=>n.UserId==uid).OrderByDescending(n=>n.CreatedAt).ThenByDescending(n=>n.Id).Take(3).ToListAsync();
+ var pending=next!=null&&pendingIds.Contains(next.Id);
+ var canFeedback=next!=null&&next.ApplicationUserId==uid&&!string.IsNullOrEmpty(uid)&&FeedbackPolicy.Eligible(next)&&!await HubDb.EventFeedbacks.AnyAsync(f=>f.BookingId==next.Id&&f.ClientId==uid);
 }
-<header class="cr-page-heading"><div><span class="cr-eyebrow">Your own little wonder studio</span><h1>Your celebrations,<br />all in one place.</h1><p>The next date to look forward to. The details that make it yours.</p></div><a asp-action="CreateStepOne" class="btn btn-primary">Plan another event ↗</a></header>
-@if (next != null)
-{
-    var finance = finances.GetValueOrDefault(next.Id);
-    <article class="cr-event-spotlight"><div><span class="cr-eyebrow">Upcoming event · BK-@next.CreatedAt.Year-@next.Id.ToString("D3")</span><h2>@(next.PackageName ?? next.Service?.Name)</h2><p class="cr-event-date">@next.EventDate.ToString("dddd, MMMM d, yyyy") · @next.StartTime.ToString("h:mm tt")</p><p>@next.PartyVenue</p><partial name="_StatusBadge" model="@ClientBookingPresentation.Status(next.Status)" /><p class="cr-next-action">@ClientBookingPresentation.NextAction(next, finance)</p><a asp-action="Details" asp-route-id="@next.Id" class="btn btn-primary">View booking & next steps</a></div><div class="cr-event-date-tile" aria-hidden="true"><span>@next.EventDate.ToString("MMM")</span><strong>@next.EventDate.Day</strong><span>@next.EventDate.ToString("dddd")</span></div></article>
-    @if(active.Count > 1) { <p class="mt-3">You have @(active.Count - 1) other upcoming request(s). <a asp-action="MyBookings">View all bookings</a></p> }
+<header class="hub-heading"><div><span class="hub-kicker">Your personal event hub</span><h1>@(string.IsNullOrWhiteSpace(firstName)?"Welcome to your workspace.":$"Good to see you, {firstName}.")</h1><p>Your dates, next steps and conversations, together.</p></div>@if(bookings.Any()){<a asp-action="CreateStepOne" class="cn-text-link">Plan another event <span aria-hidden="true">↗</span></a>}</header>
+@if(next==null){<section class="hub-card hub-empty"><span class="hub-kicker">Make room for a little wonder</span><h2>Your first celebration starts here.</h2><p>Choose an experience, check your venue and date, and send a request. Your booking and next steps will appear in this space.</p><a asp-action="CreateStepOne" class="cn-button cn-primary">Plan your event <span aria-hidden="true">→</span></a><div class="cn-links"><a asp-controller="Home" asp-action="Packages">Explore experiences</a><a asp-controller="Communications" asp-action="Index" asp-route-view="inbox">Ask a question</a></div></section>}
+else{
+ var finance=finances.GetValueOrDefault(next.Id);var action=ClientHubAction.For(next,finance,unavailable.Contains(next.Id),pending,canFeedback);
+ <div class="hub-overview">
+ <section class="hub-card hub-next" data-focus-booking="@next.Id"><div class="hub-next-top"><span class="hub-reference">@(attention!=null?"Needs your attention":active.Any()?"Next booking":"Most recent booking") · BK-@next.CreatedAt.Year-@next.Id.ToString("D3")</span><partial name="_StatusBadge" model="@(unavailable.Contains(next.Id)?"Schedule unavailable":ClientBookingPresentation.Status(next.Status))"/></div><h2>@next.PackageName</h2>
+ <div class="hub-schedule"><div class="hub-date-tile" aria-hidden="true"><span>@next.EventDate.ToString("MMM")</span><strong>@next.EventDate.Day</strong><span>@next.EventDate.Year</span></div><div><p><strong>@next.EventDate.ToString("dddd, MMMM d, yyyy")</strong></p><p>@next.StartTime.ToString("h:mm tt")–@next.EndTime.ToString("h:mm tt") @if(next.EndTime.Date!=next.StartTime.Date){<span>(@next.EndTime.ToString("MMM d"))</span>}</p><p>@next.PartyVenue</p></div></div>
+ <div class="hub-task-note"><strong>@action.Title</strong><p>@action.Description</p></div><div class="hub-next-actions"><a href="@action.Href" class="cn-button cn-primary" data-hub-next>@action.Label <span aria-hidden="true">→</span></a>@if(!action.Href.EndsWith($"/Details/{next.Id}")){<a asp-action="Details" asp-route-id="@next.Id">Booking details</a>}</div>
+ </section>
+ <aside class="hub-card hub-wallet"><span class="hub-kicker">For this booking</span><h2>Payment snapshot</h2>@if(finance!=null){<dl><div><dt>Booking total</dt><dd>₱@finance.BookingTotal.ToString("N2")</dd></div><div><dt>Verified payments</dt><dd>₱@finance.TotalVerifiedPayments.ToString("N2")</dd></div><div><dt>Remaining balance</dt><dd>₱@finance.RemainingBalance.ToString("N2")</dd></div></dl><progress class="hub-progress" max="@Math.Max(1,finance.BookingTotal)" value="@Math.Clamp(finance.TotalVerifiedPayments,0,Math.Max(1,finance.BookingTotal))" aria-label="Verified payments toward the booking total"></progress><p>@finance.PaymentStatus. Only verified payments reduce this balance.</p>}else{<p>Open the booking to check its financial details.</p>}<a asp-controller="Payments" asp-action="MyUploads">View payment activity</a></aside>
+ @if(active.Count>1){<section class="hub-card hub-other"><div class="hub-section-heading"><h2>Also on your calendar</h2><a asp-action="MyBookings">All bookings</a></div>@foreach(var item in active.Where(b=>b.Id!=next.Id).Take(3)){<a asp-action="Details" asp-route-id="@item.Id" class="hub-mini-record"><div><strong>@item.PackageName</strong><span>@item.EventDate.ToString("MMM d, yyyy") · @item.StartTime.ToString("h:mm tt")</span></div><span>@ClientBookingPresentation.Status(item.Status) <i class="bi bi-arrow-right" aria-hidden="true"></i></span></a>}</section>}
+ else if(!active.Any()){<section class="hub-card hub-other"><h2>No upcoming active booking.</h2><p class="hub-empty-note">Your past events stay in My bookings. Start a new request whenever you have another occasion in mind.</p><div class="cn-links"><a asp-action="MyBookings" asp-route-group="past">View past bookings</a><a asp-controller="Feedback" asp-action="Index">Your feedback</a></div></section>}
+ <section class="hub-card hub-activity"><div class="hub-section-heading"><h2>Recent updates</h2><a asp-controller="Notifications" asp-action="Index">All notifications</a></div>@if(notifications.Count==0){<p class="hub-empty-note">You’re all caught up. Booking and payment updates will appear here when they arrive.</p>}else{@foreach(var notice in notifications){<a asp-controller="Notifications" asp-action="Open" asp-route-id="@notice.Id" class="hub-activity-row"><span class="@(notice.IsRead?"hub-read-dot":"hub-unread-dot")" aria-hidden="true"></span><div><strong>@notice.Title <span class="visually-hidden">@(notice.IsRead?"Read":"Unread")</span></strong><p>@notice.Message</p></div><time datetime="@notice.CreatedAt.ToString("o")">@notice.CreatedAt.ToString("MMM d")</time></a>}}</section>
+ </div>
 }
-else
-{
-    <section class="cr-card cr-empty"><h2>A new celebration awaits</h2><p>You have no upcoming active event. Explore the packages or check a venue and date to get started.</p><a asp-controller="Home" asp-action="Packages" class="btn btn-primary">Explore packages</a><a asp-action="CreateStepOne" class="btn btn-outline-secondary">Check availability</a></section>
-}
-<div class="cr-dashboard-links"><a asp-action="MyBookings"><i class="bi bi-calendar-heart" aria-hidden="true"></i><strong>My bookings</strong><span>Your dates, requests, and event details</span></a><a asp-controller="Communications" asp-action="Index" asp-route-view="inbox"><i class="bi bi-chat-heart" aria-hidden="true"></i><strong>Messages</strong><span>A question? Keep the conversation going</span></a><a asp-controller="Payments" asp-action="MyUploads"><i class="bi bi-receipt" aria-hidden="true"></i><strong>My payments</strong><span>Proofs, verification, and payment history</span></a><a asp-controller="Feedback" asp-action="Index"><i class="bi bi-stars" aria-hidden="true"></i><strong>My feedback</strong><span>Your experience, in your own words</span></a><a asp-controller="Profile" asp-action="Index"><i class="bi bi-person" aria-hidden="true"></i><strong>My profile</strong><span>The details that keep us in touch</span></a></div>

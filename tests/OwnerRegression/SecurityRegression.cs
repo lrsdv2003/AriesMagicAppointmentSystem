@@ -13,7 +13,7 @@ static class SecurityRegression
 {
     public static async Task RunAsync(ApplicationDbContext db, Action<bool, string> check)
     {
-        byte[] png = [137,80,78,71,13,10,26,10,0,0,0,0];
+        byte[] png = ProductionHardeningRegression.Image();
         IFormFile Image(string name, string type, byte[] bytes) => new FormFile(new MemoryStream(bytes), 0, bytes.Length, "proof", name) { Headers = new HeaderDictionary(), ContentType = type };
         check(await ImageUploadValidation.HasMatchingSignatureAsync(Image("proof.png", "image/png", png)), "PNG signature agrees with extension and MIME type");
         check(!await ImageUploadValidation.HasMatchingSignatureAsync(Image("proof.jpg", "image/jpeg", png)), "PNG disguised as JPEG rejected");
@@ -83,6 +83,8 @@ static class SecurityRegression
             try { await competing.VerifyConfirmed(id); }
             catch (Microsoft.Data.SqlClient.SqlException ex) when (ex.Number == 1205) { /* SQL Server rolls back one contending transaction. */ }
             catch (DbUpdateException ex) when (ex.InnerException is Microsoft.Data.SqlClient.SqlException sql && sql.Number == 1205) { }
+            catch (InvalidOperationException ex) when (ex.InnerException is DbUpdateException update
+                && update.InnerException is Microsoft.Data.SqlClient.SqlException sql && sql.Number == 1205) { /* EF can wrap its transient failure hint around the deadlock. */ }
         }
         await Task.WhenAll(Compete(pc.Id), Compete(pd.Id));
         check(await db.Bookings.AsNoTracking().CountAsync(x => x.EventDate == date && x.Status == BookingStatus.Confirmed) == 3, "Concurrent confirmations preserve fixed three-booking capacity");

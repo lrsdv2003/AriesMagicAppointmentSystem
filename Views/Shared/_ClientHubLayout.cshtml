@@ -1,0 +1,27 @@
+@using System.Security.Claims
+@using Microsoft.EntityFrameworkCore
+@inject AriesMagicAppointmentSystem.Data.ApplicationDbContext HubDb
+@{
+ var hubUid=User.FindFirstValue(ClaimTypes.NameIdentifier);
+ var hubUnread=string.IsNullOrEmpty(hubUid)?0:await HubDb.Notifications.CountAsync(n=>n.UserId==hubUid&&!n.IsRead);
+ ViewData["HubUnread"]=hubUnread;
+ var hubController=ViewContext.RouteData.Values["controller"]?.ToString()?.ToLowerInvariant();
+ var hubAction=ViewContext.RouteData.Values["action"]?.ToString()?.ToLowerInvariant();
+}
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><meta name="theme-color" content="#03162b"/><meta name="robots" content="noindex,nofollow"/><title>@ViewData["Title"] · Aries d’ Magic Artist</title>
+<link rel="preload" href="~/fonts/wonder/dm-sans-latin.woff2" as="font" type="font/woff2" crossorigin/>
+<link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css"/><link rel="stylesheet" href="~/lib/bootstrap-icons/font/bootstrap-icons.min.css" asp-append-version="true"/>
+@foreach(var sheet in new[]{"site","tokens","aries-client-theme","magic-client-v2","magic-client-consistency","communication-center","ocr-verification","package-cards","filters","notifications","client-refresh","app-ui","client-experience","feedback","booking-concierge","client-hub"}){<link rel="stylesheet" href="~/css/@(sheet).css" asp-append-version="true"/>}
+<link rel="stylesheet" href="~/AriesMagicAppointmentSystem.styles.css" asp-append-version="true"/>
+</head>
+<body class="client-body client-inner-page client-booking-page client-concierge client-hub client-@hubController client-@hubController-@hubAction">
+<a class="hub-skip" href="#mainContent">Skip to content</a>
+<aside class="hub-sidebar" aria-label="Client workspace"><partial name="_ClientHubNavigation"/></aside>
+<header class="hub-mobile-header"><a asp-controller="Home" asp-action="Index" class="client-brand" aria-label="Aries d’ Magic Artist home"><partial name="_WonderBrand"/></a><button id="hubMenu" type="button" aria-controls="hubDrawer" aria-haspopup="dialog" aria-expanded="false" hidden><i class="bi bi-list" aria-hidden="true"></i><span>Menu</span></button></header>
+<details class="hub-fallback" id="hubFallback"><summary>Your workspace</summary><partial name="_ClientHubNavigation"/></details>
+<dialog id="hubDrawer" class="hub-drawer" aria-labelledby="hubDrawerTitle"><div class="hub-drawer-heading"><h2 id="hubDrawerTitle">Your workspace</h2><button type="button" data-hub-close aria-label="Close navigation">×</button></div><partial name="_ClientHubNavigation"/></dialog>
+<div class="hub-stage"><main id="mainContent" tabindex="-1" class="client-main"><div class="container client-page-wrap hub-content">@RenderBody()</div></main><footer class="hub-footer"><span>&copy; @DateTime.Now.Year Aries d’ Magic Artist</span><a asp-controller="Home" asp-action="Privacy">Privacy</a></footer></div>
+<script src="~/lib/jquery/dist/jquery.min.js"></script><script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script><script src="~/js/app-ui.js" asp-append-version="true"></script><script src="~/js/communication-global.js" asp-append-version="true"></script><script src="~/js/client-hub.js" asp-append-version="true"></script>
+@await RenderSectionAsync("Scripts",required:false)
+</body></html>

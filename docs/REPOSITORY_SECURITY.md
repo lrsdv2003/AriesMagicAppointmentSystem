@@ -1,0 +1,11 @@
+# Repository publication safeguards
+
+This repository contains application source, approved public marketing photography, dependencies/licenses, secret-free settings templates and synthetic **test source**. It must not contain actual users' media, private proofs/refunds, database files/backups, production settings/credentials, PFX/private keys, Data Protection envelopes, runtime logs or generated test-account/state files.
+
+`.gitignore` is preventive only. `scripts/Test-RepositorySafety.py` checks the actual Git index, including files already tracked before ignore rules were added. Gitleaks checks reachable Git history; an additional redacted `git --pre-commit --staged` scan checks additions before publication. Scan indexed source rather than directories containing generated synthetic keys or account state. Review metadata-only findings privately; do not paste matched values into issues, PRs or logs.
+
+The 28 October 2026 pre-publication Gitleaks 8.30.1 audit reported no findings across the existing reachable history (94 commits). This is scanner evidence, not a guarantee that every possible credential type is detectable. Previously tracked `appsettings.Development.json` contained no detected SQL-auth or SMTP credentials and is removed from tracking without deleting the local file. Safe development and empty Production templates remain available under `Properties/Deployment`.
+
+Operational hosting reports, backup manifests, machine-specific preview guides, generated passwords, publish output and test state remain local/ignored. Approved static performance photos under `wwwroot/images/client` are application content; private client uploads are never moved there for publication. Publication permission for the supplied performance photography was explicitly confirmed by the owner.
+
+If a real previously committed secret is discovered later: notify the owner privately using only affected path/commit/rule metadata; revoke/rotate it through the issuing provider, assess access, remove the active value from source and use protected secret storage. Removing the latest file or adding an ignore rule does not remove old commits. Preserve existing Git history unless the owner separately authorizes a coordinated history rewrite and collaborator recovery plan; never force-push as an automatic remediation.

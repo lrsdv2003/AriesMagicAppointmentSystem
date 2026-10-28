@@ -1,35 +1,94 @@
 @model IEnumerable<AriesMagicAppointmentSystem.Models.Service>
 @using AriesMagicAppointmentSystem.ViewModels
 @{ ViewData["Title"] = "The Wonder Studio"; }
-<section class="cx-hero container">
-    <div class="cx-hero-copy">
-        <span class="cx-kicker"><span aria-hidden="true">✳</span> Aries Magic / The Wonder Studio</span>
-        <h1>A little magic.<br /><em>A lot of <br />memories.</em></h1>
-        <p>Make room for something extraordinary. Explore live entertainment for your celebration, and bring your favourite people together.</p>
-        <div class="cx-actions"><a asp-controller="Bookings" asp-action="CreateStepOne" class="btn btn-primary">Let’s plan your event <span aria-hidden="true">↗</span></a><a asp-action="Packages" class="cx-text-link">Explore experiences <span aria-hidden="true">→</span></a></div>
-        <div class="cx-hero-note"><span><i class="bi bi-stars" aria-hidden="true"></i> A show to share.</span><span>A moment to keep.</span></div>
+<section class="ws-hero" aria-labelledby="homeTitle">
+    <figure class="ws-hero-media cx-media">
+        <img src="~/images/client/wonder-studio/hero-performance.jpeg" alt="Aries performing a fire illusion on a theatre stage" width="1672" height="941" fetchpriority="high" loading="eager" />
+        <span class="cx-media-fallback" hidden>Live entertainment. Shared wonder.</span>
+    </figure>
+    <div class="container ws-hero-inner">
+        <div class="ws-hero-copy">
+            <span class="ws-kicker">Live entertainment. Shared wonder.</span>
+            <h1 id="homeTitle">A little magic.<br /><em>A lot of</em><br class="ws-hero-desktop-break" /> memories.</h1>
+            <p>Make room for something extraordinary. Explore live entertainment for your celebration, and bring your favourite people together.</p>
+            <div class="ws-actions">
+                <a asp-controller="Bookings" asp-action="CreateStepOne" class="ws-button ws-button-primary">Plan your event <span aria-hidden="true">→</span></a>
+                <a asp-action="Packages" class="ws-button ws-button-outline">Explore experiences <span aria-hidden="true">→</span></a>
+            </div>
+            <p class="ws-hero-note">A show to share. <span>A moment to keep.</span></p>
+        </div>
     </div>
-    <div class="cx-hero-art"><partial name="_ClientMedia" model='ClientMedia.Get("hero")' /><span class="wonder-orbit" aria-hidden="true">✳</span><span class="cx-art-stamp" aria-hidden="true">A LITTLE<br />OUT OF THE<br />ORDINARY.</span><span class="wonder-image-note">Good people. Great anticipation.</span></div>
 </section>
-<div class="cx-ribbon"><div class="container"><span>Birthdays & celebrations</span><span aria-hidden="true">✳</span><span>School events</span><span aria-hidden="true">✳</span><span>Company gatherings</span><a href="#how-it-works">Your event starts here ↗</a></div></div>
-<section class="cx-story" id="about"><div class="container wonder-intro">
-    <div class="wonder-intro-art"><partial name="_ClientMedia" model='ClientMedia.Get("intro")' /></div>
-    <div><span class="cx-kicker">01 / More than a show</span><h2>For the joy<br />of <em>being together.</em></h2></div>
-    <div><p class="cx-lead">A little surprise goes a long way.</p><p>Aries Magic brings live entertainment to celebrations, school events, and company gatherings. Find a package that fits your occasion. We’ll help you take the next step.</p><a asp-action="Packages" class="cx-text-link">Find your kind of wonder <span aria-hidden="true">↗</span></a></div>
-</div></section>
-<section class="cx-section container" id="packages"><div class="cx-section-head"><div><span class="cx-kicker">02 / Experiences to remember</span><h2>Your occasion.<br /><em>Our kind of magic.</em></h2></div><div><p>Different celebrations. The same sense of possibility. Discover what’s included and make the experience your own.</p><a asp-action="Packages" class="cx-text-link">Explore all experiences <span aria-hidden="true">→</span></a></div></div><partial name="_ClientPackageCards" model="Model.Take(3)" /></section>
-<section class="wonder-showcase" aria-labelledby="showcaseTitle"><div class="container wonder-showcase-grid">
-    <div><span class="cx-kicker">03 / A change of atmosphere</span><h2 id="showcaseTitle">A room full<br />of <em>possibility.</em></h2><p>The lights, the anticipation, the shared surprise. This is a space for the moments that bring a celebration to life.</p><a href="#gallery" class="btn btn-outline-light">Step into the gallery <span aria-hidden="true">↗</span></a><p class="wonder-media-note">Illustrative stage preview. Event photography and an approved showreel will follow.</p></div>
-    <div class="wonder-showcase-art"><partial name="_ClientMedia" model='ClientMedia.Get("showcase")' /></div>
-</div></section>
-<section class="cx-planning" id="how-it-works"><div class="container"><div class="cx-section-head"><div><span class="cx-kicker">04 / A simple beginning</span><h2>Less figuring it out.<br /><em>More looking forward.</em></h2></div><p>Your venue, experience, and event details come together in one guided booking journey.</p></div>
-<ol class="cx-process"><li><span>01</span><h3>Set the scene</h3><p>Check your venue and a date at least three days ahead. See serviceability and estimated travel fees.</p></li><li><span>02</span><h3>Find your experience</h3><p>Explore packages, personalize eligible inclusions, and tell us about your event.</p></li><li><span>03</span><h3>Send your request</h3><p>Review the price and submit for Staff approval. A request alone does not reserve the schedule.</p></li><li><span>04</span><h3>Follow the next step</h3><p>After approval, upload your downpayment proof. Owner verification completes confirmation.</p></li></ol>
-<div class="wonder-booking-notes"><details><summary>What’s included in the price?</summary><p>Your review separates the package price, eligible customization discount, and estimated travel fees before you submit.</p></details><details><summary>When do I pay?</summary><p>Wait for Staff approval, then follow the instructions in your booking. The applicable minimum downpayment is PHP 2,000, verified by the Owner.</p></details></div>
-</div></section>
+<nav class="ws-occasions" aria-label="Celebrations and booking journey">
+    <div class="container">
+        <span><i class="bi bi-gift" aria-hidden="true"></i>Birthdays &amp; celebrations</span>
+        <span><i class="bi bi-mortarboard" aria-hidden="true"></i>School events</span>
+        <span><i class="bi bi-people" aria-hidden="true"></i>Company gatherings</span>
+        <a href="#how-it-works"><i class="bi bi-calendar2-event" aria-hidden="true"></i>Your event starts here <span aria-hidden="true">→</span></a>
+    </div>
+</nav>
+<section class="ws-featured" id="packages" aria-labelledby="experiencesTitle">
+    <div class="container ws-featured-grid">
+        <div class="ws-featured-intro">
+            <span class="ws-kicker">The experiences collection</span>
+            <h2 id="experiencesTitle">Your occasion.<br /><em>Our kind of magic.</em></h2>
+            <p>Different celebrations. The same sense of possibility. Discover what’s included and make the experience your own.</p>
+            <a asp-action="Packages" class="ws-link">View all experiences <span aria-hidden="true">→</span></a>
+        </div>
+        <partial name="_WonderFeaturedPackages" model="Model" />
+    </div>
+</section>
+<section class="ws-story ws-section ws-stage" id="about" aria-labelledby="aboutTitle">
+    <div class="container ws-story-grid">
+        <figure class="ws-story-media cx-media">
+            <img src="~/images/client/wonder-studio/audience-wonder.jpeg" alt="Aries sharing a live bird performance with an audience at a celebration" width="2048" height="1365" loading="lazy" />
+            <span class="cx-media-fallback" hidden>A moment of shared anticipation.</span>
+            <figcaption>Small surprises. Shared memories.</figcaption>
+        </figure>
+        <div class="ws-story-copy">
+            <span class="ws-kicker">01 / More than a show</span>
+            <h2 id="aboutTitle">For the joy of<br /><em>being together.</em></h2>
+            <p class="ws-lead">A little surprise goes a long way.</p>
+            <p>Aries Magic brings live entertainment to celebrations, school events, and company gatherings. Find a package that fits your occasion. We’ll help you take the next step.</p>
+            <a asp-action="Packages" class="ws-link">Find your kind of wonder <span aria-hidden="true">→</span></a>
+        </div>
+    </div>
+</section>
+<section class="ws-journey ws-section" id="how-it-works" aria-labelledby="journeyTitle">
+    <div class="container">
+        <div class="ws-section-heading"><div><span class="ws-kicker">02 / A simple beginning</span><h2 id="journeyTitle">Less figuring it out.<br /><em>More looking forward.</em></h2></div><p>Your venue, experience, and event details come together in one guided booking journey.</p></div>
+        <ol class="ws-process">
+            <li><span class="ws-step-number">01</span><h3>Set the scene</h3><p>Check your venue and a date at least three days ahead. See serviceability and estimated travel fees.</p></li>
+            <li><span class="ws-step-number">02</span><h3>Find your experience</h3><p>Explore packages, personalize eligible inclusions, and tell us about your event.</p></li>
+            <li><span class="ws-step-number">03</span><h3>Send your request</h3><p>Review the price and submit for Staff approval. A request alone does not reserve the schedule.</p></li>
+            <li><span class="ws-step-number">04</span><h3>Follow the next step</h3><p>After approval, upload your downpayment proof. Owner verification completes confirmation.</p></li>
+        </ol>
+        <div class="ws-faq" role="group" aria-label="Common booking questions">
+            <details><summary>What’s included in the price?<span aria-hidden="true">+</span></summary><p>Your review separates the package price, eligible customization discount, and estimated travel fees before you submit.</p></details>
+            <details><summary>When do I pay?<span aria-hidden="true">+</span></summary><p>Wait for Staff approval, then follow the instructions in your booking. The applicable minimum downpayment is PHP 2,000, verified by the Owner.</p></details>
+        </div>
+    </div>
+</section>
 @{ var publicStories = ViewData["PublicTestimonials"] as IEnumerable<ClientTestimonial> ?? Array.Empty<ClientTestimonial>(); }
 <partial name="_ClientTestimonials" model="publicStories" />
-<section class="cx-section container" id="gallery"><div class="cx-section-head"><div><span class="cx-kicker">06 / A glimpse of the feeling</span><h2>A little unexpected.<br /><em>Entirely memorable.</em></h2></div><p>An editorial space for event memories. These locally made artwork previews will give way to approved photography.</p></div><div class="cx-gallery">
-@foreach (var key in new[] { "gallery-1", "gallery-2", "gallery-3" }) { var media = ClientMedia.Get(key); <button type="button" class="cx-gallery-item" data-gallery-src="@media.Source" data-gallery-alt="@media.Alt" aria-label="Enlarge artwork preview: @media.Alt"><partial name="_ClientMedia" model="media" /><span class="cx-gallery-label">Explore the artwork <span aria-hidden="true">↗</span></span></button> }
-</div></section>
-<section class="cx-closing"><div class="container cx-closing-grid"><div><span class="cx-kicker">Your people. Your occasion.</span><h2>Let’s create something<br /><em>unforgettable.</em></h2><p>Start with a place and a date. We’ll take it from there, one clear step at a time.</p></div><div class="cx-closing-actions"><a asp-controller="Bookings" asp-action="CreateStepOne" class="btn btn-light">Let’s plan your event <span aria-hidden="true">↗</span></a><span>Venue & date → Experience → Event details → Review</span></div></div></section>
-<dialog id="clientGallery" class="cx-gallery-dialog" aria-labelledby="galleryTitle"><div class="cx-dialog-bar"><h2 id="galleryTitle">A glimpse of the wonder</h2><button type="button" class="btn btn-outline-secondary" data-gallery-close>Close ×</button></div><img alt="" width="1200" height="900" /><p>Illustrative placeholder. Approved event media will replace this artwork.</p></dialog>
+<section class="ws-gallery-section ws-section" id="gallery" aria-labelledby="galleryHeading">
+    <div class="container">
+        <div class="ws-section-heading"><div><span class="ws-kicker">@(publicStories.Any(story => story.CanPublish) ? "04" : "03") / A glimpse of the feeling</span><h2 id="galleryHeading">A little unexpected.<br /><em>Entirely memorable.</em></h2></div><p>Magic, laughter, and the people who make it special. A glimpse of Aries d’ Magic Artist at celebrations.</p></div>
+        <p class="ws-gallery-hint">Scroll through the moments <span aria-hidden="true">→</span></p>
+        <div class="ws-gallery-grid" role="group" aria-label="Event photographs. Scroll horizontally on small screens for more." tabindex="0">
+            @foreach (var item in new[] {
+                (File: "audience-wonder.jpeg", Alt: "Aries performing with a bird while children watch at a celebration", Title: "A little anticipation", Caption: "The room, together."),
+                (File: "shared-moment.jpeg", Alt: "Aries sharing a white bird with children during a magic performance", Title: "A shared surprise", Caption: "Moments that bring us closer."),
+                (File: "celebration.jpeg", Alt: "Aries and fellow entertainers with children at a decorated celebration", Title: "A memory to keep", Caption: "Your people. Your occasion.") })
+            {
+                var source = Url.Content("~/images/client/wonder-studio/" + item.File);
+                <button type="button" class="ws-gallery-item" data-gallery-src="@source" data-gallery-alt="@item.Alt" aria-label="Enlarge photograph: @item.Alt">
+                    <img src="@source" alt="@item.Alt" width="2048" height="1365" loading="lazy" />
+                    <span class="ws-gallery-caption"><strong>@item.Title</strong><span>@item.Caption</span><span class="ws-gallery-open" aria-hidden="true">↗</span></span>
+                </button>
+            }
+        </div>
+    </div>
+</section>
+<section class="ws-closing" aria-labelledby="closingTitle"><div class="container"><div class="ws-closing-panel"><div><span class="ws-kicker">Your people. Your occasion.</span><h2 id="closingTitle">Let’s create something<br /><em>unforgettable.</em></h2><p>Start with a place and a date. We’ll take it from there, one clear step at a time.</p></div><a asp-controller="Bookings" asp-action="CreateStepOne" class="ws-button ws-button-primary">Let’s plan your event <span aria-hidden="true">→</span></a></div></div></section>
+<dialog id="clientGallery" class="cx-gallery-dialog ws-gallery-dialog" aria-labelledby="galleryTitle"><div class="cx-dialog-bar"><h2 id="galleryTitle">A glimpse of the wonder</h2><button type="button" class="ws-button ws-button-outline" data-gallery-close>Close <span aria-hidden="true">×</span></button></div><img alt="" width="2048" height="1365" /><p data-gallery-status role="status" hidden>This photograph could not be loaded. Please close the viewer and try again.</p></dialog>

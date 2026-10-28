@@ -1,172 +1,37 @@
 @model AriesMagicAppointmentSystem.ViewModels.VerifyEmailViewModel
-@{
-    ViewData["Title"] = "Verify Your Email";
-}
-
-<div class="otp-page">
-    <div class="otp-card">
-        <div class="otp-icon" aria-hidden="true"><i class="bi bi-envelope-check" aria-hidden="true"></i></div>
-        <div class="otp-heading">
-            <span class="otp-eyebrow">Secure account verification</span>
-            <h1>Verify Your Email</h1>
-            <p>We sent a 6-digit verification code to <strong>@Model.MaskedEmail</strong>.</p>
-        </div>
-
-        @if (TempData["VerificationSuccess"] != null)
-        {
-            <div class="alert alert-success otp-alert" role="status">@TempData["VerificationSuccess"]</div>
-        }
-        @if (TempData["VerificationError"] != null)
-        {
-            <div class="alert alert-danger otp-alert" role="alert">@TempData["VerificationError"]</div>
-        }
-        <div asp-validation-summary="ModelOnly" class="text-danger otp-validation"></div>
-
-        <form asp-action="VerifyEmail" method="post" id="verifyEmailForm" novalidate>
-            @Html.AntiForgeryToken()
-            <input asp-for="UserId" type="hidden" />
-            <input asp-for="Code" type="hidden" id="otpCombined" />
-            <fieldset class="otp-fieldset" @(Model.AttemptsLocked ? "disabled" : null)>
-                <legend class="visually-hidden">Enter six digit verification code</legend>
-                <div class="otp-inputs" role="group" aria-label="Six digit verification code">
-                    @for (var i = 0; i < 6; i++)
-                    {
-                        <input class="otp-digit" inputmode="numeric" pattern="[0-9]*" maxlength="1" autocomplete="one-time-code" aria-label="Digit @(i + 1)" data-index="@i" />
-                    }
-                </div>
-            </fieldset>
-            <span asp-validation-for="Code" class="text-danger d-block text-center mt-2"></span>
-            <button type="submit" class="btn btn-primary otp-primary-btn" id="verifyOtpButton" @(Model.AttemptsLocked ? "disabled" : null)>
-                <span class="normal-label"><i class="bi bi-shield-check" aria-hidden="true"></i> Verify Email</span>
-                <span class="loading-label d-none">Verifying...</span>
-            </button>
-        </form>
-
-        <div class="otp-meta" aria-live="polite">
-            @if (Model.ExpiresAtUtc.HasValue && Model.HasActiveCode)
-            {
-                <span><i class="bi bi-clock" aria-hidden="true"></i> Code expires in <strong id="expiryCountdown">--:--</strong></span>
-            }
-            else if (Model.AttemptsLocked)
-            {
-                <span><i class="bi bi-shield-exclamation" aria-hidden="true"></i> Request a new code to continue.</span>
-            }
-            else
-            {
-                <span><i class="bi bi-info-circle" aria-hidden="true"></i> Request a new code if the previous one expired.</span>
-            }
-        </div>
-
-        <form asp-action="ResendVerificationCode" method="post" id="resendOtpForm" class="otp-resend-form">
-            @Html.AntiForgeryToken()
-            <input type="hidden" name="userId" value="@Model.UserId" />
-            <button type="submit" class="btn otp-resend-btn" id="resendOtpButton" data-seconds="@Model.ResendSecondsRemaining">
-                <span class="normal-label">Resend Code</span>
-                <span class="loading-label d-none">Sending...</span>
-            </button>
-            <span id="resendCountdown" class="otp-resend-countdown"></span>
-        </form>
-
-        <div class="otp-help">
-            <p>Didn't receive it? Check your spam folder or wait for the resend timer.</p>
-            <details class="otp-change-email">
-                <summary>Wrong email address? Change Email</summary>
-                <form asp-action="ChangeVerificationEmail" method="post" class="otp-change-email-form">
-                    @Html.AntiForgeryToken()
-                    <input type="hidden" name="userId" value="@Model.UserId" />
-                    <label for="verificationEmail" class="form-label">New email address</label>
-                    <input id="verificationEmail" name="email" type="email" class="form-control mb-2" autocomplete="email" required placeholder="name@example.com" />
-                    <label for="verificationPassword" class="form-label">Current password</label>
-                    <input id="verificationPassword" name="currentPassword" type="password" class="form-control mb-2" autocomplete="current-password" required placeholder="Enter your password" />
-                    <button type="submit" class="btn btn-outline-primary w-100">Update Email &amp; Send New Code</button>
-                    <div class="form-text">Changing the email invalidates the current code and sends a new one.</div>
-                </form>
-            </details>
-            <a asp-action="Login"><i class="bi bi-arrow-left" aria-hidden="true"></i> Back to Login</a>
-        </div>
+@{ ViewData["Title"] = "Verify your email"; }
+<section class="au-page au-compact"><div class="container"><div class="au-panel au-verification">
+    <div class="au-panel-heading"><span class="au-symbol" aria-hidden="true"><i class="bi bi-envelope-check"></i></span><span class="au-kicker">One more step</span><h1>Verify your email</h1><p>Enter the six-digit code sent to <strong class="au-recipient">@Model.MaskedEmail</strong>.</p></div>
+    <partial name="_AuthNotices" />
+    <form asp-action="VerifyEmail" method="post" id="verifyEmailForm" data-auth-form>
+        @Html.AntiForgeryToken()
+        <input asp-for="UserId" type="hidden" />
+        <div asp-validation-summary="ModelOnly" class="au-validation text-danger" role="alert" tabindex="-1"></div>
+        <fieldset class="au-code-fieldset" @(Model.AttemptsLocked ? "disabled" : null)>
+            <legend class="visually-hidden">Email verification</legend>
+            <div class="au-field"><label asp-for="Code" class="form-label">Verification code</label><input asp-for="Code" type="text" class="form-control au-input au-code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" placeholder="6-digit code" aria-describedby="codeHelp CodeError" /><p id="codeHelp" class="au-help">Enter or paste all six digits.</p><span asp-validation-for="Code" id="CodeError" class="text-danger"></span></div>
+        </fieldset>
+        <button type="submit" class="au-button au-primary" id="verifyOtpButton" data-auth-label="Verifying…" @(Model.AttemptsLocked ? "disabled" : null)>Verify email <span aria-hidden="true">→</span></button><p class="au-submit-status visually-hidden" role="status" data-auth-status></p>
+    </form>
+    <div class="au-code-state">
+        @if(Model.HasActiveCode && Model.ExpiresAtUtc.HasValue){<p class="au-help">Code expires in <time id="expiryCountdown" data-expires-at="@DateTime.SpecifyKind(Model.ExpiresAtUtc.Value, DateTimeKind.Utc).ToString("O")" datetime="@DateTime.SpecifyKind(Model.ExpiresAtUtc.Value, DateTimeKind.Utc).ToString("O")">until @Model.ExpiresAtUtc.Value.ToString("HH:mm") UTC</time>.</p>}
+        else if(Model.AttemptsLocked){<p class="au-notice au-notice-error" role="status">Too many incorrect attempts. Request a new code to continue.</p>}
+        else {<p class="au-help">No active code is available. Request a new code to continue.</p>}
     </div>
-</div>
-
-@section Scripts {
-    <partial name="_ValidationScriptsPartial" />
-    <script>
-        (() => {
-            const form = document.getElementById('verifyEmailForm');
-            const combined = document.getElementById('otpCombined');
-            const digits = [...document.querySelectorAll('.otp-digit')];
-            const verifyButton = document.getElementById('verifyOtpButton');
-            const resendForm = document.getElementById('resendOtpForm');
-            const resendButton = document.getElementById('resendOtpButton');
-            const resendCountdown = document.getElementById('resendCountdown');
-            const syncCode = () => combined.value = digits.map(x => x.value).join('');
-            const focusDigit = i => { if (i >= 0 && i < digits.length) digits[i].focus(); };
-
-            digits.forEach((input, index) => {
-                input.addEventListener('input', () => {
-                    input.value = input.value.replace(/\D/g, '').slice(-1);
-                    syncCode();
-                    if (input.value && index < digits.length - 1) focusDigit(index + 1);
-                });
-                input.addEventListener('keydown', e => {
-                    if (e.key === 'Backspace' && !input.value && index > 0) focusDigit(index - 1);
-                    if (e.key === 'ArrowLeft') { e.preventDefault(); focusDigit(index - 1); }
-                    if (e.key === 'ArrowRight') { e.preventDefault(); focusDigit(index + 1); }
-                });
-                input.addEventListener('paste', e => {
-                    const text = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '').slice(0, 6);
-                    if (!text) return;
-                    e.preventDefault();
-                    digits.forEach((box, i) => box.value = text[i] || '');
-                    syncCode();
-                    focusDigit(Math.min(text.length, 6) - 1);
-                });
-            });
-
-            form?.addEventListener('submit', e => {
-                syncCode();
-                if (!/^\d{6}$/.test(combined.value)) {
-                    e.preventDefault();
-                    digits.find(x => !x.value)?.focus();
-                    return;
-                }
-                if (verifyButton) {
-                    verifyButton.disabled = true;
-                    verifyButton.querySelector('.normal-label')?.classList.add('d-none');
-                    verifyButton.querySelector('.loading-label')?.classList.remove('d-none');
-                }
-            });
-
-            let resendSeconds = Number(resendButton?.dataset.seconds || 0);
-            const updateResend = () => {
-                if (!resendButton) return;
-                const waiting = resendSeconds > 0;
-                resendButton.disabled = waiting;
-                resendCountdown.textContent = waiting ? `Resend code in ${resendSeconds} second${resendSeconds === 1 ? '' : 's'}` : '';
-            };
-            updateResend();
-            if (resendSeconds > 0) setInterval(() => { if (resendSeconds > 0) { resendSeconds--; updateResend(); } }, 1000);
-
-            resendForm?.addEventListener('submit', e => {
-                if (resendButton?.disabled) { e.preventDefault(); return; }
-                resendButton.disabled = true;
-                resendButton.querySelector('.normal-label')?.classList.add('d-none');
-                resendButton.querySelector('.loading-label')?.classList.remove('d-none');
-            });
-            const expiryEl = document.getElementById('expiryCountdown');
-            const expiresAt = '@(Model.ExpiresAtUtc?.ToString("O") ?? "")';
-            if (expiryEl && expiresAt) {
-                const target = new Date(expiresAt).getTime();
-                const renderExpiry = () => {
-                    const remaining = Math.max(0, Math.floor((target - Date.now()) / 1000));
-                    const minutes = Math.floor(remaining / 60).toString().padStart(2, '0');
-                    const seconds = (remaining % 60).toString().padStart(2, '0');
-                    expiryEl.textContent = `${minutes}:${seconds}`;
-                };
-                renderExpiry();
-                setInterval(renderExpiry, 1000);
-            }
-
-            if (digits.length && !digits[0].disabled) digits[0].focus();
-        })();
-    </script>
-}
+    <form asp-action="ResendVerificationCode" method="post" id="resendOtpForm" class="au-resend" data-auth-form>
+        @Html.AntiForgeryToken()<input type="hidden" name="userId" value="@Model.UserId" />
+        <button type="submit" class="au-button au-secondary" id="resendOtpButton" data-auth-label="Sending…" data-seconds="@Model.ResendSecondsRemaining" @(Model.ResendSecondsRemaining > 0 ? "disabled" : null)>Resend code</button>
+        <p id="resendCountdown" class="au-help" aria-live="off">@(Model.ResendSecondsRemaining > 0 ? $"Available in {Model.ResendSecondsRemaining} seconds." : "")</p><p class="au-submit-status visually-hidden" role="status" data-auth-status></p>
+    </form>
+    <div class="au-verify-help"><p class="au-help">Check your spam folder if the email hasn’t arrived.</p>
+        <details class="au-change-email"><summary>Wrong address? Change email</summary>
+            <form asp-action="ChangeVerificationEmail" method="post" data-auth-form>
+                @Html.AntiForgeryToken()<input type="hidden" name="userId" value="@Model.UserId" />
+                <div class="au-field"><label for="verificationEmail" class="form-label">New email address</label><input id="verificationEmail" name="email" type="email" class="form-control au-input" autocomplete="email" required placeholder="name@example.com" /></div>
+                <div class="au-field"><label for="verificationPassword" class="form-label">Current password</label><div class="au-password"><input id="verificationPassword" name="currentPassword" type="password" class="form-control au-input" autocomplete="current-password" required placeholder="Enter your password" /><button type="button" class="au-reveal" data-password-target="verificationPassword" aria-controls="verificationPassword" aria-label="Show current password" aria-pressed="false" hidden><i class="bi bi-eye" aria-hidden="true"></i></button></div></div>
+                <button type="submit" class="au-button au-secondary" data-auth-label="Updating email…">Update email &amp; send code</button><p class="au-help">Changing the email invalidates the current code and sends a new one.</p><p class="au-submit-status visually-hidden" role="status" data-auth-status></p>
+            </form>
+        </details>
+    </div><a asp-action="Login" class="au-back">Back to sign in</a>
+</div></div></section>
+@section Scripts { <partial name="_AuthScripts" /> }

@@ -1,26 +1,30 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
-    <RuntimeFrameworkVersion>9.0.21</RuntimeFrameworkVersion>
+    <TargetFramework>net10.0</TargetFramework>
+    <RuntimeFrameworkVersion>10.0.0</RuntimeFrameworkVersion>
     <RollForward>LatestPatch</RollForward>
+    <TargetLatestRuntimePatch>false</TargetLatestRuntimePatch>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>e706ad45-e5df-4a73-97cd-90a9cd11ea19</UserSecretsId>
+    <AspNetCoreHostingModel>OutOfProcess</AspNetCoreHostingModel>
+    <!-- Folder publishes inside the checkout must never become input to another publish. -->
+    <DefaultItemExcludes>$(DefaultItemExcludes);publish\**;publish-*\**;.tmp-owner-build\**;App_Data\**</DefaultItemExcludes>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="MailKit" Version="4.16.0" />
     <PackageReference Include="SkiaSharp" Version="4.153.1" />
     <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="4.153.1" />
-    <PackageReference Include="System.Security.Cryptography.Pkcs" Version="8.0.2" />
-    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="9.0.21" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.21" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.21">
+    <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.13" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.13" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.13" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.13">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.21">
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.13">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
@@ -34,7 +38,15 @@
 
   <ItemGroup>
     <Compile Remove="tests\**\*.cs" />
-    <Content Remove="tests\**; .tmp-owner-build\**" />
-    <None Remove="tests\**; .tmp-owner-build\**" />
+    <Content Remove="tests\**;.tmp-owner-build\**;publish\**;publish-*\**;App_Data\**;wwwroot\uploads\**;wwwroot\test-contract*.pdf;index.html" />
+    <None Remove="tests\**;.tmp-owner-build\**;publish\**;publish-*\**;App_Data\**;wwwroot\uploads\**;wwwroot\test-contract*.pdf;index.html" />
+    <!-- SDK/npm development manifests are build inputs, never runtime deployment content. -->
+    <Content Remove="global.json;package.json;package-lock.json;npm-shrinkwrap.json" />
+    <None Remove="global.json;package.json;package-lock.json;npm-shrinkwrap.json" />
+    <!-- Private wrapping certificates and persisted key/revocation envelopes never enter build/publish content. -->
+    <Content Remove="**\*.pfx;**\*.p12;**\key-*.xml;**\revocation-*.xml" />
+    <None Remove="**\*.pfx;**\*.p12;**\key-*.xml;**\revocation-*.xml" />
+    <!-- This release uses hosting-panel environment variables, not machine-local JSON. -->
+    <Content Update="appsettings.Development.json;appsettings.Production.json;appsettings.Staging.json" CopyToPublishDirectory="Never" />
   </ItemGroup>
 </Project>

@@ -28,6 +28,10 @@ static class DashboardRegression
         Booking BookingAt(DateTime start,string status) => new() {Client=client,Service=package,PackageName=package.Name,EventDate=start.Date,StartTime=start,EndTime=start.AddHours(1),Status=status,FinalPrice=15000,PartyVenue="Antipolo Community Hall, Rizal",DistanceKm=12.4};
         var today1=BookingAt(DateTime.Today.AddHours(23),BookingStatus.Confirmed);
         var today2=BookingAt(DateTime.Today.AddHours(22),BookingStatus.Confirmed);
+        // Keep both synthetic events active even when this suite runs after 23:00.
+        // Start-time ordering remains the subject of the dashboard assertion.
+        today1.EndTime=DateTime.Today.AddDays(1).AddHours(1);
+        today2.EndTime=DateTime.Today.AddDays(1).AddHours(1);
         var future=BookingAt(DateTime.Today.AddDays(3).AddHours(14),BookingStatus.Confirmed);
         var pending=BookingAt(DateTime.Today.AddDays(7).AddHours(14),BookingStatus.Pending);
         var approved=BookingAt(DateTime.Today.AddDays(8).AddHours(14),BookingStatus.AwaitingDownpayment);

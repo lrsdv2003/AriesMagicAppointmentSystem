@@ -1,10 +1,13 @@
 @model IEnumerable<AriesMagicAppointmentSystem.Models.Notification>
 @{
-    Layout = User.IsInRole("Client") ? "_Layout" : "_DashboardLayout";
+    Layout = User.IsInRole("Client") ? "_ClientHubLayout" : "_DashboardLayout";
     ViewData["Title"] = "Notifications";
     var notifications = Model.OrderByDescending(x => x.CreatedAt).ToList();
     var unread = notifications.Count(x => !x.IsRead);
 }
+@if(User.IsInRole("Client")){<partial name="_ClientNotifications" model="Model"/>}
+else
+{
 <section class="notice-page" aria-labelledby="noticeTitle">
     <header class="notice-header">
         <div>@if(User.IsInRole("Client")){<h1 id="noticeTitle">Notifications</h1>}else{<span id="noticeTitle" class="visually-hidden">Notifications</span>}<p>@unread unread <span aria-hidden="true">&middot;</span> @notifications.Count total</p></div>
@@ -18,3 +21,5 @@
         <div class="notice-list">@foreach (var item in notifications) { <partial name="_NotificationRow" model="item" /> }</div>
     }
 </section>
+
+}

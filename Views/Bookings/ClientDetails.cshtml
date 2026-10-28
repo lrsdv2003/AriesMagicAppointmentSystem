@@ -2,6 +2,7 @@
 @using AriesMagicAppointmentSystem.Models
 @using AriesMagicAppointmentSystem.ViewModels
 @{
+    Layout = "_ClientHubLayout";
     ViewData["Title"] = "Booking details";
     var finance = ViewBag.FinancialSummary as BookingFinancialSummaryViewModel;
     var canCancel = new[] { BookingStatus.Pending, BookingStatus.AwaitingDownpayment, BookingStatus.AwaitingVerification }.Contains(Model.Status);
@@ -10,23 +11,28 @@
     var scheduleUnavailable = ViewBag.IsScheduleUnavailable is bool unavailable && unavailable;
     var canPay = !scheduleUnavailable && finance != null && finance.RemainingBalance > 0 && !finance.HasPendingVerification && !finance.HasAdditionalEvidenceRequired && new[] { BookingStatus.AwaitingDownpayment, BookingStatus.Confirmed, BookingStatus.Completed }.Contains(Model.Status);
 }
-<header class="cr-page-heading"><div><span class="cr-eyebrow">BK-@Model.CreatedAt.Year-@Model.Id.ToString("D3")</span><h1>@Model.PackageName</h1><partial name="_StatusBadge" model="@(scheduleUnavailable ? "Schedule unavailable" : ClientBookingPresentation.Status(Model.Status))" /></div><a asp-action="MyBookings" class="btn btn-outline-secondary">All bookings</a></header>
-<div class="cr-notice mb-4" role="status">@(scheduleUnavailable ? "This time is no longer available. Request another schedule or message staff before making a payment." : ClientBookingPresentation.NextAction(Model,finance))</div>
-<div class="mb-4"><partial name="_FeedbackEntry" model="Model" /></div><div class="cr-detail-grid"><div>
-<section class="cr-card"><h2>Your event</h2><dl class="cr-facts"><div><dt>Date & time</dt><dd>@Model.EventDate.ToString("MMMM d, yyyy") · @Model.StartTime.ToString("h:mm tt")–@Model.EndTime.ToString("h:mm tt")</dd></div><div><dt>Venue</dt><dd>@Model.PartyVenue</dd></div><div><dt>Event type</dt><dd>@Model.EventType</dd></div><div><dt>Motif</dt><dd>@Model.Motif</dd></div>@if(!string.IsNullOrWhiteSpace(Model.PartyTheme)){<div><dt>Party theme</dt><dd>@Model.PartyTheme</dd></div>}@if(!string.IsNullOrWhiteSpace(Model.CelebrantName)){<div><dt>Celebrant</dt><dd>@Model.CelebrantName @if(Model.Age.HasValue){<span>· Age @Model.Age</span>}</dd></div>}<div><dt>Guests</dt><dd>@Model.PaxCount</dd></div><div><dt>Contact</dt><dd>@Model.ContactPerson · @Model.ContactNumber</dd></div></dl></section>
-<section class="cr-card mt-4"><h2>Need help with this booking?</h2><p>Keep your questions and updates together with staff.</p><form asp-controller="Communications" asp-action="StartBookingConversation" method="post">@Html.AntiForgeryToken()<input type="hidden" name="bookingId" value="@Model.Id"/><button class="btn btn-primary" type="submit">Message staff</button></form></section>
-<section class="cr-card mt-4"><h2>Changes & requests</h2>
-@if(pendingReschedule){<p>A reschedule request is awaiting staff review.</p><a asp-controller="RescheduleRequests" asp-action="MyRequests" class="btn btn-outline-secondary">View request status</a>}
-else if(canReschedule){<p>Rescheduling is subject to availability and staff approval. Choose a date at least three days ahead.</p><a asp-controller="RescheduleRequests" asp-action="Create" asp-route-bookingId="@Model.Id" class="btn btn-outline-secondary">Request reschedule</a>}
-@if(canCancel){<details class="cr-terms"><summary>Cancel this booking</summary><p>Cancellation is available while your booking is awaiting review, downpayment, or payment verification. Cancellation does not automatically issue a refund.</p><a asp-action="Cancel" asp-route-id="@Model.Id" class="btn btn-outline-danger">Review cancellation</a></details>}
-@if(Model.Status == BookingStatus.AwaitingVerification){<details class="cr-terms"><summary>Request a refund</summary><p>Refund requests are reviewed by the owner. Submit payment proof and the reason for your request.</p><a asp-controller="Payments" asp-action="RequestRefund" asp-route-bookingId="@Model.Id" class="btn btn-outline-secondary">Request refund</a></details>}
-@if(!canCancel&&!canReschedule){<p>Online changes are unavailable for this booking status. Message staff if you need help.</p>}
-<div class="cr-inline-actions"><a asp-controller="RescheduleRequests" asp-action="MyRequests" class="btn btn-outline-secondary">Reschedule request history</a><a asp-controller="Payments" asp-action="MyRefundRequests" class="btn btn-outline-secondary">Refund request history</a></div>
+<div class="cn-page">
+<header class="cn-page-heading"><div><p class="cn-kicker">BK-@Model.CreatedAt.Year-@Model.Id.ToString("D3")</p><h1>@(Model.Status == BookingStatus.Confirmed ? "Your event is confirmed." : "Your booking.")</h1></div><a asp-action="MyBookings" class="cn-text-link">All bookings</a></header>
+<div class="cn-next-step" role="status">@(scheduleUnavailable ? "This time is no longer available. Request another schedule or message Staff before making a payment." : ClientBookingPresentation.NextAction(Model,finance))</div>
+<partial name="_FeedbackEntry" model="Model"/>
+<div class="cn-detail-layout">
+<section class="cn-event"><div class="cn-event-head"><div><span class="cn-reference">Your experience</span><h2>@Model.PackageName</h2></div><partial name="_StatusBadge" model="@(scheduleUnavailable ? "Schedule unavailable" : ClientBookingPresentation.Status(Model.Status))"/></div>
+<dl class="cn-facts"><div><dt>Event date</dt><dd>@Model.EventDate.ToString("dddd, MMMM d, yyyy")</dd></div><div><dt>Time</dt><dd>@Model.StartTime.ToString("h:mm tt")–@Model.EndTime.ToString("h:mm tt") @if(Model.EndTime.Date!=Model.StartTime.Date){<span>(@Model.EndTime.ToString("MMM d"))</span>}</dd></div><div><dt>Venue</dt><dd>@Model.PartyVenue</dd></div></dl>
+<details class="cn-disclosure"><summary>Event & contact details</summary><dl class="cn-facts"><div><dt>Event type</dt><dd>@Model.EventType</dd></div><div><dt>Motif</dt><dd>@Model.Motif</dd></div>@if(!string.IsNullOrWhiteSpace(Model.PartyTheme)){<div><dt>Party theme</dt><dd>@Model.PartyTheme</dd></div>}@if(!string.IsNullOrWhiteSpace(Model.CelebrantName)){<div><dt>Celebrant</dt><dd>@Model.CelebrantName @if(Model.Age.HasValue){<span>· Age @Model.Age</span>}</dd></div>}<div><dt>Guests</dt><dd>@Model.PaxCount</dd></div><div><dt>Contact</dt><dd>@Model.ContactPerson · @Model.ContactNumber</dd></div></dl></details>
+<details class="cn-disclosure"><summary>Manage this booking</summary>
+@if(pendingReschedule){<p>A reschedule request is awaiting Staff review.</p><a asp-controller="RescheduleRequests" asp-action="MyRequests" class="cn-text-link">View request status</a>}
+else if(canReschedule){<p>A schedule change needs availability and Staff approval.</p><a asp-controller="RescheduleRequests" asp-action="Create" asp-route-bookingId="@Model.Id" class="cn-text-link">Request reschedule</a>}
+@if(canCancel){<p>Cancellation is available at this booking stage. It does not automatically issue a refund.</p><a asp-action="Cancel" asp-route-id="@Model.Id" class="cn-text-link">Review cancellation</a>}
+@if(Model.Status == BookingStatus.AwaitingVerification){<p>Refund requests are reviewed by the Owner.</p><a asp-controller="Payments" asp-action="RequestRefund" asp-route-bookingId="@Model.Id" class="cn-text-link">Request a refund</a>}
+@if(!canCancel&&!canReschedule){<p>Online changes are unavailable at this stage. Message Staff if you need help.</p>}
+<div class="cn-links"><a asp-controller="RescheduleRequests" asp-action="MyRequests">Reschedule history</a><a asp-controller="Payments" asp-action="MyRefundRequests">Refund history</a></div>
+</details>
+<form asp-controller="Communications" asp-action="StartBookingConversation" method="post" class="cn-support">@Html.AntiForgeryToken()<input type="hidden" name="bookingId" value="@Model.Id"/><button class="cn-edit" type="submit">Message Staff about this event</button></form>
 </section>
-</div><aside>
-<section class="cr-card cr-price-summary"><h2>Payment & balance</h2><dl><div><dt>Booking total</dt><dd>₱@((finance?.BookingTotal ?? Model.FinalPrice).ToString("N2"))</dd></div><div><dt>Verified payments</dt><dd>₱@((finance?.TotalVerifiedPayments ?? 0).ToString("N2"))</dd></div><div class="cr-total"><dt>Remaining balance</dt><dd>₱@((finance?.RemainingBalance ?? Model.FinalPrice).ToString("N2"))</dd></div></dl><p>@(finance?.PaymentStatus ?? "Unpaid")</p><p class="small">Only verified payments reduce the balance.</p>
-@if(canPay){<a asp-controller="Payments" asp-action="Upload" asp-route-bookingId="@Model.Id" class="btn btn-primary w-100">Upload payment proof</a>}
-@if(finance?.HasAdditionalEvidenceRequired == true){<a asp-controller="Payments" asp-action="MyUploads" class="btn btn-primary w-100">Replace payment proof</a>}
-<a asp-controller="Payments" asp-action="MyUploads" class="btn btn-outline-secondary w-100 mt-2">Payment history</a>
-</section>
-</aside></div>
+<aside class="cn-balance"><h2>Payment summary</h2><dl><div><dt>Required downpayment</dt><dd>₱@((finance?.RequiredDownpayment ?? Model.RequiredDownpayment).ToString("N2"))</dd></div><div><dt>Booking total</dt><dd>₱@((finance?.BookingTotal ?? Model.FinalPrice).ToString("N2"))</dd></div><div><dt>Verified payments</dt><dd>₱@((finance?.TotalVerifiedPayments ?? 0).ToString("N2"))</dd></div><div class="cn-total"><dt>Remaining balance</dt><dd>₱@((finance?.RemainingBalance ?? Model.FinalPrice).ToString("N2"))</dd></div></dl><p class="cn-help">@(finance?.PaymentStatus ?? "Unpaid"). Only verified payments reduce your balance.</p>
+@if(canPay){<a asp-controller="Payments" asp-action="Upload" asp-route-bookingId="@Model.Id" class="cn-button cn-primary cn-balance-action">Upload payment proof</a>}
+@if(finance?.HasAdditionalEvidenceRequired == true){<a asp-controller="Payments" asp-action="MyUploads" class="cn-button cn-primary cn-balance-action">Replace payment proof</a>}
+<a asp-controller="Payments" asp-action="MyUploads" class="cn-text-link">View payment activity</a>
+</aside>
+</div>
+</div>

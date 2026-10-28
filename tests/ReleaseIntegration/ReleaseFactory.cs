@@ -7,8 +7,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.AspNetCore.DataProtection;
 
-sealed class ReleaseFactory(string connection, int smtpPort, Uri mapServer, string privateRoot, bool failVerificationAudit = false, bool shortTicket = false, bool cleanFeedbackMedia = false) : WebApplicationFactory<Program>
+sealed class ReleaseFactory(string connection, int smtpPort, Uri mapServer, string privateRoot, bool failVerificationAudit = false, bool shortTicket = false, bool cleanFeedbackMedia = false, bool authUi = false) : WebApplicationFactory<Program>
 {
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -24,6 +25,8 @@ sealed class ReleaseFactory(string connection, int smtpPort, Uri mapServer, stri
             , ["Logging:LogLevel:Default"] = "Warning", ["Logging:LogLevel:Microsoft.EntityFrameworkCore"] = "Warning"
         }));
         builder.ConfigureTestServices(services => {
+            _ = authUi; // Preserve earlier named callers; every synthetic host must avoid the user profile key ring.
+            services.AddDataProtection().UseEphemeralDataProtectionProvider();
             if(cleanFeedbackMedia) {
                 services.RemoveAll<IFeedbackMalwareScanner>();
                 services.AddSingleton<IFeedbackMalwareScanner,FixtureCleanFeedbackScanner>();

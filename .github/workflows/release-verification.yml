@@ -1,66 +1,8 @@
 name: Release verification (no deployment)
 on:
-  pull_request:
   workflow_dispatch:
 permissions:
   contents: read
 jobs:
   verify:
-    runs-on: windows-latest
-    timeout-minutes: 25
-    steps:
-      - uses: actions/checkout@v7.0.1
-      - uses: actions/setup-dotnet@v6.0.0
-        with:
-          dotnet-version: '9.0.x'
-      - name: Check isolated SQL prerequisite
-        shell: pwsh
-        run: |
-          if (!(Get-Command SqlLocalDB -ErrorAction SilentlyContinue)) { throw 'SQL LocalDB is required for these integration tests.' }
-          if ((SqlLocalDB info) -notcontains 'MSSQLLocalDB') {
-            SqlLocalDB create MSSQLLocalDB
-            if ($LASTEXITCODE) { exit $LASTEXITCODE }
-          }
-          SqlLocalDB start MSSQLLocalDB
-      - name: Restore and build
-        shell: pwsh
-        run: |
-          dotnet restore tests/ReleaseIntegration/ReleaseIntegration.csproj
-          if ($LASTEXITCODE) { exit $LASTEXITCODE }
-          dotnet restore tests/OwnerRegression/OwnerRegression.csproj
-          if ($LASTEXITCODE) { exit $LASTEXITCODE }
-          dotnet build AriesMagicAppointmentSystem.csproj -c Debug --no-restore
-          if ($LASTEXITCODE) { exit $LASTEXITCODE }
-          dotnet build tests/ReleaseIntegration/ReleaseIntegration.csproj -c Release --no-restore
-          if ($LASTEXITCODE) { exit $LASTEXITCODE }
-          dotnet build tests/OwnerRegression/OwnerRegression.csproj -c Release --no-restore
-          exit $LASTEXITCODE
-      - name: Dependency advisory gate
-        shell: pwsh
-        run: ./scripts/Test-DependencyAdvisories.ps1
-      - name: Actual Identity, SQL, SMTP, OCR and restore integration
-        shell: pwsh
-        run: |
-          dotnet tool restore
-          if ($LASTEXITCODE) { exit $LASTEXITCODE }
-          dotnet ef migrations script --idempotent --no-build --configuration Release -o .tmp-owner-build/release-migrations.sql
-          if ($LASTEXITCODE) { exit $LASTEXITCODE }
-          dotnet tests/ReleaseIntegration/bin/Release/net9.0/ReleaseIntegration.dll
-          exit $LASTEXITCODE
-      - name: Existing role, financial and concurrency regressions
-        shell: pwsh
-        run: dotnet tests/OwnerRegression/bin/Release/net9.0/OwnerRegression.dll --render
-      - name: UI DOM regression
-        shell: pwsh
-        run: |
-          npm install --prefix .tmp-owner-build/audit-tools --no-package-lock --ignore-scripts jsdom@30.1.3
-          if ($LASTEXITCODE) { exit $LASTEXITCODE }
-          $env:JSDOM_MODULE=([uri](Join-Path (Get-Location) '.tmp-owner-build/audit-tools/node_modules/jsdom/lib/api.js')).AbsoluteUri
-          node tests/OwnerRegression/ui.dom.mjs
-          exit $LASTEXITCODE
-      - name: Publish and package safety gate
-        shell: pwsh
-        run: |
-          dotnet publish AriesMagicAppointmentSystem.csproj -c Release --no-restore -o .tmp-owner-build/audit-publish
-          if ($LASTEXITCODE) { exit $LASTEXITCODE }
-          ./scripts/Test-ReleasePolicy.ps1
+    uses: ./.github/workflows/ci.yml

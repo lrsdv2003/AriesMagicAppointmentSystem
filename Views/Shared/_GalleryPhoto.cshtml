@@ -1,0 +1,10 @@
+@model AriesMagicAppointmentSystem.ViewModels.GalleryPhoto
+@{ var largest = Math.Min(1440, Model.Width); }
+<figure class="wg-card wg-card-@Model.Key">
+    <button type="button" class="wg-photo" data-portfolio-src="@Url.Content(Model.Original)" data-portfolio-alt="@Model.Alt" data-portfolio-title="@Model.Title" data-portfolio-credit="@Model.Credit" aria-label="View photograph: @Model.Title" aria-describedby="caption-@Model.Key">
+        <picture><source type="image/webp" srcset="@Url.Content("~/images/client/gallery/"+Model.Key+"-480.webp") 480w, @Url.Content("~/images/client/gallery/"+Model.Key+"-960.webp") 960w, @Url.Content("~/images/client/gallery/"+Model.Key+"-"+largest+".webp") @(largest)w" sizes="@Model.Sizes" /><img src="@Url.Content(Model.Original)" alt="@Model.Alt" width="@Model.Width" height="@Model.Height" loading="@(Model.Key == "illusion" ? "eager" : "lazy")" fetchpriority="@(Model.Key == "illusion" ? "high" : "auto")" decoding="async" /></picture>
+        <span class="wg-image-fallback" hidden>Photograph unavailable. Select to try the full image.</span>
+        <span class="wg-card-line"><span>@Model.Title</span><span class="wg-view" aria-hidden="true">View ↗</span></span>
+    </button>
+    <figcaption id="caption-@Model.Key"><span class="visually-hidden">@Model.Alt</span>@if (Model.Credit != null) {<span class="wg-credit">Photograph: @Model.Credit</span>}</figcaption>
+</figure>
