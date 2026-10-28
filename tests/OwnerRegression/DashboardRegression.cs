@@ -26,15 +26,19 @@ static class DashboardRegression
         var client=new User {FullName="Dashboard Client",Email="",Role="Client"};
         var package=new Service {Name="Dashboard Magic Package with a Long Name",Price=15000,DurationInHours=1};
         Booking BookingAt(DateTime start,string status) => new() {Client=client,Service=package,PackageName=package.Name,EventDate=start.Date,StartTime=start,EndTime=start.AddHours(1),Status=status,FinalPrice=15000,PartyVenue="Antipolo Community Hall, Rizal",DistanceKm=12.4};
-        var today1=BookingAt(DateTime.Today.AddHours(23),BookingStatus.Confirmed);
-        var today2=BookingAt(DateTime.Today.AddHours(22),BookingStatus.Confirmed);
-        // Keep both synthetic events active even when this suite runs after 23:00.
-        // Start-time ordering remains the subject of the dashboard assertion.
-        today1.EndTime=DateTime.Today.AddDays(1).AddHours(1);
-        today2.EndTime=DateTime.Today.AddDays(1).AddHours(1);
-        var future=BookingAt(DateTime.Today.AddDays(3).AddHours(14),BookingStatus.Confirmed);
-        var pending=BookingAt(DateTime.Today.AddDays(7).AddHours(14),BookingStatus.Pending);
-        var approved=BookingAt(DateTime.Today.AddDays(8).AddHours(14),BookingStatus.AwaitingDownpayment);
+        var fixtureToday=DateTime.Today;
+        var today1=BookingAt(fixtureToday.AddHours(23),BookingStatus.Confirmed);
+        var today2=BookingAt(fixtureToday.AddHours(22),BookingStatus.Confirmed);
+        // Dashboard dates follow its AsOf clock, while history expiration uses Manila.
+        // Keep synthetic events active across both dates, including UTC CI after 16:00.
+        static DateTime ActiveFixtureEnd(DateTime localToday,DateTime businessNow) =>
+            (localToday>businessNow.Date?localToday:businessNow.Date).AddDays(2);
+        check(ActiveFixtureEnd(new(2026,10,28),new(2026,10,29,2,0,0))>new DateTime(2026,10,29,2,0,0),"Dashboard fixture survives UTC/Manila date boundary");
+        check(ActiveFixtureEnd(new(2026,10,29),new(2026,10,29,23,59,0))>new DateTime(2026,10,29,23,59,0),"Dashboard fixture survives late local execution");
+        today1.EndTime=today2.EndTime=ActiveFixtureEnd(fixtureToday,FeedbackPolicy.BusinessNow);
+        var future=BookingAt(fixtureToday.AddDays(3).AddHours(14),BookingStatus.Confirmed);
+        var pending=BookingAt(fixtureToday.AddDays(7).AddHours(14),BookingStatus.Pending);
+        var approved=BookingAt(fixtureToday.AddDays(8).AddHours(14),BookingStatus.AwaitingDownpayment);
         db.Bookings.AddRange(today1,today2,future,pending,approved);
         var conversation=new Conversation {CreatedByUserId=owner.Id,Participants=[new(){UserId=staff.Id},new(){UserId=owner.Id}],Messages=[new(){SenderId=owner.Id,MessageContent="Fixture scheduling update",SentAt=DateTime.UtcNow}]};
         db.Conversations.Add(conversation);
@@ -55,7 +59,7 @@ static class DashboardRegression
         check(staffModel.PendingBookings==await db.Bookings.CountAsync(b=>b.Status==BookingStatus.Pending),"Staff count matches Pending booking module");
         check(staffModel.RecentBookingRequests.All(b=>b.Status==BookingStatus.Pending) && !staffModel.RecentBookingRequests.Any(b=>b.Id==approved.Id),"Staff preview excludes already approved requests");
         check(staffModel.TodayEvents.Select(b=>b.Id).SequenceEqual(new[]{today2.Id,today1.Id}),"Today's events are chronological");
-        check(staffModel.UpcomingEvents.All(b=>b.EventDate>DateTime.Today),"Upcoming events exclude today");
+        check(staffModel.UpcomingEvents.All(b=>b.EventDate>staffModel.AsOf.Date),"Upcoming events exclude today");
         check(staffModel.UnreadConversations==1,"Unread indicator counts member conversations with unseen messages");
         check(staffModel.VerifiedRevenue==0 && staffModel.RecentPaymentsToVerify.Count==0,"Staff model contains no financial data");
         check(staffModel.RecentActivity.All(a=>a.Type!=SystemActivityType.PaymentVerified && a.Type!=SystemActivityType.UserUpdated),"Staff activity excludes finance and administration");

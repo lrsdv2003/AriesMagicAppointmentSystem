@@ -1,13 +1,21 @@
-name: Prepare / manually deploy closed alpha
+name: myASP.NET alpha - inventory or controlled FTPS release
 on:
   workflow_dispatch:
     inputs:
       deploy:
-        description: 'Transfer to the existing site after protected Environment approval'
+        description: 'Transfer only after explicit release confirmation and protected alpha approval'
         type: boolean
         default: false
+      release_sha:
+        description: 'Full 40-character commit SHA (required for transfer)'
+        type: string
+        default: ''
+      confirmation:
+        description: 'Type DEPLOY ARIES CLOSED ALPHA only for an intended release'
+        type: string
+        default: ''
       recovery_reference:
-        description: 'Non-sensitive ID of current site/SQL/private-data/key recovery evidence (required for transfer)'
+        description: 'Non-sensitive ID of current recovery evidence; never a credential/private URL'
         type: string
         default: ''
 permissions:
@@ -16,10 +24,33 @@ concurrency:
   group: aries-alpha-deployment
   cancel-in-progress: false
 jobs:
+  intent:
+    name: Validate manual intent and actual Environment protection
+    runs-on: windows-latest
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Reject incomplete release requests before any hosting access
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REQUEST_DEPLOY: ${{ inputs.deploy }}
+          REQUEST_SHA: ${{ inputs.release_sha }}
+          REQUEST_CONFIRMATION: ${{ inputs.confirmation }}
+          REQUEST_RECOVERY: ${{ inputs.recovery_reference }}
+          ALPHA_DEPLOYMENT_ENABLED: ${{ vars.ALPHA_DEPLOYMENT_ENABLED }}
+          ALPHA_PRESERVATION_VERIFIED: ${{ vars.ALPHA_PRESERVATION_VERIFIED }}
+          ALPHA_ENVIRONMENT_APPROVAL_CONFIGURED: ${{ vars.ALPHA_ENVIRONMENT_APPROVAL_CONFIGURED }}
+        run: ./scripts/Test-AlphaReleaseIntent.ps1 -Deploy:($env:REQUEST_DEPLOY -ceq 'true') -ReleaseSha $env:REQUEST_SHA -Confirmation $env:REQUEST_CONFIRMATION -RecoveryReference $env:REQUEST_RECOVERY
   verify:
+    needs: intent
     uses: ./.github/workflows/ci.yml
   package:
-    needs: verify
+    needs: [intent, verify]
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -28,26 +59,31 @@ jobs:
       - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           global-json-file: global.json
-      - name: Build reviewed file-only package (no database connection)
+      - name: Build and compare local inventories - no FTPS or live contact
         shell: pwsh
         run: |
           ./scripts/New-MyAspPublish.ps1 -OutputPath .tmp-owner-build/ci-publish
           . ./scripts/AlphaPayload.ps1
-          $payload = @(Get-AlphaPayload .tmp-owner-build/ci-publish)
-          $payload | ConvertTo-Json -Depth 4 | Set-Content .tmp-owner-build/alpha-payload.json
+          @(Get-AlphaPayload .tmp-owner-build/ci-publish) | ConvertTo-Json -Depth 4 | Set-Content .tmp-owner-build/alpha-payload.json
+          ./scripts/Invoke-AlphaFtpsDeployment.ps1 -PublishPath .tmp-owner-build/ci-publish -ExpectedManifest .tmp-owner-build/alpha-payload.json -BaselineManifest Properties/Deployment/alpha-baseline.csv -PlanOutput .tmp-owner-build/alpha-inventory-plan.json
+          'Inventory comparison only. No FTPS connection or live website change. This is not deployment success.' >> $env:GITHUB_STEP_SUMMARY
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           name: alpha-${{ github.sha }}
           path: |
             .tmp-owner-build/ci-publish/
             .tmp-owner-build/alpha-payload.json
+            .tmp-owner-build/alpha-inventory-plan.json
           retention-days: 7
           if-no-files-found: error
   deploy:
-    if: ${{ inputs.deploy && github.ref == 'refs/heads/main' && vars.ALPHA_DEPLOYMENT_ENABLED == 'true' && vars.ALPHA_PRESERVATION_VERIFIED == 'true' && vars.ALPHA_ENVIRONMENT_APPROVAL_CONFIGURED == 'true' }}
-    needs: package
+    if: ${{ inputs.deploy }}
+    needs: [intent, package]
     runs-on: windows-latest
-    timeout-minutes: 40
+    timeout-minutes: 90
+    permissions:
+      contents: read
+      actions: read
     environment:
       name: alpha
       url: https://ariesmagicartist-001-site1.htempurl.com/
@@ -59,6 +95,17 @@ jobs:
         with:
           name: alpha-${{ github.sha }}
           path: .tmp-owner-build/approved-artifact
+      - name: Recheck protection after approval and before loading hosting secrets
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REQUEST_SHA: ${{ inputs.release_sha }}
+          REQUEST_CONFIRMATION: ${{ inputs.confirmation }}
+          REQUEST_RECOVERY: ${{ inputs.recovery_reference }}
+          ALPHA_DEPLOYMENT_ENABLED: ${{ vars.ALPHA_DEPLOYMENT_ENABLED }}
+          ALPHA_PRESERVATION_VERIFIED: ${{ vars.ALPHA_PRESERVATION_VERIFIED }}
+          ALPHA_ENVIRONMENT_APPROVAL_CONFIGURED: ${{ vars.ALPHA_ENVIRONMENT_APPROVAL_CONFIGURED }}
+        run: ./scripts/Test-AlphaReleaseIntent.ps1 -Deploy -ReleaseSha $env:REQUEST_SHA -Confirmation $env:REQUEST_CONFIRMATION -RecoveryReference $env:REQUEST_RECOVERY
       - name: Controlled explicit-TLS FTPS replacement
         shell: pwsh
         env:
@@ -68,6 +115,7 @@ jobs:
           ALPHA_RECOVERY_REFERENCE: ${{ inputs.recovery_reference }}
           ALPHA_EXECUTION_APPROVED: 'true'
           ALPHA_ROLLBACK_FTP_ROOT: ${{ vars.ALPHA_ROLLBACK_FTP_ROOT }}
+          RELEASE_RUN: ${{ github.run_id }}-${{ github.run_attempt }}
         run: |
           ./scripts/Install-AlphaTransferTool.ps1
-          ./scripts/Invoke-AlphaFtpsDeployment.ps1 -PublishPath .tmp-owner-build/approved-artifact/ci-publish -ExpectedManifest .tmp-owner-build/approved-artifact/alpha-payload.json -ToolPath .tmp-owner-build/alpha-transfer-tool -RunId '${{ github.run_id }}-${{ github.run_attempt }}' -Execute
+          ./scripts/Invoke-AlphaFtpsDeployment.ps1 -PublishPath .tmp-owner-build/approved-artifact/ci-publish -ExpectedManifest .tmp-owner-build/approved-artifact/alpha-payload.json -BaselineManifest Properties/Deployment/alpha-baseline.csv -ToolPath .tmp-owner-build/alpha-transfer-tool -RunId $env:RELEASE_RUN -Execute
