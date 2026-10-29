@@ -48,6 +48,8 @@ internal static class ReleaseIntegrationRunner
         if(args.SequenceEqual(new[]{"--midnight-ui-fixture"})) { await BookingBrowserFixture.RunAsync(midnightPreview:true); return; }
         if(args.SequenceEqual(new[]{"--release-review-ui-fixture"})) { await BookingBrowserFixture.RunAsync(releaseReview:true); return; }
         if(args.SequenceEqual(new[]{"--manual-ui-preview"})) { await BookingBrowserFixture.RunAsync(manualPreview:true); return; }
+        if(args.SequenceEqual(new[]{"--independent-findings"})) { await IndependentFindingsReview.RunAsync(); return; }
+        if(args.SequenceEqual(new[]{"--reproduce-findings"})) { await IndependentFindingsReview.RunAsync(reproduce:true); return; }
         if(args.Length != 0) throw new ArgumentException("Unknown test mode.");
         Environment.SetEnvironmentVariable("BackgroundJobs__Enabled", "false");
         Environment.SetEnvironmentVariable("Database__InitializeOnStartup", "false");
@@ -168,6 +170,7 @@ internal static class ReleaseIntegrationRunner
             var png=await File.ReadAllBytesAsync("tests/ReleaseIntegration/Fixtures/payment.png");
             async Task<HttpResponseMessage> Upload(decimal amount) {
                 var form=new MultipartFormDataContent(); form.Add(new StringContent(clientToken),"__RequestVerificationToken");
+                form.Add(new StringContent("0"),"ExpectedLatestPaymentId");
                 form.Add(new StringContent(booking.Id.ToString()),"BookingId");form.Add(new StringContent(amount.ToString(System.Globalization.CultureInfo.InvariantCulture)),"Amount");form.Add(new StringContent("GCash"),"PaymentMethod");
                 var image=new ByteArrayContent(png);image.Headers.ContentType=new("image/png");form.Add(image,"ProofImage","proof.png");
                 return await client.PostAsync("/Payments/Upload",form);
@@ -216,7 +219,7 @@ internal static class ReleaseIntegrationRunner
             var reschedule=await db.RescheduleRequests.AsNoTracking().SingleAsync();
             using(var response=await Post(staff,$"/RescheduleRequests/Approve/{reschedule.Id}",staffToken)) Check(response.StatusCode==HttpStatusCode.Redirect,"Staff processes real reschedule request");
             Check((await db.Bookings.AsNoTracking().SingleAsync()).StartTime==reschedule.RequestedStartTime,"Rescheduling updates the single calendar/upcoming schedule record");
-            // Reschedule email is synchronous in the established workflow and adds one fixture message.
+            // Decisions queue mail atomically; the dispatcher alone contacts SMTP.
             var mailBeforeOutbox=smtp.Messages.Count;
             await OutboxTests(factory,smtp,connection,mailBeforeOutbox);
             await ConcurrentReschedules(db,staff,staffToken,booking,package.Id);
@@ -241,6 +244,7 @@ internal static class ReleaseIntegrationRunner
                 Check(response.StatusCode==HttpStatusCode.Redirect&&response.Headers.Location!.ToString().Contains("Login"),"Expired real Identity ticket is rejected by the application");
             }
             await RestoreTests(db,connection,database,root,smtp.Port,mapUrl,passwords["Client"]);
+            await IndependentFindingsReview.RunAsync();
             await File.WriteAllTextAsync(".tmp-owner-build/release-evidence.json",System.Text.Json.JsonSerializer.Serialize(new {
                 CheckedAtUtc=DateTime.UtcNow,Runtime=Environment.Version.ToString(),Checks=checks,SourceData="Synthetic isolated LocalDB",
                 BackupVerified=true,RestoreSeconds=restoreSeconds,NativeOcrVerified=true,EmailTransport="Loopback SMTP, not Google",
@@ -271,12 +275,14 @@ internal static class ReleaseIntegrationRunner
         catch(EmailDeliveryException error){sanitized=error.InnerException==null&&!error.Message.Contains("fixture");}
         Check(sanitized,"SMTP provider error is replaced by a secret-free exception without a raw inner response");
         var dispatcher=scope.ServiceProvider.GetRequiredService<EmailOutboxDispatcher>();
+        var queued=await db.EmailOutboxMessages.CountAsync(x=>x.DeliveredAtUtc==null&&x.FailedAtUtc==null);
+        Check(queued==2,"Payment and reschedule confirmations are both queued, without false sent claims");
         Check(await dispatcher.DispatchAsync()==0,"Real SMTP authentication failure does not undo financial commit");
         Check(await db.EmailOutboxMessages.AnyAsync(x=>x.Attempts==1&&x.DeliveredAtUtc==null&&x.LastFailureType==nameof(EmailDeliveryException)),"SMTP failure is retained with sanitized bounded retry state");
         smtp.RejectAuthentication=false;
         await db.EmailOutboxMessages.ExecuteUpdateAsync(s=>s.SetProperty(x=>x.NextAttemptAtUtc,DateTime.UtcNow.AddMinutes(-1)));
-        Check(await dispatcher.DispatchAsync()==1 && smtp.Messages.Count==priorMessages+1,"Committed outbox retries through real loopback SMTP");
-        Check(await dispatcher.DispatchAsync()==0 && smtp.Messages.Count==priorMessages+1,"Delivered item is not sent again on ordinary retries");
+        Check(await dispatcher.DispatchAsync()==queued && smtp.Messages.Count==priorMessages+queued,"Committed outbox retries through real loopback SMTP");
+        Check(await dispatcher.DispatchAsync()==0 && smtp.Messages.Count==priorMessages+queued,"Delivered item is not sent again on ordinary retries");
     }
 
     static async Task AuthenticationRecovery(string connection,SmtpFixture smtp,Uri mapUrl,string root,Dictionary<string,string> passwords)

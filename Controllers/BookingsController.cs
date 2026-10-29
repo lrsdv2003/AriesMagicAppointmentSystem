@@ -241,9 +241,10 @@ namespace AriesMagicAppointmentSystem.Controllers
                     availableTravelTimeMinutes = distance.AvailableTravelTimeMinutes,
                     usesPreviousEventLocation = distance.UsesPreviousEventLocation,
                     serviceabilityReason = distance.ServiceabilityReason,
-                    originLatitude = distance.OriginLatitude,
-                    originLongitude = distance.OriginLongitude,
-                    startingPointName = distance.StartingPointName
+                    // A public estimate must not identify another Client's event venue.
+                    originLatitude = distance.UsesPreviousEventLocation ? (double?)null : distance.OriginLatitude,
+                    originLongitude = distance.UsesPreviousEventLocation ? (double?)null : distance.OriginLongitude,
+                    startingPointName = distance.UsesPreviousEventLocation ? "Previous confirmed event" : distance.StartingPointName
                 });
             }
             catch
@@ -628,6 +629,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                 return Challenge();
             }
 
+            await using var transaction = await _context.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
             var legacyClient = await _context.LegacyUsers
                 .FirstOrDefaultAsync(u => u.Email == appUser.Email);
 
@@ -648,6 +650,26 @@ namespace AriesMagicAppointmentSystem.Controllers
             var startDateTime = model.EventDate.Date.Add(model.StartTime);
             var endDateTime = startDateTime.AddHours(selectedPackage.DurationInHours);
 
+            var removedInclusionNames = validRemovedInclusions.OrderBy(i => i.Id).Select(i => i.Name).ToList();
+            var removedInclusionsJson = JsonSerializer.Serialize(removedInclusionNames);
+            // An exact replay of an active request is not another booking. The serializable
+            // predicate also coordinates simultaneous retries without a new schema or lock service.
+            var duplicateId = await _context.Bookings.AsNoTracking()
+                .Where(b => b.ApplicationUserId == appUserId && b.ServiceId == selectedPackage.Id
+                    && b.EventDate == model.EventDate.Date && b.StartTime == startDateTime && b.EndTime == endDateTime
+                    && b.PartyVenue == model.PartyVenue && b.EventType == model.EventType && b.Motif == model.Motif
+                    && b.PartyTheme == model.PartyTheme && b.CelebrantName == model.CelebrantName && b.Age == model.Age
+                    && b.PaxCount == model.PaxCount && b.ContactPerson == model.ContactPerson && b.ContactNumber == model.ContactNumber
+                    && b.RemovedInclusionsJson == removedInclusionsJson
+                    && (b.Status == BookingStatus.Pending || b.Status == BookingStatus.AwaitingDownpayment
+                        || b.Status == BookingStatus.AwaitingVerification || b.Status == BookingStatus.Confirmed))
+                .Select(b => (int?)b.Id).FirstOrDefaultAsync();
+            if (duplicateId.HasValue)
+            {
+                TempData["Success"] = "This booking request has already been submitted. Review its current status in My Bookings.";
+                return RedirectToAction(nameof(MyBookings));
+            }
+
             if (await HasReachedDailyConfirmedLimit(model.EventDate))
             {
                 ModelState.AddModelError("", "This date already has the maximum of 3 confirmed bookings.");
@@ -659,10 +681,6 @@ namespace AriesMagicAppointmentSystem.Controllers
                 ModelState.AddModelError("", "The selected time conflicts with an existing confirmed booking, including the 1-hour buffer.");
                 return await ClientWizardViewAsync(model);
             }
-
-            var removedInclusionNames = validRemovedInclusions
-                .Select(i => i.Name)
-                .ToList();
 
             var booking = new Booking
             {
@@ -697,7 +715,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                 BasePrice = selectedPackage.Price,
                 FinalPrice = finalPrice,
                 RequiredDownpayment = FixedRequiredDownpayment,
-                RemovedInclusionsJson = JsonSerializer.Serialize(removedInclusionNames)
+                RemovedInclusionsJson = removedInclusionsJson
             };
 
             _context.Bookings.Add(booking);
@@ -742,7 +760,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             await _context.SaveChangesAsync();
 
             TempData["Success"] = "Your booking request was submitted successfully. Please wait for staff review before proceeding to the payment step.";
-
+            await transaction.CommitAsync();
             return RedirectToAction(nameof(MyBookings));
         }
 
@@ -859,6 +877,7 @@ namespace AriesMagicAppointmentSystem.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ApproveConfirmed(int id, string? internalNote)
         {
+            await using var transaction = await _context.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
             var booking = await _context.Bookings
                 .Include(b => b.Client)
                 .Include(b => b.Service)
@@ -909,8 +928,8 @@ namespace AriesMagicAppointmentSystem.Controllers
             await _context.SaveChangesAsync();
             await _activityService.LogAsync(SystemActivityType.BookingApproved,
                 $"Booking #{booking.Id} approved during Staff review.", staffUserId, staffName,
-                booking.Id.ToString(), "Booking", new { BookingId = booking.Id, Note = cleanNote, StaffUserId = staffUserId, StaffName = staffName, ActionTaken = "Approved", Timestamp = now });
-
+                booking.Id.ToString(), "Booking", new { BookingId = booking.Id, Note = cleanNote, StaffUserId = staffUserId, StaffName = staffName, ActionTaken = "Approved", PreviousStatus = BookingStatus.Pending, NewStatus = BookingStatus.AwaitingDownpayment, Timestamp = now });
+            await transaction.CommitAsync();
             TempData["Success"] = "Booking approved. The client can now proceed to payment.";
             return RedirectToAction(nameof(Index));
         }
@@ -941,6 +960,7 @@ namespace AriesMagicAppointmentSystem.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeclineConfirmed(int id, string? internalNote)
         {
+            await using var transaction = await _context.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
             var booking = await _context.Bookings
                 .Include(b => b.Client)
                 .Include(b => b.Service)
@@ -994,8 +1014,8 @@ namespace AriesMagicAppointmentSystem.Controllers
             await _context.SaveChangesAsync();
             await _activityService.LogAsync(SystemActivityType.BookingDeclined,
                 $"Booking #{booking.Id} declined during Staff review.", staffUserId, staffName,
-                booking.Id.ToString(), "Booking", new { BookingId = booking.Id, Note = cleanNote, StaffUserId = staffUserId, StaffName = staffName, ActionTaken = "Declined", Timestamp = now });
-
+                booking.Id.ToString(), "Booking", new { BookingId = booking.Id, Note = cleanNote, StaffUserId = staffUserId, StaffName = staffName, ActionTaken = "Declined", PreviousStatus = BookingStatus.Pending, NewStatus = BookingStatus.Declined, Timestamp = now });
+            await transaction.CommitAsync();
             TempData["Success"] = "Booking declined.";
             return RedirectToAction(nameof(Index));
         }

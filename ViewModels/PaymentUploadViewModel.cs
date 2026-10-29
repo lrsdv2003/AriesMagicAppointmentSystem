@@ -10,6 +10,10 @@ namespace AriesMagicAppointmentSystem.ViewModels
         [Display(Name = "Booking")]
         public int BookingId { get; set; }
 
+        [Required(ErrorMessage = "Open a fresh payment form before submitting your receipt.")]
+        [Range(0, int.MaxValue)]
+        public int? ExpectedLatestPaymentId { get; set; }
+
         public decimal FixedDownpaymentAmount { get; set; } = 2000;
 
         [Required]

@@ -92,3 +92,6 @@ backup/
 /GALLERY_ASSET_MANIFEST.md
 /index.html
 /GITHUB_UPDATE_REPORT.md
+
+# Local operational evidence from the separate deployment-setup PR.
+/GITHUB_ACTIONS_SETUP_REPORT.md

@@ -16,16 +16,20 @@ namespace AriesMagicAppointmentSystem.Controllers
     public class RescheduleRequestsController : Controller
     {
         private readonly ApplicationDbContext _context;
-        private readonly IEmailService _emailService;
+        private readonly EmailOutbox _emailOutbox;
+        private readonly ISystemActivityService _activityService;
         private readonly UserManager<ApplicationUser> _userManager;
 
         public RescheduleRequestsController(
             ApplicationDbContext context,
             IEmailService emailService,
-            UserManager<ApplicationUser> userManager)
+            UserManager<ApplicationUser> userManager,
+            ISystemActivityService? activityService = null)
         {
             _context = context;
-            _emailService = emailService;
+            _ = emailService; // Existing callers retained; delivery uses the persisted outbox.
+            _emailOutbox = new EmailOutbox(context);
+            _activityService = activityService ?? new SystemActivityService(context);
             _userManager = userManager;
         }
 
@@ -52,6 +56,7 @@ namespace AriesMagicAppointmentSystem.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(RescheduleRequestCreateViewModel model)
         {
+            await using var transaction = await _context.Database.BeginTransactionAsync(IsolationLevel.Serializable);
             var appUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             ViewBag.UnavailableDates = await GetUnavailableRescheduleDatesAsync();
 
@@ -142,6 +147,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                     "/RescheduleRequests/Index");
             }
 
+            await transaction.CommitAsync();
             TempData["Success"] = "Your reschedule request was submitted successfully. Please wait for Staff review.";
             return RedirectToAction(nameof(MyRequests));
         }
@@ -298,8 +304,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             var reviewerName = reviewer?.FullName ?? reviewer?.Email ?? User.Identity?.Name ?? "Staff";
             RescheduleRequest? request;
 
-            await using (var transaction = await _context.Database.BeginTransactionAsync(IsolationLevel.Serializable))
-            {
+            await using var transaction = await _context.Database.BeginTransactionAsync(IsolationLevel.Serializable);
                 request = await _context.RescheduleRequests
                     .Include(r => r.Booking)
                         .ThenInclude(b => b!.Client)
@@ -366,8 +371,6 @@ namespace AriesMagicAppointmentSystem.Controllers
                 });
 
                 await _context.SaveChangesAsync();
-                await transaction.CommitAsync();
-            }
 
             var bookingCode = $"BK-{request!.Booking!.CreatedAt.Year}-{request.Booking.Id:D3}";
             var newSchedule = $"{request.RequestedDate:MMMM dd, yyyy}, {request.RequestedStartTime:hh:mm tt} - {request.RequestedEndTime:hh:mm tt}";
@@ -389,7 +392,8 @@ namespace AriesMagicAppointmentSystem.Controllers
 
             if (request.Booking.Client != null)
             {
-                await _emailService.SendEmailAsync(
+                await _emailOutbox.EnqueueAsync(
+                    $"reschedule-approved:{request.Id}",
                     request.Booking.Client.Email,
                     "Reschedule Approved",
                     $@"
@@ -399,6 +403,9 @@ namespace AriesMagicAppointmentSystem.Controllers
                     <p>You can view the updated booking details in your account.</p>");
             }
 
+            await _activityService.LogAsync(SystemActivityType.RescheduleApproved, "Staff approved a reschedule request.", reviewerId, reviewerName,
+                request.Id.ToString(), "RescheduleRequest", new { PreviousStatus = RescheduleRequestStatus.Pending, NewStatus = RescheduleRequestStatus.Approved, request.BookingId });
+            await transaction.CommitAsync();
             TempData["Success"] = $"{bookingCode} was rescheduled successfully.";
             return RedirectToAction(nameof(Index));
         }
@@ -420,8 +427,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             var reviewerName = reviewer?.FullName ?? reviewer?.Email ?? User.Identity?.Name ?? "Staff";
             RescheduleRequest? request;
 
-            await using (var transaction = await _context.Database.BeginTransactionAsync(IsolationLevel.Serializable))
-            {
+            await using var transaction = await _context.Database.BeginTransactionAsync(IsolationLevel.Serializable);
                 request = await _context.RescheduleRequests
                     .Include(r => r.Booking)
                         .ThenInclude(b => b!.Client)
@@ -470,8 +476,6 @@ namespace AriesMagicAppointmentSystem.Controllers
                 });
 
                 await _context.SaveChangesAsync();
-                await transaction.CommitAsync();
-            }
 
             var originalDate = request!.OriginalDate ?? request.Booking!.EventDate;
             var originalStart = request.OriginalStartTime ?? request.Booking.StartTime;
@@ -492,7 +496,8 @@ namespace AriesMagicAppointmentSystem.Controllers
                 var reasonParagraph = string.IsNullOrWhiteSpace(clientFacingReason)
                     ? string.Empty
                     : $"<p><strong>Reason:</strong> {System.Net.WebUtility.HtmlEncode(clientFacingReason)}</p>";
-                await _emailService.SendEmailAsync(
+                await _emailOutbox.EnqueueAsync(
+                    $"reschedule-rejected:{request.Id}",
                     request.Booking.Client.Email,
                     "Reschedule Request Declined",
                     $@"
@@ -502,6 +507,9 @@ namespace AriesMagicAppointmentSystem.Controllers
                     {reasonParagraph}");
             }
 
+            await _activityService.LogAsync(SystemActivityType.RescheduleRejected, "Staff rejected a reschedule request.", reviewerId, reviewerName,
+                request.Id.ToString(), "RescheduleRequest", new { PreviousStatus = RescheduleRequestStatus.Pending, NewStatus = RescheduleRequestStatus.Rejected, request.BookingId });
+            await transaction.CommitAsync();
             TempData["Success"] = "Reschedule request rejected. The booking schedule was not changed.";
             return RedirectToAction(nameof(Index));
         }

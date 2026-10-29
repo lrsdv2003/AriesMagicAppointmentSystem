@@ -13,6 +13,6 @@
         <p>@Model.Message</p>
     </div>
     @if (hasTarget || !Model.IsRead) {
-        <a asp-controller="Notifications" asp-action="Open" asp-route-id="@Model.Id" class="notice-action">@(hasTarget ? presentation.Action : "Mark as read")<span class="visually-hidden">: @Model.Title</span><i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+        <form asp-controller="Notifications" asp-action="Open" asp-route-id="@Model.Id" method="post" class="notice-open-form"><button type="submit" class="notice-action">@(hasTarget ? presentation.Action : "Mark as read")<span class="visually-hidden">: @Model.Title</span><i class="bi bi-arrow-right" aria-hidden="true"></i></button></form>
     }
 </article>

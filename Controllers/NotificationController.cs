@@ -46,6 +46,8 @@ namespace AriesMagicAppointmentSystem.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Open(int id)
         {
             var appUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
