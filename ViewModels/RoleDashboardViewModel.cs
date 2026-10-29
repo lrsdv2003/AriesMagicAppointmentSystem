@@ -10,6 +10,13 @@ namespace AriesMagicAppointmentSystem.ViewModels
         public List<DashboardShortcut> Attention { get; set; } = new();
         public List<DashboardShortcut> QuickActions { get; set; } = new();
         public List<DashboardMetric> Metrics { get; set; } = new();
+        public List<WorkspaceMetric> WorkspaceMetrics { get; set; } = new();
+        public List<WorkspaceUser> RecentUsers { get; set; } = new();
+        public List<Service> PackagePreviews { get; set; } = new();
+        public List<WorkspaceConversation> RecentConversations { get; set; } = new();
+        public List<Booking> CalendarPreview { get; set; } = new();
+        public int ConfirmedThisWeek { get; set; }
+        public int VerifiedPaymentCount { get; set; }
         public List<SystemActivity> RecentActivity { get; set; } = new();
         public List<Booking> TodayEvents { get; set; } = new();
         public List<RefundRequest> RecentRefundRequests { get; set; } = new();
@@ -68,4 +75,7 @@ namespace AriesMagicAppointmentSystem.ViewModels
     public record DashboardShortcut(string Label, string Href, string Icon, string? Detail = null);
     public record DashboardMetric(string Label, string Value, string? Context = null);
     public record DashboardTrendPoint(string Label, int Count);
+    public record WorkspaceMetric(string Label, string Value, string Context, string Icon, string Tone);
+    public record WorkspaceUser(string Id, string Name, string Email, string Roles, string Status);
+    public record WorkspaceConversation(int Id, string Title, string Preview, int UnreadCount, DateTime SentAt);
 }

@@ -42,6 +42,9 @@ static class DashboardRegression
         db.Bookings.AddRange(today1,today2,future,pending,approved);
         var conversation=new Conversation {CreatedByUserId=owner.Id,Participants=[new(){UserId=staff.Id},new(){UserId=owner.Id}],Messages=[new(){SenderId=owner.Id,MessageContent="Fixture scheduling update",SentAt=DateTime.UtcNow}]};
         db.Conversations.Add(conversation);
+        var nonMemberConversation = new Conversation {Title="Private nonmember fixture",CreatedByUserId=owner.Id,
+            Participants=[new(){UserId=owner.Id}],Messages=[new(){SenderId=owner.Id,MessageContent="Nonmember preview sentinel",SentAt=DateTime.UtcNow.AddMinutes(1)}]};
+        db.Conversations.Add(nonMemberConversation);
         await db.SaveChangesAsync();
         db.RescheduleRequests.Add(new RescheduleRequest {Booking=future,RequestedDate=future.EventDate.AddDays(1),RequestedStartTime=future.StartTime.AddDays(1),RequestedEndTime=future.EndTime.AddDays(1),Reason="Fixture"});
         db.SystemActivities.AddRange(
@@ -61,6 +64,10 @@ static class DashboardRegression
         check(staffModel.TodayEvents.Select(b=>b.Id).SequenceEqual(new[]{today2.Id,today1.Id}),"Today's events are chronological");
         check(staffModel.UpcomingEvents.All(b=>b.EventDate>staffModel.AsOf.Date),"Upcoming events exclude today");
         check(staffModel.UnreadConversations==1,"Unread indicator counts member conversations with unseen messages");
+        check(staffModel.RecentConversations.All(c=>c.Id!=nonMemberConversation.Id) && staffModel.RecentConversations.Any(c=>c.Id==conversation.Id),"Workspace message previews obey conversation membership, not role-wide access");
+        check(staffModel.CalendarPreview.All(b=>b.Status==BookingStatus.Confirmed && b.EndTime>=staffModel.AsOf && b.EventDate.Month==staffModel.AsOf.Month && b.EventDate.Year==staffModel.AsOf.Year),"Workspace calendar contains only remaining confirmed events in the displayed month");
+        var weekStart=staffModel.AsOf.Date.AddDays(-((7+(int)staffModel.AsOf.DayOfWeek-(int)DayOfWeek.Monday)%7));
+        check(staffModel.ConfirmedThisWeek==await db.Bookings.CountAsync(b=>b.Status==BookingStatus.Confirmed && b.EndTime>=staffModel.AsOf && b.EventDate>=weekStart && b.EventDate<weekStart.AddDays(7)),"Weekly workspace metric uses remaining confirmed Monday–Sunday events");
         check(staffModel.VerifiedRevenue==0 && staffModel.RecentPaymentsToVerify.Count==0,"Staff model contains no financial data");
         check(staffModel.RecentActivity.All(a=>a.Type!=SystemActivityType.PaymentVerified && a.Type!=SystemActivityType.UserUpdated),"Staff activity excludes finance and administration");
         pending.Status=BookingStatus.AwaitingDownpayment;await db.SaveChangesAsync();
@@ -73,6 +80,8 @@ static class DashboardRegression
         check(ownerModel.VerifiedRevenue==report.TotalCollectedRevenue && ownerModel.CompletedRefunds==report.RefundsIssued && ownerModel.NetCollectedRevenue==report.NetCollectedRevenue,"Owner collected/refund/net totals match unfiltered Reports including cancelled bookings");
         check(ownerModel.OutstandingReceivables==report.OutstandingReceivables && ownerModel.BookingValue==report.TotalBookingValue,"Owner receivables and booking value match Reports");
         check(ownerModel.PendingPayments==await db.Payments.CountAsync(p=>p.Status==PaymentStatus.Pending),"Payment priority matches verification queue");
+        check(ownerModel.VerifiedPaymentCount==await db.Payments.CountAsync(p=>p.Status==PaymentStatus.Verified),"Owner workspace verified-record metric excludes pending payments");
+        check(ownerModel.WorkspaceMetrics.Single(m=>m.Label=="Verified receipts").Value=="₱"+report.TotalCollectedRevenue.ToString("N2"),"Owner headline collections reconcile to the authoritative financial report");
         check(ownerModel.RecentPaymentsToVerify.Count<=4 && ownerModel.RecentRefundRequests.Count<=4,"Financial queue previews stay compact");
         check(ownerModel.BookingTrend.Count==6,"Business trend includes six event months");
         var failed=(RoleDashboardViewModel)((ViewResult)await Controller("Owner",owner.Id,new FailingDashboardFinance(finance)).Owner()).Model!;
@@ -83,6 +92,9 @@ static class DashboardRegression
         var userController=new UserManagementController(manager,new SystemActivityService(db));
         var activeUsers=(IEnumerable<ApplicationUser>)((ViewResult)await userController.Index(null,"Active")).Model!;
         check(adminModel.TotalUsers==await db.Users.CountAsync() && adminModel.ActiveUsers==activeUsers.Count(),"Admin account totals match User Management");
+        check(adminModel.RecentUsers.Count<=5 && adminModel.RecentUsers.All(u=>db.Users.Any(a=>a.Id==u.Id && (a.Email ?? "Not recorded")==u.Email)),"Admin workspace uses bounded authoritative identity previews");
+        check(adminModel.TotalBookings==await db.Bookings.CountAsync() && adminModel.RecentBookings.Count==0,"Admin booking metric is aggregate-only and adds no operational record access");
+        check(adminModel.PackagePreviews.All(p=>!p.IsArchived) && adminModel.PackagePreviews.Count<=3,"Admin package preview retains real active catalog records");
         check(adminModel.TrashedBookingsCount==await db.Bookings.CountAsync(b=>b.Status==BookingStatus.Declined||b.Status==BookingStatus.Cancelled||b.Status==BookingStatus.Expired),"Admin archive count matches Trash History");
         check(adminModel.RecentPaymentsToVerify.Count==0 && adminModel.UpcomingEvents.Count==0 && adminModel.VerifiedRevenue==0,"Admin model excludes operational and financial data");
         check(adminModel.RecentActivity.All(a=>a.Type!=SystemActivityType.PaymentVerified && a.Type!=SystemActivityType.BookingApproved),"Admin activity preview stays system-focused");

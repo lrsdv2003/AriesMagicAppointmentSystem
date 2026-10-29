@@ -1,0 +1,2 @@
+@model AriesMagicAppointmentSystem.ViewModels.RoleDashboardViewModel
+<details class="workspace-quick-links"><summary>More workspace shortcuts</summary><nav aria-label="@Model.RoleName quick access">@foreach(var item in Model.QuickActions){<a href="@item.Href"><i class="bi @item.Icon" aria-hidden="true"></i>@item.Label<i class="bi bi-arrow-right" aria-hidden="true"></i></a>}</nav></details>

@@ -1,25 +1,38 @@
 @model AriesMagicAppointmentSystem.ViewModels.RoleDashboardViewModel
+@using AriesMagicAppointmentSystem.Models
 @{ Layout = "_DashboardLayout"; ViewData["Title"] = "Admin Dashboard"; }
 <div class="role-workspace" data-role="Admin">
 <partial name="_DashboardStart" model="Model" />
-<div class="dash-content-grid">
-<section class="dash-panel"><div class="dash-section-heading"><h3>User Overview</h3><a asp-controller="UserManagement" asp-action="Index">Manage Users</a></div>
+<div class="workspace-dashboard-grid">
+<section class="dash-panel workspace-main-panel" aria-labelledby="workspaceUsersTitle">
+<div class="dash-section-heading"><h2 id="workspaceUsersTitle"><i class="bi bi-people" aria-hidden="true"></i>Users &amp; role management</h2><a asp-controller="UserManagement" asp-action="Index">Manage users <i class="bi bi-arrow-right" aria-hidden="true"></i></a></div>
 @if(Model.UnavailableSections.Contains("users")){<p class="dash-empty">Unable to load user overview.</p>}
-else {<dl class="dash-facts">
-@foreach(var role in new[]{"Client","Staff","Owner","Admin"}){<div><dt>@role accounts</dt><dd>@Model.UserRoles.GetValueOrDefault(role).ToString("N0")</dd></div>}
-<div><dt>Unverified accounts</dt><dd>@Model.UnverifiedUsers</dd></div>
-</dl>}
+else if(!Model.RecentUsers.Any()){<p class="dash-empty">No registered users to display.</p>}
+else{<div class="workspace-table-scroll" role="region" aria-label="Most recently registered users" tabindex="0"><table class="workspace-table" role="table"><caption class="visually-hidden">Recent accounts, newest registrations first</caption><thead role="rowgroup"><tr role="row"><th role="columnheader" scope="col">Account</th><th role="columnheader" scope="col">Email</th><th role="columnheader" scope="col">Role</th><th role="columnheader" scope="col">Status</th><th role="columnheader" scope="col">Action</th></tr></thead><tbody role="rowgroup">
+@foreach(var account in Model.RecentUsers){<tr role="row"><td role="cell" data-label="Account"><strong>@account.Name</strong></td><td role="cell" data-label="Email">@account.Email</td><td role="cell" data-label="Role"><span class="ui-badge ui-badge-neutral">@(string.IsNullOrEmpty(account.Roles)?"Unassigned":account.Roles)</span></td><td role="cell" data-label="Status"><span class="ui-badge @(account.Status=="Active"?"ui-badge-success":"ui-badge-warning")">@account.Status</span></td><td role="cell" data-label="Action"><a class="workspace-table-action" asp-controller="UserManagement" asp-action="Details" asp-route-id="@account.Id">Manage<span class="visually-hidden"> @account.Name</span></a></td></tr>}
+</tbody></table></div><p class="workspace-panel-note">Manage accounts within your existing permissions. Payment and refund verification remain Owner-only.</p>}
 </section>
-<section class="dash-panel"><div class="dash-section-heading"><h3>Calendar Configuration</h3><a asp-controller="Calendar" asp-action="Index">Manage Calendar</a></div>
-<dl class="dash-facts"><div><dt>Maximum daily bookings</dt><dd>3 <small>Fixed rule</small></dd></div>
-@if(!Model.UnavailableSections.Contains("system overview")){<div><dt>Active blocked dates</dt><dd>@Model.BlockedDates</dd></div>}
-</dl>@if(Model.UnavailableSections.Contains("system overview")){<p class="dash-empty">Unable to load calendar configuration.</p>}
+<section class="dash-panel workspace-controls" aria-labelledby="workspaceControlsTitle">
+<div class="dash-section-heading"><h2 id="workspaceControlsTitle"><i class="bi bi-sliders" aria-hidden="true"></i>Operating controls</h2><a asp-controller="Calendar" asp-action="Index">Calendar settings <i class="bi bi-arrow-right" aria-hidden="true"></i></a></div>
+<div class="workspace-panel-body"><h3>Daily confirmed booking limit</h3><p>The existing fixed capacity rule.</p><div class="workspace-capacity"><span>Booking capacity</span><strong>@BookingRules.MaximumDailyBookings <small>/ day</small></strong></div>
+<h3>Calendar permissions</h3><p>Manage blocked dates. Operational booking details and Staff decisions stay outside Admin access.</p><a class="dash-button" asp-controller="Calendar" asp-action="Index">Manage blocked dates</a>
+@if(!Model.UnavailableSections.Contains("system overview")){<dl class="dash-facts workspace-control-facts"><div><dt>Active blocked dates</dt><dd>@Model.BlockedDates</dd></div><div><dt>Activity in the last 24 hours</dt><dd>@Model.RecentActivityCount</dd></div></dl>}
+</div></section>
+<section class="dash-panel workspace-main-panel" aria-labelledby="workspacePackagesTitle">
+<div class="dash-section-heading"><h2 id="workspacePackagesTitle"><i class="bi bi-box-seam" aria-hidden="true"></i>Package management</h2><a asp-controller="Services" asp-action="Index">Manage packages <i class="bi bi-arrow-right" aria-hidden="true"></i></a></div>
+@if(Model.UnavailableSections.Contains("system overview")){<p class="dash-empty">Unable to load packages.</p>}
+else if(!Model.PackagePreviews.Any()){<p class="dash-empty">No active packages in the catalog.</p>}
+else{<div class="workspace-package-grid">@foreach(var package in Model.PackagePreviews){<article><h3>@package.Name</h3><strong class="workspace-package-price">₱@package.Price.ToString("N2")</strong><p>@package.DurationInHours @(package.DurationInHours==1?"hour":"hours") · Active</p>
+@if(!package.Inclusions.Any()){<p class="workspace-catalog-note"><i class="bi bi-exclamation-circle" aria-hidden="true"></i>No published inclusions</p>}else{<p>@package.Inclusions.Count published inclusions</p>}
+<a class="workspace-table-action" asp-controller="Services" asp-action="Edit" asp-route-id="@package.Id">Edit package<span class="visually-hidden"> @package.Name</span></a></article>}</div>}
+</section>
+<section class="dash-panel" aria-labelledby="workspaceArchiveTitle"><div class="dash-section-heading"><h2 id="workspaceArchiveTitle"><i class="bi bi-archive" aria-hidden="true"></i>Archived records</h2><a asp-controller="TrashHistory" asp-action="Index">Review trash <i class="bi bi-arrow-right" aria-hidden="true"></i></a></div>
+@if(Model.UnavailableSections.Contains("system overview")){<p class="dash-empty">Unable to load archived records.</p>}else if(Model.TrashedBookingsCount+Model.ArchivedPackages==0){<p class="dash-empty">No archived records.</p>}else{<dl class="dash-facts workspace-panel-body"><div><dt>Booking archives</dt><dd>@Model.TrashedBookingsCount <small>Read-only records</small></dd></div><div><dt>Archived packages</dt><dd>@Model.ArchivedPackages <small>Restorable</small></dd></div></dl>}
 </section>
 </div>
-<section class="dash-panel"><div class="dash-section-heading"><h3>Archived Records</h3><a asp-controller="TrashHistory" asp-action="Index">Review Trash</a></div>
-@if(Model.UnavailableSections.Contains("system overview")){<p class="dash-empty">Unable to load archived records.</p>}
-else if(Model.TrashedBookingsCount + Model.ArchivedPackages == 0){<p class="dash-empty">No archived records.</p>}
-else {<dl class="dash-facts"><div><dt>Booking archives</dt><dd>@Model.TrashedBookingsCount <small>Read-only records</small></dd></div><div><dt>Archived packages</dt><dd>@Model.ArchivedPackages <small>Restorable</small></dd></div></dl>}
+<section class="dash-panel"><div class="dash-section-heading"><h2><i class="bi bi-person-check" aria-hidden="true"></i>Account overview</h2></div>
+@if(Model.UnavailableSections.Contains("users")){<p class="dash-empty">Unable to load account counts.</p>}else{<dl class="workspace-account-facts">@foreach(var role in new[]{"Client","Staff","Owner","Admin"}){<div><dt>@role accounts</dt><dd>@Model.UserRoles.GetValueOrDefault(role).ToString("N0")</dd></div>}<div><dt>Unverified accounts</dt><dd>@Model.UnverifiedUsers</dd></div></dl>}
 </section>
 <partial name="_DashboardRecentActivity" model="Model" />
+<partial name="_WorkspaceQuickAccess" model="Model" />
 </div>

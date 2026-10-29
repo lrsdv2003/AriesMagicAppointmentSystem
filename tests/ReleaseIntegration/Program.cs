@@ -42,6 +42,8 @@ internal static class ReleaseIntegrationRunner
     }
     static async Task Main(string[] args)
     {
+        if(args.SequenceEqual(new[]{"--internal-workspaces-ui-fixture"})) { await InternalWorkspaceFixture.RunAsync(); return; }
+        if(args.SequenceEqual(new[]{"--internal-workspaces-empty-fixture"})) { await InternalWorkspaceFixture.RunAsync(empty:true); return; }
         if(args.SequenceEqual(new[]{"--auth-ui-fixture"})) { await AuthBrowserFixture.RunAsync(); return; }
         if(args.SequenceEqual(new[]{"--booking-ui-fixture"})) { await BookingBrowserFixture.RunAsync(); return; }
         if(args.SequenceEqual(new[]{"--client-hub-ui-fixture"})) { await BookingBrowserFixture.RunAsync(hubPreview:true); return; }

@@ -30,17 +30,17 @@ try{
    await go(name);
    const issues=await page.evaluate(()=>{
     const result=[],main=document.querySelector('#mainContent');
-    if(getComputedStyle(document.querySelector('.dashboard-sidebar')).backgroundColor!=='rgb(21, 33, 54)')result.push('sidebar contrast');
+    if(getComputedStyle(document.querySelector('.dashboard-sidebar')).backgroundColor!=='rgb(5, 24, 44)')result.push('sidebar theme');
     if(innerWidth>=992&&getComputedStyle(document.querySelector('.ui-menu-toggle')).display!=='none')result.push('desktop menu toggle');
     if(document.documentElement.scrollWidth>innerWidth+1)result.push('document overflow');
     if(main.scrollWidth>main.clientWidth+2)result.push('content overflow '+main.scrollWidth+'/'+main.clientWidth);
-    if(!getComputedStyle(document.body).fontFamily.includes('Segoe UI'))result.push('wrong primary font');
-    document.querySelectorAll('button,input,select,h1,h2').forEach(e=>{if(!getComputedStyle(e).fontFamily.includes('Segoe UI'))result.push('inconsistent font '+e.tagName);});
+    if(!getComputedStyle(document.body).fontFamily.includes('DM Sans'))result.push('wrong primary font');
+    document.querySelectorAll('button,input,select,h1,h2').forEach(e=>{if(!getComputedStyle(e).fontFamily.includes('DM Sans'))result.push('inconsistent font '+e.tagName);});
     const heading=document.querySelector('.dashboard-title'),actions=document.querySelector('.topbar-right');
     if(heading.getBoundingClientRect().right>actions.getBoundingClientRect().left+1)result.push('header title overlaps actions');
     const ids=[...document.querySelectorAll('[id]')].map(x=>x.id);
     if(new Set(ids).size!==ids.length)result.push('duplicate IDs');
-    document.querySelectorAll('h1,h2,h3').forEach(e=>{if(Number(getComputedStyle(e).fontWeight)>600)result.push('heavy heading '+e.textContent);});
+    document.querySelectorAll('h1,h2,h3').forEach(e=>{if(Number(getComputedStyle(e).fontWeight)>650)result.push('heavy heading '+e.textContent);});
     const header=document.querySelector('.dashboard-topbar');
     const before=header.getBoundingClientRect().top;main.scrollTop=500;
     if(Math.abs(header.getBoundingClientRect().top-before)>1)result.push('header moved with content');
