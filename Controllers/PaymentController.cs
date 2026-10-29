@@ -99,6 +99,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             {
                 viewModel.BookingId = bookingId.Value;
                 var summary = await _financialService.GetSummaryAsync(bookingId.Value);
+                viewModel.ExpectedLatestPaymentId = summary.Ledger.Select(p => p.PaymentId).DefaultIfEmpty(0).Max();
                 if (summary.RemainingBalance > 0)
                     viewModel.Amount = Math.Min(FixedDownpaymentAmount, summary.RemainingBalance);
             }
@@ -135,6 +136,15 @@ namespace AriesMagicAppointmentSystem.Controllers
             }
 
             var financialBefore = await _financialService.GetSummaryAsync(booking.Id);
+            // A retried form remains the same intent even after the Owner has reviewed it.
+            // Compare against persisted history inside the existing serializable transaction.
+            var latestPaymentId = financialBefore.Ledger.Select(p => p.PaymentId).DefaultIfEmpty(0).Max();
+            if (model.ExpectedLatestPaymentId != latestPaymentId)
+            {
+                ModelState.AddModelError("", "Payment activity has changed since this form was opened. Review the current payment activity and open a fresh form before submitting another installment.");
+                model.Bookings = await GetPayableBookingsAsync(appUserId);
+                return View(model);
+            }
             if (financialBefore.RemainingBalance <= 0)
             {
                 ModelState.AddModelError("", "This booking is already fully paid.");

@@ -21,8 +21,9 @@ public sealed class BookingContextViewComponent(ApplicationDbContext db, IPaymen
         return View(bookings.Select(b => new BookingContextItem(b.Id, $"BK-{b.CreatedAt.Year}-{b.Id:D3}", b.PackageName,
             b.EventDate.ToString("yyyy-MM-dd"), b.StartTime.ToString("HH:mm"), b.EndTime.ToString("HH:mm"), b.EndTime.ToString("yyyy-MM-dd"), b.PartyVenue,
             b.Service?.DurationInHours, summaries.GetValueOrDefault(b.Id)?.BookingTotal,
-            summaries.GetValueOrDefault(b.Id)?.TotalVerifiedPayments, summaries.GetValueOrDefault(b.Id)?.RemainingBalance)).ToArray());
+            summaries.GetValueOrDefault(b.Id)?.TotalVerifiedPayments, summaries.GetValueOrDefault(b.Id)?.RemainingBalance,
+            summaries.TryGetValue(b.Id,out var summary)?summary.Ledger.Select(p=>p.PaymentId).DefaultIfEmpty(0).Max():null)).ToArray());
     }
 }
 public sealed record BookingContextItem(int Id, string Reference, string Package, string Date, string Start, string End, string EndDate,
-    string Venue, int? DurationHours, decimal? Total, decimal? Verified, decimal? Balance);
+    string Venue, int? DurationHours, decimal? Total, decimal? Verified, decimal? Balance, int? LatestPaymentId=null);

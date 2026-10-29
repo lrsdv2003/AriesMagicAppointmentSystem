@@ -48,3 +48,10 @@
 
 .owner-section-heading{flex-wrap:wrap}
 }
+
+/* Keep the longer advisory amount result readable within its existing scroll region. */
+.owner-review-page .owner-review-stack{min-width:0}
+.owner-review-page .owner-payment-compare{min-width:640px}
+.owner-review-page .owner-payment-compare :is(th,td){word-break:normal;overflow-wrap:normal}
+.owner-review-page .owner-payment-compare td:nth-child(2),.owner-review-page .owner-payment-compare td:nth-child(3){white-space:nowrap}
+.owner-review-page .owner-payment-compare td:last-child{min-width:12rem}

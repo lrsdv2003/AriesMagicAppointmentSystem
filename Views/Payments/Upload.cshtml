@@ -11,6 +11,7 @@ else
 {
 <form asp-action="Upload" method="post" enctype="multipart/form-data" id="clientPaymentForm" novalidate data-has-errors="@(!ViewData.ModelState.IsValid ? "true" : "false")">
 @Html.AntiForgeryToken()
+<input asp-for="ExpectedLatestPaymentId" type="hidden"/>
 <div asp-validation-summary="All" class="cn-error-summary" role="alert" tabindex="-1"></div>
 <section class="cn-panel" id="paymentInstructions">
     <div class="cn-panel-heading"><h2 tabindex="-1">Pay, then send your receipt.</h2><p>Owner verification confirms the payment and updates your balance.</p></div>
@@ -20,7 +21,7 @@ else
     <div class="cn-actions"><button type="button" class="cn-button cn-primary" id="continuePayment">I have paid — upload receipt <span aria-hidden="true">→</span></button></div>
 </section>
 <section class="cn-panel" id="paymentProof" hidden>
-    <div class="cn-panel-heading"><h2 tabindex="-1">Send your payment receipt.</h2><p>This submits proof for Owner review. It does not automatically verify payment.</p></div>
+    <div class="cn-panel-heading"><h2 tabindex="-1">Send your payment receipt.</h2><p>Show the amount, recipient, reference number, date and successful status. Owner review is required; uploading does not verify payment.</p></div>
     <p id="paymentSelection" class="cn-context"></p>
     <fieldset class="cn-fieldset"><legend>Transaction details</legend><div class="cn-fields">
         <div class="cn-field"><label asp-for="Amount">Amount paid (₱)</label><input asp-for="Amount" type="number" step="0.01" min="0.01" class="cn-input" required/><span asp-validation-for="Amount" id="AmountError" class="cn-field-error"></span></div>

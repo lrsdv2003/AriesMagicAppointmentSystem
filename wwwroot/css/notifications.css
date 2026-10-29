@@ -29,3 +29,8 @@ body.client-body .notice-header h1{color:var(--app-text)}
 body.client-body .notice-row .notice-copy h2{color:#1e293b!important;font-family:inherit}
 body.client-body .notice-row .notice-copy p{color:#475569!important}
 body.client-body .notice-row .notice-action{color:#5b21b6!important}
+
+/* Native POST action retains the former notification link styling. */
+.notice-open-form{margin:0}
+.notice-open-form>button.notice-action{border:0;background:none;font-family:inherit;cursor:pointer;text-align:left}
+@media(max-width:600px){.notice-open-form{grid-column:2;justify-self:start}}
