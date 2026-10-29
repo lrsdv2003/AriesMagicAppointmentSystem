@@ -113,4 +113,5 @@ body.client-hub :is(.table,.ui-table){--bs-table-bg:var(--mc-surface);--bs-table
 body.client-hub .hub-notice-form{margin:0}
 body.client-hub .hub-notice-form>button.hub-activity-row{border:0;border-top:1px solid var(--mc-line);background:none;color:inherit;font:inherit;font-weight:400!important;cursor:pointer}
 body.client-hub .hub-notice-form>button.hub-activity-row{width:100%;text-align:left}
+body.client-hub .notice-open-form{display:flex;align-self:center}
 @media(max-width:767px){body.client-hub .notice-open-form{grid-column:2;justify-self:start}}
