@@ -186,7 +186,9 @@ static class IndependentFindingsReview
                 using(var r=await client.GetAsync("/Payments/PaymentProof/"+first.Id))Check(r.IsSuccessStatusCode&&r.Headers.CacheControl?.NoStore==true,"SEC-02 own proof remains private and noncached");
             }
 
-            await File.WriteAllTextAsync(Path.Combine(".tmp-owner-build","findings-review",reproduce?"additional-reproduction.json":"targeted-results.json"),JsonSerializer.Serialize(new {checks,failures,mode=reproduce?"Before-fix reproduction":"Regression",results,ProductionContacted=false},new JsonSerializerOptions{WriteIndented=true}));
+            var evidenceDirectory=Path.Combine(".tmp-owner-build","findings-review");
+            Directory.CreateDirectory(evidenceDirectory);
+            await File.WriteAllTextAsync(Path.Combine(evidenceDirectory,reproduce?"additional-reproduction.json":"targeted-results.json"),JsonSerializer.Serialize(new {checks,failures,mode=reproduce?"Before-fix reproduction":"Regression",results,ProductionContacted=false},new JsonSerializerOptions{WriteIndented=true}));
             Console.WriteLine(reproduce?$"REPRODUCTION: {failures} missing safeguards observed across {checks} checks. No production contact.":$"SUCCESS: {checks} independent findings checks passed. Isolated SQL only.");
         }finally{await map.StopAsync();if(!Regex.IsMatch(name,"^AriesFindings_[0-9a-f]{32}$"))throw new Exception("Unsafe test teardown.");await db.Database.EnsureDeletedAsync();}
     }

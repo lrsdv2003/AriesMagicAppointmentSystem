@@ -60,6 +60,7 @@ All evidence below uses generated LocalDB names, actual Identity cookies/MVC/ant
 - Owner/client regression: **511 PASS** locally, repeated after the view corrections (`final-owner-regression.log`, including existing optional local publish-output checks). The rerun uses the documented process-level Staging environment; an initial invocation without those flags tried to parse an existing empty local operational configuration file. No application configuration was edited to make the test pass.
 - Locked DOM tooling restored with `npm ci --ignore-scripts --no-audit --no-fund`; **882 DOM checks PASS**, repeated after the view corrections (`final-dom.log`). No dependency versions changed.
 - Browser: actual in-app browser walkthrough and matching synthetic screenshots described below. No JavaScript console errors in the exercised pages. Automated headless Edge could not launch in this environment; no new axe browser run or comprehensive accessibility certification is claimed. Semantic DOM checks, native keyboard interaction, focus visibility and targeted contrast checks supplement the browser review.
+- The first GitHub clean-checkout run completed the findings assertions but exposed a test-only evidence-writer dependency on a pre-existing ignored directory. The harness now creates that directory before saving its JSON results. No assertion was removed or weakened; final clean-checkout status is reported with the PR.
 
 Reproduce locally from a clean source checkout with an authorized SQL LocalDB installation:
 
