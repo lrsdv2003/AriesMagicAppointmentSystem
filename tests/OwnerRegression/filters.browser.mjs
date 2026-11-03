@@ -28,12 +28,12 @@ try {
         await page.setViewport({width, height: 900});
         for (current of names) {
             await page.goto('http://owner.test/fixture/' + current, {waitUntil:'networkidle0'});
-            assert(await page.$(current === 'Bookings-MyBookings' ? '.cr-list-tools' : '.am-filter-bar'), current + ' filter missing');
+            assert(await page.$(current === 'Bookings-MyBookings' ? '.cn-list-tools' : '.am-filter-bar'), current + ' filter missing');
             const toggle = await page.$('.am-filter-bar [data-bs-toggle="dropdown"]');
             if (toggle) await toggle.click();
             const problems = await page.evaluate(() => {
                 const issues = [];
-                document.querySelectorAll('.am-filter-bar, .cr-list-tools').forEach(bar => {
+                document.querySelectorAll('.am-filter-bar, .cn-list-tools').forEach(bar => {
                     const rect = bar.getBoundingClientRect();
                     if (rect.left < -1 || rect.right > innerWidth + 1) issues.push('bar overflow ' + rect.right);
                     bar.querySelectorAll('input:not([type=hidden]), select, .btn, .am-filter-chips button, .dropdown-menu.show').forEach(el => {

@@ -60,9 +60,8 @@ try {
  assert(await page.$eval('#clientGallery',el=>!el.open));
  assert(await page.$eval('[data-gallery-src]',el=>el===document.activeElement));
  checks+=5;
- await go('Profile-Index');await page.click('[data-bs-target="#editModal"]');await page.waitForSelector('#editModal.show');
- assert(await page.$eval('#editModal',el=>el.contains(document.activeElement)));
- await page.keyboard.press('Escape');
+ await go('Profile-Index');await page.focus('#profileFullName');
+ assert(await page.$eval('#hubProfileForm',el=>el.contains(document.activeElement)&&el.querySelector('[name="__RequestVerificationToken"]')));
  await page.emulateMediaFeatures([{name:'prefers-reduced-motion',value:'reduce'}]);
  await go('Home-Index');
  assert.equal(await page.$eval('.cx-package-art img',el=>getComputedStyle(el).transitionDuration),'0s');

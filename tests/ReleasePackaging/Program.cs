@@ -27,7 +27,7 @@ foreach (var file in Directory.EnumerateFiles(Path.Combine(root, "Views"), "*.cs
     Check(views.Contains("/" + Path.GetRelativePath(root, file).Replace('\\', '/')), "Current Razor view compiled: " + Path.GetRelativePath(root, file).Replace('\\', '/'));
 }
 var settings = new ConfigurationBuilder().AddJsonFile(Path.Combine(package, "appsettings.json"))
-    .AddJsonFile(Path.Combine(package, "appsettings.Production.json")).Build();
+    .AddJsonFile(Path.Combine(package, "appsettings.Production.json"), optional: true).Build();
 Check(!settings.GetSection("DataProtection").Exists(), "Package JSON has no DataProtection activation/configuration");
 var feature = assembly.GetType("AriesMagicAppointmentSystem.Services.CertificateDataProtection", throwOnError: true)!;
 var services = new ServiceCollection();

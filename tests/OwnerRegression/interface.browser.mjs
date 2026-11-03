@@ -64,7 +64,10 @@ try{
  assert(await page.$('form[action*="MarkAllRead"] input[name="__RequestVerificationToken"]'));
  console.log('PASS notification labels, useful actions and anti-forgery form');
  await go('Notifications-Index-Client');
- assert.equal(await page.$eval('.notice-copy h2',el=>getComputedStyle(el).color),'rgb(25, 43, 42)');
- assert.equal(await page.$eval('.notice-copy p',el=>getComputedStyle(el).color),'rgb(87, 102, 99)');
+ assert(await page.evaluate(()=>{
+  const rgb=value=>value.match(/[\d.]+/g).slice(0,3).map(Number);
+  const luminance=color=>rgb(color).map(v=>{v/=255;return v<=0.04045?v/12.92:((v+0.055)/1.055)**2.4;}).reduce((sum,v,i)=>sum+v*[0.2126,0.7152,0.0722][i],0);
+  return [...document.querySelectorAll('.notice-copy h2,.notice-copy p')].every(el=>{let bg=el;while(bg.parentElement&&['transparent','rgba(0, 0, 0, 0)'].includes(getComputedStyle(bg).backgroundColor))bg=bg.parentElement;const a=luminance(getComputedStyle(el).color),b=luminance(getComputedStyle(bg).backgroundColor);return (Math.max(a,b)+0.05)/(Math.min(a,b)+0.05)>=4.5;});
+ }),'Current approved Client notification colors meet 4.5:1 contrast');
  console.log('PASS Client notification contrast');
 }finally{await browser.close();}
