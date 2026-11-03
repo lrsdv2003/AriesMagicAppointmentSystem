@@ -9,6 +9,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>e706ad45-e5df-4a73-97cd-90a9cd11ea19</UserSecretsId>
     <AspNetCoreHostingModel>OutOfProcess</AspNetCoreHostingModel>
+    <!-- Match the verified live runtime configuration on shared IIS hosting. -->
+    <ServerGarbageCollection>false</ServerGarbageCollection>
     <!-- Folder publishes inside the checkout must never become input to another publish. -->
     <DefaultItemExcludes>$(DefaultItemExcludes);publish\**;publish-*\**;.tmp-owner-build\**;App_Data\**</DefaultItemExcludes>
   </PropertyGroup>
