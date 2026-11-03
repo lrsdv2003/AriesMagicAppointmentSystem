@@ -15,6 +15,7 @@ namespace AriesMagicAppointmentSystem.Data
         public DbSet<Service> Services { get; set; }
         public DbSet<Booking> Bookings { get; set; }
         public DbSet<Payment> Payments { get; set; }
+        public DbSet<PaymentProofRevision> PaymentProofRevisions { get; set; }
         public DbSet<BookingTimeline> BookingTimelines { get; set; }
         public DbSet<RescheduleRequest> RescheduleRequests { get; set; }
         public DbSet<Notification> Notifications { get; set; }
@@ -64,6 +65,7 @@ namespace AriesMagicAppointmentSystem.Data
                 t.HasCheckConstraint("CK_RefundRequests_ApprovedAmount", "[ApprovedAmount] IS NULL OR ([ApprovedAmount] > 0 AND [ApprovedAmount] <= [Amount])");
             });
             builder.Entity<Payment>().HasOne(p => p.Booking).WithMany(b => b.Payments).HasForeignKey(p => p.BookingId).OnDelete(DeleteBehavior.NoAction);
+            builder.Entity<PaymentProofRevision>().HasOne(r => r.Payment).WithMany(p => p.ProofRevisions).HasForeignKey(r => r.PaymentId).OnDelete(DeleteBehavior.NoAction);
             builder.Entity<RefundRequest>().HasOne(r => r.Booking).WithMany().HasForeignKey(r => r.BookingId).OnDelete(DeleteBehavior.NoAction);
             builder.Entity<Booking>().HasIndex(b => new { b.EventDate, b.StartTime, b.EndTime });
 

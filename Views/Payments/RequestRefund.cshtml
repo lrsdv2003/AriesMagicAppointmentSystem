@@ -9,7 +9,7 @@
         <div class="section-kicker">Client Portal</div>
         <h1 class="client-portal-title">Request Refund</h1>
         <p class="client-portal-text">
-            Use this form if you already sent the downpayment but your selected slot is no longer available.
+            Refund review is available only for a system-recorded eligible payment scenario. The Owner reviews the original receipt and decides whether a refund is approved. Submission never triggers an automatic payment.
         </p>
     </div>
 </div>
@@ -22,16 +22,16 @@
 
         <div class="row g-3">
             <div class="col-12">
-                <label asp-for="BookingId" class="form-label">Select Booking</label>
-                <select asp-for="BookingId" asp-items="Model.Bookings" class="form-select">
-                    <option value="">-- Select Booking --</option>
+                <label asp-for="PaymentId" class="form-label">Eligible payment</label>
+                <select asp-for="PaymentId" asp-items="Model.Bookings" class="form-select">
+                    <option value="">-- Select an eligible payment --</option>
                 </select>
-                <span asp-validation-for="BookingId" class="text-danger"></span>
+                <span asp-validation-for="PaymentId" class="text-danger"></span>
             </div>
 
             <div class="col-md-6">
                 <label class="form-label" for="refundAmount">Refund Amount</label>
-                <input id="refundAmount" value="₱@Model.FixedRefundAmount.ToString("N2")" class="form-control" readonly />
+                <input id="refundAmount" value="Set to the original eligible payment amount" class="form-control" readonly />
             </div>
 
             <div class="col-md-6">
@@ -47,16 +47,11 @@
             </div>
 
             <div class="col-md-6">
-                <label asp-for="PaymentProofImage" class="form-label"></label>
-                <input asp-for="PaymentProofImage" type="file" class="form-control" data-proof-input accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" />
-                <span asp-validation-for="PaymentProofImage" class="text-danger"></span><div class="proof-preview-shell" data-proof-preview hidden><img alt="Refund supporting screenshot preview"/><div><button type="button" class="btn btn-sm btn-outline-secondary" data-proof-replace>Replace Image</button><button type="button" class="btn btn-sm btn-outline-danger" data-proof-remove>Remove Image</button></div></div>
-                <div class="form-text">Upload proof that you already sent the downpayment.</div>
+                <p class="form-text">The original payment receipt is already linked to this request and is available to the Owner through the protected proof route.</p>
             </div>
 
             <div class="col-12">
-                <label asp-for="ClientReason" class="form-label"></label>
-                <textarea asp-for="ClientReason" class="form-control" rows="4" placeholder="Explain why you are requesting a refund"></textarea>
-                <span asp-validation-for="ClientReason" class="text-danger"></span>
+                <p class="form-text">Eligibility reason comes from the system’s booking and payment records and cannot be changed here.</p>
             </div>
         </div>
 

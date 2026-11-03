@@ -46,6 +46,7 @@ namespace AriesMagicAppointmentSystem.ViewModels
         public decimal FinalPrice { get; set; }
         public decimal RequiredDownpayment { get; set; } = 2000;
         public bool AcceptTerms { get; set; }
+        public string? AcceptedTermsVersion { get; set; }
 
         public List<ServiceOptionViewModel> AvailablePackages { get; set; } = new();
         public List<PackageInclusionSelectionViewModel> Inclusions { get; set; } = new();

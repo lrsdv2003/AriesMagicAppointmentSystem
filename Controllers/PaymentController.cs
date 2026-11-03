@@ -3,6 +3,7 @@ using AriesMagicAppointmentSystem.Data;
 using AriesMagicAppointmentSystem.Models;
 using AriesMagicAppointmentSystem.Services;
 using AriesMagicAppointmentSystem.ViewModels;
+using AriesMagicAppointmentSystem.ViewComponents;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -90,18 +91,19 @@ namespace AriesMagicAppointmentSystem.Controllers
             var viewModel = new PaymentUploadViewModel
             {
                 FixedDownpaymentAmount = FixedDownpaymentAmount,
-                Amount = FixedDownpaymentAmount,
+                PaymentOption = "Minimum",
                 GCashQrPath = "/images/gcash-qr.jpeg",
                 Bookings = await GetPayableBookingsAsync(appUserId)
             };
+            if (!bookingId.HasValue && viewModel.Bookings.Count > 0 && int.TryParse(viewModel.Bookings[0].Value, out var firstBooking))
+                bookingId = firstBooking;
 
             if (bookingId.HasValue && viewModel.Bookings.Any(b => b.Value == bookingId.Value.ToString()))
             {
                 viewModel.BookingId = bookingId.Value;
                 var summary = await _financialService.GetSummaryAsync(bookingId.Value);
                 viewModel.ExpectedLatestPaymentId = summary.Ledger.Select(p => p.PaymentId).DefaultIfEmpty(0).Max();
-                if (summary.RemainingBalance > 0)
-                    viewModel.Amount = Math.Min(FixedDownpaymentAmount, summary.RemainingBalance);
+                viewModel.Options = PaymentOptions.Build(summary.BookingTotal, summary.TotalVerifiedPayments);
             }
             return View(viewModel);
         }
@@ -136,6 +138,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             }
 
             var financialBefore = await _financialService.GetSummaryAsync(booking.Id);
+            model.Options = PaymentOptions.Build(financialBefore.BookingTotal, financialBefore.TotalVerifiedPayments);
             // A retried form remains the same intent even after the Owner has reviewed it.
             // Compare against persisted history inside the existing serializable transaction.
             var latestPaymentId = financialBefore.Ledger.Select(p => p.PaymentId).DefaultIfEmpty(0).Max();
@@ -157,25 +160,36 @@ namespace AriesMagicAppointmentSystem.Controllers
                 model.Bookings = await GetPayableBookingsAsync(appUserId);
                 return View(model);
             }
-            if (financialBefore.TotalVerifiedPayments <= 0 && financialBefore.RemainingBalance > FixedDownpaymentAmount && model.Amount < FixedDownpaymentAmount)
+            if (financialBefore.TotalVerifiedPayments > 0m)
             {
-                ModelState.AddModelError(nameof(model.Amount), "Minimum down payment is ₱2,000.");
+                ModelState.AddModelError("", "The initial payment has already been verified. Further client payment-proof uploads are closed; the remaining balance is due on the event day.");
                 model.Bookings = await GetPayableBookingsAsync(appUserId);
                 return View(model);
             }
-            if (financialBefore.RemainingBalance <= FixedDownpaymentAmount && model.Amount < financialBefore.RemainingBalance)
+            var selected = model.Options.SingleOrDefault(o => o.Key == model.PaymentOption);
+            if (selected == null || model.Options.Count == 0)
             {
-                ModelState.AddModelError(nameof(model.Amount), $"The final outstanding balance is ₱{financialBefore.RemainingBalance:N2}. Please pay the exact remaining balance.");
+                ModelState.AddModelError(nameof(model.PaymentOption), "Choose a valid payment option for this booking.");
+                model.Bookings = await GetPayableBookingsAsync(appUserId);
+                return View(model);
+            }
+            model.Amount = selected.Amount;
+            if (model.Amount <= 0m || model.Amount > financialBefore.RemainingBalance)
+            {
+                ModelState.AddModelError(nameof(model.PaymentOption), "The selected initial payment must be positive and no greater than the booking balance.");
                 model.Bookings = await GetPayableBookingsAsync(appUserId);
                 return View(model);
             }
 
+            var paymentSubmittedAtUtc = DateTime.UtcNow;
             var requestedStart = booking.StartTime;
             var requestedEnd = booking.EndTime;
-            if (financialBefore.TotalVerifiedPayments <= 0 && await HasPaidScheduleConflict(
-                booking.Id,
-                requestedStart,
-                requestedEnd))
+            var earlierSecuredBooking = financialBefore.TotalVerifiedPayments <= 0
+                ? await FindEarlierSecuredSlotBookingAsync(booking, paymentSubmittedAtUtc)
+                : null;
+            var hasScheduleConflict = financialBefore.TotalVerifiedPayments <= 0 && await HasPaidScheduleConflict(
+                booking.Id, requestedStart, requestedEnd);
+            if (hasScheduleConflict && earlierSecuredBooking == null)
             {
                 ModelState.AddModelError(
                     "",
@@ -231,6 +245,29 @@ namespace AriesMagicAppointmentSystem.Controllers
 
             await _context.SaveChangesAsync();
 
+            if (earlierSecuredBooking != null && financialBefore.TotalVerifiedPayments <= 0)
+            {
+                var previousBookingStatus=booking.Status;
+                booking.Status=BookingStatus.Cancelled;
+                booking.CancelledAtUtc=DateTime.UtcNow;
+                booking.CancelledByUserId=appUserId;
+                booking.CancellationActorRole="System";
+                booking.CancellationReason="Payment was submitted after another Client had already secured the requested overlapping schedule.";
+                booking.CancellationSource="EarlierPaymentSecuredSlot";
+                booking.CancellationPreviousStatus=previousBookingStatus;
+                booking.CancellationPaymentId=payment.Id;
+                booking.RefundEligible=true;
+                booking.RefundEligibilityReason="PaymentReceivedSlotUnavailable";
+                booking.RefundEligibilityPaymentId=payment.Id;
+                _context.BookingTimelines.Add(new BookingTimeline {BookingId=booking.Id,EventType=TimelineEventType.BookingCancelled,
+                    Notes="Payment proof was received, but an earlier Owner-verified payment had secured the overlapping slot. The proof remains pending Owner verification for refund review.",CreatedAt=DateTime.UtcNow});
+                await _context.SaveChangesAsync();
+                await _activityService.LogAsync(SystemActivityType.BookingCancelled,$"Booking #{booking.Id} closed because an earlier verified payment secured the slot.",
+                    appUserId!,User.Identity?.Name,booking.Id.ToString(),"Booking",new {BookingId=booking.Id,ClientId=appUserId,ActorRole="System",
+                        Reason=booking.CancellationReason,PreviousStatus=previousBookingStatus,NewStatus=booking.Status,PaymentId=payment.Id,
+                        ConflictingBookingId=earlierSecuredBooking.Id,RefundEligible=true,RefundEligibilityReason=booking.RefundEligibilityReason});
+            }
+
             var ocr = await AnalyzePaymentProofAsync(payment, savedProof.PhysicalPath, OcrVerificationPurposes.PaymentProof);
             _context.OcrVerifications.Add(ocr);
             payment.TransactionReference = ocr.ExtractedReferenceNumber;
@@ -276,6 +313,21 @@ namespace AriesMagicAppointmentSystem.Controllers
             var internalUser = User.IsInRole("Owner");
             if (!internalUser && (!User.IsInRole("Client") || payment.Booking?.ApplicationUserId != uid)) return Forbid();
             return ServeFinancialProof(payment.ProofImagePath);
+        }
+
+        [Authorize(Roles = "Owner")]
+        public async Task<IActionResult> ProofHistory(int id)
+        {
+            var payment = await _context.Payments.AsNoTracking().Include(p => p.Booking).Include(p => p.ProofRevisions)
+                .FirstOrDefaultAsync(p => p.Id == id);
+            return payment == null ? NotFound() : View(payment);
+        }
+
+        [Authorize(Roles = "Owner")]
+        public async Task<IActionResult> PaymentProofRevision(int id)
+        {
+            var revision = await _context.PaymentProofRevisions.AsNoTracking().FirstOrDefaultAsync(r => r.Id == id);
+            return revision == null ? NotFound() : ServeFinancialProof(revision.ProofImagePath);
         }
 
         [Authorize(Roles = "Client,Owner")]
@@ -330,6 +382,17 @@ namespace AriesMagicAppointmentSystem.Controllers
             var validation = await ValidateProofImageAsync(proofImage);
             if (validation != null) { TempData["Error"] = validation; return RedirectToAction(nameof(MyUploads)); }
             var saved = await SavePrivateProofAsync(proofImage, "payments");
+            _context.PaymentProofRevisions.Add(new PaymentProofRevision
+            {
+                PaymentId = payment.Id,
+                ProofImagePath = payment.ProofImagePath,
+                Amount = payment.Amount,
+                PaymentMethod = payment.PaymentMethod,
+                Status = payment.Status,
+                UploadedAt = payment.UploadedAt,
+                ReviewerNote = payment.ReviewerNote,
+                ArchivedAtUtc = DateTime.UtcNow
+            });
             payment.ProofImagePath = saved.StoredPath;
             payment.Status = PaymentStatus.Pending;
             payment.UploadedAt = DateTime.Now;
@@ -355,6 +418,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                 .Include(p => p.Booking).ThenInclude(b => b!.Client)
                 .Include(p => p.Booking).ThenInclude(b => b!.Service)
                 .Include(p => p.OcrVerifications)
+                .Include(p => p.ProofRevisions)
                 .AsQueryable();
 
             query = filter.ToLowerInvariant() switch
@@ -393,6 +457,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                 .Include(p => p.Booking)
                     .ThenInclude(b => b!.Service)
                 .Include(p => p.OcrVerifications)
+                .Include(p => p.ProofRevisions)
                 .FirstOrDefaultAsync(p => p.Id == id);
 
             if (payment == null) return NotFound();
@@ -440,7 +505,10 @@ namespace AriesMagicAppointmentSystem.Controllers
                 return RedirectToAction(nameof(Verify), new { id });
             }
 
-            if (payment.Booking != null && financialBefore.TotalVerifiedPayments <= 0
+            var recordedSlotUnavailable = payment.Booking?.RefundEligible == true
+                && payment.Booking.RefundEligibilityPaymentId == payment.Id
+                && payment.Booking.RefundEligibilityReason == "PaymentReceivedSlotUnavailable";
+            if (payment.Booking != null && financialBefore.TotalVerifiedPayments <= 0 && !recordedSlotUnavailable
                 && payment.Booking.Status == BookingStatus.AwaitingVerification)
             {
                 var booking = payment.Booking;
@@ -458,11 +526,13 @@ namespace AriesMagicAppointmentSystem.Controllers
 
             var previousStatus = payment.Status;
             payment.Status = PaymentStatus.Verified;
+            var verificationAtUtc = DateTime.UtcNow;
             payment.VerifiedAt = DateTime.Now;
+            payment.InitialVerificationAtUtc ??= financialBefore.TotalVerifiedPayments <= 0m ? verificationAtUtc : null;
             payment.VerifiedByUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             payment.VerifiedByUserName = User.Identity?.Name;
 
-            if (payment.Booking != null)
+            if (payment.Booking != null && !recordedSlotUnavailable)
             {
                 if (financialBefore.TotalVerifiedPayments <= 0 && payment.Booking.Status == BookingStatus.AwaitingVerification)
                     payment.Booking.Status = BookingStatus.Confirmed;
@@ -492,16 +562,21 @@ namespace AriesMagicAppointmentSystem.Controllers
             var financialAfter = await _financialService.GetSummaryAsync(payment.BookingId);
             if (payment.Booking != null && !string.IsNullOrWhiteSpace(payment.Booking.ApplicationUserId))
             {
-                var notificationTitle = financialAfter.IsFullyPaid
+                var notificationTitle = recordedSlotUnavailable
+                    ? "Payment Verified — Schedule Unavailable"
+                    : financialAfter.IsFullyPaid
                     ? "Payment Complete"
                     : financialBefore.TotalVerifiedPayments <= 0 ? "Down Payment Verified" : "Payment Verified";
-                var notificationMessage = financialAfter.IsFullyPaid
+                var notificationMessage = recordedSlotUnavailable
+                    ? "The Owner verified your payment, but another Client had already secured the requested overlapping slot. Your payment is eligible for Owner refund review; submit a request from the booking details."
+                    : financialAfter.IsFullyPaid
                     ? "Your booking is now fully paid."
                     : $"Your payment of ₱{payment.Amount:N2} has been verified. Remaining Balance: ₱{financialAfter.RemainingBalance:N2}.";
-                await CreateNotificationAsync(payment.Booking.ApplicationUserId, notificationTitle, notificationMessage, "/Payments/MyUploads");
+                await CreateNotificationAsync(payment.Booking.ApplicationUserId, notificationTitle, notificationMessage,
+                    recordedSlotUnavailable ? "/Bookings/MyBookings" : "/Payments/MyUploads");
             }
 
-            if (payment.Booking != null && financialBefore.TotalVerifiedPayments <= 0)
+            if (payment.Booking != null && financialBefore.TotalVerifiedPayments <= 0 && !recordedSlotUnavailable)
             {
                 var bookingWithClient = await _context.Bookings
                     .Include(b => b.Client)
@@ -562,7 +637,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             payment.Status = PaymentStatus.Rejected;
             payment.RejectionReason = rejectionReason;
             payment.ReviewerNote = rejectionReason;
-            payment.VerifiedAt = DateTime.Now;
+            payment.VerifiedAt = DateTime.UtcNow;
             payment.VerifiedByUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             payment.VerifiedByUserName = User.Identity?.Name;
 
@@ -615,10 +690,13 @@ namespace AriesMagicAppointmentSystem.Controllers
 
             var model = new RefundRequestViewModel
             {
-                BookingId = bookingId ?? 0,
                 FixedRefundAmount = FixedDownpaymentAmount,
                 Bookings = await GetRefundableBookingsAsync(appUserId)
             };
+            if (bookingId.HasValue) {
+                var match=model.Bookings.FirstOrDefault(x=>x.Text.StartsWith($"BK-{DateTime.Now.Year}-{bookingId.Value:D3}",StringComparison.Ordinal));
+                if(match!=null&&int.TryParse(match.Value,out var paymentId))model.PaymentId=paymentId;
+            }
 
             return View(model);
         }
@@ -632,7 +710,6 @@ namespace AriesMagicAppointmentSystem.Controllers
             await using var transaction = await _context.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
             var appUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            model.FixedRefundAmount = FixedDownpaymentAmount;
             model.Bookings = await GetRefundableBookingsAsync(appUserId);
 
             if (!ModelState.IsValid)
@@ -640,67 +717,39 @@ namespace AriesMagicAppointmentSystem.Controllers
                 return View(model);
             }
 
-            var booking = await _context.Bookings
-                .Include(b => b.Service)
-                .FirstOrDefaultAsync(b =>
-                    b.Id == model.BookingId &&
-                    b.ApplicationUserId == appUserId);
-
-            if (booking == null)
+            var originalPayment = await _context.Payments.Include(p => p.Booking)
+                .FirstOrDefaultAsync(p => p.Id == model.PaymentId && p.Booking != null && p.Booking.ApplicationUserId == appUserId);
+            var booking=originalPayment?.Booking;
+            var eligiblePaymentIds=await GetRefundEligiblePaymentIdsAsync(appUserId);
+            if (originalPayment == null || booking == null || !eligiblePaymentIds.Contains(model.PaymentId))
             {
-                ModelState.AddModelError("", "Selected booking was not found.");
+                ModelState.AddModelError("", "Selected payment is not linked to an eligible refund scenario.");
                 return View(model);
             }
-
-            if (booking.Status != BookingStatus.AwaitingVerification)
+            if (await _context.RefundRequests.AnyAsync(r=>r.OriginalPaymentId==originalPayment.Id))
             {
-                ModelState.AddModelError("", "Refund request is only allowed for bookings that are awaiting payment verification.");
+                ModelState.AddModelError("", "A refund request already exists for this eligible payment.");
                 return View(model);
             }
-
-            var existingActiveRefund = await _context.RefundRequests
-                .AnyAsync(r =>
-                    r.BookingId == booking.Id &&
-                    (r.Status == RefundStatus.Pending || r.Status == RefundStatus.UnderReview || r.Status == RefundStatus.Approved || r.Status == RefundStatus.RefundProcessing));
-
-            if (existingActiveRefund)
+            if (originalPayment.Status != PaymentStatus.Verified)
             {
-                ModelState.AddModelError("", "You already have an active refund request for this booking.");
+                ModelState.AddModelError("", "The eligible payment is not available for refund review.");
                 return View(model);
             }
-
-            var originalPayment = await _context.Payments
-                .Where(p => p.BookingId == booking.Id && p.Status != PaymentStatus.Rejected)
-                .OrderByDescending(p => p.UploadedAt)
-                .FirstOrDefaultAsync();
-            if (originalPayment == null)
-            {
-                ModelState.AddModelError("", "A payment record is required before a refund request can be submitted.");
-                return View(model);
-            }
-
-            var fileValidationError = await ValidateProofImageAsync(model.PaymentProofImage);
-
-            if (!string.IsNullOrWhiteSpace(fileValidationError))
-            {
-                ModelState.AddModelError("PaymentProofImage", fileValidationError);
-                return View(model);
-            }
-
-            var savedRefundProof = await SavePrivateProofAsync(model.PaymentProofImage!, "refunds");
+            var eligibilityReason=booking.RefundEligible&&booking.RefundEligibilityPaymentId==originalPayment.Id
+                ? booking.RefundEligibilityReason : "PaymentReceivedSlotUnavailable";
 
             var refundRequest = new RefundRequest
             {
                 BookingId = booking.Id,
                 OriginalPaymentId = originalPayment.Id,
                 OriginalPayment = originalPayment,
-                Amount = Math.Min(FixedDownpaymentAmount, originalPayment.Amount),
+                Amount = originalPayment.Amount,
                 GCashAccountName = model.GCashAccountName.Trim(),
                 GCashNumber = model.GCashNumber.Trim(),
-                PaymentProofImagePath = savedRefundProof.StoredPath,
-                ClientReason = string.IsNullOrWhiteSpace(model.ClientReason)
-                    ? "Client requested a refund for a sent downpayment."
-                    : model.ClientReason.Trim(),
+                PaymentProofImagePath = originalPayment.ProofImagePath,
+                EligibilityReason = eligibilityReason,
+                ClientReason = "System-recorded eligibility: " + eligibilityReason,
                 Status = RefundStatus.UnderReview,
                 RequestedAt = DateTime.Now
             };
@@ -719,7 +768,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             var refundOcr = await _ocrService.AnalyzeAsync(new OcrAnalysisRequest
             {
                 PaymentId = originalPayment.Id, RefundRequestId = refundRequest.Id, VerificationPurpose = OcrVerificationPurposes.RefundSupport,
-                FilePath = savedRefundProof.PhysicalPath, ExpectedAmount = originalPayment.Amount, ExpectedPaymentMethod = originalPayment.PaymentMethod,
+                FilePath = GetFinancialProofPhysicalPath(originalPayment.ProofImagePath), ExpectedAmount = originalPayment.Amount, ExpectedPaymentMethod = originalPayment.PaymentMethod,
                 ExpectedReceiver = _configuration["OcrVerification:ExpectedReceiver"] ?? "Aries Magic", SubmittedAt = refundRequest.RequestedAt
             });
             _context.OcrVerifications.Add(refundOcr);
@@ -996,23 +1045,33 @@ namespace AriesMagicAppointmentSystem.Controllers
             {
                 return new List<SelectListItem>();
             }
-
-            return await _context.Bookings
-                .Include(b => b.Service)
-                .Where(b =>
-                    b.ApplicationUserId == appUserId &&
-                    b.Status == BookingStatus.AwaitingVerification)
-                .OrderByDescending(b => b.CreatedAt)
-                .Select(b => new SelectListItem
-                {
-                    Value = b.Id.ToString(),
-                    Text = "BK-" + b.CreatedAt.Year + "-" + b.Id.ToString("D3") + " - " +
-                        (b.PackageName ?? b.Service!.Name) + " - " +
-                        b.EventDate.ToString("MMM dd, yyyy") + " - " +
-                        b.Status
-                })
-                .ToListAsync();
+            var ids=await GetRefundEligiblePaymentIdsAsync(appUserId);
+            var payments=await _context.Payments.Include(p=>p.Booking)
+                .Where(p=>ids.Contains(p.Id)).OrderByDescending(p=>p.UploadedAt).ToListAsync();
+            return payments.Select(p=>new SelectListItem { Value=p.Id.ToString(), Text=$"BK-{p.Booking!.CreatedAt.Year}-{p.Booking.Id:D3} · {p.Booking.PackageName} · ₱{p.Amount:N2} · {RefundReasonLabel(p.Booking,p)}" }).ToList();
         }
+
+        private async Task<List<int>> GetRefundEligiblePaymentIdsAsync(string? appUserId)
+        {
+            if(string.IsNullOrWhiteSpace(appUserId))return new();
+            var payments=await _context.Payments.AsNoTracking().Include(p=>p.Booking)
+                .Where(p=>p.Booking!=null&&p.Booking.ApplicationUserId==appUserId
+                    &&p.Status==PaymentStatus.Verified
+                    &&p.Booking.Status!=BookingStatus.Completed).ToListAsync();
+            var alreadyRequested=await _context.RefundRequests.Where(r=>r.OriginalPaymentId.HasValue)
+                .Select(r=>r.OriginalPaymentId!.Value).ToHashSetAsync();
+            var eligible=new List<int>();
+            foreach(var payment in payments) {
+                if(alreadyRequested.Contains(payment.Id))continue;
+                var booking=payment.Booking!;
+                if(booking.RefundEligible&&booking.RefundEligibilityPaymentId==payment.Id) eligible.Add(payment.Id);
+            }
+            return eligible;
+        }
+
+        private static string RefundReasonLabel(Booking booking,Payment payment) => booking.RefundEligible&&booking.RefundEligibilityPaymentId==payment.Id
+            ? booking.RefundEligibilityReason switch {"ClientCancellationWithin24Hours"=>"Client cancellation in 24-hour window","StaffApprovedCancellation"=>"Staff-approved cancellation","PaymentReceivedSlotUnavailable"=>"Payment received; slot unavailable",_=>"Eligible cancellation"}
+            : "Payment received; requested slot became unavailable";
 
         private async Task<List<SelectListItem>> GetPayableBookingsAsync(string? appUserId)
         {
@@ -1023,7 +1082,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                     (b.Status == BookingStatus.AwaitingDownpayment || b.Status == BookingStatus.Confirmed || b.Status == BookingStatus.Completed))
                 .OrderByDescending(b => b.CreatedAt).ToListAsync();
             var summaries = await _financialService.GetSummariesAsync(candidates.Select(b => b.Id));
-            return candidates.Where(b => summaries.TryGetValue(b.Id, out var f) && f.RemainingBalance > 0 && !f.HasPendingVerification && !f.HasAdditionalEvidenceRequired)
+            return candidates.Where(b => summaries.TryGetValue(b.Id, out var f) && f.RemainingBalance > 0 && f.TotalVerifiedPayments <= 0 && !f.HasPendingVerification && !f.HasAdditionalEvidenceRequired)
                 .Select(b => new SelectListItem
                 {
                     Value = b.Id.ToString(),
@@ -1078,6 +1137,13 @@ namespace AriesMagicAppointmentSystem.Controllers
 
             return false;
         }
+
+        private Task<Booking?> FindEarlierSecuredSlotBookingAsync(Booking target,DateTime uploadedAtUtc) => _context.Bookings.AsNoTracking()
+            .Where(other=>other.Id!=target.Id&&other.Status==BookingStatus.Confirmed
+                &&target.StartTime<other.EndTime.AddHours(1)&&target.EndTime.AddHours(1)>other.StartTime)
+            .Where(other=>_context.Payments.Any(p=>p.BookingId==other.Id&&p.Status==PaymentStatus.Verified
+                &&p.InitialVerificationAtUtc!=null&&p.InitialVerificationAtUtc<uploadedAtUtc))
+            .OrderBy(other=>other.Id).FirstOrDefaultAsync();
         private async Task<(string StoredPath, string PhysicalPath)> SavePrivateProofAsync(IFormFile file, string category)
         {
             var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
@@ -1184,6 +1250,18 @@ namespace AriesMagicAppointmentSystem.Controllers
             Response.Headers.CacheControl = "private, no-store, max-age=0";
             Response.Headers.Pragma = "no-cache";
             return PhysicalFile(fullPath, contentType, enableRangeProcessing: true);
+        }
+
+        private string GetFinancialProofPhysicalPath(string storedPath)
+        {
+            if(storedPath.StartsWith("/uploads/",StringComparison.OrdinalIgnoreCase)) {
+                var relative=storedPath.TrimStart('/').Replace('/',Path.DirectorySeparatorChar);
+                var root=Path.GetFullPath(_environment.WebRootPath);
+                var full=Path.GetFullPath(Path.Combine(root,relative));
+                if(!full.StartsWith(root+Path.DirectorySeparatorChar,StringComparison.OrdinalIgnoreCase))throw new InvalidOperationException("Invalid proof path.");
+                return full;
+            }
+            return ResolvePrivateProofPath(storedPath);
         }
 
         private async Task NotifyAffectedClientsAboutLockedScheduleAsync(Booking paidBooking)

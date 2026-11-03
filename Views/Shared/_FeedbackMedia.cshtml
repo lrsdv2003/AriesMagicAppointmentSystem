@@ -1,5 +1,40 @@
 @model IEnumerable<AriesMagicAppointmentSystem.Models.FeedbackMedia>
+@{
+    var items = Model.ToList();
+}
 <div class="feedback-previews">
-@foreach(var media in Model){<figure class="feedback-media"><figcaption>@media.DisplayFilename · @media.ProcessingStatus</figcaption>@if(media.ProcessingStatus=="Ready"&&media.ScannedAtUtc!=null){<a asp-controller="FeedbackMedia" asp-action="Private" asp-route-id="@media.Id" target="_blank" rel="noopener"><img src="@Url.Action("Private","FeedbackMedia",new {id=media.Id})" alt="Your submitted event photograph" width="600" height="400" loading="lazy" /><span>Open photo <span class="visually-hidden">(new tab)</span></span></a>}else{<p>Preview unavailable until security processing is complete. Unprocessed files are never served.</p>}</figure>}
+@foreach (var media in items)
+{
+    <figure class="feedback-media">
+        <figcaption>@media.DisplayFilename · @media.ProcessingStatus</figcaption>
+        @if (media.ProcessingStatus == "Ready" && media.ScannedAtUtc != null && media.Kind == "Image")
+        {
+            <a asp-controller="FeedbackMedia" asp-action="Private" asp-route-id="@media.Id" target="_blank" rel="noopener">
+                <img src="@Url.Action("Private", "FeedbackMedia", new { id = media.Id })" alt="Your submitted event photograph" width="600" height="400" loading="lazy" />
+                <span>Open photo <span class="visually-hidden">(new tab)</span></span>
+            </a>
+        }
+        else if (media.ProcessingStatus == "Ready" && media.ScannedAtUtc != null && media.Kind == "Video")
+        {
+            <video src="@Url.Action("Private", "FeedbackMedia", new { id = media.Id })" controls preload="metadata" playsinline aria-label="Your submitted event video"></video>
+        }
+        else if (media.ProcessingStatus == "Failed" && User.IsInRole("Client"))
+        {
+            <p>Security processing did not finish. This file is still private and has not been approved for preview.</p>
+            <form asp-controller="Feedback" asp-action="RetryMedia" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@media.Id" />
+                <button type="submit" class="btn btn-outline-secondary">Retry security check</button>
+            </form>
+        }
+        else
+        {
+            <p>@(media.ProcessingStatus == "Rejected" ? "This file did not pass the security check and cannot be previewed." : "Preview will be available only after the security scan succeeds. Unprocessed files are never served.")</p>
+        }
+    </figure>
+}
 </div>
-@if(!Model.Any()){<p>No photos were submitted.</p>}
+@if (items.Count == 0)
+{
+    <p>No media was submitted.</p>
+}

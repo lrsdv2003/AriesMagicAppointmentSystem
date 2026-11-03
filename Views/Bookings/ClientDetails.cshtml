@@ -5,7 +5,9 @@
     Layout = "_ClientHubLayout";
     ViewData["Title"] = "Booking details";
     var finance = ViewBag.FinancialSummary as BookingFinancialSummaryViewModel;
-    var canCancel = new[] { BookingStatus.Pending, BookingStatus.AwaitingDownpayment, BookingStatus.AwaitingVerification }.Contains(Model.Status);
+    var canCancel = new[] { BookingStatus.Pending, BookingStatus.AwaitingDownpayment, BookingStatus.AwaitingVerification, BookingStatus.Confirmed }.Contains(Model.Status);
+    var canDirectCancel = ViewBag.CanDirectCancel is bool direct && direct;
+    var directCancelDeadline = ViewBag.CancellationDeadline as DateTime?;
     var canReschedule = new[] { BookingStatus.Confirmed, BookingStatus.AwaitingDownpayment, BookingStatus.AwaitingVerification }.Contains(Model.Status);
     var pendingReschedule = Model.RescheduleRequests.Any(r => r.Status == RescheduleRequestStatus.Pending);
     var scheduleUnavailable = ViewBag.IsScheduleUnavailable is bool unavailable && unavailable;
@@ -22,14 +24,20 @@
 <details class="cn-disclosure"><summary>Manage this booking</summary>
 @if(pendingReschedule){<p>A reschedule request is awaiting Staff review.</p><a asp-controller="RescheduleRequests" asp-action="MyRequests" class="cn-text-link">View request status</a>}
 else if(canReschedule){<p>A schedule change needs availability and Staff approval.</p><a asp-controller="RescheduleRequests" asp-action="Create" asp-route-bookingId="@Model.Id" class="cn-text-link">Request reschedule</a>}
-@if(canCancel){<p>Cancellation is available at this booking stage. It does not automatically issue a refund.</p><a asp-action="Cancel" asp-route-id="@Model.Id" class="cn-text-link">Review cancellation</a>}
-@if(Model.Status == BookingStatus.AwaitingVerification){<p>Refund requests are reviewed by the Owner.</p><a asp-controller="Payments" asp-action="RequestRefund" asp-route-bookingId="@Model.Id" class="cn-text-link">Request a refund</a>}
+@if(canDirectCancel&&directCancelDeadline.HasValue){var deadline=TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(directCancelDeadline.Value,DateTimeKind.Utc),AriesMagicAppointmentSystem.Services.FeedbackPolicy.BusinessZone);<p>Direct cancellation is available until @deadline.ToString("MMM d, h:mm tt") Manila time. Refund eligibility is reviewed separately by the Owner.</p><a asp-action="Cancel" asp-route-id="@Model.Id" class="cn-text-link">Review cancellation</a>}
+else if(canCancel && ViewBag.CanRequestCancellationReview is bool canRequest && canRequest){
+    if(ViewBag.CancellationConversationId is int conversationId){<p>Your cancellation request has been sent. Continue the private conversation with Staff.</p><a asp-controller="Communications" asp-action="Index" asp-route-id="@conversationId" class="cn-text-link">Open cancellation conversation</a>}
+    else{<p>Your 24-hour window has ended. Tell Staff why you need to cancel. This sends a private cancellation request through the existing booking conversation; it does not approve a refund.</p><form asp-controller="Communications" asp-action="RequestBookingCancellation" method="post" class="cn-support">@Html.AntiForgeryToken()<input type="hidden" name="bookingId" value="@Model.Id"/><label class="form-label" for="cancellationReviewReason">Why do you need to cancel?</label><textarea id="cancellationReviewReason" name="reason" class="form-control" minlength="8" maxlength="1000" required></textarea><button class="cn-edit" type="submit">Contact Staff</button></form>}
+}
+else if(canCancel){<p>A direct cancellation is not available now. Contact Staff through the private booking conversation for help.</p>}
+@if(ViewBag.HasRefundEligibility is bool canRefund && canRefund){<p>A system-recorded payment scenario is eligible for Owner refund review. Approval is not automatic.</p><a asp-controller="Payments" asp-action="RequestRefund" asp-route-bookingId="@Model.Id" class="cn-text-link">Request a refund</a>}
 @if(!canCancel&&!canReschedule){<p>Online changes are unavailable at this stage. Message Staff if you need help.</p>}
 <div class="cn-links"><a asp-controller="RescheduleRequests" asp-action="MyRequests">Reschedule history</a><a asp-controller="Payments" asp-action="MyRefundRequests">Refund history</a></div>
 </details>
-<form asp-controller="Communications" asp-action="StartBookingConversation" method="post" class="cn-support">@Html.AntiForgeryToken()<input type="hidden" name="bookingId" value="@Model.Id"/><button class="cn-edit" type="submit">Message Staff about this event</button></form>
+@if(ViewBag.CancellationConversationId is not int){<form asp-controller="Communications" asp-action="StartBookingConversation" method="post" class="cn-support">@Html.AntiForgeryToken()<input type="hidden" name="bookingId" value="@Model.Id"/><button class="cn-edit" type="submit">Message Staff about this event</button></form>}
 </section>
 <aside class="cn-balance"><h2>Payment summary</h2><dl><div><dt>Required downpayment</dt><dd>₱@((finance?.RequiredDownpayment ?? Model.RequiredDownpayment).ToString("N2"))</dd></div><div><dt>Booking total</dt><dd>₱@((finance?.BookingTotal ?? Model.FinalPrice).ToString("N2"))</dd></div><div><dt>Verified payments</dt><dd>₱@((finance?.TotalVerifiedPayments ?? 0).ToString("N2"))</dd></div><div class="cn-total"><dt>Remaining balance</dt><dd>₱@((finance?.RemainingBalance ?? Model.FinalPrice).ToString("N2"))</dd></div></dl><p class="cn-help">@(finance?.PaymentStatus ?? "Unpaid"). Only verified payments reduce your balance.</p>
+@if(finance?.TotalVerifiedPayments>0&&finance.RemainingBalance>0){<p class="cn-help">Your initial payment is verified. The remaining balance of ₱@finance.RemainingBalance.ToString("N2") is due on the day of your event.</p>}else if(finance?.IsFullyPaid==true){<p class="cn-help">Your booking has been fully paid. No remaining balance is due.</p>}
 @if(canPay){<a asp-controller="Payments" asp-action="Upload" asp-route-bookingId="@Model.Id" class="cn-button cn-primary cn-balance-action">Upload payment proof</a>}
 @if(finance?.HasAdditionalEvidenceRequired == true){<a asp-controller="Payments" asp-action="MyUploads" class="cn-button cn-primary cn-balance-action">Replace payment proof</a>}
 <a asp-controller="Payments" asp-action="MyUploads" class="cn-text-link">View payment activity</a>

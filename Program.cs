@@ -95,11 +95,10 @@ builder.Services.AddScoped<IHistoryService, HistoryService>();
 builder.Services.AddScoped<ISystemActivityService, SystemActivityService>();
 builder.Services.AddScoped<AccountCredentialRecovery>();
 builder.Services.AddOptions<FeedbackMediaOptions>().Bind(builder.Configuration.GetSection("FeedbackMedia"))
-    .Validate(o=>o.MaxImages is >=1 and <=5 && o.MaxImageBytes is >=1 and <=10*1024*1024
+    .Validate(o=>o.MaxImages is >=1 and <=5 && o.MaxImageBytes is >=1 and <=10*1024*1024 && o.MaxVideoBytes is >=1024*1024 and <=25*1024*1024
         && o.MaxDimension is >=1 and <=6000 && o.MaxPixels is >=1 and <=16_000_000
         && o.ClamAvPort is >0 and <=65535,"Feedback media limits must stay within the supported safe bounds.").ValidateOnStart();
 builder.Services.AddScoped<IFeedbackMalwareScanner,ClamAvFeedbackScanner>();
-builder.Services.AddSingleton<IFeedbackVideoProcessor,DisabledFeedbackVideoProcessor>();
 builder.Services.AddScoped<FeedbackMediaService>();
 builder.Services.AddScoped<ITrashHistoryService, TrashHistoryService>();
 builder.Services.AddScoped<IBookingExpirationService, BookingExpirationService>();

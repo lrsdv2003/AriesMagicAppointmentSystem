@@ -13,6 +13,7 @@ namespace AriesMagicAppointmentSystem.Controllers
 {
     public class BookingsController : Controller
     {
+        private const string CurrentTermsVersion = "2026-11-03-v2";
         private readonly ApplicationDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IHistoryService _historyService;
@@ -606,9 +607,9 @@ namespace AriesMagicAppointmentSystem.Controllers
             ModelState.Remove(nameof(model.FinalPrice));
             ModelState.Remove(nameof(model.RequiredDownpayment));
 
-            if (!model.AcceptTerms)
+            if (!model.AcceptTerms || !string.Equals(model.AcceptedTermsVersion, CurrentTermsVersion, StringComparison.Ordinal))
             {
-                ModelState.AddModelError("AcceptTerms", "You must agree to the Terms and Agreement before submitting your booking.");
+                ModelState.AddModelError("AcceptTerms", "Please review and accept the current Terms and Conditions before submitting your booking.");
             }
 
             if (!ModelState.IsValid)
@@ -715,7 +716,9 @@ namespace AriesMagicAppointmentSystem.Controllers
                 BasePrice = selectedPackage.Price,
                 FinalPrice = finalPrice,
                 RequiredDownpayment = FixedRequiredDownpayment,
-                RemovedInclusionsJson = removedInclusionsJson
+                RemovedInclusionsJson = removedInclusionsJson,
+                AcceptedTermsVersion = CurrentTermsVersion,
+                TermsAcceptedAtUtc = DateTime.UtcNow
             };
 
             _context.Bookings.Add(booking);
@@ -844,10 +847,33 @@ namespace AriesMagicAppointmentSystem.Controllers
             if (booking == null) return NotFound();
 
             if (User.IsInRole("Staff") || User.IsInRole("Owner"))
+            {
+                ViewBag.CancellationRequestLinked = booking.CancellationRequestMessageId.HasValue
+                    && await _context.Messages.AnyAsync(m => m.Id == booking.CancellationRequestMessageId
+                        && m.SenderId == booking.CancellationRequestByUserId
+                        && m.Conversation != null && m.Conversation.BookingId == booking.Id
+                        && m.Conversation.ConversationType == ConversationTypes.Booking);
                 return View("StaffDetails", booking);
+            }
 
             ViewBag.IsScheduleUnavailable = (await GetUnavailableBookingIdsAsync(new[] { booking })).Contains(booking.Id);
             ViewBag.FinancialSummary = await _financialService.GetSummaryAsync(booking.Id);
+            var initialPayment = booking.Payments.Where(p => p.Status == PaymentStatus.Verified && p.InitialVerificationAtUtc.HasValue)
+                .OrderBy(p => p.InitialVerificationAtUtc).FirstOrDefault();
+            var deadline = initialPayment?.InitialVerificationAtUtc?.AddHours(24);
+            ViewBag.CanDirectCancel = deadline.HasValue && DateTime.UtcNow < deadline.Value
+                && ClientCancellableStatuses.Contains(booking.Status) && !booking.RefundEligible
+                && !booking.Payments.Any(p => p.Status is PaymentStatus.Pending or PaymentStatus.AdditionalEvidenceRequired);
+            ViewBag.CancellationDeadline = deadline;
+            ViewBag.CanRequestCancellationReview = deadline.HasValue && DateTime.UtcNow >= deadline.Value
+                && ClientCancellableStatuses.Contains(booking.Status) && !booking.RefundEligible
+                && !booking.Payments.Any(p => p.Status is PaymentStatus.Pending or PaymentStatus.AdditionalEvidenceRequired);
+            ViewBag.CancellationConversationId = booking.CancellationRequestMessageId.HasValue
+                ? await _context.Conversations.Where(c => c.BookingId == booking.Id && c.ConversationType == ConversationTypes.Booking)
+                    .Select(c => (int?)c.Id).FirstOrDefaultAsync()
+                : null;
+            ViewBag.HasRefundEligibility = booking.RefundEligible && booking.RefundEligibilityPaymentId.HasValue
+                && !await _context.RefundRequests.AnyAsync(r => r.OriginalPaymentId == booking.RefundEligibilityPaymentId);
             return View("ClientDetails", booking);
         }
 
@@ -1062,7 +1088,8 @@ namespace AriesMagicAppointmentSystem.Controllers
         {
             BookingStatus.Pending,
             BookingStatus.AwaitingDownpayment,
-            BookingStatus.AwaitingVerification
+            BookingStatus.AwaitingVerification,
+            BookingStatus.Confirmed
         };
 
         [Authorize(Roles = "Client")]
@@ -1076,16 +1103,23 @@ namespace AriesMagicAppointmentSystem.Controllers
             var booking = await _context.Bookings
                 .Include(b => b.Client)
                 .Include(b => b.Service)
+                .Include(b => b.Payments)
                 .FirstOrDefaultAsync(b => b.Id == id && b.ApplicationUserId == appUserId);
 
             if (booking == null) return NotFound();
 
-            if (!ClientCancellableStatuses.Contains(booking.Status))
+            var verifiedInitial = booking.Payments.Where(p => p.Status == PaymentStatus.Verified && p.InitialVerificationAtUtc.HasValue)
+                .OrderBy(p => p.InitialVerificationAtUtc).FirstOrDefault();
+            if (booking.Payments.Any(p => p.Status is PaymentStatus.Pending or PaymentStatus.AdditionalEvidenceRequired)
+                || !BookingCancellationPolicy.IsClientDirectCancellationAllowed(booking, verifiedInitial, DateTime.UtcNow))
             {
-                TempData["Error"] = "This booking can no longer be cancelled because it is already confirmed, completed, or otherwise finalized. Please submit a refund or reschedule request instead.";
+                TempData["Error"] = verifiedInitial == null
+                    ? "Direct cancellation is available only after the Owner verifies the initial payment. Contact Staff to request help."
+                    : "Your 24-hour cancellation window has ended. Contact Staff to request a review.";
                 return RedirectToAction(nameof(MyBookings));
             }
 
+            ViewBag.CancellationDeadline = verifiedInitial!.InitialVerificationAtUtc!.Value.AddHours(24);
             return View(booking);
         }
 
@@ -1096,25 +1130,40 @@ namespace AriesMagicAppointmentSystem.Controllers
         {
             var appUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            var booking = await _context.Bookings
+            await using var transaction = await _context.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
+            var booking = await _context.Bookings.Include(b => b.Payments)
                 .FirstOrDefaultAsync(b => b.Id == id && b.ApplicationUserId == appUserId);
 
             if (booking == null) return NotFound();
 
-            if (!ClientCancellableStatuses.Contains(booking.Status))
+            var verifiedInitial = booking.Payments.Where(p => p.Status == PaymentStatus.Verified && p.InitialVerificationAtUtc.HasValue)
+                .OrderBy(p => p.InitialVerificationAtUtc).FirstOrDefault();
+            if (booking.Payments.Any(p => p.Status is PaymentStatus.Pending or PaymentStatus.AdditionalEvidenceRequired)
+                || !BookingCancellationPolicy.IsClientDirectCancellationAllowed(booking, verifiedInitial, DateTime.UtcNow))
             {
-                TempData["Error"] = "This booking can no longer be cancelled.";
+                TempData["Error"] = "This booking is outside the direct cancellation window or is no longer eligible. Contact Staff if you need a cancellation review.";
                 return RedirectToAction(nameof(MyBookings));
             }
 
+            var previousStatus = booking.Status;
+            booking.CancelledAtUtc = DateTime.UtcNow;
+            booking.CancelledByUserId = appUserId;
+            booking.CancellationActorRole = "Client";
+            booking.CancellationReason = "Client direct cancellation within 24 hours of initial payment verification.";
+            booking.CancellationSource = "Client24HourWindow";
+            booking.CancellationPreviousStatus = previousStatus;
+            booking.CancellationPaymentId = verifiedInitial!.Id;
+            booking.RefundEligible = true;
+            booking.RefundEligibilityReason = "ClientCancellationWithin24Hours";
+            booking.RefundEligibilityPaymentId = verifiedInitial.Id;
             booking.Status = BookingStatus.Cancelled;
 
             _context.BookingTimelines.Add(new BookingTimeline
             {
                 BookingId = booking.Id,
                 EventType = TimelineEventType.BookingCancelled,
-                Notes = "Booking was cancelled by the client.",
-                CreatedAt = DateTime.Now
+                Notes = "Booking was cancelled by the client within the verified initial-payment cancellation window.",
+                CreatedAt = DateTime.UtcNow
             });
 
             var staffUsers = await _userManager.GetUsersInRoleAsync("Staff");
@@ -1129,14 +1178,92 @@ namespace AriesMagicAppointmentSystem.Controllers
                     Message = $"A client cancelled their booking for {booking.EventDate:MMMM dd, yyyy}.",
                     Link = $"/Bookings/Details/{booking.Id}",
                     IsRead = false,
-                    CreatedAt = DateTime.Now
+                    CreatedAt = DateTime.UtcNow
                 });
             }
 
             await _context.SaveChangesAsync();
+            await _activityService.LogAsync(SystemActivityType.BookingCancelled,
+                $"Booking #{booking.Id} cancelled by Client.", appUserId!, User.Identity?.Name,
+                booking.Id.ToString(), "Booking", new { BookingId = booking.Id, ClientId = appUserId, ActorRole = "Client", Reason = booking.CancellationReason,
+                    PreviousStatus = previousStatus, NewStatus = booking.Status, AtUtc = booking.CancelledAtUtc,
+                    PaymentId = verifiedInitial.Id, RefundEligible = true, RefundEligibilityReason = booking.RefundEligibilityReason });
+            await transaction.CommitAsync();
 
             TempData["Success"] = "Your booking was cancelled successfully.";
             return RedirectToAction(nameof(MyBookings));
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "Staff")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CancelAfterReview(int id, string? reason)
+        {
+            reason = reason?.Trim();
+            if (string.IsNullOrWhiteSpace(reason) || reason.Length < 8 || reason.Length > 1000)
+            {
+                TempData["Error"] = "Record a cancellation reason of at least 8 characters.";
+                return RedirectToAction(nameof(Details), new { id });
+            }
+
+            await using var transaction = await _context.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
+            var booking = await _context.Bookings.Include(b => b.Payments).FirstOrDefaultAsync(b => b.Id == id);
+            if (booking == null) return NotFound();
+            var verifiedInitial = booking.Payments.Where(p => p.Status == PaymentStatus.Verified && p.InitialVerificationAtUtc.HasValue)
+                .OrderBy(p => p.InitialVerificationAtUtc).FirstOrDefault();
+            var linkedRequestExists = booking.CancellationRequestMessageId.HasValue
+                && await _context.Messages.AnyAsync(m => m.Id == booking.CancellationRequestMessageId
+                    && m.SenderId == booking.CancellationRequestByUserId
+                    && m.Conversation != null && m.Conversation.BookingId == booking.Id
+                    && m.Conversation.ConversationType == ConversationTypes.Booking);
+            if (!ClientCancellableStatuses.Contains(booking.Status) || booking.RefundEligible
+                || booking.Payments.Any(p => p.Status is PaymentStatus.Pending or PaymentStatus.AdditionalEvidenceRequired)
+                || verifiedInitial == null || booking.Status is BookingStatus.Cancelled or BookingStatus.Completed
+                || !linkedRequestExists
+                || DateTime.UtcNow < verifiedInitial.InitialVerificationAtUtc!.Value.AddHours(24))
+            {
+                TempData["Error"] = "This booking is not eligible for Staff cancellation review.";
+                return RedirectToAction(nameof(Details), new { id });
+            }
+
+            var actor = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+            var previousStatus = booking.Status;
+            booking.Status = BookingStatus.Cancelled;
+            booking.CancelledAtUtc = DateTime.UtcNow;
+            booking.CancelledByUserId = actor;
+            booking.CancellationActorRole = "Staff";
+            booking.CancellationReason = reason;
+            booking.CancellationSource = "StaffApprovedClientRequest";
+            booking.CancellationPreviousStatus = previousStatus;
+            booking.CancellationPaymentId = verifiedInitial.Id;
+            booking.RefundEligible = true;
+            booking.RefundEligibilityReason = "StaffApprovedCancellation";
+            booking.RefundEligibilityPaymentId = verifiedInitial.Id;
+            _context.BookingTimelines.Add(new BookingTimeline { BookingId = booking.Id, EventType = TimelineEventType.BookingCancelled,
+                Notes = "Staff-approved client cancellation: " + reason, CreatedAt = DateTime.UtcNow });
+            await _context.SaveChangesAsync();
+            if (!string.IsNullOrWhiteSpace(booking.ApplicationUserId))
+            {
+                _context.Notifications.Add(new Notification
+                {
+                    UserId = booking.ApplicationUserId,
+                    Title = "Cancellation Approved for Refund Review",
+                    Message = "Staff recorded your cancellation request. The Owner must still review any refund; no refund has been approved or paid.",
+                    Link = "/Payments/MyRefundRequests",
+                    IsRead = false,
+                    CreatedAt = DateTime.UtcNow
+                });
+                await _context.SaveChangesAsync();
+            }
+            await _activityService.LogAsync(SystemActivityType.BookingCancelled, $"Booking #{booking.Id} cancelled by Staff after client request.",
+                actor, User.Identity?.Name, booking.Id.ToString(), "Booking", new { BookingId = booking.Id, ClientId = booking.ApplicationUserId,
+                    ActorRole = "Staff", Reason = reason, PreviousStatus = previousStatus, NewStatus = booking.Status,
+                    AtUtc = booking.CancelledAtUtc, PaymentId = verifiedInitial.Id,
+                    CancellationRequestMessageId = booking.CancellationRequestMessageId, ClientRequestReason = booking.CancellationRequestReason, RefundEligible = true,
+                    RefundEligibilityReason = booking.RefundEligibilityReason });
+            await transaction.CommitAsync();
+            TempData["Success"] = "The cancellation was recorded and is eligible for Owner refund review. No refund was approved or paid.";
+            return RedirectToAction(nameof(Details), new { id });
         }
 
         private void SetCreateStepOneViewBags()

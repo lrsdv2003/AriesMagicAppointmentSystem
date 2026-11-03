@@ -27,11 +27,14 @@ namespace AriesMagicAppointmentSystem.Models
         public DateTime UploadedAt { get; set; } = DateTime.Now;
 
         public DateTime? VerifiedAt { get; set; }
+        // Once set by Owner verification, this UTC timestamp is immutable and anchors the cancellation window.
+        public DateTime? InitialVerificationAtUtc { get; set; }
         [MaxLength(450)] public string? VerifiedByUserId { get; set; }
         [MaxLength(200)] public string? VerifiedByUserName { get; set; }
 
         public string? RejectionReason { get; set; }
         [MaxLength(1000)] public string? ReviewerNote { get; set; }
         public ICollection<OcrVerification> OcrVerifications { get; set; } = new List<OcrVerification>();
+        public ICollection<PaymentProofRevision> ProofRevisions { get; set; } = new List<PaymentProofRevision>();
     }
 }

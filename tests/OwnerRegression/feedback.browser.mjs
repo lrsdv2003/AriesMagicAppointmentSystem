@@ -43,6 +43,7 @@ try {
  await go('Feedback-Create');
  assert(!await page.$eval('#clientFeedbackForm',el=>el.checkValidity()));checks++;
  assert(await page.$$eval('[name$="Consent"]',els=>els.every(e=>!e.checked)));checks++;
+ assert(await page.$$eval('[name="SharingPreference"]',els=>els.length===2&&els.every(e=>e.required&&!e.checked)));checks++;
  for(const name of ['OverallRating','PerformanceRating','BookingRating'])await page.click('[name="'+name+'"][value="5"]');
  await page.type('#Experience','My fixture celebration was memorable.');
  await page.type('#Suggestions','A private suggestion retained during validation.');
@@ -50,9 +51,15 @@ try {
  await (await page.$('[name="Files"]')).uploadFile(path.join(root,'wwwroot/images/magic-performance-1.jpeg'));
  await page.waitForSelector('#feedbackPreviews img');
  assert.equal(await page.$$eval('#feedbackPreviews img',els=>els.length),1);checks++;
- await page.$eval('#clientFeedbackForm',el=>{el.requestSubmit();el.requestSubmit();});
+ await page.click('#openFeedbackConsent');
+ assert(await page.$eval('#feedbackConsentDialog',el=>el.open));checks++;
+ await page.click('#confirmFeedbackConsent');
+ assert.equal(posts,0);assert(await page.$eval('#sharingChoiceError',el=>!el.hidden));checks++;
+ await page.click('[name="SharingPreference"][value="Public"]');
+ await page.click('#confirmFeedbackConsent');
+ await page.$eval('#clientFeedbackForm',el=>el.requestSubmit());
  await page.waitForFunction(()=>document.getElementById('clientFeedbackForm').getAttribute('aria-busy')==='true');
- assert(await page.$eval('#clientFeedbackForm button[type="submit"]',el=>el.disabled));checks++;
+ assert(await page.$eval('#openFeedbackConsent',el=>el.disabled));checks++;
  while(!release)await new Promise(resolve=>setTimeout(resolve,10));
  await release();
  await page.waitForFunction(()=>!document.getElementById('clientFeedbackForm').hasAttribute('aria-busy'));

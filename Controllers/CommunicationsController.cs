@@ -190,6 +190,99 @@ namespace AriesMagicAppointmentSystem.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Client")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RequestBookingCancellation(int bookingId, string? reason)
+        {
+            var userId = CurrentUserId();
+            if (userId == null) return Challenge();
+            reason = reason?.Trim();
+            if (string.IsNullOrWhiteSpace(reason) || reason.Length < 8 || reason.Length > 1000)
+            {
+                TempData["Error"] = "Explain why you need to cancel in at least 8 characters.";
+                return RedirectToAction("Details", "Bookings", new { id = bookingId });
+            }
+
+            await using var transaction = await _context.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
+            var booking = await _context.Bookings.Include(b => b.Payments)
+                .FirstOrDefaultAsync(b => b.Id == bookingId && b.ApplicationUserId == userId);
+            if (booking == null) return NotFound();
+
+            if (booking.CancellationRequestMessageId.HasValue)
+            {
+                var existingConversationId = await _context.Conversations
+                    .Where(c => c.BookingId == bookingId && c.ConversationType == ConversationTypes.Booking)
+                    .Select(c => (int?)c.Id).FirstOrDefaultAsync();
+                return existingConversationId.HasValue
+                    ? RedirectToAction(nameof(Index), new { id = existingConversationId.Value })
+                    : RedirectToAction("Details", "Bookings", new { id = bookingId });
+            }
+
+            var initialPayment = booking.Payments.Where(p => p.Status == PaymentStatus.Verified && p.InitialVerificationAtUtc.HasValue)
+                .OrderBy(p => p.InitialVerificationAtUtc).FirstOrDefault();
+            if (initialPayment == null || DateTime.UtcNow < initialPayment.InitialVerificationAtUtc!.Value.AddHours(24)
+                || booking.Status is not (BookingStatus.Pending or BookingStatus.AwaitingDownpayment or BookingStatus.AwaitingVerification or BookingStatus.Confirmed)
+                || booking.RefundEligible
+                || booking.Payments.Any(p => p.Status is PaymentStatus.Pending or PaymentStatus.AdditionalEvidenceRequired))
+            {
+                TempData["Error"] = "This booking is not eligible for a cancellation review request. Contact Staff through the booking conversation if you need general assistance.";
+                return RedirectToAction("Details", "Bookings", new { id = bookingId });
+            }
+
+            var conversation = await _context.Conversations.Include(c => c.Participants)
+                .FirstOrDefaultAsync(c => c.BookingId == bookingId && c.ConversationType == ConversationTypes.Booking);
+            if (conversation == null)
+            {
+                conversation = new Conversation
+                {
+                    ConversationType = ConversationTypes.Booking,
+                    BookingId = bookingId,
+                    Title = $"Booking #{bookingId}",
+                    CreatedByUserId = userId,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+                _context.Conversations.Add(conversation);
+                await _context.SaveChangesAsync();
+            }
+            var participantIds = await GetInternalUserIdsAsync(includeOwner: true);
+            participantIds.Add(userId);
+            await AddParticipantsAsync(conversation.Id, participantIds);
+
+            var message = new Message
+            {
+                ConversationId = conversation.Id,
+                SenderId = userId,
+                MessageContent = $"Client cancellation request · BK-{booking.CreatedAt.Year}-{booking.Id:D3}: {reason}",
+                SentAt = DateTime.UtcNow,
+                MessageType = MessageTypes.Text
+            };
+            _context.Messages.Add(message);
+            conversation.UpdatedAt = message.SentAt;
+            await _context.SaveChangesAsync();
+
+            booking.CancellationRequestAtUtc = message.SentAt;
+            booking.CancellationRequestByUserId = userId;
+            booking.CancellationRequestReason = reason;
+            booking.CancellationRequestMessageId = message.Id;
+            _context.SystemActivities.Add(new SystemActivity
+            {
+                Type = SystemActivityType.BookingCancellationRequested,
+                Description = $"Booking #{booking.Id} cancellation review requested by Client.",
+                PerformedByUserId = userId,
+                PerformedByUserName = User.Identity?.Name,
+                AffectedRecordId = booking.Id.ToString(),
+                AffectedRecordType = "Booking",
+                MetadataJson = System.Text.Json.JsonSerializer.Serialize(new { BookingId = booking.Id, MessageId = message.Id, AtUtc = message.SentAt })
+            });
+            await AddMessageNotificationsAsync(conversation, message, participantIds.Where(id => id != userId));
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+            TempData["Success"] = "Your cancellation request was sent to Staff through the private booking conversation. Staff will review it; no refund has been approved or paid.";
+            return RedirectToAction(nameof(Index), new { id = conversation.Id });
+        }
+
+        [HttpPost]
         [Authorize(Roles = "Staff,Admin,Owner")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateInternal(

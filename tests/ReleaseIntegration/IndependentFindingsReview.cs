@@ -66,13 +66,17 @@ static class IndependentFindingsReview
             using(var r=await Upload(client,installment,token))Check(await db.Payments.CountAsync(p=>p.BookingId==installment.Id)==1,"PAY-04 stale POST after approval cannot become a new installment");
             var newest=await db.Payments.Where(p=>p.BookingId==installment.Id).MaxAsync(p=>p.Id);
             if(reproduce)await db.Payments.Where(p=>p.BookingId==installment.Id&&p.Status==PaymentStatus.Pending).ExecuteUpdateAsync(s=>s.SetProperty(p=>p.Status,PaymentStatus.Rejected));
-            using(var r=await Upload(client,installment,token,newest))Check(r.StatusCode==HttpStatusCode.Redirect,"PAY-04 fresh installment intent remains allowed");
-            var replacement=await db.Payments.AsNoTracking().Where(p=>p.BookingId==installment.Id&&p.Status==PaymentStatus.Pending).SingleAsync();
+            using(var r=await Upload(client,installment,token,newest))Check(r.StatusCode==HttpStatusCode.OK&&await db.Payments.CountAsync(p=>p.BookingId==installment.Id)==1,"PAY-04 verified initial payment locks even a fresh upload intent");
+            var replacementBooking=await AddBooking(83,BookingStatus.AwaitingDownpayment);
+            using(var r=await Upload(client,replacementBooking,token))Check(r.StatusCode==HttpStatusCode.Redirect,"PAY-03 separate initial proof enters review");
+            var replacement=await db.Payments.AsNoTracking().Where(p=>p.BookingId==replacementBooking.Id&&p.Status==PaymentStatus.Pending).SingleAsync();
             using(var r=await Post(owner,"/Payments/RequestAdditionalEvidence/"+replacement.Id,ownerToken,("reason","Synthetic clearer-proof request")))Check(r.StatusCode==HttpStatusCode.Redirect,"PAY-03 Owner requests replacement evidence");
             using(var form=new MultipartFormDataContent()){
                 form.Add(new StringContent(token),"__RequestVerificationToken");var image=new ByteArrayContent(png);image.Headers.ContentType=new("image/png");form.Add(image,"proofImage","replacement.png");using var r=await client.PostAsync("/Payments/ReplaceProof/"+replacement.Id,form);
-                Check(r.StatusCode==HttpStatusCode.Redirect&&await db.Payments.CountAsync(p=>p.BookingId==installment.Id)==(reproduce?3:2),"PAY-04 authorized replacement preserves the existing payment record");
+                Check(r.StatusCode==HttpStatusCode.Redirect&&await db.Payments.CountAsync(p=>p.BookingId==replacementBooking.Id)==1,"PAY-04 authorized replacement preserves the existing payment record");
             }
+            Check(await db.PaymentProofRevisions.AnyAsync(r=>r.PaymentId==replacement.Id&&r.ProofImagePath==replacement.ProofImagePath),"PAY-04 replacement retains original proof revision");
+            using(var history=await owner.GetAsync("/Payments/ProofHistory/"+replacement.Id))Check(history.StatusCode==HttpStatusCode.OK,"Owner can inspect protected proof revision history");
             Check((await new PaymentFinancialService(db).GetSummaryAsync(installment.Id)).TotalVerifiedPayments==2000,"PAY-06 pending installment and replacement never double-count verified funds");
             var paymentCount=await db.Payments.CountAsync();using(var r=await Upload(other,installment,otherToken))Check(await db.Payments.CountAsync()==paymentCount,"PAY-04 unrelated Client cannot submit another client's proof");
 
@@ -106,7 +110,7 @@ static class IndependentFindingsReview
             var previous=await AddBooking(90,BookingStatus.Confirmed,"other",8);previous.PartyVenue="PRIVATE_OTHER_CLIENT_VENUE_SENTINEL";previous.VenueLatitude=14.5;previous.VenueLongitude=121.1;await db.SaveChangesAsync();
             using(var r=await Post(client,"/Bookings/CheckVenueServiceability",token,("partyVenue","Fixture"),("eventDate",previous.EventDate.ToString("yyyy-MM-dd")),("startTime","16:00"))){var text=await r.Content.ReadAsStringAsync();Check(r.IsSuccessStatusCode&&!text.Contains(previous.PartyVenue)&&!text.Contains("\"originLatitude\":14.5")&&!text.Contains("\"originLongitude\":121.1"),"SEC-02 venue response does not disclose another Client's previous event location");using var data=JsonDocument.Parse(text);Check(data.RootElement.GetProperty("usesPreviousEventLocation").GetBoolean()&&data.RootElement.GetProperty("distanceKm").GetDouble()>0,"VEN-03 previous-event routing and computed distance remain active");}
 
-            (string,string)[] bookingFields=[("EventType","Company Events"),("Motif","Navy"),("PartyTheme","Synthetic"),("EventDate",DateTime.Today.AddDays(100).ToString("yyyy-MM-dd")),("StartTime","10:00"),("PartyVenue","Synthetic venue"),("PaxCount","20"),("ContactPerson","Synthetic fresh Client"),("ContactNumber","09123456789"),("ServiceId",package.Id.ToString()),("AcceptTerms","true")];
+            (string,string)[] bookingFields=[("EventType","Company Events"),("Motif","Navy"),("PartyTheme","Synthetic"),("EventDate",DateTime.Today.AddDays(100).ToString("yyyy-MM-dd")),("StartTime","10:00"),("PartyVenue","Synthetic venue"),("PaxCount","20"),("ContactPerson","Synthetic fresh Client"),("ContactNumber","09123456789"),("ServiceId",package.Id.ToString()),("AcceptTerms","true"),("AcceptedTermsVersion","2026-11-03-v2")];
             await using(var broken=new ReleaseFactory(connection,smtp.Port,mapUrl,root,saveFault:new FailBookingNotificationSave())){
                 using var fresh=await Login(broken,"fresh");var freshToken=await Token(fresh,"/Communications");var count=await db.Bookings.CountAsync();var clients=await db.LegacyUsers.CountAsync();
                 using(var r=await Post(fresh,"/Bookings/SubmitBooking",freshToken,bookingFields))Check((int)r.StatusCode>=400,"DB-02 injected server notification-save failure is observed");

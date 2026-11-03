@@ -14,8 +14,11 @@ public sealed class FeedbackMediaController(ApplicationDbContext db,FeedbackMedi
     {
         var media=await db.FeedbackMedia.AsNoTracking().Include(m=>m.Feedback).SingleOrDefaultAsync(m=>m.Id==id,ct);
         if(media==null||!User.IsInRole("Staff")&&media.Feedback.ClientId!=User.FindFirstValue(ClaimTypes.NameIdentifier))return NotFound();
-        if(media.ProcessingStatus!="Ready"||media.ScannedAtUtc==null||media.Kind!="Image"||media.ContentType!="image/jpeg")return NotFound();
-        return await Deliver(media.StorageKey,ct);
+        if(media.ProcessingStatus!="Ready"||media.ScannedAtUtc==null
+            ||media.Kind=="Image"&&media.ContentType!="image/jpeg"
+            ||media.Kind=="Video"&&media.ContentType!="video/mp4"
+            ||media.Kind is not ("Image" or "Video"))return NotFound();
+        return await Deliver(media.StorageKey,media.ContentType,media.Kind=="Video",ct);
     }
     [AllowAnonymous]
     public async Task<IActionResult> Public(int id,CancellationToken ct)
@@ -24,17 +27,21 @@ public sealed class FeedbackMediaController(ApplicationDbContext db,FeedbackMedi
         var media=await db.FeedbackMedia.AsNoTracking().Where(m=>m.Id==id&&m.PublicApproved&&m.ProcessingStatus=="Ready"&&m.Kind=="Image"&&m.ContentType=="image/jpeg"
             &&m.ScannedAtUtc!=null&&m.Feedback.MediaConsent&&eligible.Contains(m.FeedbackId))
             .Select(m=>new {m.StorageKey}).SingleOrDefaultAsync(ct);
-        return media==null?NotFound():await Deliver(media.StorageKey,ct);
+        return media==null?NotFound():await Deliver(media.StorageKey,"image/jpeg",false,ct);
     }
-    private async Task<IActionResult> Deliver(string key,CancellationToken ct)
+    private Task<IActionResult> Deliver(string key,string contentType,bool video,CancellationToken ct)
     {
         Response.Headers["X-Content-Type-Options"]="nosniff";
-        Response.Headers.ContentDisposition="inline; filename=\"event-photo.jpg\"";
+        Response.Headers.ContentDisposition=video?"inline; filename=\"event-video.mp4\"":"inline; filename=\"event-photo.jpg\"";
         Response.Headers.ContentSecurityPolicy="default-src 'none'; sandbox";
-        try{return File(await store.ReadAsync(key,ct),"image/jpeg");}
-        catch(FileNotFoundException){return NotFound();}
-        catch(DirectoryNotFoundException){return NotFound();}
-        catch(IOException){return StatusCode(503,"This photo is temporarily unavailable.");}
-        catch(UnauthorizedAccessException){return StatusCode(503,"This photo is temporarily unavailable.");}
+        try
+        {
+            if(video)return Task.FromResult<IActionResult>(File(store.OpenRead(key),contentType,enableRangeProcessing:true));
+            return Task.FromResult<IActionResult>(File(store.OpenRead(key),contentType));
+        }
+        catch(FileNotFoundException){return Task.FromResult<IActionResult>(NotFound());}
+        catch(DirectoryNotFoundException){return Task.FromResult<IActionResult>(NotFound());}
+        catch(IOException){return Task.FromResult<IActionResult>(StatusCode(503,"This media is temporarily unavailable."));}
+        catch(UnauthorizedAccessException){return Task.FromResult<IActionResult>(StatusCode(503,"This media is temporarily unavailable."));}
     }
 }

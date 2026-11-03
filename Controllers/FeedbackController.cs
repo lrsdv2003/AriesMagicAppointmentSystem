@@ -31,6 +31,27 @@ public sealed class FeedbackController(ApplicationDbContext db,FeedbackMediaServ
         var feedback=await db.EventFeedbacks.AsNoTracking().Include(f=>f.Booking).Include(f=>f.Media).SingleOrDefaultAsync(f=>f.Id==id&&f.ClientId==ClientId);
         return feedback==null?NotFound():View(feedback);
     }
+    [HttpPost,ValidateAntiForgeryToken,EnableRateLimiting("uploads")]
+    public async Task<IActionResult> RetryMedia(int id,CancellationToken ct)
+    {
+        var item=await db.FeedbackMedia.AsNoTracking().Include(m=>m.Feedback)
+            .SingleOrDefaultAsync(m=>m.Id==id&&m.Feedback.ClientId==ClientId,ct);
+        if(item==null)return NotFound();
+        if(item.ProcessingStatus!="Failed")
+        {
+            TempData["Error"]="Only failed security checks can be retried. Rejected media cannot be resubmitted from this action.";
+            return RedirectToAction(nameof(Details),new {id=item.FeedbackId});
+        }
+        var changed=await db.FeedbackMedia.Where(m=>m.Id==id&&m.Feedback.ClientId==ClientId&&m.ProcessingStatus=="Failed")
+            .ExecuteUpdateAsync(set=>set.SetProperty(m=>m.ProcessingStatus,"Quarantined")
+                .SetProperty(m=>m.ProcessingAttempts,0).SetProperty(m=>m.ProcessingStartedAtUtc,(DateTime?)null)
+                .SetProperty(m=>m.ProcessingError,(string?)null).SetProperty(m=>m.ScannedAtUtc,(DateTime?)null)
+                .SetProperty(m=>m.PublicApproved,false),ct);
+        TempData[changed==1?"Success":"Error"]=changed==1
+            ?"The private file was queued for another security scan. It remains unavailable until the scan passes."
+            :"The media status changed. Refresh and review the current status.";
+        return RedirectToAction(nameof(Details),new {id=item.FeedbackId});
+    }
     public async Task<IActionResult> Create(int bookingId)
     {
         var booking=await db.Bookings.AsNoTracking().SingleOrDefaultAsync(b=>b.Id==bookingId&&b.ApplicationUserId==ClientId);
@@ -52,15 +73,22 @@ public sealed class FeedbackController(ApplicationDbContext db,FeedbackMediaServ
         if(existingId.HasValue)return RedirectToAction(nameof(Details),new {id=existingId.Value});
         input.EventLabel=booking.PackageName;
         input.Files??=[];
-        if(input.Files.Count>options.Value.MaxImages) ModelState.AddModelError("Files",$"Choose up to {options.Value.MaxImages} photos.");
-        if(input.Files.Any(f=>f.Length<1||f.Length>options.Value.MaxImageBytes)||input.Files.Sum(f=>f.Length)>options.Value.MaxImageBytes*options.Value.MaxImages)
+        var images=input.Files.Where(f=>!Path.GetExtension(f.FileName).Equals(".mp4",StringComparison.OrdinalIgnoreCase)).ToList();
+        var videos=input.Files.Where(f=>Path.GetExtension(f.FileName).Equals(".mp4",StringComparison.OrdinalIgnoreCase)).ToList();
+        if(images.Count>options.Value.MaxImages) ModelState.AddModelError("Files",$"Choose up to {options.Value.MaxImages} photos.");
+        if(videos.Count>1)ModelState.AddModelError("Files","Choose at most one video.");
+        if(images.Any(f=>f.Length<1||f.Length>options.Value.MaxImageBytes)||images.Sum(f=>f.Length)>options.Value.MaxImageBytes*options.Value.MaxImages
+            ||videos.Any(f=>f.Length<1||f.Length>options.Value.MaxVideoBytes))
             ModelState.AddModelError("Files","The selected media exceeds the upload limits.");
+        if(input.SharingPreference is not ("Public" or "Private"))ModelState.AddModelError(nameof(input.SharingPreference),"Choose whether to share feedback publicly or keep it private.");
+        input.TextConsent=input.SharingPreference=="Public";
         if(input.TextConsent&&string.IsNullOrWhiteSpace(input.Experience)) ModelState.AddModelError("Experience","Add your written experience to opt in to public testimonial sharing.");
         if(input.NameConsent&&string.IsNullOrWhiteSpace(input.PublicDisplayName)) ModelState.AddModelError("PublicDisplayName","Choose the display name you permit us to publish.");
         if(!ModelState.IsValid) return View(input);
         var prepared=new List<FeedbackMedia>();var committed=false;
         try {
-            foreach(var file in input.Files) prepared.Add(await media.PrepareAsync(file,ct));
+            foreach(var file in input.Files) prepared.Add(Path.GetExtension(file.FileName).Equals(".mp4",StringComparison.OrdinalIgnoreCase)
+                ?await media.PrepareVideoAsync(file,ct):await media.PrepareAsync(file,ct));
             await using var transaction=await db.Database.BeginTransactionAsync(IsolationLevel.Serializable,ct);
             booking=await db.Bookings.AsNoTracking().SingleOrDefaultAsync(b=>b.Id==input.BookingId&&b.ApplicationUserId==ClientId,ct);
             if(booking==null||!FeedbackPolicy.Eligible(booking)) return BadRequest("This booking is no longer eligible for feedback.");
@@ -70,8 +98,9 @@ public sealed class FeedbackController(ApplicationDbContext db,FeedbackMediaServ
             var feedback=new EventFeedback {BookingId=input.BookingId,ClientId=ClientId,OverallRating=input.OverallRating,
                 PerformanceRating=input.PerformanceRating,BookingRating=input.BookingRating,Experience=input.Experience?.Trim()??"",
                 Suggestions=input.Suggestions?.Trim()??"",PublicDisplayName=input.NameConsent?input.PublicDisplayName?.Trim()??"":"",
-                TextConsent=input.TextConsent,NameConsent=input.NameConsent,MediaConsent=input.MediaConsent,
-                ConsentedAtUtc=input.TextConsent||input.NameConsent||input.MediaConsent?now:null,SubmittedAtUtc=now,UpdatedAtUtc=now,
+                TextConsent=input.TextConsent,SharingPreference=input.SharingPreference,ConsentVersion="feedback-sharing-2026-11-03-v1",
+                NameConsent=input.NameConsent,MediaConsent=input.MediaConsent,
+                ConsentedAtUtc=now,SubmittedAtUtc=now,UpdatedAtUtc=now,
                 ModerationStatus=input.TextConsent?"Pending":"Private",Media=prepared};
             db.EventFeedbacks.Add(feedback);
             var staff=await (from userRole in db.UserRoles join role in db.Roles on userRole.RoleId equals role.Id

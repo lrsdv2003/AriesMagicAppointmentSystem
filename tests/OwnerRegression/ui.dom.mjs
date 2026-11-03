@@ -254,8 +254,9 @@ for(const name of ['Bookings-ClientDashboard','Bookings-MyBookings','Bookings-Cl
  const dom=fixture('Feedback-Create'),w=dom.window,d=w.document,form=d.getElementById('clientFeedbackForm');
  check(d.querySelectorAll('.hub-feedback-extra').length===2,'Optional media/sharing disclosure missing');
  for(const name of ['OverallRating','PerformanceRating','BookingRating']){const input=d.querySelector(`[name=${name}][value="5"]`);input.checked=true;check(input.required,'Required feedback rating became optional');}
- d.querySelector('[name=TextConsent][type=checkbox]').checked=true;
- const data=new w.FormData(form);check(data.get('OverallRating')==='5'&&data.get('TextConsent')==='true','Closed disclosure drops rating/consent form values');
+ check(d.querySelectorAll('[name=SharingPreference][required]').length===2&&!d.querySelector('[name=SharingPreference]:checked'),'Feedback requires a deliberate public/private decision with no default');
+ d.querySelector('[name=SharingPreference][value=Public]').checked=true;
+ const data=new w.FormData(form);check(data.get('OverallRating')==='5'&&data.get('SharingPreference')==='Public','Public/private choice remains associated with the feedback form');
  check(d.querySelector('[name=Suggestions]')&&d.querySelector('[name=MediaConsent]')&&d.querySelector('[name=PublicDisplayName]'),'Feedback loses private suggestions or sharing choices');
  dom.window.close();
 }
@@ -265,7 +266,7 @@ console.log('PASS Client hub navigation, original form contracts, role fields, p
 {
  const dom=fixture('Bookings-Create'),d=dom.window.document;
  check(d.querySelector('.cn-terms')?.tagName==='SECTION'&&!d.querySelector('.cn-terms details,.cn-terms summary'),'Primary agreement must stay permanently visible');
- check(d.querySelectorAll('.cn-terms-clauses h3').length===6,'All existing terms clauses remain visible');
+ check(d.querySelectorAll('.cn-terms-clauses h3').length===7,'All current terms clauses remain visible');
  check(d.querySelector('#openBookingTerms')?.getAttribute('href')==='#fullBookingTerms'&&d.querySelector('#fullBookingTerms')?.tagName==='DIALOG','Full terms remain available before agreement');
  check(d.querySelector('#AcceptTerms')?.required&&!d.querySelector('#AcceptTerms').checked,'Consent remains an explicit required unchecked choice');
  check(d.querySelector('.cn-terms-clauses').textContent.replace(/\s+/g,' ').trim()===d.querySelector('.cn-terms-full-text').textContent.replace(/\s+/g,' ').trim(),'Inline and full terms use identical source text');

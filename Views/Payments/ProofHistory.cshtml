@@ -1,0 +1,9 @@
+@model AriesMagicAppointmentSystem.Models.Payment
+@using AriesMagicAppointmentSystem.Models
+@{ Layout="_DashboardLayout"; ViewData["Title"]="Payment proof history"; }
+<header class="page-header"><div><h1>Payment submission history</h1><p>BK-@Model.Booking?.CreatedAt.Year-@Model.BookingId.ToString("D3") · Payment @Model.Id</p></div><a asp-action="Verify" asp-route-id="@Model.Id" class="btn btn-outline-secondary">Back to review</a></header>
+<section class="dashboard-panel"><h2>Current submission</h2><p>₱@Model.Amount.ToString("N2") · @Model.Status · uploaded @Model.UploadedAt</p><a asp-action="PaymentProof" asp-route-id="@Model.Id" target="_blank" rel="noopener">Open current private proof</a></section>
+<section class="dashboard-panel mt-3"><h2>Earlier submissions</h2>
+@if(!Model.ProofRevisions.Any()){<p>No earlier replacement proof is recorded for this payment.</p>}
+else{<div class="table-responsive"><table class="table text-nowrap"><caption>Earlier evidence retained for Owner review</caption><thead><tr><th>Submitted</th><th>Amount</th><th>Method</th><th>Status</th><th>Reviewer note</th><th>Proof</th></tr></thead><tbody>@foreach(var revision in Model.ProofRevisions.OrderByDescending(r=>r.ArchivedAtUtc)){<tr><td>@revision.UploadedAt</td><td>₱@revision.Amount.ToString("N2")</td><td>@revision.PaymentMethod</td><td>@revision.Status</td><td>@revision.ReviewerNote</td><td><a asp-action="PaymentProofRevision" asp-route-id="@revision.Id" target="_blank" rel="noopener">Open private proof</a></td></tr>}</tbody></table></div>}
+</section>

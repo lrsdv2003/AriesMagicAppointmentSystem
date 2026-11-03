@@ -18,7 +18,7 @@
 <body class="client-body client-inner-page client-booking-page client-concierge client-hub client-@hubController client-@hubController-@hubAction">
 <a class="hub-skip" href="#mainContent">Skip to content</a>
 <aside class="hub-sidebar" aria-label="Client workspace"><partial name="_ClientHubNavigation"/></aside>
-<header class="hub-mobile-header"><a asp-controller="Home" asp-action="Index" class="client-brand" aria-label="Aries d’ Magic Artist home"><partial name="_WonderBrand"/></a><button id="hubMenu" type="button" aria-controls="hubDrawer" aria-haspopup="dialog" aria-expanded="false" hidden><i class="bi bi-list" aria-hidden="true"></i><span>Menu</span></button></header>
+<header class="hub-mobile-header"><a asp-controller="Home" asp-action="Index" class="client-brand"><partial name="_WonderBrand"/></a><button id="hubMenu" type="button" aria-controls="hubDrawer" aria-haspopup="dialog" aria-expanded="false" hidden><i class="bi bi-list" aria-hidden="true"></i><span>Menu</span></button></header>
 <details class="hub-fallback" id="hubFallback"><summary>Your workspace</summary><partial name="_ClientHubNavigation"/></details>
 <dialog id="hubDrawer" class="hub-drawer" aria-labelledby="hubDrawerTitle"><div class="hub-drawer-heading"><h2 id="hubDrawerTitle">Your workspace</h2><button type="button" data-hub-close aria-label="Close navigation">×</button></div><partial name="_ClientHubNavigation"/></dialog>
 <div class="hub-stage"><main id="mainContent" tabindex="-1" class="client-main"><div class="container client-page-wrap hub-content">@RenderBody()</div></main><footer class="hub-footer"><span>&copy; @DateTime.Now.Year Aries d’ Magic Artist</span><a asp-controller="Home" asp-action="Privacy">Privacy</a></footer></div>

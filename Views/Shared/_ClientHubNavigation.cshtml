@@ -6,7 +6,7 @@
   ("Event management",new[]{("Payments","Payments","MyUploads","bi-wallet2"),("Rescheduling","RescheduleRequests","MyRequests","bi-calendar2-week"),("Messages","Communications","Index","bi-chat-dots"),("Refund requests","Payments","MyRefundRequests","bi-arrow-return-left")}),
   ("Account & activity",new[]{("Notifications","Notifications","Index","bi-bell"),("My feedback","Feedback","Index","bi-star"),("Profile","Profile","Index","bi-person-circle")})};
 }
-<div class="hub-brand"><a asp-controller="Home" asp-action="Index" class="client-brand" aria-label="Aries d’ Magic Artist home"><partial name="_WonderBrand"/></a><span>Client workspace</span></div>
+<div class="hub-brand"><a asp-controller="Home" asp-action="Index" class="client-brand"><partial name="_WonderBrand"/></a><span>Client workspace</span></div>
 <nav class="hub-navigation" aria-label="Client navigation">
 @foreach(var group in groups){<div class="hub-nav-group"><p class="hub-nav-caption">@group.Item1</p>
 @foreach(var link in group.Item2){

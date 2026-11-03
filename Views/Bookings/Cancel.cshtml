@@ -6,6 +6,9 @@
     var packageName = string.IsNullOrWhiteSpace(Model.PackageName)
         ? Model.Service?.Name
         : Model.PackageName;
+    var deadlineUtc = (DateTime)ViewBag.CancellationDeadline;
+    var deadlineLocal = TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(deadlineUtc, DateTimeKind.Utc), AriesMagicAppointmentSystem.Services.FeedbackPolicy.BusinessZone);
+    var remaining = deadlineUtc - DateTime.UtcNow;
 }
 
 <div class="client-portal-header">
@@ -102,30 +105,20 @@
         </div>
 
         <div class="booking-summary-note mt-4 mb-4">
-            @if (Model.Status == AriesMagicAppointmentSystem.Models.BookingStatus.AwaitingVerification)
-            {
-                <text>
-                    You already have a payment proof under verification for this booking. If you already sent a
-                    downpayment and want it back, please submit a refund request instead of cancelling.
-                </text>
-            }
-            else
-            {
-                <text>
-                    Cancelling this booking will free up the requested schedule. This action cannot be undone, and
-                    you will need to create a new booking if you change your mind.
-                </text>
-            }
+            <p>This direct cancellation window ends <strong>@deadlineLocal.ToString("MMMM d, yyyy 'at' h:mm tt") Manila time</strong> (@Math.Max(0,(int)remaining.TotalHours) hours and @Math.Max(0,remaining.Minutes) minutes remaining).</p>
+            <p>Cancelling will cancel this booking. If the payment qualifies, you may submit a refund request; every refund remains subject to Owner review and approval. Cancellation does not automatically issue a refund.</p>
         </div>
 
-        <form asp-action="Cancel" method="post">
+        <form asp-action="Cancel" method="post" id="confirmCancellationForm">
             @Html.AntiForgeryToken()
             <input type="hidden" asp-for="Id" />
 
             <div class="d-flex gap-2 flex-wrap">
-                <button type="submit" class="btn btn-danger">Confirm Cancellation</button>
+                <button type="button" class="btn btn-danger" id="openCancellationConfirmation">Review cancellation</button>
                 <a asp-action="MyBookings" class="btn btn-outline-secondary">Keep Booking</a>
             </div>
         </form>
+        <dialog id="cancellationConfirmation" aria-labelledby="cancelConfirmTitle"><h2 id="cancelConfirmTitle">Cancel BK-@Model.CreatedAt.Year-@Model.Id.ToString("D3")?</h2><p>This booking will be cancelled. A qualifying payment may be submitted for Owner refund review; no refund is automatic.</p><div class="d-flex gap-2"><button type="button" id="closeCancellationConfirmation" class="btn btn-outline-secondary">Keep booking</button><button type="submit" form="confirmCancellationForm" class="btn btn-danger">Confirm cancellation</button></div></dialog>
     </div>
 </div>
+<script>document.getElementById('openCancellationConfirmation')?.addEventListener('click',()=>document.getElementById('cancellationConfirmation')?.showModal());document.getElementById('closeCancellationConfirmation')?.addEventListener('click',()=>document.getElementById('cancellationConfirmation')?.close());</script>

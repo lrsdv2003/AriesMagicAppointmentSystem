@@ -161,6 +161,15 @@
         }
     </section>
 </div>
+@if (User.IsInRole("Staff") && ViewBag.CancellationRequestLinked is bool hasClientRequest && hasClientRequest
+    && Model.CancellationRequestAtUtc.HasValue && Model.Payments.Any(p => p.Status == PaymentStatus.Verified && p.InitialVerificationAtUtc.HasValue)
+    && Model.Status is not BookingStatus.Cancelled and not BookingStatus.Completed && !Model.RefundEligible
+    && DateTime.UtcNow >= Model.Payments.Where(p => p.Status == PaymentStatus.Verified && p.InitialVerificationAtUtc.HasValue).Min(p => p.InitialVerificationAtUtc)!.Value.AddHours(24))
+{
+    <section class="dashboard-panel mt-3" aria-labelledby="staffCancelTitle"><h2 id="staffCancelTitle">Client cancellation review</h2><p>Client request received @Model.CancellationRequestAtUtc.Value.ToString("u"). Reason: @Model.CancellationRequestReason</p><p>Record why this request is valid. The action cancels the booking and creates eligibility for Owner refund review; it cannot approve or mark any refund paid.</p>
+    <form asp-action="CancelAfterReview" method="post" class="mt-3" id="staffCancellationForm">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@Model.Id"/><label for="staffCancelReason" class="form-label">Staff decision reason</label><textarea id="staffCancelReason" name="reason" class="form-control" minlength="8" maxlength="1000" required></textarea><p class="form-text">Record the reason this Client request is valid. Refund approval remains Owner-only.</p><button class="btn btn-danger" type="button" id="reviewStaffCancellation">Review cancellation</button></form>
+    <dialog id="staffCancellationConfirmation" aria-labelledby="staffCancellationConfirmTitle"><h3 id="staffCancellationConfirmTitle">Cancel BK-@Model.CreatedAt.Year-@Model.Id.ToString("D3")?</h3><p>This records a Staff-approved Client cancellation and makes the verified payment eligible for Owner refund review. It does not approve or issue a refund.</p><div class="d-flex gap-2"><button type="button" class="btn btn-outline-secondary" id="keepStaffBooking">Keep booking</button><button class="btn btn-danger" type="submit" form="staffCancellationForm">Confirm cancellation review</button></div></dialog></section>
+}
 @if (isPending)
 {
     <div class="modal fade staff-booking-modal" id="approveBookingModal" tabindex="-1" aria-labelledby="approveBookingModalLabel" aria-hidden="true">
@@ -204,6 +213,13 @@
 
 @section Scripts {
 <script>
+    document.getElementById('reviewStaffCancellation')?.addEventListener('click', () => {
+        const form = document.getElementById('staffCancellationForm');
+        const reason = document.getElementById('staffCancelReason');
+        if (!reason.checkValidity()) { reason.reportValidity(); return; }
+        document.getElementById('staffCancellationConfirmation')?.showModal();
+    });
+    document.getElementById('keepStaffBooking')?.addEventListener('click', () => document.getElementById('staffCancellationConfirmation')?.close());
     document.querySelectorAll('.js-booking-decision-form').forEach(form => form.addEventListener('submit', () => {
         const submit = form.querySelector('.js-decision-submit');
         if (!submit || submit.disabled) return;

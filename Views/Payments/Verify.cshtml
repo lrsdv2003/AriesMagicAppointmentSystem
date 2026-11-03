@@ -31,7 +31,7 @@
     @if (TempData["Error"] != null){<div class="alert alert-danger" role="alert">@TempData["Error"]</div>}
     <div class="owner-review-layout">
         <section class="owner-proof-panel" aria-labelledby="paymentProofHeading">
-            <div class="owner-section-heading"><div><h2 id="paymentProofHeading">Payment Proof</h2></div><span class="status-badge @StatusClass(Model.Status)">@StatusLabel(Model.Status)</span></div>
+            <div class="owner-section-heading"><div><h2 id="paymentProofHeading">Payment Proof</h2><a asp-action="ProofHistory" asp-route-id="@Model.Id" class="btn btn-sm btn-outline-secondary">Submission history (@Model.ProofRevisions.Count)</a></div><span class="status-badge @StatusClass(Model.Status)">@StatusLabel(Model.Status)</span></div>
             <button type="button" class="owner-proof-large js-proof-preview" aria-label="Enlarge payment proof"><img src="@Url.Action("PaymentProof","Payments",new{id=Model.Id})" alt="Protected payment proof" /></button>
             <p class="owner-proof-help"><i class="bi bi-zoom-in" aria-hidden="true"></i> Click the proof to enlarge it.</p>
         </section>
