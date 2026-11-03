@@ -1,7 +1,7 @@
 @model AriesMagicAppointmentSystem.ViewModels.RoleDashboardViewModel
 @using AriesMagicAppointmentSystem.ViewModels
 <section class="dash-panel" aria-labelledby="recentHeading">
-<div class="dash-section-heading"><h3 id="recentHeading">@(Model.RoleName == "Admin" ? "Recent Administrative Activity" : Model.RoleName == "Owner" ? "Recent Business Activity" : "Recent Activity")</h3>
+<div class="dash-section-heading"><h2 id="recentHeading"><i class="bi bi-activity" aria-hidden="true"></i> @(Model.RoleName == "Admin" ? "Maintenance activity" : Model.RoleName == "Owner" ? "Recent business activity" : "Recent activity")</h2>
 @if(Model.RoleName == "Admin"){<a asp-controller="SystemActivity" asp-action="Index">View All Activity</a>}</div>
 @if(Model.UnavailableSections.Contains("activity")) { <p class="dash-empty">Unable to load recent activity.</p> }
 else if(!Model.RecentActivity.Any()) { <p class="dash-empty">No recent activity recorded.</p> }

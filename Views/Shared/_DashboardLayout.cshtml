@@ -1,257 +1,128 @@
 @using System.Security.Claims
+@using Microsoft.EntityFrameworkCore
 @inject AriesMagicAppointmentSystem.Data.ApplicationDbContext _context
 @{
-    var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
-    var currentAction = ViewContext.RouteData.Values["action"]?.ToString();
+    var currentController = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
+    var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? "";
     var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-    var unreadMessageCount = 0;
-    if (!string.IsNullOrEmpty(currentUserId))
-    {
-        unreadMessageCount = _context.ConversationParticipants
-            .Count(p => p.UserId == currentUserId && p.Conversation!.Messages.Any(m =>
-                m.SenderId != currentUserId && (!p.LastReadAt.HasValue || m.SentAt > p.LastReadAt.Value)));
+    var role = User.IsInRole("Owner") ? "Owner" : User.IsInRole("Admin") ? "Admin" : "Staff";
+    var account = string.IsNullOrEmpty(currentUserId) ? null : await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == currentUserId);
+    var unreadMessageCount = string.IsNullOrEmpty(currentUserId) ? 0 : await _context.ConversationParticipants
+        .CountAsync(p => p.UserId == currentUserId && p.Conversation!.Messages.Any(m => m.SenderId != currentUserId && (!p.LastReadAt.HasValue || m.SentAt > p.LastReadAt.Value)));
+    var unreadNotificationCount = string.IsNullOrEmpty(currentUserId) ? 0 : await _context.Notifications.CountAsync(n => n.UserId == currentUserId && !n.IsRead);
+    var navigation = new List<(string Group, string Label, string Controller, string Action, string Icon)>();
+    if (User.IsInRole("Staff")) {
+        navigation.AddRange(new[] {
+            ("Operations", "Dashboard", "Dashboard", "Staff", "bi-house-door"),
+            ("Operations", "Bookings", "Bookings", "Index", "bi-journal-text"),
+            ("Operations", "Calendar", "Calendar", "Index", "bi-calendar3"),
+            ("Operations", "Reschedule requests", "RescheduleRequests", "Index", "bi-arrow-left-right"),
+            ("Operations", "Packages", "Services", "Index", "bi-box-seam"),
+            ("Operations", "History", "History", "Index", "bi-clock-history"),
+            ("Operations", "Testimonials & feedback", "Testimonials", "Index", "bi-chat-square-quote") });
     }
+    if (User.IsInRole("Admin")) {
+        navigation.AddRange(new[] {
+            ("Management", "Dashboard", "Dashboard", "Admin", "bi-house-door"),
+            ("Management", "Users & roles", "UserManagement", "Index", "bi-people"),
+            ("Management", "Packages", "Services", "Index", "bi-box-seam"),
+            ("Management", "Calendar settings", "Calendar", "Index", "bi-calendar3"),
+            ("Maintenance", "Trash history", "TrashHistory", "Index", "bi-archive"),
+            ("Maintenance", "System activity", "SystemActivity", "Index", "bi-activity") });
+    }
+    if (User.IsInRole("Owner")) {
+        navigation.AddRange(new[] {
+            ("Financial operations", "Dashboard", "Dashboard", "Owner", "bi-house-door"),
+            ("Financial operations", "Verify payments", "Payments", "PendingVerification", "bi-credit-card"),
+            ("Financial operations", "Refund requests", "Payments", "RefundRequests", "bi-arrow-counterclockwise"),
+            ("Overview", "Booking overview", "Bookings", "Index", "bi-journal-text"),
+            ("Overview", "Calendar", "Calendar", "Index", "bi-calendar3"),
+            ("Overview", "Financial summary", "Reports", "Index", "bi-bar-chart"),
+            ("Overview", "Packages", "Services", "Index", "bi-box-seam"),
+            ("Overview", "History", "History", "Index", "bi-clock-history") });
+    }
+    navigation = navigation.DistinctBy(n => (n.Controller, n.Action)).ToList();
+    navigation.AddRange(new[] {
+        ("Communication", "Messages", "Communications", "Index", "bi-chat-dots"),
+        ("Communication", "Notifications", "Notifications", "Index", "bi-bell"),
+        ("Account", "Profile", "InternalProfile", "Index", "bi-person") });
+    bool IsActive(string controller, string action) => currentController == controller &&
+        (controller == "Dashboard" ? currentAction == action : controller == "Payments"
+            ? (action == "RefundRequests" ? currentAction.Contains("Refund") : !currentAction.Contains("Refund")) : true);
 }
-
 <!DOCTYPE html>
 <html lang="en" class="internal-shell">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - Aries Magic Dashboard</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <link rel="stylesheet" href="~/lib/bootstrap-icons/font/bootstrap-icons.min.css" />
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/css/tokens.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/css/soft-ui.css" asp-append-version="true" />
+    @foreach (var sheet in new[] { "tokens", "site", "soft-ui", "communication-center", "ocr-verification", "staff-bookings", "staff-reschedules", "staff-interface", "package-cards", "owner-interface", "filters", "package-editor", "notifications", "admin-console", "role-dashboards", "internal-profile", "staff-calendar", "internal-ui", "app-ui", "feedback", "internal-workspaces" }) {
+        <link rel="stylesheet" href="~/css/@(sheet).css" asp-append-version="true" />
+    }
     <link rel="stylesheet" href="~/AriesMagicAppointmentSystem.styles.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/css/communication-center.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/css/ocr-verification.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/css/staff-bookings.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/css/staff-reschedules.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/css/staff-interface.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/css/package-cards.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/css/owner-interface.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/css/filters.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/css/package-editor.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/css/notifications.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/css/admin-console.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/css/role-dashboards.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/css/internal-profile.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/css/staff-calendar.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/css/internal-ui.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/css/app-ui.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/css/feedback.css" asp-append-version="true" />
 </head>
-<body class="internal-ui dashboard-body @(User.IsInRole("Staff") ? "staff-dashboard" : User.IsInRole("Admin") ? "admin-dashboard" : User.IsInRole("Owner") ? "owner-dashboard" : "")">
-    <a class="ui-skip-link" href="#mainContent">Skip to content</a>
-    <div class="dashboard-shell">
-        <aside class="dashboard-sidebar offcanvas-lg offcanvas-start" tabindex="-1" id="internalSidebar" aria-labelledby="sidebarTitle">
-            <div>
-                <div class="sidebar-brand" id="sidebarTitle">
-                    <a asp-controller="Home" asp-action="Index">Aries Magic</a>
-                    <button type="button" class="btn-close btn-close-white d-lg-none" data-bs-dismiss="offcanvas" data-bs-target="#internalSidebar" aria-label="Close navigation"></button>
-                </div>
-                <nav class="sidebar-nav" aria-label="Workspace navigation">
-                    @if (User.Identity != null && User.Identity.IsAuthenticated)
-                    {
-                        @if (User.IsInRole("Staff"))
-                        {
-                            <a asp-controller="Dashboard" asp-action="Staff"
-                               class="sidebar-link @(currentController == "Dashboard" ? "active" : "")">
-                                <i class="bi bi-grid-1x2-fill" aria-hidden="true"></i>
-                                Dashboard
-                            </a>
-                            <a asp-controller="Bookings" asp-action="Index"
-                               class="sidebar-link @(currentController == "Bookings" ? "active" : "")">
-                                <i class="bi bi-journal-text" aria-hidden="true"></i>
-                                Booking Requests
-                            </a>
-                            <a asp-controller="Calendar" asp-action="Index"
-                               class="sidebar-link @(currentController == "Calendar" ? "active" : "")">
-                                <i class="bi bi-calendar3" aria-hidden="true"></i>
-                                Calendar / Upcoming Events
-                            </a>
-                            <a asp-controller="Services" asp-action="Index"
-                               class="sidebar-link @(currentController == "Services" ? "active" : "")">
-                                <i class="bi bi-box-seam" aria-hidden="true"></i>
-                                Packages
-                            </a>
-                            <a asp-controller="RescheduleRequests" asp-action="Index"
-                               class="sidebar-link @(currentController == "RescheduleRequests" ? "active" : "")">
-                                <i class="bi bi-arrow-left-right" aria-hidden="true"></i>
-                                Reschedules
-                            </a>
-                            <a asp-controller="History" asp-action="Index"
-                               class="sidebar-link @(currentController == "History" ? "active" : "")">
-                                <i class="bi bi-clock-history" aria-hidden="true"></i>
-                                History
-                            </a>
-                            <a asp-controller="Testimonials" asp-action="Index" class="sidebar-link @(currentController == "Testimonials" ? "active" : "")"><i class="bi bi-chat-square-quote" aria-hidden="true"></i> Testimonials & Feedback</a>
-                        }
-
-                        @if (User.IsInRole("Admin"))
-                        {
-                            <a asp-controller="Dashboard" asp-action="Admin"
-                               class="sidebar-link @(currentController == "Dashboard" ? "active" : "")">
-                                <i class="bi bi-grid-1x2-fill" aria-hidden="true"></i>
-                                Dashboard
-                            </a>
-
-                            <a asp-controller="UserManagement" asp-action="Index"
-                               class="sidebar-link @(currentController == "UserManagement" ? "active" : "")">
-                                <i class="bi bi-people-fill me-2" aria-hidden="true"></i>
-                                User Management
-                            </a>
-
-                            <a asp-controller="Calendar" asp-action="Index"
-                               class="sidebar-link @(currentController == "Calendar" ? "active" : "")">
-                                <i class="bi bi-calendar3" aria-hidden="true"></i>
-                                Calendar Management
-                            </a>
-
-                            <a asp-controller="Services" asp-action="Index"
-                               class="sidebar-link @(currentController == "Services" ? "active" : "")">
-                                <i class="bi bi-box-seam" aria-hidden="true"></i>
-                                Packages
-                            </a>
-
-                            <a asp-controller="TrashHistory" asp-action="Index"
-                               class="sidebar-link @(currentController == "TrashHistory" ? "active" : "")">
-                                <i class="bi bi-trash" aria-hidden="true"></i>
-                                Trash History
-                            </a>
-
-                            <a asp-controller="SystemActivity" asp-action="Index"
-                               class="sidebar-link @(currentController == "SystemActivity" ? "active" : "")">
-                                <i class="bi bi-activity" aria-hidden="true"></i>
-                                System Activity
-                            </a>
-                        }
-
-                        @if (User.IsInRole("Owner"))
-                        {
-                            <a asp-controller="Dashboard" asp-action="Owner"
-                               class="sidebar-link @(currentController == "Dashboard" ? "active" : "")">
-                                <i class="bi bi-grid-1x2-fill" aria-hidden="true"></i>
-                                Dashboard
-                            </a>
-
-                            <a asp-controller="Payments" asp-action="PendingVerification"
-                               class="sidebar-link @(currentController == "Payments" && (currentAction == "PendingVerification" || currentAction == "Verify") ? "active" : "")">
-                                <i class="bi bi-credit-card-2-front" aria-hidden="true"></i>
-                                Verify Payments
-                            </a>
-
-                            <a asp-controller="Payments" asp-action="RefundRequests"
-                               class="sidebar-link @(currentController == "Payments" && (currentAction == "RefundRequests" || currentAction == "RefundReview") ? "active" : "")">
-                                <i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i>
-                                Refund Requests
-                            </a>
-
-                            <a asp-controller="Calendar" asp-action="Index"
-                               class="sidebar-link @(currentController == "Calendar" ? "active" : "")">
-                                <i class="bi bi-calendar3" aria-hidden="true"></i>
-                                Calendar
-                            </a>
-
-                            <a asp-controller="Services" asp-action="Index"
-                               class="sidebar-link @(currentController == "Services" ? "active" : "")">
-                                <i class="bi bi-box-seam" aria-hidden="true"></i>
-                                Packages
-                            </a>
-
-                            <a asp-controller="History" asp-action="Index"
-                               class="sidebar-link @(currentController == "History" ? "active" : "")">
-                                <i class="bi bi-clock-history" aria-hidden="true"></i>
-                                History
-                            </a>
-
-                            <a asp-controller="Reports" asp-action="Index"
-                               class="sidebar-link @(currentController == "Reports" ? "active" : "")">
-                                <i class="bi bi-bar-chart-line" aria-hidden="true"></i>
-                                Reports
-                            </a>
-                        }
-
-                    }
-                </nav>
-            </div>
-        </aside>
-
-        <main class="dashboard-main">
-            <header class="dashboard-topbar">
-                <div class="topbar-left">
-                    <button type="button" class="btn btn-outline-secondary ui-menu-toggle" data-bs-toggle="offcanvas" data-bs-target="#internalSidebar" aria-controls="internalSidebar" aria-label="Open navigation"><i class="bi bi-list" aria-hidden="true"></i></button>
-                    <h1 class="dashboard-title">@ViewData["Title"]</h1>
-                </div>
-
-                <div class="topbar-right">
-                    @{
-                        var unreadNotificationCount = 0;
-                        if (!string.IsNullOrEmpty(currentUserId))
-                        {
-                            unreadNotificationCount = _context.Notifications
-                            .Count(n => n.UserId == currentUserId && !n.IsRead);
-                        }
-                    }
-                   <a asp-controller="Communications" asp-action="Index" class="topbar-icon topbar-message-link" title="Messages" aria-label="Messages">
-                        <i class="bi bi-chat-dots-fill" aria-hidden="true"></i>
-                        <span class="communication-unread-badge" @(unreadMessageCount == 0 ? "hidden" : null)>@(unreadMessageCount > 99 ? "99+" : unreadMessageCount)</span>
+<body class="internal-ui dashboard-body midnight-workspace @(role.ToLowerInvariant())-dashboard">
+<a class="ui-skip-link" href="#mainContent">Skip to content</a>
+<div class="dashboard-shell">
+    <header class="dashboard-topbar">
+        <a class="workspace-brand" asp-controller="Home" asp-action="Index" aria-label="Aries d’ Magic Artist home">
+            <img src="~/images/client/wonder-studio/brand-original.jpeg" width="48" height="48" alt="" />
+            <span><strong>Aries d’ Magic Artist</strong><small>The Wonder Studio</small></span>
+        </a>
+        <div class="topbar-left">
+            <button type="button" class="btn btn-outline-secondary ui-menu-toggle" data-bs-toggle="offcanvas" data-bs-target="#internalSidebar" aria-controls="internalSidebar" aria-expanded="false" aria-label="Open navigation"><i class="bi bi-list" aria-hidden="true"></i></button>
+            <span class="dashboard-title">@role workspace <span class="workspace-breadcrumb">/ @ViewData["Title"]</span></span>
+        </div>
+        <div class="topbar-right">
+            <a asp-controller="Communications" asp-action="Index" class="topbar-icon topbar-message-link" aria-label="Messages, @unreadMessageCount unread conversations"><i class="bi bi-chat-dots" aria-hidden="true"></i><span class="communication-unread-badge" @(unreadMessageCount == 0 ? "hidden" : null)>@(unreadMessageCount > 99 ? "99+" : unreadMessageCount)</span></a>
+            <a asp-controller="Notifications" asp-action="Index" class="topbar-icon topbar-bell" aria-label="Notifications, @unreadNotificationCount unread"><i class="bi bi-bell" aria-hidden="true"></i>@if(unreadNotificationCount > 0){<span class="notification-badge">@(unreadNotificationCount > 99 ? "99+" : unreadNotificationCount)</span>}</a>
+            <partial name="_InternalAccountMenu" model="@(account ?? new AriesMagicAppointmentSystem.Models.ApplicationUser())" />
+        </div>
+    </header>
+    <aside class="dashboard-sidebar offcanvas-lg offcanvas-start" tabindex="-1" id="internalSidebar" aria-labelledby="sidebarTitle">
+        <div class="sidebar-brand"><span id="sidebarTitle">@role workspace</span><button type="button" class="btn-close btn-close-white d-lg-none" data-bs-dismiss="offcanvas" data-bs-target="#internalSidebar" aria-label="Close navigation"></button></div>
+        <nav class="sidebar-nav" aria-label="@role workspace navigation">
+            @foreach(var group in navigation.GroupBy(n => n.Group)) {
+                <div class="workspace-nav-group"><p>@group.Key</p>
+                @foreach(var item in group) {
+                    var active = IsActive(item.Controller, item.Action);
+                    <a asp-controller="@item.Controller" asp-action="@item.Action" class="sidebar-link @(active ? "active" : "")" aria-current="@(active ? "page" : null)"><i class="bi @item.Icon" aria-hidden="true"></i><span>@item.Label</span>
+                    @if(item.Controller == "Communications" && unreadMessageCount > 0){<span class="workspace-nav-count">@(unreadMessageCount > 99 ? "99+" : unreadMessageCount)</span>}
+                    @if(item.Controller == "Notifications" && unreadNotificationCount > 0){<span class="workspace-nav-count">@(unreadNotificationCount > 99 ? "99+" : unreadNotificationCount)</span>}
                     </a>
-                   <a asp-controller="Notifications"
-                        asp-action="Index"
-                        class="topbar-icon topbar-bell"
-                        title="Notifications" aria-label="Notifications, @unreadNotificationCount unread">
-
-                            <i class="bi bi-bell-fill" aria-hidden="true"></i>
-
-                            @if (unreadNotificationCount > 0)
-                            {
-                                <span class="notification-badge">
-                                    @unreadNotificationCount
-                                </span>
-                            }
-                    </a>
-
-                    <partial name="_InternalAccountMenu" model="@(_context.Users.Find(currentUserId) ?? new AriesMagicAppointmentSystem.Models.ApplicationUser())" />
+                }
                 </div>
-            </header>
-
-            <section class="dashboard-content" id="mainContent" tabindex="-1">
-                @RenderBody()
-
-                <div class="modal fade" id="logoutConfirmModal" tabindex="-1" aria-labelledby="logoutConfirmModalLabel" aria-hidden="true">
-                    <div class="modal-dialog modal-dialog-centered">
-                        <div class="modal-content logout-modal">
-                            <div class="modal-header">
-                                <h5 class="modal-title" id="logoutConfirmModalLabel">Confirm Logout</h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                            </div>
-                            <div class="modal-body">
-                                Are you sure you want to logout?
-                            </div>
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                                <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
-                                    @Html.AntiForgeryToken()
-                                    <button type="submit" class="btn btn-danger">Logout</button>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-        </main>
-    </div>
-
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/communication-global.js" asp-append-version="true"></script>
-    @await RenderSectionAsync("Scripts", required: false)
-    <script src="~/js/account-avatar.js" asp-append-version="true"></script>
-    <script src="~/js/filters.js" asp-append-version="true"></script>
-    <script src="~/js/admin-console.js" asp-append-version="true"></script>
-    <script src="~/js/app-ui.js" asp-append-version="true"></script>
+            }
+            <button class="sidebar-link workspace-signout" type="button" data-bs-toggle="modal" data-bs-target="#logoutConfirmModal"><i class="bi bi-box-arrow-right" aria-hidden="true"></i>Sign out</button>
+        </nav>
+        <footer class="workspace-sidebar-footer"><span>The Wonder Studio</span><p>Thoughtful details. Better events.</p></footer>
+    </aside>
+    <main class="dashboard-main">
+        <section class="dashboard-content" id="mainContent" tabindex="-1" aria-label="@ViewData["Title"]">
+            @if(currentController != "Dashboard"){
+                <header class="workspace-page-heading"><span class="dash-eyebrow">@role workspace</span><h1>@ViewData["Title"]</h1></header>
+            }
+            @RenderBody()
+        </section>
+    </main>
+</div>
+<div class="modal fade" id="logoutConfirmModal" tabindex="-1" aria-labelledby="logoutConfirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered"><div class="modal-content logout-modal">
+        <div class="modal-header"><h2 class="modal-title" id="logoutConfirmModalLabel">Sign out of your workspace?</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+        <div class="modal-body">Your saved work will be here when you return.</div>
+        <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Stay signed in</button><form asp-controller="Account" asp-action="Logout" method="post">@Html.AntiForgeryToken()<button type="submit" class="btn btn-primary">Sign out</button></form></div>
+    </div></div>
+</div>
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+<script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+<script src="~/js/communication-global.js" asp-append-version="true"></script>
+@await RenderSectionAsync("Scripts", required: false)
+<script src="~/js/account-avatar.js" asp-append-version="true"></script>
+<script src="~/js/filters.js" asp-append-version="true"></script>
+<script src="~/js/admin-console.js" asp-append-version="true"></script>
+<script src="~/js/app-ui.js" asp-append-version="true"></script>
+<script src="~/js/internal-workspaces.js" asp-append-version="true"></script>
 </body>
 </html>
