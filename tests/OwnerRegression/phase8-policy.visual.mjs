@@ -17,6 +17,7 @@ const routes={Staff:[['Dashboard','/Dashboard/Staff'],['Bookings','/Bookings/Ind
  Client:[['Homepage','/'],['Experiences','/Home/Packages'],['About','/Home/About'],['Gallery','/Home/Gallery'],['Dashboard','/Bookings/Dashboard']]};
 try{
  for(const width of [1440,1024,768,430,390,375,320])for(const [role,views] of Object.entries(routes))for(const [label,route] of views){
+  if(process.env.PHASE8_VISUAL_PAGES&&!process.env.PHASE8_VISUAL_PAGES.split(',').includes(role+'-'+label))continue;
   current=role+'-'+label;await page.setViewport({width,height:960});
   const response=await page.goto(state.Urls[role]+route,{waitUntil:'networkidle0',timeout:30000});
   assert.equal(response.status(),200,current+' did not load');

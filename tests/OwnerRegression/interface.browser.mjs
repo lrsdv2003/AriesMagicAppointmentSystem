@@ -55,7 +55,7 @@ try{
  assert(![...post.keys()].some(key=>/Inclusions\[[1-9]/.test(key)),'Deleted rows must not submit orphan checkbox values');
  console.log('PASS inclusion removal/addition, checkbox values, unique IDs, preview and submission');
  await go('Calendar-StaffIndex');
- await page.focus('.staff-calendar-blocked');
+ await page.focus('.staff-calendar-blocked .fc-daygrid-day-frame[role="button"]');
  await page.keyboard.press('Enter');await page.waitForSelector('#blockedDateModal.show');
  console.log('PASS blocked date keyboard preview');
  await go('Notifications-Index');

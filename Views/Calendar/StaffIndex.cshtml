@@ -303,8 +303,11 @@
         cell.classList.remove('staff-calendar-has-events', 'staff-calendar-blocked');
         // Keep FullCalendar's grid semantics; the inner frame is the action.
         cell.setAttribute('role', 'gridcell');
+        // Its date-only label would omit the added visible booking summary.
+        cell.removeAttribute('aria-labelledby');
         frame.removeAttribute('role');
         frame.removeAttribute('aria-label');
+        frame.removeAttribute('aria-description');
         frame.removeAttribute('tabindex');
 
         const blocked = blockedDateMap[key];
@@ -354,8 +357,8 @@
         if (blocked || visibleItems.length) {
             frame.tabIndex = 0;
             frame.setAttribute('role', 'button');
-            const visibleLabel = frame.innerText.trim().replace(/\s+/g, ' ');
-            frame.setAttribute('aria-label', `${visibleLabel}; ${displayDate}`);
+            // Derive the name from the date and summary, including package labels.
+            frame.setAttribute('aria-description', displayDate);
         }
     }
 
