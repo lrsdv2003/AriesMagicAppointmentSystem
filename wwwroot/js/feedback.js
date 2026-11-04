@@ -20,8 +20,8 @@
   choiceError.hidden=true;closeDialog();form.requestSubmit();
  });
  let urls=[],sending=false;
- const clear=()=>{urls.forEach(URL.revokeObjectURL);urls=[];previews.replaceChildren();};
- files.addEventListener('change',()=>{
+ const clear=()=>{urls.forEach(URL.revokeObjectURL);urls=[];previews?.replaceChildren();};
+ files?.addEventListener('change',()=>{
   clear();files.setCustomValidity('');
   const selected=[...files.files];
   const videos=selected.filter(f=>f.type==='video/mp4'&&f.name.toLowerCase().endsWith('.mp4'));

@@ -10,6 +10,9 @@ namespace AriesMagicAppointmentSystem.Services;
 
 public class FeedbackMediaOptions
 {
+    public bool UploadsEnabled { get; set; }
+    public bool CanUpload => UploadsEnabled && !string.IsNullOrWhiteSpace(ClamAvHost);
+    public const string UploadsUnavailableMessage = "Photo and video uploads are temporarily unavailable. You can still submit your ratings and written feedback and choose Public or Private sharing.";
     public string? Root { get; set; }
     public int MaxImages { get; set; } = 5;
     public long MaxImageBytes { get; set; } = 10*1024*1024;
@@ -86,6 +89,7 @@ public sealed class FeedbackMediaService
     }
     public async Task<FeedbackMedia> PrepareAsync(IFormFile file,CancellationToken ct)
     {
+        if(!options.CanUpload) throw new FeedbackUploadException(FeedbackMediaOptions.UploadsUnavailableMessage);
         if(file.FileName.Length>120||file.FileName.Contains("..")||file.FileName.IndexOfAny(['/', '\\', ':'])>=0||file.FileName.Any(char.IsControl))
             throw new FeedbackUploadException("Use a simple filename without folders or special path characters.");
         var extension=Path.GetExtension(file.FileName).ToLowerInvariant();
@@ -137,6 +141,7 @@ public sealed class FeedbackMediaService
 
     public async Task<FeedbackMedia> PrepareVideoAsync(IFormFile file,CancellationToken ct)
     {
+        if(!options.CanUpload) throw new FeedbackUploadException(FeedbackMediaOptions.UploadsUnavailableMessage);
         if(file.FileName.Length>120||file.FileName.Contains("..")||file.FileName.IndexOfAny(['/','\\',':'])>=0||file.FileName.Any(char.IsControl))
             throw new FeedbackUploadException("Use a simple filename without folders or special path characters.");
         if(!Path.GetExtension(file.FileName).Equals(".mp4",StringComparison.OrdinalIgnoreCase)||!string.Equals(file.ContentType,"video/mp4",StringComparison.OrdinalIgnoreCase))

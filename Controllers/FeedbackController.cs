@@ -73,6 +73,9 @@ public sealed class FeedbackController(ApplicationDbContext db,FeedbackMediaServ
         if(existingId.HasValue)return RedirectToAction(nameof(Details),new {id=existingId.Value});
         input.EventLabel=booking.PackageName;
         input.Files??=[];
+        if(input.Files.Count>0 && !options.Value.CanUpload)
+            ModelState.AddModelError("Files",FeedbackMediaOptions.UploadsUnavailableMessage);
+        if(!options.Value.CanUpload) input.MediaConsent=false;
         var images=input.Files.Where(f=>!Path.GetExtension(f.FileName).Equals(".mp4",StringComparison.OrdinalIgnoreCase)).ToList();
         var videos=input.Files.Where(f=>Path.GetExtension(f.FileName).Equals(".mp4",StringComparison.OrdinalIgnoreCase)).ToList();
         if(images.Count>options.Value.MaxImages) ModelState.AddModelError("Files",$"Choose up to {options.Value.MaxImages} photos.");

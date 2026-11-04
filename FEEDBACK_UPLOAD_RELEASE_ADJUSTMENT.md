@@ -1,0 +1,15 @@
+# Hosting-compatible feedback upload adjustment
+
+New feedback image/video uploads default disabled through `FeedbackMedia:UploadsEnabled` (environment `FeedbackMedia__UploadsEnabled`). Leave absent or explicitly false on this account. Enabling requires true AND a nonempty configured ClamAvHost; configuration presence is not proof of actual service health. A configured scanner outage still quarantines uploads and prevents preview/publication until clean. Never configure a dummy host in production.
+
+Controller rejects submitted files when disabled before preparation/transaction; both image/video preparation methods independently reject before opening the file, scanning or writing. No new media consent is recorded when uploads are disabled. Existing records/references, media worker processing and private/public retrieval authorization remain unchanged. Text/ratings and mandatory Public/Private consent remain available; optional display-name consent/moderation rules remain. UI uses existing cr-card/cr-notice styling and removes only feedback media-picker/media-consent controls. Shared feedback JS tolerates absent media controls.
+
+No database migration is added. Existing two policy migrations still require the held, validated coordinated deployment procedure. No live configuration/SQL/key/upload changes or deployment are part of this adjustment. Old 506-file package/manifests stay frozen; changed source requires a new artifact and newly derived transfer inventory, not mixed binaries.
+
+## Hosting/recovery requirements
+
+Owner reports provider confirmation: provider-managed backup retrieval on this free plan requires paid Recovery add-on; Data Protection supported; requested ClamAV access denied; private folders outside public directory supported. These assurances do not identify the current key repository/decryptor recovery dependencies or exact external-media path.
+
+Smallest recovery option: use the existing account SQL Backup/File Manager capability for a fresh retained SQL artifact and isolated restore; FTPS download-only delta backup for accessible application/private/public files. Ask provider whether it can include the actual external feedback root, effective hosting configuration and existing complete key ring/revocations/decryptor dependencies in a supported recovery set. If unavailable without the paid add-on, EJ must obtain its exact scope, point/retention and supported isolated recovery before deciding to purchase/activate it; purchase is not authorized here and does not itself prove complete recovery. SQL backup creation does not restore or overwrite the hosted database.
+
+Deployment remains NO-GO until current coordinated recovery, effective Production/SQL/TLS/startup settings, actual storage mappings/access, Data Protection continuity/recovery and live schema/execution readiness are established. Formal provider emails are not required if equivalent operational evidence exists. Historical missing images remain a separate issue; preserve their references and all remaining bytes. No scanner is needed for *new uploads while disabled*, but existing unprocessed media must remain inaccessible.

@@ -46,6 +46,30 @@ static class FeedbackFeatureTests
         var completed=Make();var canceled=Make(BookingStatus.Cancelled);var pending=Make(BookingStatus.Pending);var future=Make(days:2);var unlocked=Make(locked:false);
         db.Bookings.AddRange(completed,canceled,pending,future,unlocked);await db.SaveChangesAsync();
         var token=await GetToken(client,"/Feedback/Create?bookingId="+completed.Id);
+        var uploadOptions=scope.ServiceProvider.GetRequiredService<Microsoft.Extensions.Options.IOptions<FeedbackMediaOptions>>().Value;
+        check(!new FeedbackMediaOptions().CanUpload,"Feedback uploads default disabled");
+        uploadOptions.UploadsEnabled=false;
+        var disabledPage=await client.GetStringAsync("/Feedback/Create?bookingId="+completed.Id);
+        await System.IO.File.WriteAllTextAsync(".tmp-owner-build/feedback-uploads-disabled.synthetic.html",disabledPage);
+        check(disabledPage.Contains("temporarily unavailable")&&!Regex.IsMatch(disabledPage,"<input[^>]*name=\"Files\""),"Disabled feedback notice replaces feedback file picker");
+        foreach(var video in new[]{false,true}) {
+            var file=new FormFile(new MemoryStream([1]),0,1,"Files",video?"event.mp4":"event.jpg");
+            try {if(video)await store.PrepareVideoAsync(file,CancellationToken.None);else await store.PrepareAsync(file,CancellationToken.None);check(false,"Disabled service must reject");}
+            catch(FeedbackUploadException ex){check(ex.Message==FeedbackMediaOptions.UploadsUnavailableMessage,"Disabled service rejects before file access or scan");}
+        }
+        using(var forged=new MultipartFormDataContent()) {
+            forged.Add(new StringContent(token),"__RequestVerificationToken");forged.Add(new StringContent(completed.Id.ToString()),"BookingId");
+            foreach(var rating in new[]{"OverallRating","PerformanceRating","BookingRating"})forged.Add(new StringContent("5"),rating);
+            forged.Add(new StringContent("Private"),"SharingPreference");forged.Add(new ByteArrayContent([1]),"Files","forged.jpg");
+            using var blocked=await client.PostAsync("/Feedback/Create",forged);var body=await blocked.Content.ReadAsStringAsync();
+            check(body.Contains("temporarily unavailable")&&!await db.EventFeedbacks.AnyAsync(f=>f.BookingId==completed.Id),"Forged disabled upload cannot create feedback");
+        }
+        var textOnly=Make();db.Bookings.Add(textOnly);await db.SaveChangesAsync();
+        var textToken=await GetToken(client,"/Feedback/Create?bookingId="+textOnly.Id);
+        using(var response=await Post(client,"/Feedback/Create",textToken,("BookingId",textOnly.Id.ToString()),("OverallRating","5"),("PerformanceRating","5"),("BookingRating","5"),("Experience","Synthetic text feedback"),("SharingPreference","Private")))
+            check(response.StatusCode==HttpStatusCode.Redirect&&await db.EventFeedbacks.AnyAsync(f=>f.BookingId==textOnly.Id&&!f.TextConsent&&!f.Media.Any()),"Disabled uploads preserve private text feedback and consent");
+        uploadOptions.UploadsEnabled=true;var scannerHost=uploadOptions.ClamAvHost;uploadOptions.ClamAvHost=null;
+        check(!uploadOptions.CanUpload,"Enable without configured scanner remains unavailable");uploadOptions.ClamAvHost=scannerHost;
         var staffToken=await GetToken(staff,"/Testimonials");
         var otherToken=await GetToken(other,"/Feedback");
         foreach(var b in new[]{canceled,pending,future,unlocked}) {
@@ -167,9 +191,11 @@ static class FeedbackFeatureTests
         using(var response=await Post(client,"/Testimonials/Review",token,("Id",feedback.Id.ToString()),("Decision","Feature"),("Version",stale),("ConfirmPublication","true")))check(response.StatusCode==HttpStatusCode.Redirect,"Client cannot call Staff moderation POST");
         await using var unavailableFactory=new ReleaseFactory(connection,smtpPort,mapUrl,root);
         using var unavailableScope=unavailableFactory.Services.CreateScope();
+        var unavailableOptions=unavailableScope.ServiceProvider.GetRequiredService<Microsoft.Extensions.Options.IOptions<FeedbackMediaOptions>>().Value;
+        unavailableOptions.UploadsEnabled=true;unavailableOptions.ClamAvHost="127.0.0.1";unavailableOptions.ClamAvPort=1;
         var quarantine=await unavailableScope.ServiceProvider.GetRequiredService<FeedbackMediaService>().PrepareAsync(File(jpeg,"pending.jpg","image/jpeg"),CancellationToken.None);
         quarantine.FeedbackId=feedback.Id;db.FeedbackMedia.Add(quarantine);await db.SaveChangesAsync();
-        check(quarantine.ProcessingStatus=="Quarantined"&&quarantine.ScannedAtUtc==null,"Missing scanner leaves processed photos quarantined");
+        check(quarantine.ProcessingStatus=="Quarantined"&&quarantine.ScannedAtUtc==null,"Configured scanner outage leaves processed photos quarantined");
         using(var response=await client.GetAsync("/FeedbackMedia/Private/"+quarantine.Id))check(response.StatusCode==HttpStatusCode.NotFound,"Even the owner cannot retrieve unscanned media");
         using(var response=await anonymous.GetAsync("/FeedbackMedia/Public/"+quarantine.Id))check(response.StatusCode==HttpStatusCode.NotFound,"Unprocessed media never becomes public");
         quarantine.PublicApproved=true;var unscannedBlocked=false;
@@ -212,6 +238,8 @@ static class FeedbackFeatureTests
         check(await db.FeedbackMedia.AsNoTracking().AnyAsync(m=>m.Id==missing.Id&&m.ProcessingStatus=="Failed"&&m.ProcessingAttempts==5),"Actual worker bounds missing-file failures instead of leaving Processing indefinitely");
         check(await db.FeedbackMedia.AsNoTracking().AnyAsync(m=>m.Id==expiredMedia.Id&&m.ProcessingStatus=="Failed"&&m.ProcessingStartedAtUtc==null),"Actual worker recovers expired Processing leases with exhausted retries");
         var retryToken=await GetToken(client,"/Feedback/Details/"+feedback.Id);
+        // Extra negative upload probes consume the real limiter; allow its unchanged window to expire.
+        await Task.Delay(TimeSpan.FromSeconds(61));
         using(var retry=await Post(client,"/Feedback/RetryMedia/"+missing.Id,retryToken))
             check(retry.StatusCode==HttpStatusCode.Redirect&&await db.FeedbackMedia.AsNoTracking().AnyAsync(m=>m.Id==missing.Id&&m.ProcessingStatus=="Quarantined"&&m.ProcessingAttempts==0),"Owned failed media can be safely requeued through the antiforgery-protected retry route");
         await FeedbackScannerProtocolTests.RunAsync(check);
