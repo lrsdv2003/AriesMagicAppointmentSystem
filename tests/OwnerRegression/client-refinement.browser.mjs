@@ -90,7 +90,7 @@ try {
  await page.emulateMediaFeatures([{name:'prefers-reduced-motion',value:'reduce'}]);
  await go('Communications-Index-Client');
  await page.waitForFunction(()=>document.getElementById('commConnectionStatus').textContent==='Messages up to date');
- check(await page.$eval('.comm-send-btn',el=>el.textContent.trim()==='Send'),'Chat has a visible Send action');
+ check(await page.$eval('.comm-send-btn',el=>el.firstChild.textContent.trim()==='Send'&&el.getBoundingClientRect().height>0),'Chat has a visible Send action alongside its decorative arrow');
  const composerStyle=await fieldStyle('#commMessageInput');
  await page.type('#commMessageInput','A mobile draft');await page.keyboard.press('Enter');
  check(sends===0&&await page.$eval('#commMessageInput',el=>el.value.includes('\n')),'Touch keyboard Enter creates a newline instead of accidentally sending');
