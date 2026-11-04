@@ -1,0 +1,9 @@
+/* Scoped to the new personnel screen; shared Phase 8 tokens/layout remain unchanged. */
+.personnel-console .dash-panel + .dash-panel{margin-top:16px}
+.personnel-console form{display:grid;gap:8px}
+.personnel-console .table-responsive{max-width:100%;overflow-x:auto}
+.personnel-console table{min-width:704px}
+.personnel-console td:first-child{min-width:160px;overflow-wrap:anywhere}
+.personnel-console td:last-child{min-width:240px}
+.personnel-console li{overflow-wrap:anywhere;margin-block:8px}
+.personnel-console .table-responsive:focus-visible{outline:2px solid var(--workspace-gold);outline-offset:3px}

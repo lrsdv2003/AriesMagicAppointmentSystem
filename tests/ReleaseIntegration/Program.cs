@@ -68,6 +68,8 @@ internal static class ReleaseIntegrationRunner
         if(args.SequenceEqual(new[]{"--manual-ui-preview"})) { await BookingBrowserFixture.RunAsync(manualPreview:true); return; }
         if(args.SequenceEqual(new[]{"--independent-findings"})) { await IndependentFindingsReview.RunAsync(); return; }
         if(args.SequenceEqual(new[]{"--reproduce-findings"})) { await IndependentFindingsReview.RunAsync(reproduce:true); return; }
+        if(args.SequenceEqual(new[]{"--personnel-only"})) { await PersonnelProvisioningTests.RunAsync(); return; }
+        if(args.SequenceEqual(new[]{"--personnel-operator-only"})) { await PersonnelOperatorContractTests.RunAsync(); return; }
         if(args.Length != 0) throw new ArgumentException("Unknown test mode.");
         Environment.SetEnvironmentVariable("BackgroundJobs__Enabled", "false");
         Environment.SetEnvironmentVariable("Database__InitializeOnStartup", "false");

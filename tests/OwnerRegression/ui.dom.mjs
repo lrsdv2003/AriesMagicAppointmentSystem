@@ -252,12 +252,12 @@ for(const name of ['Bookings-ClientDashboard','Bookings-MyBookings','Bookings-Cl
 }
 {
  const dom=fixture('Feedback-Create'),w=dom.window,d=w.document,form=d.getElementById('clientFeedbackForm');
- check(d.querySelectorAll('.hub-feedback-extra').length===2,'Optional media/sharing disclosure missing');
+ check(d.querySelectorAll('.hub-feedback-extra').length===1&&!d.querySelector('[name=Files]')&&d.body.textContent.includes('temporarily unavailable'),'Feedback-Off must disclose unavailable media without a picker');
  for(const name of ['OverallRating','PerformanceRating','BookingRating']){const input=d.querySelector(`[name=${name}][value="5"]`);input.checked=true;check(input.required,'Required feedback rating became optional');}
  check(d.querySelectorAll('[name=SharingPreference][required]').length===2&&!d.querySelector('[name=SharingPreference]:checked'),'Feedback requires a deliberate public/private decision with no default');
  d.querySelector('[name=SharingPreference][value=Public]').checked=true;
  const data=new w.FormData(form);check(data.get('OverallRating')==='5'&&data.get('SharingPreference')==='Public','Public/private choice remains associated with the feedback form');
- check(d.querySelector('[name=Suggestions]')&&d.querySelector('[name=MediaConsent]')&&d.querySelector('[name=PublicDisplayName]'),'Feedback loses private suggestions or sharing choices');
+ check(d.querySelector('[name=Suggestions]')&&!d.querySelector('[name=MediaConsent]')&&d.querySelector('[name=PublicDisplayName]'),'Feedback-Off preserves text/name sharing without new media consent');
  dom.window.close();
 }
 console.log('PASS Client hub navigation, original form contracts, role fields, profile policy and feedback disclosures');

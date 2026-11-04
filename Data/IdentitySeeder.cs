@@ -8,7 +8,6 @@ namespace AriesMagicAppointmentSystem.Data
         public static async Task SeedAsync(IServiceProvider serviceProvider)
         {
             var roleManager = serviceProvider.GetRequiredService<RoleManager<IdentityRole>>();
-            var userManager = serviceProvider.GetRequiredService<UserManager<ApplicationUser>>();
 
             string[] roles = { "Client", "Staff", "Admin", "Owner" };
 
@@ -16,7 +15,9 @@ namespace AriesMagicAppointmentSystem.Data
             {
                 if (!await roleManager.RoleExistsAsync(role))
                 {
-                    await roleManager.CreateAsync(new IdentityRole(role));
+                    var result = await roleManager.CreateAsync(new IdentityRole(role));
+                    if (!result.Succeeded && !await roleManager.RoleExistsAsync(role))
+                        throw new InvalidOperationException("Identity role initialization failed. No privileged account was created.");
                 }
             }
         }

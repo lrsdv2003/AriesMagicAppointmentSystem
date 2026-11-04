@@ -80,6 +80,10 @@ static class SnapshotRenderer
             ConsentedAtUtc=DateTime.UtcNow,Version=[0,0,0,0,0,0,0,1],
             Media=[new(){Id=701,DisplayFilename="event-photo.jpg",ProcessingStatus="Ready",ScannedAtUtc=DateTime.UtcNow},new(){Id=702,DisplayFilename="awaiting-scan.jpg",ProcessingStatus="Quarantined"}]};
         pages = pages.Concat(new (string Controller,string Action,object Model)[] {
+            ("Personnel","Index",new AriesMagicAppointmentSystem.Controllers.PersonnelPage([
+                new("synthetic-staff","Synthetic Staff","staff@example.test","Staff","Active"),
+                new("synthetic-pending","Synthetic Admin","pending@example.test","Admin","Pending")],[],true,true)),
+            ("PersonnelEnrollment","Accept",new AriesMagicAppointmentSystem.Controllers.PersonnelEnrollmentInput()),
             ("Feedback","Create",new FeedbackInput {BookingId=booking.Id,EventLabel=displayPackage.Name}),
             ("Feedback","Index",new ClientFeedbackPage([feedback],[feedbackBooking],1,1)),
             ("Feedback","Details",feedback),
@@ -136,7 +140,7 @@ static class SnapshotRenderer
         foreach(var page in pages)
         {
             var isClientPage = page.Controller == "Feedback" || page.Controller == "Home" || page.Controller == "Profile" || page.Controller == "RescheduleRequests" && page.Action is "Create" or "MyRequests" || page.Controller == "Bookings" && new[]{"ClientDashboard","ClientDetails","Create","Cancel"}.Contains(page.Action) || page.Controller == "Payments" && new[]{"Upload","MyUploads","RequestRefund","MyRefundRequests"}.Contains(page.Action);
-            var defaultRole = isClientPage ? "Client" : page.Controller == "Testimonials" ? "Staff" : page.Controller == "Dashboard" ? page.Action : page.Action == "Admin" || page.Controller == "Calendar" && page.Action == "Index" ? "Admin" : page.Action == "MyBookings" ? "Client" : page.Action is "StaffIndex" or "StaffDetails" || page.Controller == "RescheduleRequests" ? "Staff" : page.Controller is "UserManagement" or "SystemActivity" or "TrashHistory" ? "Admin" : "Owner";
+            var defaultRole = page.Controller == "PersonnelEnrollment" ? "Guest" : isClientPage ? "Client" : page.Controller == "Testimonials" ? "Staff" : page.Controller == "Dashboard" ? page.Action : page.Action == "Admin" || page.Controller == "Calendar" && page.Action == "Index" ? "Admin" : page.Action == "MyBookings" ? "Client" : page.Action is "StaffIndex" or "StaffDetails" || page.Controller == "RescheduleRequests" ? "Staff" : page.Controller is "UserManagement" or "SystemActivity" or "TrashHistory" ? "Admin" : "Owner";
             var roles = page.Controller == "Account" ? new[] {"Guest"} : page.Controller == "Home" && (page.Action == "Index" || page.Action == "About" || page.Action == "Gallery") ? new[] {"Client","Guest"} : page.Controller == "History" ? new[] {"Owner","Staff"} : page.Controller == "InternalProfile" ? new[] { "Owner", "Staff", "Admin" } : page.Controller == "Services" && page.Action is "Index" or "Details" ? new[] { "Owner", "Staff", "Admin" } : page.Controller == "Communications" ? new[] { "Owner", "Admin", "Staff", "Client" } : page.Controller == "Notifications" ? new[] { "Owner", "Client" } : new[] { defaultRole };
             foreach (var role in roles)
             {

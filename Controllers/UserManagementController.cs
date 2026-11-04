@@ -56,67 +56,18 @@ namespace AriesMagicAppointmentSystem.Controllers
         }
 
         private async Task<bool> CanManageStaffAsync(ApplicationUser user) =>
-            user.Id != User.FindFirstValue(ClaimTypes.NameIdentifier)
+            HttpContext.RequestServices?.GetService<Microsoft.Extensions.Options.IOptions<PersonnelOptions>>()?.Value.AdminMayManageStaff == true
+            && user.Id != User.FindFirstValue(ClaimTypes.NameIdentifier)
             && await _userManager.IsInRoleAsync(user, "Staff")
             && !await _userManager.IsInRoleAsync(user, "Admin")
             && !await _userManager.IsInRoleAsync(user, "Owner");
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateStaff(StaffUserViewModel model)
+        public IActionResult CreateStaff(StaffUserViewModel model)
         {
-            if (string.IsNullOrWhiteSpace(model.Password))
-                ModelState.AddModelError(nameof(model.Password), "A password is required.");
-            if (!ModelState.IsValid)
-            {
-                TempData["ErrorMessage"] = "Please complete all required staff account fields.";
-                return RedirectToAction(nameof(Index));
-            }
-
-            var existingUser = await _userManager.FindByEmailAsync(model.Email);
-            if (existingUser != null)
-            {
-                TempData["ErrorMessage"] = "An account with this email already exists.";
-                return RedirectToAction(nameof(Index));
-            }
-
-            var user = new ApplicationUser
-            {
-                UserName = model.Email,
-                Email = model.Email,
-                FullName = model.FullName,
-                PhoneNumber = model.PhoneNumber,
-                EmailConfirmed = true,
-                IsActive = true,
-                CreatedAt = DateTime.UtcNow
-            };
-
-            var result = await _userManager.CreateAsync(user, model.Password!);
-
-            if (!result.Succeeded)
-            {
-                TempData["ErrorMessage"] = string.Join(" ", result.Errors.Select(e => e.Description));
-                return RedirectToAction(nameof(Index));
-            }
-
-            var roleResult = await _userManager.AddToRoleAsync(user, "Staff");
-            if (!roleResult.Succeeded)
-            {
-                await _userManager.DeleteAsync(user);
-                TempData["ErrorMessage"] = "Unable to create the staff account. Please try again.";
-                return RedirectToAction(nameof(Index));
-            }
-
-            await _activityService.LogAsync(
-                SystemActivityType.UserCreated,
-                $"Created staff account: {user.FullName} ({user.Email})",
-                User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "Unknown",
-                User.Identity?.Name ?? "Unknown",
-                user.Id,
-                "ApplicationUser");
-
-            TempData["SuccessMessage"] = "Staff account created successfully.";
-            return RedirectToAction(nameof(Index));
+            // Password-based personnel onboarding is retired. The authorized invitation flow owns creation.
+            return RedirectToAction("Index", "Personnel");
         }
 
         [HttpPost]
@@ -144,6 +95,10 @@ namespace AriesMagicAppointmentSystem.Controllers
 
             if (!await CanManageStaffAsync(user)) return Forbid();
 
+            if (!string.Equals(user.Email, model.Email, StringComparison.OrdinalIgnoreCase)) {
+                TempData["ErrorMessage"]="Personnel email changes require a new verified invitation; existing email was preserved.";
+                return RedirectToAction(nameof(Index));
+            }
             user.FullName = model.FullName;
             user.Email = model.Email;
             user.UserName = model.Email;

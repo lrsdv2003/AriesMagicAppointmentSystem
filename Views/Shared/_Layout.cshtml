@@ -4,7 +4,7 @@
     var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? "Index";
     var isHome = currentController == "Home" && currentAction == "Index";
     var isGallery = currentController == "Home" && currentAction == "Gallery";
-    var isAuth = currentController == "Account" && new[] { "Login", "Register", "VerifyEmail", "EmailVerified", "ForgotPassword", "ResetPassword", "AccessDenied" }.Contains(currentAction);
+    var isAuth = currentController == "PersonnelEnrollment" || currentController == "Account" && new[] { "Login", "Register", "VerifyEmail", "EmailVerified", "ForgotPassword", "ResetPassword", "AccessDenied" }.Contains(currentAction);
     var isBookingExperience = ViewData["BookingExperience"] as bool? == true;
     var isAbout = currentController == "Home" && currentAction == "About";
     var isExperiences = currentController == "Home" && (currentAction == "Packages" || currentAction == "Package");

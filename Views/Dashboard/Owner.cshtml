@@ -3,6 +3,7 @@
 @{ Layout = "_DashboardLayout"; ViewData["Title"] = "Owner Dashboard"; var events=Model.TodayEvents.Concat(Model.UpcomingEvents).Take(3).ToList(); }
 <div class="role-workspace" data-role="Owner">
 <partial name="_DashboardStart" model="Model" />
+<p><a asp-controller="Personnel" asp-action="Index" class="btn btn-outline-secondary">Manage personnel accounts</a></p>
 <div class="workspace-dashboard-grid">
 <section class="dash-panel workspace-main-panel" aria-labelledby="workspacePaymentTitle">
 <div class="dash-section-heading"><h2 id="workspacePaymentTitle"><i class="bi bi-credit-card" aria-hidden="true"></i>Verify payments</h2><a asp-controller="Payments" asp-action="PendingVerification">Open verification queue <i class="bi bi-arrow-right" aria-hidden="true"></i></a></div>

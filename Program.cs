@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Threading.RateLimiting;
 using Microsoft.Data.SqlClient;
+using Microsoft.AspNetCore.Authentication;
 
 var builder = WebApplication.CreateBuilder(args);
 if (!builder.Environment.IsDevelopment()) ProductionSafeLogging.Configure(builder.Services);
@@ -94,6 +95,9 @@ builder.Services.AddScoped<IPasswordHasher<EmailVerification>, PasswordHasher<Em
 builder.Services.AddScoped<IHistoryService, HistoryService>();
 builder.Services.AddScoped<ISystemActivityService, SystemActivityService>();
 builder.Services.AddScoped<AccountCredentialRecovery>();
+builder.Services.AddOptions<PersonnelOptions>().Bind(builder.Configuration.GetSection("Personnel"))
+    .Validate(o=>o.InvitationHours is >=1 and <=48,"Personnel invitations must expire within 1 to 48 hours.").ValidateOnStart();
+builder.Services.AddScoped<PersonnelProvisioning>();
 builder.Services.AddOptions<FeedbackMediaOptions>().Bind(builder.Configuration.GetSection("FeedbackMedia"))
     .Validate(o=>o.MaxImages is >=1 and <=5 && o.MaxImageBytes is >=1 and <=10*1024*1024 && o.MaxVideoBytes is >=1024*1024 and <=25*1024*1024
         && o.MaxDimension is >=1 and <=6000 && o.MaxPixels is >=1 and <=16_000_000
@@ -136,8 +140,15 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.Cookie.SameSite = SameSiteMode.Lax;
     options.ExpireTimeSpan = TimeSpan.FromHours(8);
     options.SlidingExpiration = true;
+    options.Events.OnValidatePrincipal = async context => {
+        await SecurityStampValidator.ValidatePrincipalAsync(context);
+        if(context.Principal?.Identity?.IsAuthenticated!=true)return;
+        var users=context.HttpContext.RequestServices.GetRequiredService<UserManager<ApplicationUser>>();
+        var user=await users.GetUserAsync(context.Principal);
+        if(user==null||!user.IsActive){context.RejectPrincipal();await context.HttpContext.SignOutAsync(IdentityConstants.ApplicationScheme);}
+    };
 });
-builder.Services.Configure<SecurityStampValidatorOptions>(options => options.ValidationInterval = TimeSpan.FromMinutes(1));
+builder.Services.Configure<SecurityStampValidatorOptions>(options => options.ValidationInterval = TimeSpan.Zero);
 
 var app = builder.Build();
 CertificateDataProtection.ValidateStartup(app.Services);
