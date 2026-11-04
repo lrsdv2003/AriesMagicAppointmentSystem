@@ -30,6 +30,18 @@ try{
    violations=await page.evaluate(async()=>(await axe.run(document,{runOnly:{type:'tag',values:['wcag2a','wcag2aa','wcag21a','wcag21aa','wcag22aa']}})).violations.map(v=>({id:v.id,targets:v.nodes.map(n=>n.target)})));
   }
   results.push({page:current,width,status:response.status(),...metrics,violations});
+  if(role==='Staff'&&label==='Calendar'&&[1440,390].includes(width)){
+   const event=await page.$('.staff-calendar-has-events .fc-daygrid-day-frame[role="button"]');
+   assert(event,'Calendar needs a keyboard action inside its grid cell');
+   await event.focus();await page.keyboard.press('Enter');
+   await page.waitForSelector('#bookingPreviewModal.show #previewContent:not(.d-none)');
+   assert(await page.$eval('#previewDetails',el=>!el.classList.contains('disabled')&&el.getAttribute('href').startsWith('/Bookings/')));
+   await page.click('#bookingPreviewModal .btn-close');
+   await page.waitForFunction(()=>!document.querySelector('#bookingPreviewModal').classList.contains('show'));
+   const blocked=await page.$('.staff-calendar-blocked .fc-daygrid-day-frame[role="button"]');
+   if(blocked){await blocked.focus();await page.keyboard.press('Enter');await page.waitForSelector('#blockedDateModal.show');await page.click('#blockedDateModal .btn-close');await page.waitForFunction(()=>!document.querySelector('#blockedDateModal').classList.contains('show'));}
+   console.log('PASS calendar keyboard previews',width);
+  }
   if(label==='Dashboard'&&role!=='Client'&&[1440,390].includes(width)){
    await page.evaluate(()=>{const main=document.querySelector('#mainContent');if(main)main.scrollTop=main.scrollHeight;});
    await page.screenshot({path:path.join(output,current+'-lower-'+width+'.png'),fullPage:true});

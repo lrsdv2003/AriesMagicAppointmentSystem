@@ -301,9 +301,11 @@
         content.className = 'staff-day-content';
         frame.appendChild(content);
         cell.classList.remove('staff-calendar-has-events', 'staff-calendar-blocked');
-        cell.removeAttribute('role');
-        cell.removeAttribute('aria-label');
-        cell.removeAttribute('tabindex');
+        // Keep FullCalendar's grid semantics; the inner frame is the action.
+        cell.setAttribute('role', 'gridcell');
+        frame.removeAttribute('role');
+        frame.removeAttribute('aria-label');
+        frame.removeAttribute('tabindex');
 
         const blocked = blockedDateMap[key];
         const visibleItems = filteredDayItems(key);
@@ -350,12 +352,10 @@
         }
 
         if (blocked || visibleItems.length) {
-            cell.tabIndex = 0;
-            cell.setAttribute('role', 'button');
-            const bookingLabel = visibleItems.length
-                ? `${visibleItems.length} confirmed booking${visibleItems.length === 1 ? '' : 's'}`
-                : 'no visible confirmed bookings';
-            cell.setAttribute('aria-label', `${displayDate}: ${blocked ? 'Blocked / unavailable; ' : ''}${bookingLabel}`);
+            frame.tabIndex = 0;
+            frame.setAttribute('role', 'button');
+            const visibleLabel = frame.innerText.trim().replace(/\s+/g, ' ');
+            frame.setAttribute('aria-label', `${visibleLabel}; ${displayDate}`);
         }
     }
 

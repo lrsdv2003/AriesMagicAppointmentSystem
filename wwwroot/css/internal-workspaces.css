@@ -151,6 +151,8 @@ body.internal-ui.midnight-workspace .workspace-finance-facts{display:grid;grid-t
 body.internal-ui.midnight-workspace .workspace-finance-facts dt{color:var(--app-muted);font-size:12px!important}
 body.internal-ui.midnight-workspace .workspace-finance-facts dd{font-size:clamp(21px,1.8vw,26px);color:var(--app-text);font-variant-numeric:tabular-nums;margin:7px 0 4px;overflow-wrap:anywhere;line-height:1.3}
 body.internal-ui.midnight-workspace .workspace-finance-facts small{font-size:11px;color:var(--app-muted)}
+body.internal-ui.midnight-workspace .workspace-finance-facts dd:has(small){margin-bottom:0}
+body.internal-ui.midnight-workspace .workspace-finance-facts dd small{display:block;margin-top:4px;line-height:1.5}
 body.internal-ui.midnight-workspace .workspace-net-total{grid-column:1/-1;border-block:1px solid var(--app-border);padding:16px 0}
 body.internal-ui.midnight-workspace .workspace-net-total dd{color:var(--workspace-gold);font-size:30px}
 body.internal-ui.midnight-workspace .workspace-review-note{border-top:1px solid var(--app-border)}

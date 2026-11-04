@@ -48,7 +48,7 @@ try {
  await page.$eval('#Email',el=>{el.readOnly=false;el.disabled=true;});
  check((await fieldStyle('#Email')).background!==initial.background,'Disabled control has a distinct surface');
  await page.emulateMediaFeatures([{name:'prefers-color-scheme',value:'dark'}]);
- check((await fieldStyle('#FullName')).background===initial.background,'OS dark mode preserves the deliberate light form theme');
+ check((await fieldStyle('#FullName')).background===initial.background,'OS dark mode preserves the approved form theme');
  await page.emulateMediaFeatures([{name:'prefers-color-scheme',value:'light'}]);
  await go('Account-Register');
  const cdp=await page.createCDPSession();await cdp.send('DOM.enable');
