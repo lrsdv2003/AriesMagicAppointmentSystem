@@ -34,3 +34,20 @@ Recorded production baseline952101514621493fa9eb0966257ac42cf3ee3d71 remains the
 A free Brevo plan does not itself prove account activation, sender eligibility, inbox receipt or hosting compatibility. An owned custom domain is necessary for authenticating Aries' own domain. Brevo's documented brevosend.com rewrite can be considered only if this account is permitted to use it; otherwise obtain a controlled domain or provider-confirmed existing SMTP service. Never spoof free-mail identities.
 
 Recovery: current coordinated application/config/SQL backup; maintenance; only reviewed allowlist to/ariesmagic over explicitFTPS; preserve six existing settings plus reviewed provider settings, private roots and keys. On failed startup/SQL/auth/private-proof security stop, maintain consistency and restore compatible application files. No automatic SQL restoration/reset, identity replacement or key reset. A successfully changed Owner email remains the new login even after application rollback.
+
+
+## Updated validated review artifact
+{
+  "SourceCommit": "baa995455b015f4faa10f505a74c263b36fe9bf7",
+  "Package": "publish-net10-owner-email-secure-review-20261105",
+  "Files": 515,
+  "AllowlistedFiles": 509,
+  "ChangedFromFrozenPersonnel": 5,
+  "MissingBaselinePaths": 0,
+  "HashVerificationMismatches": 0,
+  "DeploymentAuthorized": false,
+  "ManifestSHA256": "558E26512C1C4F5160A428C4D1338EF173232B200CC753C17E173855A5CD455A",
+  "AllowlistSHA256": "EEB7E8BCB78026F68C684BAF640C2357D75A12EAA77C03B39EBC772ECD001727"
+}
+
+Independent second-pass verification of every package file:0 mismatches. All506 frozen baseline transfer paths retained; only five transfer files differ from the recorded baseline. Original515/509 artifact remains intact but superseded. New509 allowlist omits six protected/configuration/debug files. Full manifests and exact changed-file hashes: .tmp-owner-build/owner-email-secure/. No migration or production change. Production verdict remains NO-GO for external evidence and operator authorization.
