@@ -54,6 +54,16 @@ public class DashboardController : Controller
             model.UnreadConversations = await _context.ConversationParticipants.AsNoTracking()
                 .CountAsync(p => p.UserId == uid && p.Conversation!.Messages.Any(m =>
                     m.SenderId != uid && (!p.LastReadAt.HasValue || m.SentAt > p.LastReadAt.Value)));
+            // Presentation preview uses the same membership boundary as Communications.
+            // Never load conversations merely because the viewer has an internal role.
+            model.RecentConversations = await _context.ConversationParticipants.AsNoTracking()
+                .Where(p => p.UserId == uid && p.Conversation!.Messages.Any())
+                .OrderByDescending(p => p.Conversation!.Messages.Max(m => m.SentAt)).ThenBy(p => p.ConversationId)
+                .Take(3).Select(p => new WorkspaceConversation(p.ConversationId,
+                    p.Conversation!.Title ?? "Conversation",
+                    p.Conversation.Messages.OrderByDescending(m => m.SentAt).ThenByDescending(m => m.Id).Select(m => m.MessageContent).First(),
+                    p.Conversation.Messages.Count(m => m.SenderId != uid && (!p.LastReadAt.HasValue || m.SentAt > p.LastReadAt.Value)),
+                    p.Conversation.Messages.Max(m => m.SentAt))).ToListAsync();
         });
         return model;
     }
@@ -83,6 +93,11 @@ public class DashboardController : Controller
                 .OrderBy(b => b.StartTime).ThenBy(b => b.Id).Take(3).ToListAsync();
             model.UpcomingEvents = await events.Where(b => b.EventDate >= tomorrow)
                 .OrderBy(b => b.EventDate).ThenBy(b => b.StartTime).Take(4).ToListAsync();
+            var week = today.AddDays(-((7 + (int)today.DayOfWeek - (int)DayOfWeek.Monday) % 7));
+            model.ConfirmedThisWeek = await events.CountAsync(b => b.EventDate >= week && b.EventDate < week.AddDays(7));
+            var month = new DateTime(today.Year, today.Month, 1);
+            model.CalendarPreview = await events.Where(b => b.EventDate >= month && b.EventDate < month.AddMonths(1))
+                .OrderBy(b => b.StartTime).ThenBy(b => b.Id).ToListAsync();
         });
     }
 
@@ -132,6 +147,12 @@ public class DashboardController : Controller
             new("Calendar", "/Calendar", "bi-calendar3"),
             new("Packages", "/Services", "bi-box-seam"),
             new("Messages", "/Communications", "bi-chat-dots")];
+        if (!model.UnavailableSections.Contains("requests")) model.WorkspaceMetrics.AddRange([
+            new("Pending bookings", model.PendingBookings.ToString("N0"), "Awaiting Staff review", "bi-journal-text", "burgundy"),
+            new("Reschedule requests", model.PendingReschedules.ToString("N0"), "Awaiting a decision", "bi-arrow-left-right", "gold")]);
+        if (!model.UnavailableSections.Contains("schedule")) model.WorkspaceMetrics.AddRange([
+            new("Confirmed events", (model.TodayBookings + model.UpcomingBookings).ToString("N0"), "In progress or upcoming", "bi-check2", "green"),
+            new("Events this week", model.ConfirmedThisWeek.ToString("N0"), "Remaining confirmed · Mon–Sun", "bi-calendar3", "blue")]);
         return View(model);
     }
 
@@ -143,6 +164,7 @@ public class DashboardController : Controller
         await LoadAsync(model, "queues", async () =>
         {
             model.PendingPayments = await _context.Payments.CountAsync(p => p.Status == PaymentStatus.Pending);
+            model.VerifiedPaymentCount = await _context.Payments.CountAsync(p => p.Status == PaymentStatus.Verified);
             model.PendingRefunds = await _context.RefundRequests.CountAsync(r => r.Status == RefundStatus.Pending || r.Status == RefundStatus.UnderReview);
             model.RefundProofsAwaitingVerification = await _context.RefundRequests.CountAsync(r => r.Status == RefundStatus.RefundProcessing);
             model.RecentPaymentsToVerify = await _context.Payments.AsNoTracking().Include(p => p.Booking).ThenInclude(b => b!.Client)
@@ -210,6 +232,12 @@ public class DashboardController : Controller
             new("Calendar", "/Calendar", "bi-calendar3"),
             new("Packages", "/Services", "bi-box-seam"),
             new("Messages", "/Communications", "bi-chat-dots")];
+        if (!model.UnavailableSections.Contains("queues")) model.WorkspaceMetrics.AddRange([
+            new("Pending payment proofs", model.PendingPayments.ToString("N0"), "Awaiting Owner verification", "bi-credit-card", "burgundy"),
+            new("Refund requests", model.PendingRefunds.ToString("N0"), "Pending or under review", "bi-arrow-counterclockwise", "gold"),
+            new("Verified payments", model.VerifiedPaymentCount.ToString("N0"), "All-time verified records", "bi-check2", "green")]);
+        if (!model.UnavailableSections.Contains("financial overview")) model.WorkspaceMetrics.Add(
+            new("Verified receipts", "₱" + model.VerifiedRevenue.ToString("N2"), "All time · before completed refunds", "bi-bar-chart", "blue"));
         return View(model);
     }
 
@@ -229,10 +257,21 @@ public class DashboardController : Controller
             model.UserRoles = await (from ur in _context.UserRoles join r in _context.Roles on ur.RoleId equals r.Id
                 group ur by r.Name into g select new { Role = g.Key ?? "Unassigned", Count = g.Count() })
                 .ToDictionaryAsync(r => r.Role, r => r.Count);
+            var recent = await users.OrderByDescending(u => u.CreatedAt).ThenBy(u => u.Id).Take(5)
+                .Select(u => new { u.Id, u.FullName, u.Email, u.IsActive, u.LockoutEnd }).ToListAsync();
+            var ids = recent.Select(u => u.Id).ToList();
+            var assignments = await (from ur in _context.UserRoles join r in _context.Roles on ur.RoleId equals r.Id
+                where ids.Contains(ur.UserId) select new { ur.UserId, r.Name }).ToListAsync();
+            model.RecentUsers = recent.Select(u => new WorkspaceUser(u.Id, u.FullName, u.Email ?? "Not recorded",
+                string.Join(", ", assignments.Where(r => r.UserId == u.Id).Select(r => r.Name).OrderBy(n => n)),
+                !u.IsActive ? "Disabled" : u.LockoutEnd > now ? "Locked" : "Active")).ToList();
         });
         await LoadAsync(model, "system overview", async () =>
         {
             model.ActivePackages = await _context.Services.CountAsync(s => !s.IsArchived);
+            model.PackagePreviews = await _context.Services.AsNoTracking().Include(s => s.Inclusions)
+                .Where(s => !s.IsArchived).OrderBy(s => s.Price).ThenBy(s => s.Id).Take(3).ToListAsync();
+            model.TotalBookings = await _context.Bookings.CountAsync(); // Aggregate only; no Admin operational record access.
             model.ArchivedPackages = await _context.Services.CountAsync(s => s.IsArchived);
             model.BlockedDates = await _context.BlockedDates.CountAsync(d => d.Date >= model.AsOf.Date);
             model.TrashedBookingsCount = await _context.Bookings.CountAsync(b =>
@@ -271,6 +310,12 @@ public class DashboardController : Controller
             new("Trash History", "/TrashHistory", "bi-trash"),
             new("System Activity", "/SystemActivity", "bi-activity"),
             new("Messages", "/Communications", "bi-chat-dots")];
+        if (!model.UnavailableSections.Contains("users")) model.WorkspaceMetrics.Add(
+            new("Registered users", model.TotalUsers.ToString("N0"), "Client and internal accounts", "bi-people", "blue"));
+        if (!model.UnavailableSections.Contains("system overview")) model.WorkspaceMetrics.AddRange([
+            new("Active packages", model.ActivePackages.ToString("N0"), "Available in the catalog", "bi-box-seam", "gold"),
+            new("Total bookings", model.TotalBookings.ToString("N0"), "All statuses · aggregate only", "bi-journal-text", "green"),
+            new("Failed logins", model.FailedLogins.ToString("N0"), "Recorded today · UTC", "bi-shield-check", "burgundy")]);
         return View(model);
     }
 }

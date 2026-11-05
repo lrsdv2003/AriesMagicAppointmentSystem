@@ -53,6 +53,9 @@ static class SnapshotRenderer
             new Notification { Id=4, Title="System Update", Message="Your preferences were saved.", IsRead=true, CreatedAt=DateTime.Now.AddDays(-3) }
         };
         var pages = new (string Controller,string Action,object Model)[] {
+            ("Bookings","Approve",booking),
+            ("Bookings","Decline",booking),
+            ("Bookings","AddNote",booking),
             ("Payments","PendingVerification",new[] {payment}),
             ("Payments","Verify",payment),
             ("Payments","RefundRequests",new[] {refund}),
@@ -60,6 +63,8 @@ static class SnapshotRenderer
             ("Reports","Index",reports),
             ("Services","Index",new[] {displayPackage}),
             ("Services","Details",displayPackage),
+            ("Services","Archive",displayPackage),
+            ("Services","Restore",new Service {Id=displayPackage.Id,Name=displayPackage.Name,Price=displayPackage.Price,DurationInHours=displayPackage.DurationInHours,IsArchived=true}),
             ("Services","Create",new ServiceManageViewModel {Name="New package",Price=10000,DurationInHours=2}),
             ("Services","Edit",new ServiceManageViewModel { Id=displayPackage.Id, Name=displayPackage.Name, Price=displayPackage.Price, DurationInHours=displayPackage.DurationInHours,
                 Inclusions=displayPackage.Inclusions.Select(i=>new ServiceInclusionInputViewModel { Id=i.Id, Name=i.Name, DeductionAmount=i.DeductionAmount, IsRemovable=i.IsRemovable }).ToList() }),

@@ -35,8 +35,8 @@ try {
    if(name.includes('Staff'))assert(!links.some(h=>/^\/(Payments|Reports|UserManagement|SystemActivity)/.test(h)));
    if(name.includes('Admin'))assert(!links.some(h=>/^\/(Payments|Reports|Bookings|RescheduleRequests)/.test(h)));
    if(name.endsWith('-empty'))assert(await page.$('.dash-empty'));
-   if(name.endsWith('-error')){assert(await page.$('.dash-load-errors a'));assert(await page.$('.dash-quick-grid a'));}
-   if(width===390)assert.equal(await page.$eval('.dash-metric-grid',el=>getComputedStyle(el).gridTemplateColumns.split(' ').length),1);
+   if(name.endsWith('-error')){assert(await page.$('.dash-load-errors a'));assert(await page.$('.workspace-quick-links nav a'));}
+   if(width===390)assert.equal(await page.$eval('.dash-metric-grid',el=>getComputedStyle(el).gridTemplateColumns.split(' ').length),2);
    await page.screenshot({path:path.join(snapshots,'dashboard-'+name+'-'+width+'.png'),fullPage:true});
    console.log('PASS dashboard layout',name,width);
   }
@@ -44,8 +44,8 @@ try {
  await page.setViewport({width:1440,height:900});
  for(const role of ['Staff','Owner','Admin']){
   await go('Dashboard-'+role);
-  await page.focus('.dash-quick-grid a');
-  assert.equal(await page.$eval('.dash-quick-grid a',el=>getComputedStyle(el).outlineStyle),'solid','Keyboard focus is visible');
+  await page.focus('.workspace-quick-links summary');
+  assert.equal(await page.$eval('.workspace-quick-links summary',el=>getComputedStyle(el).outlineStyle),'solid','Keyboard focus is visible');
   await page.evaluate(()=>scrollTo(0,800));
   assert.equal(await page.evaluate(()=>scrollY),0,'Dashboard scroll stays within the content panel for '+role);
   assert(Math.abs(await page.$eval('.dashboard-topbar',el=>el.getBoundingClientRect().top))<2,'Sticky header for '+role);
@@ -57,6 +57,6 @@ try {
  await go('Dashboard-Owner');
  assert(await page.$('a[href*="Payments/Verify"]'));
  assert.equal(await page.$$eval('.dash-trend meter',els=>els.length),6);
- assert(await page.$$eval('.dash-metric',els=>els.some(el=>el.textContent.includes('Completed refunds'))));
+ assert(await page.$eval('.workspace-finance-facts',el=>el.textContent.includes('Completed refunds')));
  console.log('PASS keyboard focus, sticky headers, filtered shortcuts and accessible six-month trend');
 } finally { await browser.close(); }

@@ -274,4 +274,40 @@ console.log('PASS Client hub navigation, original form contracts, role fields, p
 }
 console.log('PASS Midnight Concierge agreement and grouped navigation contracts');
 
+for(const role of ['Staff','Admin','Owner']){
+ const dom=fixture('Dashboard-'+role),d=dom.window.document,w=dom.window;
+ check(d.body.classList.contains('midnight-workspace'),role+': scoped workspace shell');
+ check(d.querySelector('link[href*="internal-workspaces.css"]'),role+': shared workspace stylesheet');
+ check(d.querySelector('h1')?.textContent===role+' Dashboard',role+': clear page heading');
+ check(!d.querySelector('.dashboard-topbar input[type=search]'),role+': no unsupported global search');
+ const nav=[...d.querySelectorAll('.sidebar-nav a')].map(a=>a.getAttribute('href'));
+ for(const controller of role==='Staff'?['Bookings','Calendar','Services','RescheduleRequests','History','Testimonials']:role==='Admin'?['UserManagement','Calendar','Services','TrashHistory','SystemActivity']:['Payments','Bookings','Calendar','Reports','Services','History'])
+  check(nav.some(h=>h.startsWith('/'+controller)),role+': preserves '+controller+' navigation');
+ for(const controller of role==='Admin'?['Payments','Reports','Bookings','History']:role==='Staff'?['Payments','Reports','UserManagement','SystemActivity']:['UserManagement','SystemActivity'])
+  check(!nav.some(h=>h.startsWith('/'+controller)),role+': excludes unauthorized '+controller+' navigation');
+ check(!d.querySelector('.role-workspace form[method=post]'),role+': dashboard review links do not make instant decisions');
+ check(d.querySelector('.sidebar-link.active')?.getAttribute('aria-current')==='page',role+': active destination announced');
+ run(dom,'internal-workspaces.js');
+ check([...d.querySelectorAll('table th')].every(th=>th.getAttribute('scope')&&th.getAttribute('role')==='columnheader'),role+': responsive table headers retain explicit associations');
+ d.getElementById('internalSidebar').dispatchEvent(new w.Event('shown.bs.offcanvas'));
+ check(d.querySelector('.ui-menu-toggle').getAttribute('aria-expanded')==='true',role+': drawer expanded state');
+ d.getElementById('internalSidebar').dispatchEvent(new w.Event('hidden.bs.offcanvas'));
+ check(d.querySelector('.ui-menu-toggle').getAttribute('aria-expanded')==='false',role+': drawer collapsed state');
+ if(role==='Staff'){
+  const buttons=[...d.querySelectorAll('[data-workspace-date]')];
+  check(buttons.filter(b=>b.tabIndex===0).length===1,'Calendar has one tab entry');
+  const first=buttons[0];first.click();
+  check(first.getAttribute('aria-pressed')==='true'&&d.querySelectorAll('[data-workspace-date][aria-pressed=true]').length===1,'Calendar date selection is exclusive');
+  first.dispatchEvent(new w.KeyboardEvent('keydown',{key:'ArrowRight',bubbles:true,cancelable:true}));
+  check(d.activeElement===buttons[1]&&buttons[1].getAttribute('aria-pressed')==='true','Calendar supports keyboard date selection');
+  check(d.querySelector('[data-workspace-calendar-status]').textContent===buttons[1].getAttribute('aria-label'),'Calendar announces the selected date and count');
+ }
+ dom.window.close();
+}
+for(const name of ['Home-Index-Guest','Account-Login','Bookings-ClientDashboard','Bookings-Create']){
+ const dom=fixture(name),d=dom.window.document;
+ check(!d.body.classList.contains('midnight-workspace')&&!d.querySelector('link[href*="internal-workspaces.css"]'),name+': internal theme does not leak into approved Client UI');
+ dom.window.close();
+}
+console.log('PASS internal workspaces role navigation, review-only dashboards, calendar keyboard behavior and Client isolation');
 console.log(`SUCCESS: ${checks} UI DOM checks passed.`);

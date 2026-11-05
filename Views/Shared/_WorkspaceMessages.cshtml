@@ -1,0 +1,7 @@
+@model AriesMagicAppointmentSystem.ViewModels.RoleDashboardViewModel
+<section class="dash-panel workspace-messages" aria-labelledby="workspaceMessagesTitle">
+<div class="dash-section-heading"><h2 id="workspaceMessagesTitle"><i class="bi bi-chat-dots" aria-hidden="true"></i>Messages</h2><a asp-controller="Communications" asp-action="Index">Open inbox <i class="bi bi-arrow-right" aria-hidden="true"></i></a></div>
+@if(Model.UnavailableSections.Contains("messages")){<p class="dash-empty">Unable to load conversations.</p>}
+else if(!Model.RecentConversations.Any()){<p class="dash-empty">No conversations yet. Your authorized messages will appear here.</p>}
+else{<div class="dash-list">@foreach(var conversation in Model.RecentConversations){<article class="dash-row"><div class="dash-record"><strong>@conversation.Title</strong><p class="workspace-message-preview">@conversation.Preview</p><small><time datetime="@conversation.SentAt.ToString("O")">@conversation.SentAt.ToLocalTime().ToString("MMM d, h:mm tt")</time>@if(conversation.UnreadCount>0){<text> · @conversation.UnreadCount unread</text>}</small></div><a class="dash-button" asp-controller="Communications" asp-action="Index" asp-route-id="@conversation.Id">Open<span class="visually-hidden"> @conversation.Title</span></a></article>}</div>}
+</section>

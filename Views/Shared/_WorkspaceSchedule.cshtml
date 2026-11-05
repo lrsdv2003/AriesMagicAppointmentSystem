@@ -1,0 +1,30 @@
+@model AriesMagicAppointmentSystem.ViewModels.RoleDashboardViewModel
+@{
+    var first = new DateTime(Model.AsOf.Year,Model.AsOf.Month,1);
+    var days = DateTime.DaysInMonth(first.Year,first.Month);
+    var offset = ((int)first.DayOfWeek + 6) % 7;
+}
+<section class="dash-panel workspace-schedule" aria-labelledby="workspaceScheduleTitle" data-workspace-calendar>
+<div class="dash-section-heading"><h2 id="workspaceScheduleTitle"><i class="bi bi-calendar3" aria-hidden="true"></i>Upcoming schedule</h2><a asp-controller="Calendar" asp-action="Index">Full calendar <i class="bi bi-arrow-right" aria-hidden="true"></i></a></div>
+@if(Model.UnavailableSections.Contains("schedule")){<p class="dash-empty">Unable to load the schedule.</p>}
+else{
+<div class="workspace-mini-calendar"><h3>@first.ToString("MMMM yyyy")</h3><div class="workspace-calendar-grid" role="group" aria-label="Select a day in @first.ToString("MMMM yyyy")">
+@foreach(var dayName in new[]{"M","T","W","T","F","S","S"}){<span class="workspace-weekday" aria-hidden="true">@dayName</span>}
+@for(var i=0;i<offset;i++){<span aria-hidden="true"></span>}
+@for(var day=1;day<=days;day++){
+var date=first.AddDays(day-1);var count=Model.CalendarPreview.Count(b=>b.EventDate.Date==date);var selected=date==Model.AsOf.Date;
+<button type="button" data-workspace-date="@date.ToString("yyyy-MM-dd")" aria-pressed="@selected.ToString().ToLowerInvariant()" class="@(selected?"is-selected":"") @(count>0?"has-events":"")" aria-label="@date.ToString("dddd, MMMM d"), @count remaining confirmed events">@day</button>
+}
+</div><p class="workspace-calendar-key"><span aria-hidden="true"></span> Remaining confirmed events · select a date</p></div>
+<p class="visually-hidden" aria-live="polite" data-workspace-calendar-status></p>
+<div data-workspace-day-empty hidden><p class="dash-empty">No remaining confirmed events on this date.</p></div>
+<div class="workspace-selected-events" data-workspace-day-results>
+@foreach(var group in Model.CalendarPreview.GroupBy(b=>b.EventDate.Date)){
+<div data-workspace-day="@group.Key.ToString("yyyy-MM-dd")" hidden="@(group.Key!=Model.AsOf.Date)"><partial name="_DashboardEvents" model="group.ToList()" /></div>
+}
+</div>
+@if(!Model.TodayEvents.Any()) {<p class="dash-note" data-workspace-today-note>No events scheduled today.</p>}
+@if(Model.UpcomingEvents.Any()) {<div class="workspace-next-events"><h3>Next confirmed events</h3><partial name="_DashboardEvents" model="Model.UpcomingEvents.Take(2)" /></div>}
+else if(!Model.TodayEvents.Any()){<p class="dash-empty">No upcoming confirmed events.</p>}
+}
+</section>
