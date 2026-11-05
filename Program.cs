@@ -79,14 +79,16 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddOptions<EmailSettings>().Bind(builder.Configuration.GetSection("EmailSettings"))
-    .Validate(o => builder.Environment.IsDevelopment() ||
-        (!string.IsNullOrWhiteSpace(o.Host) && o.Port is > 0 and <= 65535 && o.EnableSsl
-        && !string.IsNullOrWhiteSpace(o.Username) && !string.IsNullOrWhiteSpace(o.Password)
-        && new System.ComponentModel.DataAnnotations.EmailAddressAttribute().IsValid(o.SenderEmail)),
-        "Production EmailSettings require a provider, TLS, valid sender and configured credentials.")
+    .Validate(o => builder.Environment.IsDevelopment() || EmailConfiguration.IsValid(o),
+        "Email provider configuration is invalid; values omitted.")
     .ValidateOnStart();
-
-builder.Services.AddScoped<IEmailService, SmtpEmailService>();
+builder.Services.AddScoped<SmtpEmailService>();
+builder.Services.AddHttpClient<HttpsEmailService>(c => c.Timeout = TimeSpan.FromSeconds(30))
+    .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false })
+    .RemoveAllLoggers();
+builder.Services.AddScoped<IEmailService>(sp => sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<EmailSettings>>().Value.Provider.Equals("Smtp", StringComparison.OrdinalIgnoreCase)
+    ? sp.GetRequiredService<SmtpEmailService>() : sp.GetRequiredService<HttpsEmailService>());
+builder.Services.AddScoped<OwnerEmailChangeService>();
 builder.Services.AddScoped<EmailOutbox>();
 builder.Services.AddScoped<EmailOutboxDispatcher>();
 builder.Services.AddScoped<IEmailVerificationService, EmailVerificationService>();

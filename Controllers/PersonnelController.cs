@@ -76,7 +76,7 @@ public sealed class PersonnelController(UserManager<ApplicationUser> users,Perso
     private async Task Deliver(EnrollmentDelivery delivery,string recipient)
     {
         var link=Origin()+"/PersonnelEnrollment/Accept#"+delivery.UserId+":"+delivery.Secret;
-        try {await email.SendEmailAsync(recipient,"Your Aries Magic personnel enrollment",$"<p>You have been invited to Aries Magic. Choose your own password using this single-use, expiring link:</p><p><a href=\"{WebUtility.HtmlEncode(link)}\">Complete enrollment</a></p><p>If unexpected, ignore this message.</p>");TempData["SuccessMessage"]="Enrollment email sent. Account remains inactive until enrollment completes.";}
+        try {await email.SendEmailAsync(recipient,"Your Aries Magic personnel enrollment",$"<p>You have been invited to Aries Magic. Choose your own password using this single-use, expiring link:</p><p><a href=\"{WebUtility.HtmlEncode(link)}\">Complete enrollment</a></p><p>If unexpected, ignore this message.</p>");TempData["SuccessMessage"]="Enrollment submitted to the email provider. Delivery is not yet confirmed. Account remains inactive until enrollment completes.";}
         catch {TempData["ErrorMessage"]="Email delivery is unavailable. Account remains inactive. An authorized operator must rotate and deliver the invitation through the documented private process.";}
     }
 }

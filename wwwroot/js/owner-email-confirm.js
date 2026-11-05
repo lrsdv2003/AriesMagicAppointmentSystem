@@ -1,0 +1,1 @@
+(() => { const value = location.hash.slice(1); history.replaceState(null, '', location.pathname); try { const bytes=Uint8Array.from(atob(value.replace(/-/g,'+').replace(/_/g,'/')),c=>c.charCodeAt(0)); document.getElementById('emailChangeToken').value=new TextDecoder().decode(bytes); } catch { document.querySelector('button[type="submit"]').disabled=true; } })();

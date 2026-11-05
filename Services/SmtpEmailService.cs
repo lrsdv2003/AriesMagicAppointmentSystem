@@ -6,7 +6,8 @@ using MimeKit;
 
 namespace AriesMagicAppointmentSystem.Services;
 
-public sealed class EmailDeliveryException() : Exception("Email delivery failed. Check the configured provider and retry.");
+public sealed class EmailDeliveryException(string classification = "ProviderFailure") : Exception("Email delivery failed. Check the configured provider and retry.")
+{ public string Classification { get; } = classification; }
 
 public sealed class SmtpEmailService(IOptions<EmailSettings> options, ILogger<SmtpEmailService> logger) : IEmailService
 {
@@ -39,8 +40,9 @@ public sealed class SmtpEmailService(IOptions<EmailSettings> options, ILogger<Sm
         catch (Exception ex)
         {
             // Do not log provider responses: these may contain secrets or personal data.
-            logger.LogError("SMTP delivery failed ({FailureType}).", ex.GetType().Name);
-            throw new EmailDeliveryException();
+            var category = EmailFailure.Classify(ex);
+            logger.LogError("Email submission failed. Provider={Provider} Classification={Classification}", "Smtp", category);
+            throw new EmailDeliveryException(category);
         }
     }
 }

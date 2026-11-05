@@ -1,0 +1,8 @@
+@model AriesMagicAppointmentSystem.Controllers.OwnerEmailInput
+@{Layout="_DashboardLayout";ViewData["Title"]="Owner email settings";var pending=ViewBag.Pending as AriesMagicAppointmentSystem.Services.PendingOwnerEmail;}
+<section class="dash-panel"><h1>Change login email</h1><p>Your existing login stays active until you verify the new address. Verification expires after 30 minutes.</p>
+@if(pending!=null){<p role="status">A change is pending until @pending.ExpiresUtc.ToString("u"). Request another verification after two minutes to replace it.</p><form asp-action="Cancel" method="post"><button type="submit" class="btn btn-outline-light">Cancel pending change</button></form>}
+<form asp-action="SendVerification" method="post"><div class="mb-3"><label for="currentEmail">Current email</label><input id="currentEmail" class="form-control" value="@ViewBag.CurrentEmail" readonly /></div>
+<div class="mb-3"><label asp-for="NewEmail">New email</label><input asp-for="NewEmail" class="form-control" autocomplete="email" /></div>
+<div class="mb-3"><label asp-for="ConfirmEmail">Confirm new email</label><input asp-for="ConfirmEmail" type="email" class="form-control" autocomplete="email" /></div>
+<div class="mb-3"><label asp-for="CurrentPassword">Current password</label><input asp-for="CurrentPassword" class="form-control" autocomplete="current-password" /></div><div class="mb-3"><label asp-for="AuthenticatorCode">Authenticator code (if enabled)</label><input asp-for="AuthenticatorCode" class="form-control" autocomplete="one-time-code" inputmode="numeric" /></div><button class="btn btn-primary" type="submit">Send verification email</button></form></section>

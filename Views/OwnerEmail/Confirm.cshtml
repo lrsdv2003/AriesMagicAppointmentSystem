@@ -1,0 +1,3 @@
+@{Layout="_DashboardLayout";ViewData["Title"]="Verify email change";}
+<section class="dash-panel"><h1>Verify your new login email</h1><p>Confirm to update your existing Owner account. You will then sign in with the verified email.</p><form asp-action="Confirm" method="post"><input type="hidden" name="token" id="emailChangeToken"/><button type="submit" class="btn btn-primary">Confirm email change</button></form></section>
+@section Scripts {<script src="~/js/owner-email-confirm.js" asp-append-version="true"></script>}
