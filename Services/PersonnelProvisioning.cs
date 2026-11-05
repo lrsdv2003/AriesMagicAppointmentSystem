@@ -13,8 +13,12 @@ namespace AriesMagicAppointmentSystem.Services;
 public sealed class PersonnelOptions
 {
     public bool AdminMayManageStaff { get; set; }
-    public string? PublicOrigin { get; set; }
+    public string? PublicOrigin { get; set; } = "https://ariesmagicartist-001-site1.htempurl.com";
     public int InvitationHours { get; set; } = 24;
+}
+public sealed class PersonnelActionException(string reason) : InvalidOperationException("Personnel operation refused.")
+{
+    public string Reason { get; } = reason;
 }
 public sealed record PersonnelInvitation(string Role,string Digest,DateTime ExpiresUtc,string State,string Issuer);
 public sealed record EnrollmentDelivery(string UserId,string Secret);
@@ -48,8 +52,8 @@ public sealed class PersonnelProvisioning(ApplicationDbContext db,UserManager<Ap
             // No HTTP caller may select this mode. A pending Owner reserves the bootstrap as well.
             if(actor!=null||role!="Owner"||await users.Users.AnyAsync()||await db.Bookings.AnyAsync()||await db.Payments.AnyAsync())throw new InvalidOperationException("Owner bootstrap requires a fresh, empty database.");
         } else if(actor==null||!await CanManageAsync(actor,role))throw new UnauthorizedAccessException();
-        if(await users.FindByEmailAsync(email)!=null)throw new InvalidOperationException("Email already registered; existing accounts cannot be promoted through enrollment.");
-        if(!await roleManager.RoleExistsAsync(role))throw new InvalidOperationException("Initialize Identity roles using the operator tool first.");
+        if(await users.FindByEmailAsync(email)!=null)throw new PersonnelActionException("AlreadyRegistered");
+        if(!await roleManager.RoleExistsAsync(role))throw new PersonnelActionException("RoleNotConfigured");
         var user=new ApplicationUser {UserName=email,Email=email,FullName=name,EmailConfirmed=false,IsActive=false};
         Require(await users.CreateAsync(user));
         var delivery=await IssueAsync(user,role,actor?.Id??"operator-bootstrap");
@@ -106,7 +110,9 @@ public sealed class PersonnelProvisioning(ApplicationDbContext db,UserManager<Ap
         await db.Entry(user).ReloadAsync();
         var roles=await users.GetRolesAsync(user);var invitation=await PendingAsync(user);
         var current=roles.Count==1?roles[0]:roles.Count==0&&invitation?.State=="Pending"?invitation.Role:null;
-        if(id==actor.Id||current==null||!await CanManageAsync(actor,current))throw new UnauthorizedAccessException();
+        if(id==actor.Id)throw new PersonnelActionException("SelfManagement");
+        if(current==null)throw new PersonnelActionException("NotManageable");
+        if(!await CanManageAsync(actor,current))throw new UnauthorizedAccessException();
         switch(action) {
             case "Revoke":
                 if(invitation?.State!="Pending"||roles.Count!=0)throw new InvalidOperationException("Not pending.");

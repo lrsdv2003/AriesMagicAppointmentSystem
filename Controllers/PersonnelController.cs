@@ -49,7 +49,13 @@ public sealed class PersonnelController(UserManager<ApplicationUser> users,Perso
             var delivery=await provisioning.InviteAsync(await Actor(),input.Email,input.FullName,input.Role);
             await Deliver(delivery,input.Email);
         } catch(UnauthorizedAccessException){return Forbid();}
-        catch(InvalidOperationException){TempData["ErrorMessage"]="Invitation refused. Check account state, permissions and the configured enrollment origin.";}
+        catch(PersonnelActionException ex){TempData["ErrorMessage"]=ex.Reason switch {
+            "AlreadyRegistered"=>"This email is already registered. Use Resend invitation for a pending account, or invite a different email.",
+            "RoleNotConfigured"=>"Personnel roles are not initialized. Ask the system operator to verify the Staff role.",
+            "InvalidOrigin"=>"The secure enrollment URL is not configured correctly. Contact the system operator.",
+            _=>"Invitation could not be created. Refresh and check account status."
+        };}
+        catch(InvalidOperationException){TempData["ErrorMessage"]="Invitation could not be created. Check whether the account already exists or the personnel setup is complete.";}
         return RedirectToAction(nameof(Index));
     }
     [HttpPost,ValidateAntiForgeryToken,EnableRateLimiting("account")]
@@ -57,6 +63,7 @@ public sealed class PersonnelController(UserManager<ApplicationUser> users,Perso
     {
         try {_=Origin();var delivery=await provisioning.ReissueAsync(await Actor(),id);var user=await users.FindByIdAsync(id);await Deliver(delivery,user!.Email!);}
         catch(UnauthorizedAccessException){return Forbid();}
+        catch(PersonnelActionException ex){TempData["ErrorMessage"]=ex.Reason=="InvalidOrigin"?"The secure enrollment URL is not configured correctly. Contact the system operator.":"Invitation cannot be reissued for this account.";}
         catch(InvalidOperationException){TempData["ErrorMessage"]="Invitation could not be reissued. Check pending state and configuration.";}
         return RedirectToAction(nameof(Index));
     }
@@ -65,12 +72,17 @@ public sealed class PersonnelController(UserManager<ApplicationUser> users,Perso
     {
         try {await provisioning.ManageAsync(await Actor(),id,operation,role);TempData["SuccessMessage"]="Personnel account updated. Previous sessions were revoked.";}
         catch(UnauthorizedAccessException){return Forbid();}
+        catch(PersonnelActionException ex){TempData["ErrorMessage"]=ex.Reason switch {
+            "SelfManagement"=>"You cannot change your own personnel access from this page.",
+            "NotManageable"=>"This account has no active personnel role or pending invitation. No changes were made.",
+            _=>"Account action could not be completed. Refresh and try again."
+        };}
         catch(InvalidOperationException){TempData["ErrorMessage"]="Account action refused. Refresh and check enrollment state.";}
         return RedirectToAction(nameof(Index));
     }
     private string Origin()
     {
-        if(!Uri.TryCreate(settings.Value.PublicOrigin,UriKind.Absolute,out var uri)||uri.Scheme!="https"||!string.IsNullOrEmpty(uri.UserInfo)||uri.AbsolutePath!="/"||!string.IsNullOrEmpty(uri.Query)||!string.IsNullOrEmpty(uri.Fragment))throw new InvalidOperationException();
+        if(!Uri.TryCreate(settings.Value.PublicOrigin,UriKind.Absolute,out var uri)||uri.Scheme!="https"||!string.IsNullOrEmpty(uri.UserInfo)||uri.AbsolutePath!="/"||!string.IsNullOrEmpty(uri.Query)||!string.IsNullOrEmpty(uri.Fragment))throw new PersonnelActionException("InvalidOrigin");
         return uri.GetLeftPart(UriPartial.Authority);
     }
     private async Task Deliver(EnrollmentDelivery delivery,string recipient)

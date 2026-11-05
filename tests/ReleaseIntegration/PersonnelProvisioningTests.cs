@@ -27,6 +27,7 @@ static class PersonnelProvisioningTests
             await using var factory=new ReleaseFactory(connection,smtp.Port,new Uri("http://127.0.0.1:1"),root);
             using var scope=factory.Services.CreateScope();var services=scope.ServiceProvider;
             var db=services.GetRequiredService<ApplicationDbContext>();var users=services.GetRequiredService<UserManager<ApplicationUser>>();var service=services.GetRequiredService<PersonnelProvisioning>();
+            Check(new PersonnelOptions().PublicOrigin=="https://ariesmagicartist-001-site1.htempurl.com","Known production HTTPS enrollment origin is the safe default when pool config is absent");
             var options=services.GetRequiredService<IOptions<PersonnelOptions>>().Value;options.PublicOrigin="https://personnel.example.test";
             await IdentitySeeder.SeedAsync(services);await IdentitySeeder.SeedAsync(services);
             Check(await db.Roles.CountAsync()==4&&!await db.Users.AnyAsync(),"Idempotent role-only initialization creates no privileged users");
@@ -80,6 +81,10 @@ static class PersonnelProvisioningTests
             await service.ManageAsync(owner,staff.Id,"Role","Staff");Check(await users.IsInRoleAsync(staff,"Staff")&&!await users.IsInRoleAsync(staff,"Admin"),"Owner may return Admin to Staff");
             var reset=await users.GeneratePasswordResetTokenAsync(staff);Check((await users.ResetPasswordAsync(staff,reset,password+"R")).Succeeded,"Identity password reset works after enrollment");
             var revoked=await service.InviteAsync(owner,"revoke@example.test","Revoked","Staff");await service.ManageAsync(owner,revoked.UserId,"Revoke");Check(!(await service.EnrollAsync(revoked.UserId,revoked.Secret,password)).Succeeded,"Revoked invitation cannot enroll");
+            try {await service.ManageAsync(owner,revoked.UserId,"RevokeSessions");throw new Exception("Revoked target incorrectly manageable");}
+            catch(PersonnelActionException ex){Check(ex.Reason=="NotManageable","Already-revoked invitation returns safe no-op classification rather than authorization failure");}
+            try {await service.ManageAsync(owner,owner.Id,"RevokeSessions");throw new Exception("Self revocation incorrectly manageable");}
+            catch(PersonnelActionException ex){Check(ex.Reason=="SelfManagement","Owner cannot manage own account, with safe classification");}
             await Denied(()=>service.InviteAsync(owner,"staff@example.test","Duplicate","Admin"),"Existing accounts cannot be promoted by duplicate invitation");
             using var client=factory.CreateClient(new(){AllowAutoRedirect=false,HandleCookies=true});
             string Token(string html)=>WebUtility.HtmlDecode(Regex.Match(html,"name=\"__RequestVerificationToken\"[^>]*value=\"([^\"]+)\"").Groups[1].Value);
@@ -87,9 +92,21 @@ static class PersonnelProvisioningTests
             using var loginResponse=await client.PostAsync("/Account/Login",new FormUrlEncodedContent(new Dictionary<string,string>{{"__RequestVerificationToken",Token(login)},{"Email",owner.Email!},{"Password",password}}));
             Check(loginResponse.StatusCode==HttpStatusCode.Redirect,"Owner real Identity login succeeds");
             var personnel=await client.GetStringAsync("/Personnel");Check(personnel.Contains("Personnel accounts"),"Owner management page renders using current dashboard");
+            Check(personnel.Contains("This invitation has been revoked. It cannot be used to enroll."),"Revoked invitation has explanatory text rather than a misleading action selector");
             await File.WriteAllTextAsync(".tmp-owner-build/personnel-owner.synthetic.html",personnel);
             async Task<HttpResponseMessage> Post(HttpClient http,string path,string token,params (string,string)[] fields)=>await http.PostAsync(path,new FormUrlEncodedContent(fields.Select(x=>new KeyValuePair<string,string>(x.Item1,x.Item2)).Append(new("__RequestVerificationToken",token))));
             using(var noCsrf=await client.PostAsync("/Personnel/Invite",new FormUrlEncodedContent(new Dictionary<string,string>{{"Role","Staff"}})))Check(noCsrf.StatusCode==HttpStatusCode.BadRequest,"Personnel invitation POST requires anti-forgery");
+            using(var refused=await Post(client,"/Personnel/Manage",Token(personnel),("id",revoked.UserId),("operation","RevokeSessions")))Check(refused.StatusCode==HttpStatusCode.Redirect&&!refused.Headers.Location!.OriginalString.Contains("AccessDenied"),"Revoked invitation action does not send Owner to Access Denied");
+            var revokedFeedback=await client.GetStringAsync("/Personnel");Check(revokedFeedback.Contains("no active personnel role or pending invitation"),"Revoked invitation action returns helpful inline feedback");
+            using(var self=await Post(client,"/Personnel/Manage",Token(personnel),("id",owner.Id),("operation","RevokeSessions")))Check(self.StatusCode==HttpStatusCode.Redirect&&!self.Headers.Location!.OriginalString.Contains("AccessDenied"),"Self-management is refused without misleading Access Denied redirect");
+            var selfFeedback=await client.GetStringAsync("/Personnel");Check(selfFeedback.Contains("cannot change your own personnel access"),"Self-management gives an explicit explanation");
+            using(var duplicate=await Post(client,"/Personnel/Invite",Token(personnel),("Email","staff@example.test"),("FullName","Existing Staff"),("Role","Staff")))Check(duplicate.StatusCode==HttpStatusCode.Redirect,"Existing email invitation request is handled safely");
+            var duplicateFeedback=await client.GetStringAsync("/Personnel");Check(duplicateFeedback.Contains("email is already registered"),"Duplicate email shows clear action without promoting existing user");
+            options.PublicOrigin="http://untrusted.example.test";
+            using(var badOrigin=await Post(client,"/Personnel/Invite",Token(personnel),("Email","bad-origin@example.test"),("FullName","Synthetic Origin"),("Role","Staff")))Check(badOrigin.StatusCode==HttpStatusCode.Redirect,"Invalid origin is refused before issuing invitation");
+            var originFeedback=await client.GetStringAsync("/Personnel");Check(originFeedback.Contains("secure enrollment URL is not configured correctly"),"Invalid origin explains configuration failure without disclosing secrets");
+            Check(await users.FindByEmailAsync("bad-origin@example.test")==null,"Invalid origin creates no personnel account or token");
+            options.PublicOrigin="https://personnel.example.test";
             using(var forbidden=await Post(client,"/Personnel/Invite",Token(personnel),("Email","owner-forged@example.test"),("FullName","Forged"),("Role","Owner")))Check(forbidden.StatusCode==HttpStatusCode.Forbidden||forbidden.StatusCode==HttpStatusCode.Redirect&&forbidden.Headers.Location!.OriginalString.Contains("AccessDenied"),"HTTP invitation rejects forged Owner role");
             Check(await users.FindByEmailAsync("owner-forged@example.test")==null,"Forged Owner invitation persisted no account");
             using(var invited=await Post(client,"/Personnel/Invite",Token(personnel),("Email","http-staff@example.test"),("FullName","HTTP Staff"),("Role","Staff")))Check(invited.StatusCode==HttpStatusCode.Redirect,"Owner invitation uses configured email delivery");
