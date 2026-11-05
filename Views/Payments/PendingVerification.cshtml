@@ -8,7 +8,7 @@
     string OcrClass(string? result) => result switch {
         OcrVerificationResults.LikelyMatch => "ocr-likely", OcrVerificationResults.PartialMatch => "ocr-partial",
         OcrVerificationResults.MismatchDetected => "ocr-mismatch", OcrVerificationResults.OcrFailed => "ocr-failed", _ => "ocr-manual" };
-    string OcrLabel(string? result) => string.IsNullOrWhiteSpace(result) ? "Manual Review Required" : result;
+    string OcrLabel(string? result) => result==OcrVerificationResults.LikelyMatch ? "Ready for Review" : "Needs Manual Review";
     string StatusClass(string status) => status switch {
         PaymentStatus.Verified => "status-verified", PaymentStatus.Rejected => "status-rejected", _ => "status-pending" };
     string StatusLabel(string status) => status switch {
@@ -54,9 +54,9 @@
                     <tr>
                         <td><strong class="owner-booking-code">BK-@item.Booking?.CreatedAt.Year-@item.BookingId.ToString("D3")</strong><span class="owner-cell-subtext">@packageName</span></td>
                         <td><strong>@(item.Booking?.Client?.FullName ?? "Unknown client")</strong></td>
-                        <td><strong>₱@item.Amount.ToString("N2")</strong>@if(ocr?.ExtractedAmount.HasValue==true){<span class="owner-cell-subtext">Detected: ₱@ocr.ExtractedAmount.Value.ToString("N2")</span>}</td>
+                        <td><strong>Expected: ₱@((item.ExpectedAmountAtUpload??item.Amount).ToString("N2"))</strong>@if(ocr?.ExtractedAmount.HasValue==true){<span class="owner-cell-subtext">Detected: ₱@ocr.ExtractedAmount.Value.ToString("N2")</span>}</td>
                         <td><button type="button" class="owner-proof-button js-proof-preview" data-proof-src="@Url.Action("PaymentProof","Payments",new{id=item.Id})" data-proof-title="Payment proof for BK-@item.BookingId" aria-label="Enlarge payment proof"><img src="@Url.Action("PaymentProof","Payments",new{id=item.Id})" class="owner-proof-thumb" alt="Payment proof thumbnail" /></button></td>
-                        <td><span class="ocr-badge @OcrClass(ocr?.VerificationResult)">@OcrLabel(ocr?.VerificationResult)</span>@if(ocr?.IsDuplicateReference==true){<span class="owner-attention-note"><i class="bi bi-exclamation-triangle" aria-hidden="true"></i> Duplicate reference</span>}</td>
+                        <td><span class="ocr-badge @OcrClass(ocr?.VerificationResult)">@OcrLabel(ocr?.VerificationResult)</span>@if(ocr?.IsDuplicateReference==true||ocr?.IsDuplicateImage==true){<span class="owner-attention-note"><i class="bi bi-exclamation-triangle" aria-hidden="true"></i> Possible duplicate proof</span>}</td>
                         <td><span class="status-badge @StatusClass(item.Status)">@StatusLabel(item.Status)</span></td>
                         <td class="text-end"><a asp-action="Verify" asp-route-id="@item.Id" class="btn btn-sm btn-primary">@(isOwner ? "Review" : "View")</a></td>
                     </tr>

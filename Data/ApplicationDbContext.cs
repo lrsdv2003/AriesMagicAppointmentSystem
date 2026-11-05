@@ -123,6 +123,8 @@ namespace AriesMagicAppointmentSystem.Data
                 .IsUnique();
 
             builder.Entity<Payment>().Property(p => p.Amount).HasPrecision(18, 2);
+            builder.Entity<Payment>().Property(p => p.ExpectedAmountAtUpload).HasPrecision(18, 2);
+            builder.Entity<OcrVerification>().HasIndex(o => o.ProofSha256);
             builder.Entity<RefundRequest>().Property(r => r.Amount).HasPrecision(18, 2);
             builder.Entity<RefundRequest>().Property(r => r.ApprovedAmount).HasPrecision(18, 2);
             builder.Entity<OcrVerification>().Property(o => o.ExtractedAmount).HasPrecision(18, 2);

@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using AriesMagicAppointmentSystem.Data;
 using AriesMagicAppointmentSystem.Models;
@@ -50,16 +51,21 @@ namespace AriesMagicAppointmentSystem.Services
 
             try
             {
+                await using (var proof = File.OpenRead(request.FilePath))
+                    verification.ProofSha256 = Convert.ToHexString(await SHA256.HashDataAsync(proof, cancellationToken));
+
                 var dataPath = Path.Combine(_environment.ContentRootPath, "tessdata");
                 using var engine = new TesseractEngine(dataPath, "eng", EngineMode.Default);
-                using var image = Pix.LoadFromFile(request.FilePath);
+                using var image = OcrImagePreprocessor.LoadForOcr(request.FilePath, out var lowResolution);
                 using var page = engine.Process(image, PageSegMode.Auto);
                 var text = (page.GetText() ?? string.Empty).Trim();
                 var confidence = Math.Round((decimal)page.GetMeanConfidence() * 100m, 1);
 
                 verification.RawText = text.Length > 12000 ? text[..12000] : text;
                 verification.OcrConfidence = confidence;
-                verification.ExtractedAmount = ExtractAmount(text, request.ExpectedAmount);
+                var amount = ReceiptAmountExtractor.Extract(text);
+                verification.ExtractedAmount = amount.Amount;
+                verification.AmountReliability = amount.Reliability;
                 verification.ExtractedReferenceNumber = ExtractReference(text);
                 verification.ExtractedSender = ExtractLabeledValue(text, "sender", "from", "account name");
                 verification.ExtractedReceiver = ExtractLabeledValue(text, "receiver", "recipient", "merchant", "paid to", "to");
@@ -69,8 +75,14 @@ namespace AriesMagicAppointmentSystem.Services
                 verification.ExtractedTime = ExtractTime(text);
 
                 var warnings = new List<string>();
-                if (image.Width < 500 || image.Height < 500)
+                if (lowResolution)
                     warnings.Add("Low image resolution may reduce OCR accuracy.");
+                if (amount.Ambiguous)
+                    warnings.Add("Several plausible transaction amounts were found. OCR did not guess an amount.");
+                else if (amount.Amount is null)
+                    warnings.Add("Transaction amount was not reliably detected. Manual review required.");
+                else if (amount.Reliability.StartsWith("Low", StringComparison.Ordinal))
+                    warnings.Add("Amount has no explicit transfer label. Check it against the receipt.");
                 if (confidence < 65m)
                     warnings.Add("Low OCR confidence - manual review recommended.");
                 if (string.IsNullOrWhiteSpace(text))
@@ -88,6 +100,15 @@ namespace AriesMagicAppointmentSystem.Services
                 if (!string.IsNullOrWhiteSpace(verification.ExtractedPaymentMethod) && !string.IsNullOrWhiteSpace(request.ExpectedPaymentMethod) &&
                     !ContainsNormalized(verification.ExtractedPaymentMethod, request.ExpectedPaymentMethod))
                     warnings.Add("Detected payment method does not match the selected payment method.");
+
+                if (!string.IsNullOrWhiteSpace(verification.ProofSha256))
+                {
+                    verification.IsDuplicateImage = await _context.OcrVerifications.AsNoTracking()
+                        .AnyAsync(x => x.ProofSha256 == verification.ProofSha256 &&
+                            (!request.PaymentId.HasValue || x.PaymentId != request.PaymentId), cancellationToken);
+                    if (verification.IsDuplicateImage)
+                        warnings.Add("The same receipt image was previously submitted. Owner must investigate before crediting payment.");
+                }
 
                 if (!string.IsNullOrWhiteSpace(verification.ExtractedReferenceNumber))
                 {
@@ -109,7 +130,7 @@ namespace AriesMagicAppointmentSystem.Services
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "OCR processing failed for payment {PaymentId} refund {RefundRequestId}", request.PaymentId, request.RefundRequestId);
+                _logger.LogWarning("OCR processing failed. FailureClass={FailureClass}", ex.GetType().Name);
                 verification.VerificationResult = OcrVerificationResults.OcrFailed;
                 verification.ProcessingError = "OCR could not analyze this image. Manual review is required.";
                 verification.WarningSummary = "OCR analysis failed. The screenshot must be reviewed manually.";
@@ -121,7 +142,7 @@ namespace AriesMagicAppointmentSystem.Services
         private static string DetermineResult(OcrVerification v, OcrAnalysisRequest request, List<string> warnings)
         {
             if (string.IsNullOrWhiteSpace(v.RawText)) return OcrVerificationResults.OcrFailed;
-            var mismatch = v.IsDuplicateReference || IsNegativeStatus(v.ExtractedStatus) ||
+            var mismatch = v.IsDuplicateReference || v.IsDuplicateImage || IsNegativeStatus(v.ExtractedStatus) ||
                 (v.ExtractedAmount.HasValue && Math.Abs(v.ExtractedAmount.Value - request.ExpectedAmount) > 0.01m) ||
                 (!string.IsNullOrWhiteSpace(v.ExtractedReceiver) && !OcrComparison.ReceiverMatches(v.ExtractedReceiver, request.ExpectedReceiver));
             if (mismatch) return OcrVerificationResults.MismatchDetected;
@@ -133,40 +154,28 @@ namespace AriesMagicAppointmentSystem.Services
             if (!string.IsNullOrWhiteSpace(v.ExtractedPaymentMethod) && !string.IsNullOrWhiteSpace(request.ExpectedPaymentMethod) && ContainsNormalized(v.ExtractedPaymentMethod, request.ExpectedPaymentMethod)) matches++;
             if (!string.IsNullOrWhiteSpace(v.ExtractedReferenceNumber)) matches++;
 
-            if ((v.OcrConfidence ?? 0) < 50m) return OcrVerificationResults.ManualReviewRequired;
-            if (matches >= 3 && warnings.Count <= 1) return OcrVerificationResults.LikelyMatch;
+            if (!v.ExtractedAmount.HasValue || string.IsNullOrWhiteSpace(v.ExtractedReferenceNumber) ||
+                !IsPositiveStatus(v.ExtractedStatus) || (v.OcrConfidence ?? 0) < 60m ||
+                v.AmountReliability is null || v.AmountReliability.StartsWith("Low", StringComparison.Ordinal))
+                return OcrVerificationResults.ManualReviewRequired;
+            if (matches >= 3 && warnings.Count == 0) return OcrVerificationResults.LikelyMatch;
             if (matches >= 1) return OcrVerificationResults.PartialMatch;
             return OcrVerificationResults.ManualReviewRequired;
         }
 
-        private static decimal? ExtractAmount(string text, decimal expected)
-        {
-            var values = Regex.Matches(text, @"(?i)(?:PHP|PHP\s*₱|₱|P\s*)\s*([0-9]{1,3}(?:[, ][0-9]{3})*(?:\.[0-9]{1,2})?|[0-9]+(?:\.[0-9]{1,2})?)")
-                .Select(m => decimal.TryParse(m.Groups[1].Value.Replace(",", "").Replace(" ", ""), NumberStyles.Number, CultureInfo.InvariantCulture, out var v) ? (decimal?)v : null)
-                .Where(v => v.HasValue).Select(v => v!.Value).Where(v => v > 0).Distinct().ToList();
-            if (values.Count == 0)
-            {
-                values = Regex.Matches(text, @"(?im)(?:amount|total|paid)\s*[:\-]?\s*(?:PHP|₱|P)?\s*([0-9,]+(?:\.[0-9]{1,2})?)")
-                    .Select(m => decimal.TryParse(m.Groups[1].Value.Replace(",", ""), NumberStyles.Number, CultureInfo.InvariantCulture, out var v) ? (decimal?)v : null)
-                    .Where(v => v.HasValue).Select(v => v!.Value).Where(v => v > 0).Distinct().ToList();
-            }
-            return values.OrderBy(v => Math.Abs(v - expected)).FirstOrDefault() is var best && best > 0 ? best : null;
-        }
-
         private static string? ExtractReference(string text)
         {
-            var labeled = Regex.Match(text, @"(?im)(?:reference|ref\.?|transaction\s*(?:id|no\.?|number)|trace\s*(?:id|no\.?)?)\s*[:#\-]?\s*([A-Z0-9\-]{8,30})");
+            var labeled = Regex.Match(text, @"(?im)\b(?:reference(?:\s*(?:number|no\.?|id))?|ref\.?(?:\s*(?:number|no\.?|id))?|transaction\s*(?:id|no\.?|number)|trace\s*(?:id|no\.?|number))\s*[:#\-]?\s*([A-Z0-9][A-Z0-9\-]{7,34})\b");
             if (labeled.Success) return labeled.Groups[1].Value.Trim();
-            var generic = Regex.Matches(text, @"\b[A-Z0-9]{10,24}\b", RegexOptions.IgnoreCase)
-                .Select(m => m.Value).FirstOrDefault(v => v.Any(char.IsDigit) && v.Count(char.IsDigit) >= 8);
-            return generic;
+            // Do not guess from an unlabeled number: account, phone and booking IDs often look like references.
+            return null;
         }
 
         private static string? ExtractLabeledValue(string text, params string[] labels)
         {
             foreach (var label in labels)
             {
-                var m = Regex.Match(text, $@"(?im)^\s*{Regex.Escape(label)}\s*[:\-]?\s*([^\r\n]{{2,80}})$");
+                var m = Regex.Match(text, $@"(?im)^\s*{Regex.Escape(label)}\b\s*[:\-]?\s*([^\r\n]{{2,80}})$");
                 if (m.Success) return m.Groups[1].Value.Trim();
             }
             return null;
@@ -175,6 +184,7 @@ namespace AriesMagicAppointmentSystem.Services
         private static string? ExtractStatus(string text)
         {
             if (Regex.IsMatch(text, @"\b(unsuccessful|unpaid|not\s+(?:successful|completed|paid))\b", RegexOptions.IgnoreCase)) return "Failed";
+            if (Regex.IsMatch(text, @"\b(processing|in\s+progress|awaiting\s+confirmation)\b", RegexOptions.IgnoreCase)) return "Pending";
             foreach (var status in new[] { "Failed", "Cancelled", "Canceled", "Pending", "Successful", "Completed", "Paid" })
                 if (Regex.IsMatch(text, $@"\b{status}\b", RegexOptions.IgnoreCase)) return status;
             return null;
@@ -184,13 +194,13 @@ namespace AriesMagicAppointmentSystem.Services
         {
             if (Regex.IsMatch(text, @"\bGCash\b", RegexOptions.IgnoreCase)) return "GCash";
             if (Regex.IsMatch(text, @"\bMaya\b|PayMaya", RegexOptions.IgnoreCase)) return "Maya";
-            if (Regex.IsMatch(text, @"bank\s*transfer|online\s*bank", RegexOptions.IgnoreCase)) return "Bank Transfer";
+            if (Regex.IsMatch(text, @"bank\s*transfer|online\s*bank|\b(?:BDO|BPI|UnionBank|Metrobank|Landbank|RCBC|PNB|Security\s*Bank|China\s*Bank)\b", RegexOptions.IgnoreCase)) return "Bank Transfer";
             return null;
         }
 
         private static DateTime? ExtractDate(string text)
         {
-            var patterns = new[] { @"\b\d{1,2}[/-]\d{1,2}[/-]\d{2,4}\b", @"\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)[a-z]*\s+\d{1,2},?\s+\d{4}\b", @"\b\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)[a-z]*\s+\d{4}\b" };
+            var patterns = new[] { @"\b\d{4}-\d{1,2}-\d{1,2}\b", @"\b\d{1,2}[/-]\d{1,2}[/-]\d{2,4}\b", @"\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)[a-z]*\s+\d{1,2},?\s+\d{4}\b", @"\b\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)[a-z]*\s+\d{4}\b" };
             foreach (var pattern in patterns)
             foreach (Match m in Regex.Matches(text, pattern, RegexOptions.IgnoreCase))
                 if (DateTime.TryParse(m.Value, CultureInfo.InvariantCulture, DateTimeStyles.AllowWhiteSpaces, out var date)) return date.Date;

@@ -221,6 +221,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             {
                 BookingId = model.BookingId,
                 Amount = model.Amount,
+                ExpectedAmountAtUpload = model.Amount,
                 ProofImagePath = savedProof.StoredPath,
                 PaymentMethod = model.PaymentMethod.Trim(),
                 Status = PaymentStatus.Pending,
@@ -466,10 +467,42 @@ namespace AriesMagicAppointmentSystem.Controllers
             return View(payment);
         }
 
+        [HttpPost]
+        [Authorize(Roles = "Owner")]
+        [ValidateAntiForgeryToken]
+        [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("account")]
+        public async Task<IActionResult> ReanalyzeProof(int id)
+        {
+            var payment = await _context.Payments.AsNoTracking().FirstOrDefaultAsync(p => p.Id == id);
+            if (payment == null) return NotFound();
+            if (payment.Status is not (PaymentStatus.Pending or PaymentStatus.AdditionalEvidenceRequired))
+            {
+                TempData["Error"] = "Only unverified payment proofs can be reanalyzed.";
+                return RedirectToAction(nameof(Verify), new { id });
+            }
+            try
+            {
+                var proofPath = GetFinancialProofPhysicalPath(payment.ProofImagePath);
+                if (!System.IO.File.Exists(proofPath)) throw new FileNotFoundException();
+                var ocr = await AnalyzePaymentProofAsync(payment, proofPath);
+                _context.OcrVerifications.Add(ocr);
+                await _context.SaveChangesAsync();
+                await LogActivityAsync(SystemActivityType.OcrAnalysisCompleted,
+                    $"Owner reanalyzed proof for payment #{id}; no payment was approved or credited.",
+                    id.ToString(), "Payment", new { ocr.VerificationResult, ocr.IsDuplicateReference, ocr.IsDuplicateImage });
+                TempData["Success"] = "Proof reanalyzed. Review the latest OCR result manually; no payment amount or status was changed.";
+            }
+            catch (Exception)
+            {
+                TempData["Error"] = "This proof could not be reanalyzed. Request a clearer image or continue with manual review.";
+            }
+            return RedirectToAction(nameof(Verify), new { id });
+        }
+
         [HttpPost, ActionName("Verify")]
         [Authorize(Roles = "Owner")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> VerifyConfirmed(int id)
+        public async Task<IActionResult> VerifyConfirmed(int id, decimal? verifiedAmount, string? amountCorrectionReason, string? correctedReference, bool duplicateOverrideConfirmed = false, string? duplicateOverrideReason = null)
         {
             await using var transaction = await _context.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
             var payment = await _context.Payments
@@ -484,9 +517,25 @@ namespace AriesMagicAppointmentSystem.Controllers
                 return RedirectToAction(nameof(PendingVerification));
             }
 
-            if (payment.Amount <= 0m)
+            var confirmedAmount = verifiedAmount ?? payment.Amount;
+            if (confirmedAmount <= 0m || confirmedAmount != decimal.Round(confirmedAmount, 2) || confirmedAmount > 1000000m)
             {
-                TempData["Error"] = "The submitted payment amount must be greater than zero.";
+                TempData["Error"] = "Enter a positive Owner-confirmed payment amount with no more than two decimal places.";
+                return RedirectToAction(nameof(Verify), new { id });
+            }
+            var expectedAtUpload = payment.ExpectedAmountAtUpload ?? payment.Amount;
+            var ownerReference = correctedReference is null ? payment.TransactionReference : correctedReference.Trim();
+            if (ownerReference?.Length > 100 || (ownerReference is { Length: > 0 } &&
+                !System.Text.RegularExpressions.Regex.IsMatch(ownerReference, @"^[A-Za-z0-9/_.\- ]+$")))
+            {
+                TempData["Error"] = "Enter a valid transaction reference, up to 100 characters.";
+                return RedirectToAction(nameof(Verify), new { id });
+            }
+            var amountChanged = confirmedAmount != expectedAtUpload;
+            var referenceChanged = !string.Equals(ownerReference, payment.TransactionReference, StringComparison.Ordinal);
+            if ((amountChanged || referenceChanged) && (string.IsNullOrWhiteSpace(amountCorrectionReason) || amountCorrectionReason.Trim().Length is < 10 or > 1000))
+            {
+                TempData["Error"] = "Explain any Owner correction to the amount or reference (10 to 1,000 characters).";
                 return RedirectToAction(nameof(Verify), new { id });
             }
             var financialBefore = await _financialService.GetSummaryAsync(payment.BookingId);
@@ -494,12 +543,23 @@ namespace AriesMagicAppointmentSystem.Controllers
                 .Where(o => o.PaymentId == payment.Id && o.VerificationPurpose == OcrVerificationPurposes.PaymentProof)
                 .OrderByDescending(o => o.ProcessedAt).FirstOrDefaultAsync();
             var detectedAmount = latestOcr?.ExtractedAmount;
-            if (payment.Amount > financialBefore.RemainingBalance || (detectedAmount.HasValue && detectedAmount.Value > financialBefore.RemainingBalance))
+            var usedReference = !string.IsNullOrWhiteSpace(ownerReference) && await _context.Payments.AsNoTracking()
+                .AnyAsync(p => p.Id != payment.Id && p.Status == PaymentStatus.Verified && p.TransactionReference == ownerReference);
+            var usedImage = !string.IsNullOrWhiteSpace(latestOcr?.ProofSha256) && await _context.OcrVerifications.AsNoTracking()
+                .AnyAsync(o => o.PaymentId != payment.Id && o.ProofSha256 == latestOcr.ProofSha256 &&
+                    o.Payment != null && o.Payment.Status == PaymentStatus.Verified);
+            if ((usedReference || usedImage) && (!duplicateOverrideConfirmed ||
+                string.IsNullOrWhiteSpace(duplicateOverrideReason) || duplicateOverrideReason.Trim().Length is < 12 or > 500))
+            {
+                TempData["Error"] = "This reference or receipt was used for a previously verified payment. Investigate and record an Owner override reason (12–500 characters) before crediting it again.";
+                return RedirectToAction(nameof(Verify), new { id });
+            }
+            if (confirmedAmount > financialBefore.RemainingBalance)
             {
                 TempData["Error"] = $"Payment amount exceeds the remaining balance of ₱{financialBefore.RemainingBalance:N2}. Manual review required. Do not approve this payment until the discrepancy is resolved.";
                 return RedirectToAction(nameof(Verify), new { id });
             }
-            if (financialBefore.TotalVerifiedPayments <= 0 && financialBefore.RemainingBalance > FixedDownpaymentAmount && payment.Amount < FixedDownpaymentAmount)
+            if (financialBefore.TotalVerifiedPayments <= 0 && financialBefore.RemainingBalance > FixedDownpaymentAmount && confirmedAmount < FixedDownpaymentAmount)
             {
                 TempData["Error"] = "Minimum down payment is ₱2,000.";
                 return RedirectToAction(nameof(Verify), new { id });
@@ -525,6 +585,14 @@ namespace AriesMagicAppointmentSystem.Controllers
             }
 
             var previousStatus = payment.Status;
+            payment.ExpectedAmountAtUpload ??= expectedAtUpload;
+            payment.Amount = confirmedAmount;
+            payment.TransactionReference = string.IsNullOrWhiteSpace(ownerReference) ? null : ownerReference;
+            if (amountChanged || referenceChanged)
+            {
+                var correctionNote = "Owner corrected submitted payment details: " + amountCorrectionReason!.Trim();
+                payment.ReviewerNote = correctionNote.Length > 1000 ? correctionNote[..1000] : correctionNote;
+            }
             payment.Status = PaymentStatus.Verified;
             var verificationAtUtc = DateTime.UtcNow;
             payment.VerifiedAt = DateTime.Now;
@@ -558,7 +626,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             }
 
             await _context.SaveChangesAsync();
-            await LogActivityAsync(SystemActivityType.PaymentVerified, $"Payment #{payment.Id} approved by Owner after OCR-assisted review.", payment.Id.ToString(), "Payment", new { PreviousStatus = previousStatus, NewStatus = payment.Status, OwnerUserId = payment.VerifiedByUserId, OwnerName = payment.VerifiedByUserName, ReviewNotes = payment.ReviewerNote, payment.Amount });
+            await LogActivityAsync(SystemActivityType.PaymentVerified, $"Payment #{payment.Id} approved by Owner after OCR-assisted review.", payment.Id.ToString(), "Payment", new { PreviousStatus = previousStatus, NewStatus = payment.Status, OwnerUserId = payment.VerifiedByUserId, OwnerName = payment.VerifiedByUserName, ReviewNotes = payment.ReviewerNote, payment.Amount, ExpectedAtUpload = expectedAtUpload, OcrDetectedAmount = detectedAmount, AmountCorrected = amountChanged, ReferenceCorrected = referenceChanged, DuplicateOverride = usedReference || usedImage, DuplicateOverrideReason = (usedReference || usedImage) ? duplicateOverrideReason?.Trim() : null });
             var financialAfter = await _financialService.GetSummaryAsync(payment.BookingId);
             if (payment.Booking != null && !string.IsNullOrWhiteSpace(payment.Booking.ApplicationUserId))
             {

@@ -12,6 +12,8 @@ namespace AriesMagicAppointmentSystem.Models
 
         [Required]
         public decimal Amount { get; set; }
+        // Immutable client selection for newer payments; Amount becomes the Owner-confirmed ledger value only on approval.
+        public decimal? ExpectedAmountAtUpload { get; set; }
 
         [Required]
         public string ProofImagePath { get; set; } = string.Empty;

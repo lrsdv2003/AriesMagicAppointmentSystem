@@ -906,6 +906,10 @@ namespace AriesMagicAppointmentSystem.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("AmountReliability")
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
                     b.Property<int?>("DuplicatePaymentId")
                         .HasColumnType("int");
 
@@ -940,6 +944,9 @@ namespace AriesMagicAppointmentSystem.Migrations
                         .HasMaxLength(40)
                         .HasColumnType("nvarchar(40)");
 
+                    b.Property<bool>("IsDuplicateImage")
+                        .HasColumnType("bit");
+
                     b.Property<bool>("IsDuplicateReference")
                         .HasColumnType("bit");
 
@@ -956,6 +963,10 @@ namespace AriesMagicAppointmentSystem.Migrations
                     b.Property<string>("ProcessingError")
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("ProofSha256")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
 
                     b.Property<string>("RawText")
                         .HasColumnType("nvarchar(max)");
@@ -983,6 +994,8 @@ namespace AriesMagicAppointmentSystem.Migrations
 
                     b.HasIndex("PaymentId");
 
+                    b.HasIndex("ProofSha256");
+
                     b.HasIndex("RefundRequestId");
 
                     b.ToTable("OcrVerifications");
@@ -1002,6 +1015,10 @@ namespace AriesMagicAppointmentSystem.Migrations
 
                     b.Property<int>("BookingId")
                         .HasColumnType("int");
+
+                    b.Property<decimal?>("ExpectedAmountAtUpload")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<DateTime?>("InitialVerificationAtUtc")
                         .HasColumnType("datetime2");

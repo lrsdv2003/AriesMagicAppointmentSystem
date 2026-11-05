@@ -68,6 +68,7 @@ internal static class ReleaseIntegrationRunner
         if(args.SequenceEqual(new[]{"--manual-ui-preview"})) { await BookingBrowserFixture.RunAsync(manualPreview:true); return; }
         if(args.SequenceEqual(new[]{"--independent-findings"})) { await IndependentFindingsReview.RunAsync(); return; }
         if(args.SequenceEqual(new[]{"--reproduce-findings"})) { await IndependentFindingsReview.RunAsync(reproduce:true); return; }
+        if(args.SequenceEqual(new[]{"--ocr-amount-only"})) { OcrAmountRegressionTests.Run(); return; }
         if(args.SequenceEqual(new[]{"--personnel-only"})) { await PersonnelProvisioningTests.RunAsync(); return; }
         if(args.SequenceEqual(new[]{"--personnel-operator-only"})) { await PersonnelOperatorContractTests.RunAsync(); return; }
         if(args.Length != 0) throw new ArgumentException("Unknown test mode.");
@@ -208,7 +209,22 @@ internal static class ReleaseIntegrationRunner
             using(var proof=await client.GetAsync($"/Payments/PaymentProof/{payment.Id}")) Check(proof.StatusCode==HttpStatusCode.OK && proof.Headers.CacheControl?.NoStore==true,"Own proof served through protected noncached HTTP route");
             using(var proof=await owner.GetAsync($"/Payments/PaymentProof/{payment.Id}")) Check(proof.StatusCode==HttpStatusCode.OK && proof.Headers.CacheControl?.NoStore==true && (await proof.Content.ReadAsByteArrayAsync()).SequenceEqual(png),"Real Owner cookie reads exact original private proof bytes through protected HTTP route");
             using(var proof=await staff.GetAsync($"/Payments/PaymentProof/{payment.Id}")) Check(proof.StatusCode==HttpStatusCode.Redirect,"Staff cookie denied private financial proof");
-            using(var response=await Post(owner,$"/Payments/Verify/{payment.Id}",ownerToken)) Check(response.StatusCode==HttpStatusCode.Redirect,"Owner verification HTTP commits");
+            Check(payment.ExpectedAmountAtUpload==2000m,"Selected payment amount is preserved separately from OCR and later Owner-confirmed amount");
+            using(var reanalysis=await Post(owner,$"/Payments/ReanalyzeProof/{payment.Id}",ownerToken))
+                Check(reanalysis.StatusCode==HttpStatusCode.Redirect,"Owner can safely reanalyze a pending receipt");
+            Check(await db.OcrVerifications.CountAsync(o=>o.PaymentId==payment.Id&&o.VerificationPurpose==OcrVerificationPurposes.PaymentProof)==2
+                && await db.Payments.AnyAsync(p=>p.Id==payment.Id&&p.Status==PaymentStatus.Pending&&p.Amount==2000m),
+                "Reanalysis creates new advisory OCR evidence without crediting funds");
+            using(var invalidCorrection=await Post(owner,$"/Payments/Verify/{payment.Id}",ownerToken,("verifiedAmount","3500")))
+                Check(invalidCorrection.StatusCode==HttpStatusCode.Redirect&&await db.Payments.AnyAsync(p=>p.Id==payment.Id&&p.Status==PaymentStatus.Pending),
+                    "Unexplained change from PHP 2,000 to PHP 3,500 cannot approve or credit payment");
+            using(var response=await Post(owner,$"/Payments/Verify/{payment.Id}",ownerToken,
+                ("verifiedAmount","2000"),("correctedReference","OWNER-CORRECTED-REF-123456"),
+                ("amountCorrectionReason","Owner cross-checked the transfer reference against provider records.")))
+                Check(response.StatusCode==HttpStatusCode.Redirect,"Owner may correct OCR reference with a documented reason during manual approval");
+            Check(await db.Payments.AnyAsync(p=>p.Id==payment.Id&&p.TransactionReference=="OWNER-CORRECTED-REF-123456"
+                &&p.ExpectedAmountAtUpload==2000m&&p.Amount==2000m),
+                "Correction preserves original expected amount and Owner confirmed financial ledger");
             Check(await db.Bookings.AsNoTracking().AnyAsync(b=>b.Id==booking.Id&&b.Status==BookingStatus.Confirmed),"Verified downpayment confirms booking in SQL");
             var finance=await new PaymentFinancialService(db).GetSummaryAsync(booking.Id);
             Check(finance.TotalVerifiedPayments==2000 && finance.RemainingBalance==8000,"Verified downpayment reduces outstanding balance exactly once");
