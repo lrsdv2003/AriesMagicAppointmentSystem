@@ -18,6 +18,7 @@ public static class EmailFailure
         OperationCanceledException => "Timeout", MailKit.Security.AuthenticationException => "Authentication",
         MailKit.Security.SslHandshakeException or AuthenticationException => "Tls",
         MailKit.Net.Smtp.SmtpCommandException s => (int)s.StatusCode is 530 or 535 ? "Authentication" : "ProviderRejected",
+        HttpRequestException { InnerException: AuthenticationException } => "Tls",
         SocketException or HttpRequestException or IOException => "NetworkOrTransport",
         ArgumentException or OptionsValidationException => "Configuration", _ => "ProviderFailure" };
     public static string Classify(HttpStatusCode s) => (int)s switch {401 or 403=>"AuthenticationOrSenderAuthorization",429=>"RateLimited",>=500=>"ProviderUnavailable",_=>"ProviderRejected"};

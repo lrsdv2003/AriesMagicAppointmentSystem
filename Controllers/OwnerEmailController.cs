@@ -18,7 +18,12 @@ public sealed class OwnerEmailController(UserManager<ApplicationUser> users,Sign
  async Task<ApplicationUser> Actor()=>await users.GetUserAsync(User)??throw new UnauthorizedAccessException();
  [HttpGet]public async Task<IActionResult> Index(){var u=await Actor();ViewBag.CurrentEmail=u.Email;ViewBag.Pending=await changes.Pending(u);return View(new OwnerEmailInput());}
  [HttpPost,ValidateAntiForgeryToken]public async Task<IActionResult> SendVerification(OwnerEmailInput input){var u=await Actor();
- if(ModelState.IsValid&&(!await users.GetTwoFactorEnabledAsync(u)||await users.VerifyTwoFactorTokenAsync(u,users.Options.Tokens.AuthenticatorTokenProvider,(input.AuthenticatorCode??" ").Replace(" ","")))&&(await signIn.CheckPasswordSignInAsync(u,input.CurrentPassword,true)).Succeeded){
+ var authenticated=ModelState.IsValid&&(await signIn.CheckPasswordSignInAsync(u,input.CurrentPassword,true)).Succeeded;
+ if(authenticated&&await users.GetTwoFactorEnabledAsync(u)) {
+     authenticated=await users.VerifyTwoFactorTokenAsync(u,users.Options.Tokens.AuthenticatorTokenProvider,(input.AuthenticatorCode??"").Replace(" ",""));
+     if(!authenticated)await users.AccessFailedAsync(u);
+ }
+ if(authenticated){
  try{await changes.Request(u,input.NewEmail.Trim());TempData["SuccessMessage"]="Verification submitted. Your current login remains active until confirmation.";}catch{await changes.Audit(u,"request refused or delivery failed");TempData["ErrorMessage"]="Unable to submit verification. Check the address, cooldown and delivery configuration.";}}
  else {await changes.Audit(u,"reauthentication or validation failed");TempData["ErrorMessage"]="Verification refused. Check your details. If two-factor authentication is enabled, enter your authenticator code.";}
  return RedirectToAction(nameof(Index));}
