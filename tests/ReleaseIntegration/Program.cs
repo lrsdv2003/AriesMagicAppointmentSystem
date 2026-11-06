@@ -68,6 +68,7 @@ internal static class ReleaseIntegrationRunner
         if(args.SequenceEqual(new[]{"--manual-ui-preview"})) { await BookingBrowserFixture.RunAsync(manualPreview:true); return; }
         if(args.SequenceEqual(new[]{"--independent-findings"})) { await IndependentFindingsReview.RunAsync(); return; }
         if(args.SequenceEqual(new[]{"--reproduce-findings"})) { await IndependentFindingsReview.RunAsync(reproduce:true); return; }
+        if(args.SequenceEqual(new[]{"--location-only"})) { await LocationUpgradeTests.RunAsync(); return; }
         if(args.SequenceEqual(new[]{"--ocr-amount-only"})) { OcrAmountRegressionTests.Run(); return; }
         if(args.SequenceEqual(new[]{"--personnel-only"})) { await PersonnelProvisioningTests.RunAsync(); return; }
         if(args.SequenceEqual(new[]{"--personnel-operator-only"})) { await PersonnelOperatorContractTests.RunAsync(); return; }
@@ -87,7 +88,10 @@ internal static class ReleaseIntegrationRunner
         var mapBuilder = WebApplication.CreateBuilder(); mapBuilder.Logging.ClearProviders();
         await using var map = mapBuilder.Build(); map.Urls.Add("http://127.0.0.1:0");
         var mapFails = false;
-        map.MapGet("/search", () => mapFails ? Microsoft.AspNetCore.Http.Results.StatusCode(503) : Microsoft.AspNetCore.Http.Results.Json(new[] { new { lat="14.58125", lon="121.1258", display_name="Isolated fixture venue, Philippines" } }));
+        map.MapGet("/search", () => mapFails ? Microsoft.AspNetCore.Http.Results.StatusCode(503) : Microsoft.AspNetCore.Http.Results.Json(new[] {
+            new { lat="7.58125",lon="125.1258",display_name="Wrong fixture venue",addresstype="building",place_rank=30 },
+            new { lat="14.58125", lon="121.1258",display_name="Fixture venue",addresstype="building",place_rank=30 }
+        }));
         await map.StartAsync();
         var mapUrl = new Uri(map.Services.GetRequiredService<IServer>().Features.Get<IServerAddressesFeature>()!.Addresses.Single());
         try
@@ -171,10 +175,12 @@ internal static class ReleaseIntegrationRunner
             var date=DateTime.Today.AddDays(40).ToString("yyyy-MM-dd");
             (string,string)[] bookingFields=[("EventType","Company Events"),("Motif","Blue"),("PartyTheme","Corporate"),("EventDate",date),("StartTime","09:00:00"),
                 ("PartyVenue","Fixture venue"),("PaxCount","25"),("ContactPerson","Fixture Client"),("ContactNumber","09123456789"),("ServiceId",package.Id.ToString()),
-                ("AcceptTerms","true"),("AcceptedTermsVersion","2026-11-03-v2"),("FinalPrice","0.01"),("TravelFee","-99999"),("VenueLatitude","90")];
+                ("AcceptTerms","true"),("AcceptedTermsVersion","2026-11-03-v2"),("FinalPrice","0.01"),("TravelFee","-99999"),("VenueLatitude","14.58125"),("VenueLongitude","121.1258"),("VenueSelectionMethod","Search"),("CustomerConfirmedLocation","true")];
             using(var response=await Post(client,"/Bookings/SubmitBooking",clientToken,bookingFields)) Check(response.StatusCode==HttpStatusCode.Redirect,"Client booking submitted over authenticated HTTP");
             var booking=await db.Bookings.AsNoTracking().SingleAsync();
-            Check(booking.FinalPrice==10000 && booking.TravelFee==0 && booking.VenueLatitude==14.58125,"Database stores trusted server price and actual geocoding response");
+            Check(booking.FinalPrice==10000 && booking.TravelFee==0 && booking.VenueLatitude==14.58125
+                && booking.VenueLongitude==121.1258 && booking.TravelFeeStatus==VenueLocationPolicy.Calculated,
+                "Exact selected geocoder result wins over earlier incorrect suggestions; server validates price and coordinates");
             using(var response=await Post(staff,$"/Bookings/Approve/{booking.Id}",staffToken)) Check(response.StatusCode==HttpStatusCode.Redirect,"Staff approval HTTP completes");
             Check(await db.Bookings.AsNoTracking().AnyAsync(b=>b.Id==booking.Id&&b.Status==BookingStatus.AwaitingDownpayment),"Staff approval persists awaiting-downpayment status");
             using(var contextPage=await client.GetAsync($"/Payments/Upload?bookingId={booking.Id}")) {
@@ -299,9 +305,69 @@ internal static class ReleaseIntegrationRunner
             await ConcurrentRefunds(db,owner,ownerToken,booking.Id);
             await IntegrityChecks(db,booking.Id,payment.Id);
             await FinancialRollback(db,connection,smtp.Port,mapUrl,root,passwords["Owner"],booking,package.Id);
-            var bookingsBeforeFailure=await db.Bookings.CountAsync();
+            var beforeManual=await db.Bookings.CountAsync();
             mapFails=true;
-            using(var response=await Post(client,"/Bookings/SubmitBooking",clientToken,bookingFields)) Check(response.StatusCode==HttpStatusCode.OK && await db.Bookings.CountAsync()==bookingsBeforeFailure,"Real mapping 503 prevents booking with understandable validation and no partial data");
+            var manualFields=bookingFields
+                .Where(x=>x.Item1 is not ("PartyVenue" or "VenueLatitude" or "VenueLongitude"
+                    or "VenueSelectionMethod" or "EventDate"))
+                .Concat(new (string,string)[] {
+                    ("EventDate",DateTime.Today.AddDays(62).ToString("yyyy-MM-dd")),
+                    ("PartyVenue",""),
+                    ("VenueSelectionMethod","Manual"),
+                    ("ManualStreet","Unit 4 Maple Subdivision"),
+                    ("ManualBarangay","San Isidro"),
+                    ("ManualCity","Antipolo"),
+                    ("ManualProvince","Rizal"),
+                    ("ManualVenueName","Synthetic events hall"),
+                    ("VenueDirections","Next to the community library")
+                }).ToArray();
+            using(var response=await Post(client,"/Bookings/SubmitBooking",clientToken,manualFields))
+                Check(response.StatusCode==HttpStatusCode.Redirect&&await db.Bookings.CountAsync()==beforeManual+1,
+                    "Manual address booking succeeds even during geocoding outage");
+            var manual=await db.Bookings.AsNoTracking().OrderByDescending(b=>b.Id).FirstAsync();
+            Check(manual.VenueSelectionMethod==VenueLocationPolicy.Manual && manual.VenueLatitude==null
+                && manual.DistanceKm==null && manual.TravelFee==0m
+                && manual.TravelFeeStatus==VenueLocationPolicy.PendingReview && manual.RequiresManualReview,
+                "Manual address preserves detailed venue and explicitly pending travel charge, never fake coordinates");
+            Check(manual.PartyVenue.Contains("Maple Subdivision")&&manual.PartyVenue.Contains("Antipolo")
+                &&manual.VenueDirections=="Next to the community library",
+                "Manual address, barangay, city, province and directions preserved");
+            using(var blocked=await Post(staff,$"/Bookings/Approve/{manual.Id}",staffToken))
+                Check(blocked.StatusCode==HttpStatusCode.Redirect
+                    &&await db.Bookings.AnyAsync(b=>b.Id==manual.Id&&b.Status==BookingStatus.Pending),
+                    "Staff cannot approve an unresolved manual location for payment");
+            using(var resolve=await Post(staff,$"/Bookings/ResolveVenue/{manual.Id}",staffToken,
+                ("latitude","14.58125"),("longitude","121.1258"),
+                ("confirmedTravelFee","250.00"),("reviewReason","Confirmed venue with client and adjusted travel charge.")))
+                Check(resolve.StatusCode==HttpStatusCode.Redirect,
+                    "Staff submits a confirmed venue pin and revised travel quote");
+            var quoted=await db.Bookings.AsNoTracking().SingleAsync(b=>b.Id==manual.Id);
+            Check(quoted.TravelFeeStatus==VenueLocationPolicy.AwaitingCustomerAcceptance
+                &&quoted.TravelFee==250m &&quoted.FinalPrice==10250m &&quoted.Status==BookingStatus.Pending
+                &&quoted.VenueLatitude==14.58125 &&quoted.VenueStaffReviewedAtUtc.HasValue,
+                "Staff resolution updates quote only, without allowing payment or altering event details");
+            using(var blocked=await Post(staff,$"/Bookings/Approve/{manual.Id}",staffToken))
+                Check(blocked.StatusCode==HttpStatusCode.Redirect &&
+                    await db.Bookings.AnyAsync(b=>b.Id==manual.Id&&b.Status==BookingStatus.Pending),
+                    "Staff cannot bypass customer acceptance of revised travel charge");
+            using(var unrelated=await Post(otherClient,$"/Bookings/AcceptVenueQuote/{manual.Id}",otherChatToken,
+                ("quotedTotal","10250"),("acceptTravelQuote","true")))
+                Check(unrelated.StatusCode==HttpStatusCode.NotFound,"Unrelated client cannot accept another booking quote");
+            using(var stale=await Post(client,$"/Bookings/AcceptVenueQuote/{manual.Id}",clientToken,
+                ("quotedTotal","9999"),("acceptTravelQuote","true")))
+                Check(stale.StatusCode==HttpStatusCode.Redirect&&
+                    await db.Bookings.AnyAsync(b=>b.Id==manual.Id&&b.TravelFeeStatus==VenueLocationPolicy.AwaitingCustomerAcceptance),
+                    "Stale/forged travel quote is rejected");
+            using(var accept=await Post(client,$"/Bookings/AcceptVenueQuote/{manual.Id}",clientToken,
+                ("quotedTotal","10250"),("acceptTravelQuote","true")))
+                Check(accept.StatusCode==HttpStatusCode.Redirect&&
+                    await db.Bookings.AnyAsync(b=>b.Id==manual.Id&&b.TravelFeeStatus==VenueLocationPolicy.Accepted
+                        &&b.TravelQuoteAcceptedAtUtc.HasValue),
+                    "Only actual customer explicitly accepts Staff-reviewed quote");
+            using(var approve=await Post(staff,$"/Bookings/Approve/{manual.Id}",staffToken))
+                Check(approve.StatusCode==HttpStatusCode.Redirect&&
+                    await db.Bookings.AnyAsync(b=>b.Id==manual.Id&&b.Status==BookingStatus.AwaitingDownpayment),
+                    "Staff may approve only after customer accepts revised quote");
             mapFails=false;
             Check(await db.Notifications.AnyAsync(x=>x.UserId==booking.ApplicationUserId),"Client receives persisted workflow notifications");
             await FeedbackFeatureTests.RunAsync(connection,smtp.Port,mapUrl,root,passwords,otherPassword,Check);

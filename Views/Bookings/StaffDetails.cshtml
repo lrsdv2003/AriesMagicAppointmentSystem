@@ -1,5 +1,6 @@
 @model AriesMagicAppointmentSystem.Models.Booking
 @using AriesMagicAppointmentSystem.Models
+@using AriesMagicAppointmentSystem.Services
 @using System.Text.Json
 @{
     Layout = "_DashboardLayout";
@@ -84,12 +85,36 @@
                 <div class="booking-venue-metrics">
                     <div><span>Distance</span><strong>@(Model.DistanceKm.HasValue ? $"{Model.DistanceKm.Value:N1} km" : "Not available")</strong></div>
                     <div><span>Service zone</span><strong>@(string.IsNullOrWhiteSpace(Model.ServiceZone) ? "Not available" : Model.ServiceZone)</strong></div>
-                    <div><span>Travel fee</span><strong>@(Model.TravelFee > 0 ? $"₱{Model.TravelFee:N2}" : "No travel fee")</strong></div>
+                    <div><span>Travel fee</span><strong>@(Model.TravelFeeStatus == VenueLocationPolicy.PendingReview ? "Pending Staff confirmation" : Model.TravelFee > 0 ? $"₱{Model.TravelFee:N2}" : "No travel fee")</strong></div>
                 </div>
             </div>
             <div class="staff-detail-list staff-detail-list-2col">
                 <div class="staff-detail-span-2"><span>Full Address</span><strong>@(string.IsNullOrWhiteSpace(Model.PartyVenue) ? "Not provided" : Model.PartyVenue)</strong></div>
+                <div><span>Selection method</span><strong>@(Model.VenueSelectionMethod ?? "Legacy / not recorded")</strong></div>
+                <div><span>Location review status</span><strong>@(Model.VenueVerificationStatus ?? "Legacy booking")</strong></div>
+                <div><span>Travel fee status</span><strong>@(Model.TravelFeeStatus ?? "Existing quote")</strong></div>
+                <div><span>Customer pin</span><strong>@(Model.VenueLatitude.HasValue && Model.VenueLongitude.HasValue ? $"{Model.VenueLatitude.Value:F5}, {Model.VenueLongitude.Value:F5}" : "Not provided")</strong></div>
+                @if(!string.IsNullOrWhiteSpace(Model.VenueDirections)){<div class="staff-detail-span-2"><span>Landmark / directions</span><strong>@Model.VenueDirections</strong></div>}
+                @if(Model.TravelFeeStatus == VenueLocationPolicy.PendingReview){<div class="staff-detail-span-2"><strong>Travel fee pending. Do not approve payment or treat the current estimate as final.</strong></div>}
+                @if(Model.TravelFeeStatus == VenueLocationPolicy.AwaitingCustomerAcceptance){<div class="staff-detail-span-2"><strong>Staff quote sent. Await the customer's acceptance before approving payment.</strong></div>}
             </div>
+            @if(isPending && (Model.TravelFeeStatus == VenueLocationPolicy.PendingReview ||
+                Model.TravelFeeStatus == VenueLocationPolicy.AwaitingCustomerAcceptance))
+            {
+                <form asp-action="ResolveVenue" asp-route-id="@Model.Id" method="post" class="mt-3">
+                    @Html.AntiForgeryToken()
+                    <h3 class="h6">Resolve the venue and travel quote</h3>
+                    <p class="small">Confirm an actual venue pin and the written address with the customer. The normal service coverage rules are checked on the server. Travel charges cannot be collected before customer acceptance.</p>
+                    <div class="row g-2">
+                        <div class="col-md-6"><label class="form-label" for="locationLatitude">Confirmed latitude</label><input id="locationLatitude" name="latitude" class="form-control" type="number" step="any" min="4" max="22.5" value="@Model.VenueLatitude" required/></div>
+                        <div class="col-md-6"><label class="form-label" for="locationLongitude">Confirmed longitude</label><input id="locationLongitude" name="longitude" class="form-control" type="number" step="any" min="116" max="128" value="@Model.VenueLongitude" required/></div>
+                        <div class="col-12"><label class="form-label" for="locationAddress">Corrected address (optional)</label><input id="locationAddress" name="correctedAddress" class="form-control" maxlength="500" value="@Model.PartyVenue"/></div>
+                        <div class="col-md-6"><label class="form-label" for="manualTravelFee">Confirmed travel fee (₱, optional override)</label><input id="manualTravelFee" name="confirmedTravelFee" type="number" min="0" max="25000" step="0.01" class="form-control" placeholder="Use calculated amount if blank"/></div>
+                        <div class="col-12"><label class="form-label" for="locationReason">Review and correction reason</label><textarea id="locationReason" name="reviewReason" class="form-control" required minlength="10" maxlength="700" rows="2" placeholder="Where did you confirm the exact venue pin and travel fee?"></textarea></div>
+                    </div>
+                    <button type="submit" class="btn btn-primary mt-2">Submit quote for customer acceptance</button>
+                </form>
+            }
         </section>
         <section class="dashboard-panel staff-detail-section" aria-labelledby="packageInfoTitle">
             <h2 id="packageInfoTitle"><i class="bi bi-box-seam" aria-hidden="true"></i> Booking / Package Information</h2>
@@ -131,7 +156,8 @@
                 <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#declineBookingModal">
                     <i class="bi bi-x-lg" aria-hidden="true"></i> Decline Booking
                 </button>
-                <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#approveBookingModal">
+                <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#approveBookingModal"
+                    disabled="@(Model.TravelFeeStatus != null && !VenueLocationPolicy.CanOpenPayment(Model.TravelFeeStatus))">
                     <i class="bi bi-check-lg" aria-hidden="true"></i> Approve Booking
                 </button>
             </div>

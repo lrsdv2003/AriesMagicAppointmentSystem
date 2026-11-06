@@ -165,6 +165,7 @@ namespace AriesMagicAppointmentSystem.Controllers
 
         [Authorize(Roles = "Client")]
         [HttpGet]
+        [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("account")]
         public async Task<IActionResult> SearchVenue(string query)
         {
             if (string.IsNullOrWhiteSpace(query))
@@ -177,7 +178,8 @@ namespace AriesMagicAppointmentSystem.Controllers
                 {
                     displayName = r.DisplayName,
                     latitude = r.Latitude,
-                    longitude = r.Longitude
+                    longitude = r.Longitude,
+                    isPrecise = r.IsPrecise
                 }));
             }
             catch
@@ -186,76 +188,134 @@ namespace AriesMagicAppointmentSystem.Controllers
             }
         }
 
-        [Authorize(Roles = "Client")]
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CheckVenueServiceability(string partyVenue, DateTime? eventDate, TimeSpan? startTime)
+        private sealed record VenueEvaluation(
+            string Address, string Method, double? Latitude, double? Longitude,
+            VenueDistanceResult? Distance, string VerificationStatus, string FeeStatus,
+            bool IsServiceable, string Message);
+
+        private async Task<VenueEvaluation> EvaluateVenueAsync(
+            string? venue, string? method, double? latitude, double? longitude,
+            DateTime date, TimeSpan time, string? street = null, string? barangay = null,
+            string? city = null, string? province = null, string? postal = null,
+            string? venueName = null)
         {
-            if (string.IsNullOrWhiteSpace(partyVenue))
+            var selection = VenueLocationPolicy.IsMethod(method) ? method! : VenueLocationPolicy.Search;
+            if (selection == VenueLocationPolicy.Manual)
             {
-                return BadRequest(new
-                {
-                    success = false,
-                    message = "Please select a venue before continuing."
-                });
+                if (!VenueLocationPolicy.SufficientManualAddress(street, barangay, city, province))
+                    throw new ArgumentException("Enter a city, province, and a street, subdivision, or barangay.");
+                var address = VenueLocationPolicy.FormatManualAddress(street, barangay, city, province, postal, venueName);
+                if (address.Length > 500)
+                    throw new ArgumentException("The address is too long. Shorten it and add directions in the optional field.");
+                return new VenueEvaluation(address, selection, null, null, null,
+                    VenueLocationPolicy.NeedsStaffReview, VenueLocationPolicy.PendingReview, true,
+                    "Manual address received. Staff must confirm service coverage and travel charges before payment.");
             }
+
+            if (string.IsNullOrWhiteSpace(venue) || venue.Length > 500)
+                throw new ArgumentException("Enter a complete event address or choose manual entry.");
+
+            if (!VenueLocationPolicy.HasCoordinatePair(latitude, longitude) ||
+                !VenueLocationPolicy.InPhilippines(latitude!.Value, longitude!.Value))
+            {
+                if (selection == VenueLocationPolicy.MapPin)
+                    throw new ArgumentException("Place your map pin within the Philippines and confirm its position.");
+                // Never silently select the provider's first match as the exact venue.
+                // Old forms without coordinates can still request a booking, but the address
+                // and service area must be reviewed by Staff before a quote or payment.
+                return new VenueEvaluation(venue.Trim(), selection, null, null, null,
+                    VenueLocationPolicy.NeedsStaffReview, VenueLocationPolicy.PendingReview, true,
+                    "No exact venue pin was confirmed. Staff will review the address and travel charges.");
+            }
+
+            if (selection == VenueLocationPolicy.MapPin)
+                return new VenueEvaluation(venue.Trim(), selection, latitude, longitude, null,
+                    VenueLocationPolicy.CustomerConfirmed, VenueLocationPolicy.PendingReview, true,
+                    "Customer-placed pin received. Staff must confirm location and travel charges.");
 
             try
             {
-                // Resolve the venue again on the server. Client-posted coordinates,
-                // distance, travel fee, and serviceability are never trusted.
-                var matches = await _geocodingService.SearchAsync(partyVenue);
-                var selected = matches.FirstOrDefault();
+                var matches = await _geocodingService.SearchAsync(venue.Trim());
+                var selected = matches.FirstOrDefault(r =>
+                    string.Equals(r.DisplayName.Trim(),venue.Trim(),StringComparison.OrdinalIgnoreCase)
+                    && Math.Abs(r.Latitude - latitude!.Value) < 0.0002
+                    && Math.Abs(r.Longitude - longitude!.Value) < 0.0002);
+                if (selected is null || !selected.IsPrecise)
+                    return new VenueEvaluation(venue.Trim(), selection, latitude, longitude, null,
+                        VenueLocationPolicy.NeedsStaffReview, VenueLocationPolicy.PendingReview, true,
+                        "Search result is approximate or could not be reconfirmed. Staff will clarify the exact venue.");
+                var distance = await CalculateVenueServiceabilityAsync(date, time, selected.Latitude, selected.Longitude);
+                return new VenueEvaluation(venue.Trim(), selection, selected.Latitude, selected.Longitude,
+                    distance, VenueLocationPolicy.CustomerConfirmed, VenueLocationPolicy.Calculated,
+                    distance.IsServiceable, distance.IsServiceable
+                        ? "Customer confirmed a precise search result. Distance is an estimate, not a routed road distance."
+                        : GetVenueServiceabilityError(distance));
+            }
+            catch (HttpRequestException)
+            {
+                return new VenueEvaluation(venue.Trim(), selection, latitude, longitude, null,
+                    VenueLocationPolicy.NeedsStaffReview, VenueLocationPolicy.PendingReview, true,
+                    "Location search is temporarily unavailable. Staff will confirm your address.");
+            }
+            catch (TaskCanceledException)
+            {
+                return new VenueEvaluation(venue.Trim(), selection, latitude, longitude, null,
+                    VenueLocationPolicy.NeedsStaffReview, VenueLocationPolicy.PendingReview, true,
+                    "The map search timed out. Staff will review your address.");
+            }
+        }
 
-                if (selected == null || !_venueDistanceService.IsValidCoordinate(selected.Latitude, selected.Longitude))
-                {
-                    return UnprocessableEntity(new
-                    {
-                        success = false,
-                        status = "NOT_VERIFIED",
-                        message = "Unable to verify this venue location. Please select another location or try again."
-                    });
-                }
-
-                var distance = eventDate.HasValue && startTime.HasValue
-                    ? await CalculateVenueServiceabilityAsync(eventDate.Value, startTime.Value, selected.Latitude, selected.Longitude)
-                    : _venueDistanceService.Calculate(selected.Latitude, selected.Longitude);
-
+        [Authorize(Roles = "Client")]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CheckVenueServiceability(
+            string? partyVenue, DateTime? eventDate, TimeSpan? startTime,
+            string? venueSelectionMethod, double? venueLatitude, double? venueLongitude,
+            string? manualStreet, string? manualBarangay, string? manualCity,
+            string? manualProvince, string? manualPostalCode, string? manualVenueName)
+        {
+            try
+            {
+                if (!eventDate.HasValue || !startTime.HasValue)
+                    return BadRequest(new { success=false, message="Select your event date and time." });
+                var eval = await EvaluateVenueAsync(partyVenue,venueSelectionMethod,
+                    venueLatitude,venueLongitude,eventDate.Value,startTime.Value,
+                    manualStreet,manualBarangay,manualCity,manualProvince,manualPostalCode,manualVenueName);
+                var distance = eval.Distance;
                 return Json(new
                 {
-                    success = true,
-                    status = distance.RequiresManualReview
-                        ? "FOR_STAFF_REVIEW"
-                        : distance.IsServiceable
-                            ? "SERVICEABLE"
-                            : "NOT_SERVICEABLE",
-                    displayName = selected.DisplayName,
-                    latitude = selected.Latitude,
-                    longitude = selected.Longitude,
-                    distanceKm = distance.DistanceKm,
-                    travelFee = distance.TravelFee,
-                    serviceZone = distance.ServiceZone,
-                    isServiceable = distance.IsServiceable,
-                    requiresManualReview = distance.RequiresManualReview,
-                    maximumServiceDistanceKm = distance.MaximumServiceDistanceKm,
-                    estimatedTravelTimeMinutes = distance.EstimatedTravelTimeMinutes,
-                    availableTravelTimeMinutes = distance.AvailableTravelTimeMinutes,
-                    usesPreviousEventLocation = distance.UsesPreviousEventLocation,
-                    serviceabilityReason = distance.ServiceabilityReason,
-                    // A public estimate must not identify another Client's event venue.
-                    originLatitude = distance.UsesPreviousEventLocation ? (double?)null : distance.OriginLatitude,
-                    originLongitude = distance.UsesPreviousEventLocation ? (double?)null : distance.OriginLongitude,
-                    startingPointName = distance.UsesPreviousEventLocation ? "Previous confirmed event" : distance.StartingPointName
+                    success=true,
+                    status=!eval.IsServiceable ? "NOT_SERVICEABLE"
+                        : eval.FeeStatus==VenueLocationPolicy.PendingReview ? "PENDING_LOCATION_REVIEW"
+                        : distance?.RequiresManualReview==true ? "FOR_STAFF_REVIEW" : "SERVICEABLE",
+                    displayName=eval.Address,
+                    latitude=eval.Latitude,
+                    longitude=eval.Longitude,
+                    locationVerificationStatus=eval.VerificationStatus,
+                    travelFeeStatus=eval.FeeStatus,
+                    travelFeePending=eval.FeeStatus==VenueLocationPolicy.PendingReview,
+                    distanceKm=distance?.DistanceKm,
+                    travelFee=distance?.TravelFee,
+                    serviceZone=distance?.ServiceZone,
+                    isServiceable=eval.IsServiceable,
+                    requiresManualReview=eval.FeeStatus==VenueLocationPolicy.PendingReview
+                        || distance?.RequiresManualReview==true,
+                    estimatedTravelTimeMinutes=distance?.EstimatedTravelTimeMinutes,
+                    availableTravelTimeMinutes=distance?.AvailableTravelTimeMinutes,
+                    usesPreviousEventLocation=distance?.UsesPreviousEventLocation ?? false,
+                    serviceabilityReason=eval.Message,
+                    startingPointName=distance?.UsesPreviousEventLocation==true
+                        ? "Previous confirmed event" : distance?.StartingPointName
                 });
+            }
+            catch (ArgumentException e)
+            {
+                return UnprocessableEntity(new { success=false, message=e.Message });
             }
             catch
             {
-                return StatusCode(503, new
-                {
-                    success = false,
-                    status = "NOT_VERIFIED",
-                    message = "Unable to verify this venue location. Please select another location or try again."
-                });
+                return StatusCode(503,new { success=false,
+                    message="Travel checks are temporarily unavailable. Please try again or enter your address manually." });
             }
         }
 
@@ -501,39 +561,48 @@ namespace AriesMagicAppointmentSystem.Controllers
                 return await ClientWizardViewAsync(model);
             }
 
-            // Never trust client-posted coordinates, distance, or travel fee. Re-geocode and recalculate on the server.
-            VenueDistanceResult venueDistance;
-            try
+            if (!model.CustomerConfirmedLocation)
             {
-                var matches = await _geocodingService.SearchAsync(model.PartyVenue);
-                var selectedVenue = matches.FirstOrDefault();
-                if (selectedVenue == null || !_venueDistanceService.IsValidCoordinate(selectedVenue.Latitude, selectedVenue.Longitude))
-                {
-                    ModelState.AddModelError(nameof(model.PartyVenue), "The venue could not be verified. Please return to Step 1 and select a valid venue.");
-                    return await ClientWizardViewAsync(model);
-                }
-
-                model.PartyVenue = selectedVenue.DisplayName;
-                model.VenueLatitude = selectedVenue.Latitude;
-                model.VenueLongitude = selectedVenue.Longitude;
-                venueDistance = await CalculateVenueServiceabilityAsync(model.EventDate, model.StartTime, selectedVenue.Latitude, selectedVenue.Longitude);
-                model.DistanceKm = venueDistance.DistanceKm;
-                model.TravelFee = venueDistance.TravelFee;
-                model.IsServiceable = venueDistance.IsServiceable;
-                model.ServiceZone = venueDistance.ServiceZone;
-                model.RequiresManualReview = venueDistance.RequiresManualReview;
-
-                if (!venueDistance.IsServiceable)
-                {
-                    ModelState.AddModelError(nameof(model.PartyVenue), GetVenueServiceabilityError(venueDistance));
-                    return await ClientWizardViewAsync(model);
-                }
-            }
-            catch (Exception)
-            {
-                ModelState.AddModelError(nameof(model.PartyVenue), "The venue could not be verified right now. Please try again.");
+                ModelState.AddModelError(nameof(model.CustomerConfirmedLocation), "Confirm the selected location or manual address before submitting.");
                 return await ClientWizardViewAsync(model);
             }
+            if (!VenueLocationPolicy.IsMethod(model.VenueSelectionMethod))
+            {
+                ModelState.AddModelError(nameof(model.VenueSelectionMethod), "Choose a supported location method.");
+                return await ClientWizardViewAsync(model);
+            }
+            // Never trust client-posted distance, price or serviceability. Search selections
+            // are matched to the specific geocoder result; customer pins and manual addresses
+            // always require staff resolution before payment.
+            VenueEvaluation evaluated;
+            try
+            {
+                evaluated = await EvaluateVenueAsync(model.PartyVenue, model.VenueSelectionMethod,
+                    model.VenueLatitude, model.VenueLongitude, model.EventDate, model.StartTime,
+                    model.ManualStreet, model.ManualBarangay, model.ManualCity,
+                    model.ManualProvince, model.ManualPostalCode, model.ManualVenueName);
+            }
+            catch (ArgumentException ex)
+            {
+                ModelState.AddModelError(nameof(model.PartyVenue), ex.Message);
+                return await ClientWizardViewAsync(model);
+            }
+            if (!evaluated.IsServiceable)
+            {
+                ModelState.AddModelError(nameof(model.PartyVenue), evaluated.Message);
+                return await ClientWizardViewAsync(model);
+            }
+            model.PartyVenue = evaluated.Address;
+            ModelState.Remove(nameof(model.PartyVenue));
+            model.VenueLatitude = evaluated.Latitude;
+            model.VenueLongitude = evaluated.Longitude;
+            var venueDistance = evaluated.Distance;
+            model.DistanceKm = venueDistance?.DistanceKm;
+            model.TravelFee = venueDistance?.TravelFee ?? 0m;
+            model.IsServiceable = evaluated.IsServiceable;
+            model.ServiceZone = venueDistance?.ServiceZone;
+            model.RequiresManualReview = evaluated.FeeStatus==VenueLocationPolicy.PendingReview
+                || venueDistance?.RequiresManualReview==true;
 
             var isBlocked = await _context.BlockedDates
                 .AnyAsync(x => x.Date.Date == model.EventDate.Date);
@@ -576,7 +645,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                 ? FixedInclusionDeduction
                 : 0m;
 
-            var finalPrice = selectedPackage.Price - totalDeduction + venueDistance.TravelFee;
+            var finalPrice = selectedPackage.Price - totalDeduction + (venueDistance?.TravelFee ?? 0m);
 
             if (finalPrice < 0)
             {
@@ -701,11 +770,16 @@ namespace AriesMagicAppointmentSystem.Controllers
                 PartyVenue = model.PartyVenue,
                 VenueLatitude = model.VenueLatitude,
                 VenueLongitude = model.VenueLongitude,
-                DistanceKm = venueDistance.DistanceKm,
-                TravelFee = venueDistance.TravelFee,
-                IsServiceable = venueDistance.IsServiceable,
-                ServiceZone = venueDistance.ServiceZone,
-                RequiresManualReview = venueDistance.RequiresManualReview,
+                DistanceKm = venueDistance?.DistanceKm,
+                TravelFee = venueDistance?.TravelFee ?? 0m,
+                IsServiceable = evaluated.IsServiceable,
+                ServiceZone = venueDistance?.ServiceZone,
+                RequiresManualReview = model.RequiresManualReview,
+                VenueSelectionMethod = evaluated.Method,
+                VenueVerificationStatus = evaluated.VerificationStatus,
+                TravelFeeStatus = evaluated.FeeStatus,
+                VenueDirections = model.VenueDirections?.Trim(),
+                VenueManualDetails = evaluated.Method == VenueLocationPolicy.Manual ? evaluated.Address : null,
                 CelebrantName = model.CelebrantName,
                 Age = model.Age,
                 PaxCount = model.PaxCount,
@@ -728,7 +802,8 @@ namespace AriesMagicAppointmentSystem.Controllers
             {
                 BookingId = booking.Id,
                 EventType = TimelineEventType.BookingCreated,
-                Notes = $"Booking was created by client using the client booking flow. Venue distance: {venueDistance.DistanceKm:N2} KM, zone: {venueDistance.ServiceZone}, travel fee: ₱{venueDistance.TravelFee:N2}, manual review: {venueDistance.RequiresManualReview}. Removed inclusions: {removedInclusionNames.Count}. Fixed total deduction: ₱{totalDeduction:N2}.",                CreatedAt = DateTime.Now
+                Notes = $"Customer-provided location method: {evaluated.Method}; travel charge status: {evaluated.FeeStatus}; distance: {(venueDistance is null ? "pending" : $"{venueDistance.DistanceKm:N2} km")}; fee: {(venueDistance is null ? "pending" : $"PHP {venueDistance.TravelFee:N2}")}. Fee cannot be collected until location review and customer acceptance as required.",
+                CreatedAt = DateTime.Now
             });
 
             var staffUsers = await _userManager.GetUsersInRoleAsync("Staff");
@@ -877,6 +952,108 @@ namespace AriesMagicAppointmentSystem.Controllers
             return View("ClientDetails", booking);
         }
 
+        [HttpPost]
+        [Authorize(Roles = "Staff,Owner")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ResolveVenue(int id, double? latitude, double? longitude,
+            decimal? confirmedTravelFee, string? correctedAddress, string? reviewReason)
+        {
+            await using var transaction = await _context.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
+            var booking = await _context.Bookings.FirstOrDefaultAsync(x => x.Id == id);
+            if (booking == null) return NotFound();
+            if (booking.Status != BookingStatus.Pending ||
+                booking.TravelFeeStatus is not (VenueLocationPolicy.PendingReview or VenueLocationPolicy.AwaitingCustomerAcceptance))
+            {
+                TempData["Error"]="Only pending location-review requests may be corrected.";
+                return RedirectToAction(nameof(Details),new { id });
+            }
+            if (!VenueLocationPolicy.HasCoordinatePair(latitude,longitude) ||
+                !VenueLocationPolicy.InPhilippines(latitude!.Value,longitude!.Value) ||
+                string.IsNullOrWhiteSpace(reviewReason) || reviewReason.Trim().Length is < 10 or > 700 ||
+                (correctedAddress is { Length: > 500 }) ||
+                (confirmedTravelFee.HasValue && (confirmedTravelFee.Value < 0m || confirmedTravelFee.Value > 25000m
+                    || confirmedTravelFee.Value != decimal.Round(confirmedTravelFee.Value,2))))
+            {
+                TempData["Error"]="Provide a valid Philippine venue pin, review reason (10-700 characters), and valid travel fee.";
+                return RedirectToAction(nameof(Details),new { id });
+            }
+            var distance=await CalculateVenueServiceabilityAsync(booking.EventDate,booking.StartTime.TimeOfDay,latitude.Value,longitude.Value);
+            if (!distance.IsServiceable)
+            {
+                TempData["Error"]=GetVenueServiceabilityError(distance);
+                return RedirectToAction(nameof(Details),new { id });
+            }
+            if (await _context.Payments.AnyAsync(x=>x.BookingId==id
+                && (x.Status == PaymentStatus.Pending || x.Status == PaymentStatus.Verified || x.Status == PaymentStatus.AdditionalEvidenceRequired)))
+            {
+                TempData["Error"]="A payment already exists; location changes require a separate financial review.";
+                return RedirectToAction(nameof(Details),new { id });
+            }
+            var oldTravelFee=booking.TravelFee;
+            var approvedFee=confirmedTravelFee ?? distance.TravelFee;
+            booking.TravelFee=approvedFee;
+            booking.FinalPrice=Math.Max(0m,booking.FinalPrice-oldTravelFee+approvedFee);
+            booking.DistanceKm=distance.DistanceKm;
+            booking.VenueLatitude=latitude;
+            booking.VenueLongitude=longitude;
+            booking.IsServiceable=true;
+            booking.ServiceZone=distance.ServiceZone;
+            booking.RequiresManualReview=distance.RequiresManualReview;
+            booking.VenueVerificationStatus=VenueLocationPolicy.StaffVerified;
+            booking.TravelFeeStatus=VenueLocationPolicy.AwaitingCustomerAcceptance;
+            booking.TravelQuoteAcceptedAtUtc=null;
+            booking.VenueStaffReviewedAtUtc=DateTime.UtcNow;
+            if (!string.IsNullOrWhiteSpace(correctedAddress)) booking.PartyVenue=correctedAddress.Trim();
+            var reviewer=User.FindFirstValue(ClaimTypes.NameIdentifier)??"Unknown";
+            var note=$"[{DateTime.UtcNow:O}] Staff venue resolution by {reviewer}: {reviewReason.Trim()}; "
+                + $"distance {distance.DistanceKm:N2} km; preliminary quote PHP {approvedFee:N2}; awaiting customer acceptance.";
+            booking.InternalNotes=string.IsNullOrWhiteSpace(booking.InternalNotes)
+                ? note : booking.InternalNotes+"\n"+note;
+            if (!string.IsNullOrWhiteSpace(booking.ApplicationUserId))
+                _context.Notifications.Add(new Notification {
+                    UserId=booking.ApplicationUserId,
+                    Title="Confirm your updated event location and travel quote",
+                    Message="Staff reviewed your venue. Review and accept the updated travel fee and booking total before payment becomes available.",
+                    Link=$"/Bookings/Details/{id}",IsRead=false,CreatedAt=DateTime.Now
+                });
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+            TempData["Success"]="Venue reviewed. The customer must accept the updated booking quote before Staff can approve payment.";
+            return RedirectToAction(nameof(Details),new { id });
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "Client")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AcceptVenueQuote(int id, decimal quotedTotal, bool acceptTravelQuote)
+        {
+            await using var transaction=await _context.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
+            var userId=User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var booking=await _context.Bookings.FirstOrDefaultAsync(b=>b.Id==id&&b.ApplicationUserId==userId);
+            if (booking==null) return NotFound();
+            if (booking.Status!=BookingStatus.Pending ||
+                booking.TravelFeeStatus!=VenueLocationPolicy.AwaitingCustomerAcceptance ||
+                !acceptTravelQuote || quotedTotal!=booking.FinalPrice || !booking.IsServiceable)
+            {
+                TempData["Error"]="This quote has changed or needs review. Check the latest total before accepting.";
+                return RedirectToAction(nameof(Details),new { id });
+            }
+            booking.TravelFeeStatus=VenueLocationPolicy.Accepted;
+            booking.TravelQuoteAcceptedAtUtc=DateTime.UtcNow;
+            var staff=await _userManager.GetUsersInRoleAsync("Staff");
+            var owners=await _userManager.GetUsersInRoleAsync("Owner");
+            foreach(var person in staff.Concat(owners).DistinctBy(x=>x.Id))
+                _context.Notifications.Add(new Notification {
+                    UserId=person.Id,Title="Customer accepted revised venue quote",
+                    Message=$"Booking #{id} location and travel quote were accepted; Staff may continue reviewing the booking.",
+                    Link=$"/Bookings/Details/{id}",IsRead=false,CreatedAt=DateTime.Now
+                });
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+            TempData["Success"]="You accepted the reviewed travel quote. Staff can now continue evaluating your booking.";
+            return RedirectToAction(nameof(Details),new { id });
+        }
+
         [Authorize(Roles = "Owner")]
         public async Task<IActionResult> Approve(int? id)
         {
@@ -917,6 +1094,11 @@ namespace AriesMagicAppointmentSystem.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
+            if (!VenueLocationPolicy.CanOpenPayment(booking.TravelFeeStatus))
+            {
+                TempData["Error"]="The venue and travel quote must be reviewed and accepted before payment can be enabled.";
+                return RedirectToAction(nameof(Details),new { id });
+            }
             var now = DateTime.Now;
             var staffUserId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "Unknown";
             var staffAccount = await _userManager.GetUserAsync(User);

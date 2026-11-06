@@ -23,6 +23,15 @@ namespace AriesMagicAppointmentSystem.ViewModels
         public bool IsServiceable { get; set; }
         public string? ServiceZone { get; set; }
         public bool RequiresManualReview { get; set; }
+        [MaxLength(20)] public string VenueSelectionMethod { get; set; } = "Search";
+        [MaxLength(180)] public string? ManualStreet { get; set; }
+        [MaxLength(100)] public string? ManualBarangay { get; set; }
+        [MaxLength(100)] public string? ManualCity { get; set; }
+        [MaxLength(100)] public string? ManualProvince { get; set; }
+        [MaxLength(12)] public string? ManualPostalCode { get; set; }
+        [MaxLength(120)] public string? ManualVenueName { get; set; }
+        [MaxLength(500)] public string? VenueDirections { get; set; }
+        public bool CustomerConfirmedLocation { get; set; }
 
         public string? CelebrantName { get; set; }
 

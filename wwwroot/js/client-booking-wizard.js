@@ -17,7 +17,7 @@
   const steps = [...form.querySelectorAll('.cr-steps li')];
   const money = value => new Intl.NumberFormat('en-PH', { style:'currency', currency:'PHP' }).format(value);
   let step = 0, venueSelection = '', verifiedKey = '', venueResult = null, availableIds = [], checking = false, searchVersion = 0;
-  const key = () => [$('PartyVenue').value, $('EventDate').value, $('StartTime').value].join('|');
+  const key = () => [window.AriesLocation.key(),$('EventDate').value,$('StartTime').value].join('|');
   const selectedPackage = () => packages.find(p => p.Id === Number(form.querySelector('[name="ServiceId"]:checked')?.value));
   const removed = () => [...form.querySelectorAll('[name="RemovedInclusionIds"]:checked')].map(i => Number(i.value));
   function error(message) { $('wizardError').textContent = message; $('wizardError').hidden = !message; }
@@ -45,41 +45,43 @@
   function valid(panel) { for (const input of panel.querySelectorAll('input,select')) { if(!input.disabled && !input.checkValidity()) { input.setAttribute('aria-invalid','true'); input.reportValidity(); return false; } } return true; }
   async function json(url, options) { const response = await fetch(url, options); if(!response.ok || !response.headers.get('content-type')?.includes('application/json')) throw new Error('This check is unavailable. Please try again or sign in again.'); return response.json(); }
   function invalidate() { verifiedKey = ''; venueResult = null; availableIds = []; $('locationResult').textContent = 'Continue to check travel and schedule availability.'; summary(); }
-  $('PartyVenue').addEventListener('input', () => { venueSelection = ''; if($('venueChoice'))$('venueChoice').hidden=true; ++searchVersion; $('venueResults').replaceChildren(); invalidate(); });
-  ['EventDate','StartTime'].forEach(id => $(id).addEventListener('change', invalidate));
-  $('PartyVenue').addEventListener('keydown', event => { if(event.key === 'Enter') { event.preventDefault(); $('findVenue').click(); } });
-  $('findVenue').addEventListener('click', async () => {
-    const query = $('PartyVenue').value.trim(); if(query.length < 3) { error('Enter at least three characters to search for a venue.'); return; }
-    const version = ++searchVersion; $('findVenue').disabled = true; error(''); $('venueResults').textContent = 'Searching…';
-    try {
-      const results = await json(form.dataset.searchUrl + '?query=' + encodeURIComponent(query));
-      if(version !== searchVersion) return;
-      $('venueResults').replaceChildren();
-      if(!results.length) $('venueResults').textContent = 'No venue found. Try a more complete address.';
-      for(const result of results) { const button = document.createElement('button'); button.type = 'button'; button.textContent = result.displayName; button.className = 'cn-search-result'; button.onclick = () => { $('PartyVenue').value = result.displayName; venueSelection = result.displayName; $('venueResults').replaceChildren(); invalidate(); if($('venueChoice')){$('venueChoice').hidden=false;$('venueChoice').textContent='Selected: '+result.displayName;} $('PartyVenue').focus(); }; $('venueResults').append(button); }
-    } catch(e) { if(version === searchVersion) { $('venueResults').replaceChildren(); error(e.message); } }
-    finally { $('findVenue').disabled = false; }
-  });
-  async function checkLocation() {
-    if(checking) return false;
-    if(!valid(panels[0])) return false;
-    if(!venueSelection) { error('Search for your venue and select a result so its location can be checked.'); return false; }
-    checking = true; $('checkLocation').disabled = true; const checkingKey = key(); $('locationResult').textContent = 'Checking venue, travel estimate, and schedule…'; error('');
-    try {
-      const data = new URLSearchParams({ partyVenue:venueSelection, eventDate:$('EventDate').value, startTime:$('StartTime').value, __RequestVerificationToken:form.querySelector('[name="__RequestVerificationToken"]').value });
-      const [venue,schedule] = await Promise.all([json(form.dataset.venueUrl, { method:'POST',body:data }), json(form.dataset.scheduleUrl + '?' + new URLSearchParams({date:$('EventDate').value,startTime:$('StartTime').value}))]);
-      if(checkingKey !== key()) return false;
-      if(!venue.success || !venue.isServiceable) throw new Error(venue.serviceabilityReason || venue.message || 'This venue cannot be served. Choose another venue.');
-      if(!schedule.available) throw new Error(schedule.message);
-      venueResult = venue; availableIds = schedule.availableIds; verifiedKey = checkingKey;
-      const minutes = Number(venue.estimatedTravelTimeMinutes);
-      const travelTime = Number.isFinite(minutes) && minutes > 0 ? ` · Estimated travel time: ${Math.floor(minutes / 60)} hr ${Math.round(minutes % 60)} min` : '';
-      $('locationResult').textContent = `${venue.requiresManualReview ? 'Serviceable — staff review required' : 'Serviceable'} · Estimated distance: ${Number(venue.distanceKm).toFixed(2)} km${travelTime} · Travel fee: ${money(venue.travelFee)}. ${schedule.message}`;
-      for(const option of form.querySelectorAll('[data-package-option]')) { const input = option.querySelector('input'); input.disabled = !availableIds.includes(Number(input.value)); option.hidden = input.disabled; if(input.disabled) input.checked = false; }
-      if(!selectedPackage()) $('customizePackage').hidden = true;
-      if($('checkedSchedule'))$('checkedSchedule').textContent=`${new Date($('EventDate').value+'T12:00:00').toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric'})} · ${new Date($('EventDate').value+'T'+$('StartTime').value).toLocaleTimeString('en-PH',{hour:'numeric',minute:'2-digit'})} · ${venueSelection}`; summary(); return true;
-    } catch(e) { verifiedKey = ''; venueResult = null; $('locationResult').textContent = e.message; error(e.message); summary(); return false; }
-    finally { checking = false; $('checkLocation').disabled = false; }
+  window.AriesLocation.init(invalidate,error);
+  ['EventDate','StartTime'].forEach(id=>$(id).addEventListener('change',invalidate));
+  async function checkLocation(){
+    if(checking)return false;
+    if(!window.AriesLocation.canCheck()||!valid(panels[0]))return false;
+    checking=true;$('checkLocation').disabled=true;const checkedKey=key();
+    $('locationResult').textContent='Checking venue and schedule…';error('');
+    try{
+      const payload={...window.AriesLocation.payload(),
+        eventDate:$('EventDate').value,startTime:$('StartTime').value,
+        __RequestVerificationToken:form.querySelector('[name="__RequestVerificationToken"]').value};
+      const venuePromise=json(form.dataset.venueUrl,{method:'POST',body:new URLSearchParams(payload)});
+      const schedulePromise=json(form.dataset.scheduleUrl+'?'+new URLSearchParams({
+        date:$('EventDate').value,startTime:$('StartTime').value}));
+      const [venue,schedule]=await Promise.all([venuePromise,schedulePromise]);
+      if(checkedKey!==key())return false;
+      if(!venue.success||!venue.isServiceable)
+        throw new Error(venue.serviceabilityReason||venue.message||'The location is outside current service coverage.');
+      if(!schedule.available)throw new Error(schedule.message);
+      venueResult=venue;availableIds=schedule.availableIds;verifiedKey=checkedKey;
+      const pending=Boolean(venue.travelFeePending);
+      $('locationResult').textContent=(pending?'Location received for Staff review. Travel fee pending. ':
+        'Location confirmed by customer. Estimated distance: '+Number(venue.distanceKm).toFixed(2)+
+        ' km · Travel fee: '+money(venue.travelFee)+'. ')+schedule.message;
+      for(const option of form.querySelectorAll('[data-package-option]')){
+        const input=option.querySelector('input');
+        input.disabled=!availableIds.includes(Number(input.value));option.hidden=input.disabled;
+        if(input.disabled)input.checked=false;
+      }
+      if(!selectedPackage())$('customizePackage').hidden=true;
+      $('checkedSchedule').textContent=
+        new Date($('EventDate').value+'T12:00:00').toLocaleDateString('en-PH',
+        {month:'short',day:'numeric',year:'numeric'})+' · '+$('StartTime').value+' · '+$('PartyVenue').value;
+      summary();return true;
+    }catch(e){verifiedKey='';venueResult=null;$('locationResult').textContent=e.message;error(e.message);
+      summary();return false;
+    }finally{checking=false;$('checkLocation').disabled=false;}
   }
 
   function renderInclusions(restore = false) {
@@ -95,7 +97,17 @@
     summary();
   }
   form.querySelectorAll('[name="ServiceId"]').forEach(r => r.addEventListener('change', () => renderInclusions()));
-  function summary() { const pack = selectedPackage(), discount = removed().length ? 2000 : 0; $('summaryPackage').textContent = pack?.Name || 'Choose a package'; $('summaryBase').textContent = pack ? money(pack.Price) : '—'; $('summaryDiscount').textContent = pack ? money(discount) : '—'; $('summaryTravel').textContent = venueResult ? money(venueResult.travelFee) : 'Check venue first'; const total=pack&&venueResult?money(Math.max(0,pack.Price-discount+venueResult.travelFee)):'—';$('summaryTotal').textContent=total;if($('summaryPeek'))$('summaryPeek').textContent=pack?total:'Choose an experience'; }
+  function summary(){
+    const pack=selectedPackage(),discount=removed().length?2000:0,pending=Boolean(venueResult?.travelFeePending);
+    $('summaryPackage').textContent=pack?.Name||'Choose a package';
+    $('summaryBase').textContent=pack?money(pack.Price):'—';
+    $('summaryDiscount').textContent=pack?money(discount):'—';
+    $('summaryTravel').textContent=venueResult?(pending?'Pending Staff review':money(venueResult.travelFee)):'Check venue first';
+    const total=pack&&venueResult?(pending?money(Math.max(0,pack.Price-discount))+' + travel pending':
+      money(Math.max(0,pack.Price-discount+venueResult.travelFee))):'—';
+    $('summaryTotal').textContent=total;
+    if($('summaryPeek'))$('summaryPeek').textContent=pack?total:'Choose an experience';
+  }
   function eventFields() { const type = $('EventType').value, birthday = type === 'Birthday', bridal = type === 'Bridal Shower'; const flags = {theme: !['','Company Events','School Events'].includes(type), celebrant:birthday || bridal, age:birthday}; for(const [name,visible] of Object.entries(flags)) { const box = form.querySelector(`[data-event-field="${name}"]`); box.hidden = !visible; const input = box.querySelector('input'); input.disabled = !visible; input.required = visible; } }
   $('EventType').addEventListener('change',eventFields);
   function review() {
@@ -105,7 +117,7 @@
     const endMinutes=startMinutes+(selectedPackage()?.DurationInHours||0)*60;
     const clock=value=>new Intl.DateTimeFormat('en-PH',{hour:'numeric',minute:'2-digit',timeZone:'UTC'}).format(new Date(Date.UTC(2000,0,1,0,value)));
     const scheduleTime=clock(startMinutes)+'–'+clock(endMinutes)+(endMinutes>=1440?' (next day)':'');
-    const groups = [['Location & date',0,[['Venue',$('PartyVenue').value],['Date',date.toLocaleDateString('en-PH',{year:'numeric',month:'long',day:'numeric'})],['Time',scheduleTime],['Duration',(selectedPackage()?.DurationInHours || 0)+' hours']]],['Package',1,[['Package',selectedPackage()?.Name || ''],['Removed inclusions',selectedPackage()?.Inclusions.filter(i=>removed().includes(i.Id)).map(i=>i.Name).join(', ') || 'None']]],['Event details',2,[['Event',$('EventType').value],['Motif',$('Motif').value],['Guests',$('PaxCount').value],['Contact',$('ContactPerson').value],['Phone',$('ContactNumber').value]]]];
+    const groups = [['Location & date',0,[['Venue',$('PartyVenue').value],['Selection method',window.AriesLocation.methodLabel()],['Travel assessment',venueResult?.travelFeePending?'Pending Staff confirmation':'Estimate available'],['Nearby directions',$('VenueDirections').value||'None'],['Date',date.toLocaleDateString('en-PH',{year:'numeric',month:'long',day:'numeric'})],['Time',scheduleTime],['Duration',(selectedPackage()?.DurationInHours || 0)+' hours']]],['Package',1,[['Package',selectedPackage()?.Name || ''],['Removed inclusions',selectedPackage()?.Inclusions.filter(i=>removed().includes(i.Id)).map(i=>i.Name).join(', ') || 'None']]],['Event details',2,[['Event',$('EventType').value],['Motif',$('Motif').value],['Guests',$('PaxCount').value],['Contact',$('ContactPerson').value],['Phone',$('ContactNumber').value]]]];
     for(const [id,label] of [['PartyTheme','Party theme'],['CelebrantName','Celebrant'],['Age','Age']]) if(!$(id).disabled && $(id).value) groups[2][2].push([label,$(id).value]);
     for(const [title,index,rows] of groups){
       const section=document.createElement('section');section.className='cn-review-block';

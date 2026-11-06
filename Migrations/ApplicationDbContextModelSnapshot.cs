@@ -307,11 +307,37 @@ namespace AriesMagicAppointmentSystem.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<string>("TravelFeeStatus")
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.Property<DateTime?>("TravelQuoteAcceptedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("VenueDirections")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
                     b.Property<double?>("VenueLatitude")
                         .HasColumnType("float");
 
                     b.Property<double?>("VenueLongitude")
                         .HasColumnType("float");
+
+                    b.Property<string>("VenueManualDetails")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("VenueSelectionMethod")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTime?>("VenueStaffReviewedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("VenueVerificationStatus")
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
 
                     b.HasKey("Id");
 

@@ -82,6 +82,13 @@ namespace AriesMagicAppointmentSystem.Models
         public bool IsServiceable { get; set; } = true;
         public string? ServiceZone { get; set; }
         public bool RequiresManualReview { get; set; }
+        [MaxLength(20)] public string? VenueSelectionMethod { get; set; }
+        [MaxLength(32)] public string? VenueVerificationStatus { get; set; }
+        [MaxLength(32)] public string? TravelFeeStatus { get; set; }
+        [MaxLength(500)] public string? VenueDirections { get; set; }
+        [MaxLength(500)] public string? VenueManualDetails { get; set; }
+        public DateTime? VenueStaffReviewedAtUtc { get; set; }
+        public DateTime? TravelQuoteAcceptedAtUtc { get; set; }
 
         [Range(1, 120)]
         public int? Age { get; set; }
