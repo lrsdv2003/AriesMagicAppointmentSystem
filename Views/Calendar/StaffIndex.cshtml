@@ -37,6 +37,7 @@
 @* FullCalendar 6 injects its CSS from the existing pinned JavaScript bundle. *@
 
 <div class="staff-calendar-page">
+    <div class="staff-round1-calendar-layout">
     <header class="ui-toolbar staff-calendar-hero">
 
         <a asp-controller="Bookings" asp-action="Index" class="btn btn-outline-primary">
@@ -81,6 +82,27 @@
     </section>
 
     <section class="staff-upcoming-panel" aria-labelledby="upcomingHeading">
+    @if(useStaffColors){
+      <section class="staff-round1-selected-day" aria-labelledby="staffSelectedDayTitle">
+       <div class="staff-round1-selected-head"><h2 id="staffSelectedDayTitle">Confirmed bookings · @DateTime.Today.ToString("MMM d, yyyy")</h2><span id="staffSelectedDayCount"></span></div>
+       <p class="staff-round1-day-empty" data-staff-day-empty>No confirmed bookings on this date.</p>
+       <div class="staff-round1-day-records">
+       @foreach(var dayGroup in confirmed.GroupBy(b=>b.EventDate.Date)){
+         <div data-staff-day="@dayGroup.Key.ToString("yyyy-MM-dd")" hidden>
+         @foreach(var booking in dayGroup.OrderBy(b=>b.StartTime)){
+           <article class="staff-round1-day-event">
+             <a asp-controller="Bookings" asp-action="Details" asp-route-id="@booking.Id" class="staff-round1-booking-code">BK-@booking.CreatedAt.Year-@booking.Id.ToString("D3")</a>
+             <span>@(booking.Client?.FullName ?? "Client not recorded")</span>
+             <time datetime="@booking.StartTime.ToString("O")">@booking.StartTime.ToString("h:mm tt")</time>
+             <small>@(string.IsNullOrWhiteSpace(booking.PackageName)?booking.Service?.Name:booking.PackageName)</small>
+             <a asp-controller="Bookings" asp-action="Details" asp-route-id="@booking.Id" class="staff-round1-action">View Details</a>
+           </article>
+         }
+         </div>
+       }
+       </div>
+      </section>
+    }
         <div class="staff-upcoming-heading">
             <div>
                 <h2 id="upcomingHeading">Upcoming Confirmed Bookings</h2>
@@ -136,6 +158,7 @@
             <div class="staff-upcoming-empty d-none" id="upcomingFilteredEmpty" role="status"><i class="bi bi-search" aria-hidden="true"></i><span>No upcoming bookings match your search.</span></div>
         }
     </section>
+    </div>
 </div>
 <div class="modal fade staff-preview-modal" id="bookingPreviewModal" tabindex="-1" aria-labelledby="bookingPreviewTitle" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
@@ -207,6 +230,26 @@
     let calendar;
     let activePackageFilter = '';
     let selectedDate = null;
+    const staffCalendar = @useStaffColors.ToString().ToLowerInvariant();
+    const staffDays = [...document.querySelectorAll("[data-staff-day]")];
+    function showStaffDay(key) {
+        if (!staffCalendar) return;
+        const date = new Date(key + "T00:00:00");
+        const header = document.getElementById("staffSelectedDayTitle");
+        if (header && !Number.isNaN(date.getTime()))
+            header.textContent = "Confirmed bookings · " + date.toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"});
+        let count=0;
+        for (const group of staffDays) {
+            const visible=group.dataset.staffDay===key;
+            group.hidden=!visible;
+            if (visible) count+=group.querySelectorAll(".staff-round1-day-event").length;
+        }
+        const empty=document.querySelector("[data-staff-day-empty]");
+        if (empty) empty.hidden=count>0;
+        const label=document.getElementById("staffSelectedDayCount");
+        if (label) label.textContent=count+" event"+(count===1?"":"s");
+    }
+    showStaffDay("@DateTime.Today.ToString("yyyy-MM-dd")");
     let selectedCell = null;
     let previewItems = [];
     let previewIndex = 0;
@@ -401,7 +444,14 @@
             fixedWeekCount: false,
             showNonCurrentDates: true,
             dayCellDidMount: mountDaySummary,
-            dateClick: info => openDatePreview(info.dateStr, info.dayEl),
+            dateClick: info => {
+                if (!staffCalendar) { openDatePreview(info.dateStr, info.dayEl); return; }
+                showStaffDay(info.dateStr);
+                if (!openBlockedDate(info.dateStr, info.dayEl)) {
+                    selectedDate=info.dateStr;
+                    setSelectedCell(info.dayEl);
+                }
+            },
             datesSet: () => {
                 document.getElementById('calendarTitle').textContent = calendar.view.title;
                 document.getElementById('calendarLoading').classList.add('d-none');

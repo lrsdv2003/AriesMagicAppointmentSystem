@@ -122,6 +122,50 @@ public class DashboardController : Controller
     public async Task<IActionResult> Staff()
     {
         var model = await StartAsync("Staff");
+        // The Staff card counts only unread Client support threads, not internal team chats.
+        await LoadAsync(model, "client conversations", async () =>
+        {
+            var staffId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(staffId)) return;
+            var authorized = _context.ConversationParticipants.AsNoTracking()
+                .Where(p => p.UserId == staffId
+                    && p.Conversation != null
+                    && p.Conversation.ConversationType == ConversationTypes.ClientSupport
+                    && p.Conversation.SupportClientId != null);
+            model.UnreadClientConversations = await authorized.CountAsync(p =>
+                p.Conversation!.Messages.Any(m => m.SenderId != staffId
+                    && (!p.LastReadAt.HasValue || m.SentAt > p.LastReadAt.Value)));
+            var threads = await authorized
+                .Where(p => p.Conversation!.Messages.Any())
+                .OrderByDescending(p => p.Conversation!.Messages.Max(m => m.SentAt))
+                .Take(5).Select(p => new
+                {
+                    p.ConversationId,
+                    ClientId = p.Conversation!.SupportClientId!,
+                    Preview = p.Conversation.Messages.OrderByDescending(m => m.SentAt)
+                        .ThenByDescending(m => m.Id).Select(m => m.MessageContent).First(),
+                    SentAt = p.Conversation.Messages.Max(m => m.SentAt),
+                    Unread = p.Conversation.Messages.Count(m => m.SenderId != staffId
+                        && (!p.LastReadAt.HasValue || m.SentAt > p.LastReadAt.Value))
+                }).ToListAsync();
+            var ids = threads.Select(t => t.ClientId).Distinct().ToList();
+            var clients = await _context.Users.AsNoTracking().Where(u => ids.Contains(u.Id))
+                .Select(u => new { u.Id, u.FullName, u.ProfilePicturePath })
+                .ToDictionaryAsync(u => u.Id);
+            model.RecentClientConversations = threads.Select(t =>
+            {
+                clients.TryGetValue(t.ClientId, out var client);
+                var name = !string.IsNullOrWhiteSpace(client?.FullName)
+                    ? client.FullName : "Client";
+                var initials = string.Concat(name.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                    .Take(2).Select(part => char.ToUpperInvariant(part[0])));
+                var avatar = !string.IsNullOrWhiteSpace(client?.ProfilePicturePath)
+                    ? Url.Action("ParticipantAvatar", "Communications",
+                        new { conversationId = t.ConversationId, userId = t.ClientId }) : null;
+                return new StaffClientConversation(t.ConversationId, name, t.Preview,
+                    t.Unread, t.SentAt, avatar, initials);
+            }).ToList();
+        });
         await LoadAsync(model, "schedule refresh", async () => { await _historyService.ArchiveDueBookingsAsync(); });
         await LoadAsync(model, "requests", async () =>
         {

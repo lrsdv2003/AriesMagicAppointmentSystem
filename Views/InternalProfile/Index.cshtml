@@ -10,10 +10,13 @@
 <div asp-validation-summary="All" class="text-danger account-errors" role="alert"></div>
 <div class="account-grid">
 <aside class="account-card account-summary">
-<div class="account-avatar" aria-label="Profile avatar">
+<div class="account-avatar" role="img" aria-label="Profile avatar">
 @if (Model.HasPhoto) { <img src="@Url.Action("Photo")" alt="" data-avatar-image /> }
 <span hidden="@Model.HasPhoto">@initials</span>
 </div>
+@if(User.IsInRole("Staff")){
+ <button class="staff-round1-avatar-edit" type="button" data-staff-photo-trigger aria-controls="profilePhoto" aria-label="Choose a new Staff profile photo"><i class="bi bi-camera" aria-hidden="true"></i> Change photo</button>
+}
 <h2>@Model.DisplayName</h2>
 <partial name="_DashboardBadge" model="Model.Role" />
 <p class="account-email">@Model.Email</p>

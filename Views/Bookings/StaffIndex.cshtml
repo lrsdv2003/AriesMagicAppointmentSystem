@@ -102,7 +102,7 @@
         else
         {
             <div class="table-responsive staff-booking-table-wrap">
-                <table class="table align-middle staff-booking-table">
+                <table class="table align-middle staff-booking-table" data-staff-paginate="bookings">
                     <thead>
                         <tr>
                             <th scope="col">Booking</th>
@@ -170,7 +170,7 @@
                                     @if (staffOnly && item.BookingStatus == BookingStatus.Pending && (item.RequiresManualReview || !item.IsServiceable))
                                     {<span class="staff-review-guidance">Review venue before approval</span>}
                                     <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-outline-secondary">
-                                        <i class="bi bi-eye" aria-hidden="true"></i> Details
+                                        <i class="bi bi-eye" aria-hidden="true"></i> View Details
                                     </a>
                                 </div>
                             </td>

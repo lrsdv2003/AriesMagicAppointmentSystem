@@ -14,6 +14,8 @@ namespace AriesMagicAppointmentSystem.ViewModels
         public List<WorkspaceUser> RecentUsers { get; set; } = new();
         public List<Service> PackagePreviews { get; set; } = new();
         public List<WorkspaceConversation> RecentConversations { get; set; } = new();
+        public List<StaffClientConversation> RecentClientConversations { get; set; } = new();
+        public int UnreadClientConversations { get; set; }
         public List<Booking> CalendarPreview { get; set; } = new();
         public int ConfirmedThisWeek { get; set; }
         public int VerifiedPaymentCount { get; set; }
@@ -78,4 +80,10 @@ namespace AriesMagicAppointmentSystem.ViewModels
     public record WorkspaceMetric(string Label, string Value, string Context, string Icon, string Tone);
     public record WorkspaceUser(string Id, string Name, string Email, string Roles, string Status);
     public record WorkspaceConversation(int Id, string Title, string Preview, int UnreadCount, DateTime SentAt);
+}
+
+namespace AriesMagicAppointmentSystem.ViewModels
+{
+    public record StaffClientConversation(int Id, string Name, string Preview, int UnreadCount,
+        DateTime SentAt, string? AvatarUrl, string Initials);
 }

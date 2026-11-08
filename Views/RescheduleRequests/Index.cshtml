@@ -80,13 +80,16 @@
         else
         {
             <div class="table-responsive staff-reschedule-table-wrap">
-                <table class="table align-middle staff-reschedule-table">
+                <table class="table align-middle staff-reschedule-table" data-staff-paginate="reschedules">
                     <thead>
                         <tr>
                             <th scope="col">Booking</th>
                             <th scope="col">Client</th>
                             <th scope="col">Original Date &amp; Time</th>
                             <th scope="col">Requested Date &amp; Time</th>
+                            <th scope="col">Package</th>
+                            <th scope="col">Requested on</th>
+                            <th scope="col">Status</th>
                             <th scope="col">Details</th>
                             <th scope="col" class="text-end">Actions</th>
                         </tr>
@@ -125,6 +128,9 @@
                                     }
                                 </div>
                             </td>
+                            <td class="staff-round1-table-package">@(booking.PackageName ?? booking.Service?.Name ?? "Package not recorded")</td>
+                            <td><time datetime="@request.CreatedAt.ToString("O")">@request.CreatedAt.ToString("MMM d, yyyy")</time></td>
+                            <td><span class="status-badge @StatusClass(request.Status)">@request.Status</span></td>
                             <td><a asp-action="Details" asp-route-id="@request.Id" class="btn btn-sm btn-outline-secondary"><i class="bi bi-eye" aria-hidden="true"></i> View Details</a></td>
                             <td class="text-end">
                                 <div class="staff-reschedule-actions">
@@ -161,7 +167,8 @@
                     var originalText = originalDate.HasValue && originalStart.HasValue && originalEnd.HasValue ? $"{originalDate.Value:MMM dd, yyyy} · {originalStart.Value:hh:mm tt} – {originalEnd.Value:hh:mm tt}" : "Historical original schedule unavailable";
                     var requestedText = $"{request.RequestedDate:MMM dd, yyyy} · {request.RequestedStartTime:hh:mm tt} – {request.RequestedEndTime:hh:mm tt}";
                     <article class="staff-reschedule-card">
-                        <div class="staff-reschedule-card-head"><div><strong class="staff-booking-code">@bookingCode</strong><span class="staff-booking-subtext">@(booking.PackageName ?? booking.Service?.Name)</span></div>@if (request.Status != RescheduleRequestStatus.Pending){<span class="status-badge @StatusClass(request.Status)">@request.Status</span>}</div>
+                        <div class="staff-reschedule-card-head"><div><strong class="staff-booking-code">@bookingCode</strong><span class="staff-booking-subtext">@(booking.PackageName ?? booking.Service?.Name)</span></div><span class="status-badge @StatusClass(request.Status)">@request.Status</span></div>
+                        <small class="staff-round1-requested-at">Requested @request.CreatedAt.ToString("MMM d, yyyy")</small>
                         <strong class="staff-reschedule-client">@(booking.Client?.FullName ?? "Unknown client")</strong>
                         <div class="staff-reschedule-card-schedules">
                             <div class="reschedule-schedule neutral"><span>Original</span><strong>@originalText</strong></div>
