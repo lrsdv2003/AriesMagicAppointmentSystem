@@ -38,12 +38,7 @@
 
 <div class="staff-calendar-page">
     <div class="staff-round1-calendar-layout">
-    <header class="ui-toolbar staff-calendar-hero">
 
-        <a asp-controller="Bookings" asp-action="Index" class="btn btn-outline-primary">
-            <i class="bi bi-journal-check" aria-hidden="true"></i> Booking Requests
-        </a>
-    </header>
     <section class="staff-calendar-panel" aria-labelledby="calendarHeading">
         <div class="staff-calendar-toolbar">
             <div>
@@ -134,7 +129,7 @@
                             <td><strong>@booking.EventDate.ToString("MMM dd, yyyy")</strong><span>@booking.StartTime.ToString("hh:mm tt")</span></td>
                             <td><span class="package-badge package-@colorKey"><span class="package-dot"></span>@packageName</span></td>
                             <td><strong>@booking.PartyVenue</strong><span>@(booking.DistanceKm.HasValue ? $"{booking.DistanceKm.Value:N1} KM" : "Distance unavailable")</span></td>
-                            <td class="text-end"><a asp-controller="Bookings" asp-action="Details" asp-route-id="@booking.Id" class="btn btn-sm btn-outline-primary">Details</a></td>
+                            <td class="text-end"><a asp-controller="Bookings" asp-action="Details" asp-route-id="@booking.Id" class="btn btn-sm btn-outline-primary">View Details</a></td>
                         </tr>
                     }
                     </tbody>
@@ -156,6 +151,16 @@
                 }
             </div>
             <div class="staff-upcoming-empty d-none" id="upcomingFilteredEmpty" role="status"><i class="bi bi-search" aria-hidden="true"></i><span>No upcoming bookings match your search.</span></div>
+            <nav class="staff-round2-calendar-pager" aria-label="Upcoming confirmed booking pages">
+              <label for="staffUpcomingPageSize">Rows per page
+                <select id="staffUpcomingPageSize" class="form-select">
+                  <option value="10">10</option><option value="20">20</option><option value="50">50</option>
+                </select>
+              </label>
+              <span id="staffUpcomingPageInfo" aria-live="polite"></span>
+              <div><button type="button" class="btn btn-outline-secondary" id="staffUpcomingPrev">Previous</button>
+                <button type="button" class="btn btn-primary" id="staffUpcomingNext">Next</button></div>
+            </nav>
         }
     </section>
     </div>
@@ -484,21 +489,40 @@
 
     function initUpcomingFilters() {
         const search = document.getElementById('upcomingSearch');
-        const rows = [...document.querySelectorAll('.js-upcoming-row')];
+        const tableRows = [...document.querySelectorAll('#upcomingTable tbody .js-upcoming-row')];
+        const cards = [...document.querySelectorAll('#upcomingCards .js-upcoming-row')];
         const empty = document.getElementById('upcomingFilteredEmpty');
-        applyUpcomingFilters = () => {
+        const pageSelect = document.getElementById('staffUpcomingPageSize');
+        const info = document.getElementById('staffUpcomingPageInfo');
+        const prev = document.getElementById('staffUpcomingPrev');
+        const next = document.getElementById('staffUpcomingNext');
+        let page = 1;
+        const matched = row => {
             const query = (search?.value || '').trim().toLowerCase();
-            let visible = 0;
-            rows.forEach(row => {
-                const matchesSearch = !query || (row.dataset.search || '').toLowerCase().includes(query);
-                const matchesPackage = !activePackageFilter || row.dataset.package === activePackageFilter;
-                const show = matchesSearch && matchesPackage;
-                row.classList.toggle('d-none', !show);
-                if (show) visible++;
-            });
-            empty?.classList.toggle('d-none', visible > 0);
+            return (!query || (row.dataset.search || '').toLowerCase().includes(query))
+                && (!activePackageFilter || row.dataset.package === activePackageFilter);
         };
-        search?.addEventListener('input', applyUpcomingFilters);
+        applyUpcomingFilters = (resetPage = false) => {
+            if (resetPage === true) page = 1;
+            const size = Number(pageSelect?.value) || 10;
+            const matching = tableRows.filter(matched);
+            const count = matching.length;
+            const totalPages = Math.max(1, Math.ceil(count / size));
+            page = Math.max(1, Math.min(page, totalPages));
+            const visible = new Set(matching.slice((page-1)*size,page*size));
+            tableRows.forEach((row,i) => row.classList.toggle('d-none', !visible.has(row)));
+            cards.forEach((card,i) => card.classList.toggle('d-none',
+                !tableRows[i] || !visible.has(tableRows[i])));
+            empty?.classList.toggle('d-none', count > 0);
+            if (info) info.textContent = count + ' matching confirmed bookings · page ' + page + ' of ' + totalPages;
+            if (prev) prev.disabled = page <= 1;
+            if (next) next.disabled = page >= totalPages;
+        };
+        search?.addEventListener('input', () => applyUpcomingFilters(true));
+        pageSelect?.addEventListener('change', () => applyUpcomingFilters(true));
+        prev?.addEventListener('click', () => { page--;applyUpcomingFilters(); });
+        next?.addEventListener('click', () => { page++;applyUpcomingFilters(); });
+        applyUpcomingFilters(true);
     }
 
     function initLegendFilters() {

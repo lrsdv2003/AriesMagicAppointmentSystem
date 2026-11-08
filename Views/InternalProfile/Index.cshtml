@@ -10,12 +10,17 @@
 <div asp-validation-summary="All" class="text-danger account-errors" role="alert"></div>
 <div class="account-grid">
 <aside class="account-card account-summary">
-<div class="account-avatar" role="img" aria-label="Profile avatar">
-@if (Model.HasPhoto) { <img src="@Url.Action("Photo")" alt="" data-avatar-image /> }
-<span hidden="@Model.HasPhoto">@initials</span>
-</div>
 @if(User.IsInRole("Staff")){
- <button class="staff-round1-avatar-edit" type="button" data-staff-photo-trigger aria-controls="profilePhoto" aria-label="Choose a new Staff profile photo"><i class="bi bi-camera" aria-hidden="true"></i> Change photo</button>
+  <button type="button" class="account-avatar staff-round2-avatar-trigger" data-staff-photo-trigger aria-label="Change Staff profile picture">
+  @if (Model.HasPhoto) { <img src="@Url.Action("Photo")" alt="" data-avatar-image /> }
+  <span hidden="@Model.HasPhoto">@initials</span><i class="bi bi-camera staff-round2-photo-indicator" aria-hidden="true"></i>
+  </button>
+  <p class="staff-round2-profile-hint">Select the photo to change it</p>
+}else{
+  <div class="account-avatar" role="img" aria-label="Profile avatar">
+  @if (Model.HasPhoto) { <img src="@Url.Action("Photo")" alt="" data-avatar-image /> }
+  <span hidden="@Model.HasPhoto">@initials</span>
+  </div>
 }
 <h2>@Model.DisplayName</h2>
 <partial name="_DashboardBadge" model="Model.Role" />

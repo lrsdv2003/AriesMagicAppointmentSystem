@@ -1,9 +1,9 @@
 @model AriesMagicAppointmentSystem.ViewModels.HistoryIndexViewModel
 @using AriesMagicAppointmentSystem.Models
 @{ var f = Model.Filters; }
-<form method="get" asp-action="Index" class="am-filter-bar">
+<form method="get" asp-action="Index" class="am-filter-bar" data-staff-autosearch="history" role="search">
 <div class="am-filter-row">
-<div class="am-filter-search"><i class="bi bi-search" aria-hidden="true"></i><label for="historySearch" class="visually-hidden">Search booking or client</label><input id="historySearch" name="Search" value="@f.Search" placeholder="Search booking or client" class="form-control" /></div>
+<div class="am-filter-search"><i class="bi bi-search" aria-hidden="true"></i><label for="historySearch" class="visually-hidden">Search booking or client</label><input id="historySearch" name="Search" value="@f.Search" placeholder="Search booking ID, client, or package" autocomplete="off" class="form-control" /></div>
 <div class="dropdown">
 <button type="button" class="btn btn-outline-secondary dropdown-toggle" id="historyFilterToggle" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false"><i class="bi bi-funnel" aria-hidden="true"></i> Filters</button>
 <div class="dropdown-menu dropdown-menu-end" aria-labelledby="historyFilterToggle">
@@ -23,7 +23,8 @@
 @if(f.CompletedDateTo.HasValue) { <input type="hidden" name="CompletedDateTo" value="@f.CompletedDateTo.Value.ToString("yyyy-MM-dd")" /> }
 @if(!string.IsNullOrEmpty(f.EventType)) { <input type="hidden" name="EventType" value="@f.EventType" /> }
 @if(User.IsInRole("Owner") && !string.IsNullOrEmpty(f.RefundStatus)) { <input type="hidden" name="RefundStatus" value="@f.RefundStatus" /> }
-<button type="submit" class="btn btn-primary">Search</button>
+@if(!User.IsInRole("Staff")){<button type="submit" class="btn btn-primary">Search</button>}
+else{<button type="submit" class="visually-hidden">Search history</button>}
 <a asp-action="Index" class="btn btn-light">Clear Filters</a>
 </div>
 </form>

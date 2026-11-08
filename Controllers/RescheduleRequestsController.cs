@@ -202,7 +202,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             string status = RescheduleRequestStatus.Pending,
             string? search = null,
             DateTime? requestedDate = null,
-            string sortBy = "newest")
+            string sortBy = "newest", int page = 1, int pageSize = 10)
         {
             var allowedStatuses = new[]
             {
@@ -232,7 +232,8 @@ namespace AriesMagicAppointmentSystem.Controllers
                 SortBy = string.Equals(sortBy, "oldest", StringComparison.OrdinalIgnoreCase) ? "oldest" : "newest",
                 PendingCount = await baseQuery.CountAsync(r => r.Status == RescheduleRequestStatus.Pending),
                 ApprovedCount = await baseQuery.CountAsync(r => r.Status == RescheduleRequestStatus.Approved),
-                RejectedCount = await baseQuery.CountAsync(r => r.Status == RescheduleRequestStatus.Rejected)
+                RejectedCount = await baseQuery.CountAsync(r => r.Status == RescheduleRequestStatus.Rejected),
+                PageSize = pageSize is 10 or 20 or 50 ? pageSize : 10
             };
 
             var query = baseQuery;
@@ -263,7 +264,11 @@ namespace AriesMagicAppointmentSystem.Controllers
                 ? query.OrderBy(r => r.CreatedAt)
                 : query.OrderByDescending(r => r.CreatedAt);
 
-            var requests = await query.ToListAsync();
+            model.TotalCount = await query.CountAsync();
+            model.Page = Math.Min(Math.Max(1, page), Math.Max(1,
+                (int)Math.Ceiling(model.TotalCount / (double)model.PageSize)));
+            var requests = await query.Skip((model.Page - 1) * model.PageSize)
+                .Take(model.PageSize).ToListAsync();
             foreach (var request in requests)
             {
                 var availability = request.Status == RescheduleRequestStatus.Pending

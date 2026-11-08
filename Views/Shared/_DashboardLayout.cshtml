@@ -73,7 +73,7 @@
         <link rel="stylesheet" href="~/css/@(sheet).css" asp-append-version="true" />
     }
     <link rel="stylesheet" href="~/AriesMagicAppointmentSystem.styles.css" asp-append-version="true" />
-    @if(role=="Staff"){<link rel="stylesheet" href="~/css/staff-reference-20261106.css" asp-append-version="true" /><link rel="stylesheet" href="~/css/staff-round1-20261108.css" asp-append-version="true" />}
+    @if(role=="Staff"){<link rel="stylesheet" href="~/css/staff-reference-20261106.css" asp-append-version="true" /><link rel="stylesheet" href="~/css/staff-round1-20261108.css" asp-append-version="true" /><link rel="stylesheet" href="~/css/staff-round2-20261108.css" asp-append-version="true" />}
     @if(role=="Admin"){<link rel="stylesheet" href="~/css/admin-reference-20261106.css" asp-append-version="true" />}
     @if(currentController=="Personnel"){<link rel="stylesheet" href="~/css/personnel.css" asp-append-version="true" />}
     @if(currentController=="Communications"){<link rel="stylesheet" href="~/css/unified-support-20261108.css" asp-append-version="true" />}
@@ -88,7 +88,8 @@
         </a>
         <div class="topbar-left">
             <button type="button" class="btn btn-outline-secondary ui-menu-toggle" data-bs-toggle="offcanvas" data-bs-target="#internalSidebar" aria-controls="internalSidebar" aria-expanded="false" aria-label="Open navigation"><i class="bi bi-list" aria-hidden="true"></i></button>
-            <span class="dashboard-title">@role workspace <span class="workspace-breadcrumb">/ @ViewData["Title"]</span></span>
+            @if(role=="Staff"){<span class="staff-round2-header-identity"><small>Aries d' Magic Artist · Staff workspace</small><strong>@ViewData["Title"]</strong></span>}
+            else{<span class="dashboard-title">@role workspace <span class="workspace-breadcrumb">/ @ViewData["Title"]</span></span>}
         </div>
         <div class="topbar-right">
             <a asp-controller="Communications" asp-action="Index" class="topbar-icon topbar-message-link" aria-label="Messages, @unreadMessageCount unread conversations"><i class="bi bi-chat-dots" aria-hidden="true"></i><span class="communication-unread-badge" @(unreadMessageCount == 0 ? "hidden" : null)>@(unreadMessageCount > 99 ? "99+" : unreadMessageCount)</span></a>
@@ -139,6 +140,6 @@
 <script src="~/js/admin-console.js" asp-append-version="true"></script>
 <script src="~/js/app-ui.js" asp-append-version="true"></script>
 <script src="~/js/internal-workspaces.js" asp-append-version="true"></script>
-@if(role=="Staff"){<script src="~/js/staff-round1-20261108.js" asp-append-version="true"></script>}
+@if(role=="Staff"){<script src="~/js/staff-round1-20261108.js" asp-append-version="true"></script><script src="~/js/staff-round2-20261108.js" asp-append-version="true"></script>}
 </body>
 </html>

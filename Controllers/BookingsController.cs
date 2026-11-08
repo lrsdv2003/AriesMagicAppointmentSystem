@@ -50,7 +50,7 @@ namespace AriesMagicAppointmentSystem.Controllers
         }
 
         [Authorize(Roles = "Staff,Owner")]
-        public async Task<IActionResult> Index(string? search, string? bookingStatus, string? paymentStatus, DateTime? eventDate, int? serviceId)
+        public async Task<IActionResult> Index(string? search, string? bookingStatus, string? paymentStatus, DateTime? eventDate, int? serviceId, int page = 1, int pageSize = 10)
         {
             // Lazily flip any bookings whose event has already ended into Completed/archived
             // before we build this list, so nothing that has already happened lingers here.
@@ -65,21 +65,18 @@ namespace AriesMagicAppointmentSystem.Controllers
 
             if (isStaff)
             {
-                bookingsQuery = bookingsQuery.Where(b =>
-                    b.Status == BookingStatus.Pending ||
-                    b.Status == BookingStatus.AwaitingDownpayment ||
-                    b.Status == BookingStatus.AwaitingVerification ||
-                    b.Status == BookingStatus.Declined);
-
-                bookingStatus = string.IsNullOrWhiteSpace(bookingStatus) ? "AllRequests" : bookingStatus;
-                bookingsQuery = bookingStatus switch
-                {
-                    "Pending" => bookingsQuery.Where(b => b.Status == BookingStatus.Pending),
-                    "ApprovedAwaitingPayment" => bookingsQuery.Where(b => b.Status == BookingStatus.AwaitingDownpayment || b.Status == BookingStatus.AwaitingVerification),
-                    "Declined" => bookingsQuery.Where(b => b.Status == BookingStatus.Declined),
-                    "RequiresReview" => bookingsQuery.Where(b => b.RequiresManualReview),
-                    _ => bookingsQuery
-                };
+                // Action queue, not a second payment-verification or historical booking list.
+                // Keep pending venue-review and customer-acceptance records discoverable,
+                // but never expose Owner-only payment states here.
+                bookingsQuery = bookingsQuery.Where(b => b.Status == BookingStatus.Pending);
+                bookingStatus = bookingStatus is "RequiresReview" or "Pending" or "AllRequests"
+                    ? bookingStatus : "AllRequests";
+                if (bookingStatus == "RequiresReview")
+                    bookingsQuery = bookingsQuery.Where(b => b.RequiresManualReview
+                        || b.TravelFeeStatus == VenueLocationPolicy.PendingReview
+                        || b.TravelFeeStatus == VenueLocationPolicy.AwaitingCustomerAcceptance);
+                // This date filter was intentionally removed from the Staff UI.
+                eventDate = null;
             }
             else if (!string.IsNullOrWhiteSpace(bookingStatus) && bookingStatus != "All")
             {
@@ -96,22 +93,66 @@ namespace AriesMagicAppointmentSystem.Controllers
                 bookingsQuery = bookingsQuery.Where(b => b.ServiceId == serviceId.Value);
             }
 
-            var bookings = await bookingsQuery
-                .OrderByDescending(b => b.CreatedAt)
-                .ToListAsync();
-
-            if (!string.IsNullOrWhiteSpace(search))
+            search = search?.Trim();
+            pageSize = isStaff && pageSize is 10 or 20 or 50 ? pageSize : 10;
+            page = Math.Max(1, page);
+            int totalCount;
+            List<Booking> bookings;
+            if (isStaff)
             {
-                var lowered = search.ToLower();
-
-                bookings = bookings.Where(b =>
-                    $"BK-{b.CreatedAt.Year}-{b.Id:D3}".ToLower().Contains(lowered) ||
-                    (b.Client?.FullName?.ToLower().Contains(lowered) ?? false) ||
-                    (b.Client?.Email?.ToLower().Contains(lowered) ?? false) ||
-                    (b.Service?.Name?.ToLower().Contains(lowered) ?? false)
-                ).ToList();
+                if (!string.IsNullOrWhiteSpace(search))
+                {
+                    var term = search.Length > 100 ? search[..100] : search;
+                    search = term;
+                    // Keep Booking ID search correct (BK-year-id) without fetching the full queue.
+                    if (term.StartsWith("BK-", StringComparison.OrdinalIgnoreCase))
+                    {
+                        var parts = term.Split('-', 3);
+                        if (parts.Length >= 2 && int.TryParse(parts[1], out var year))
+                        {
+                            bookingsQuery = bookingsQuery.Where(b => b.CreatedAt.Year == year);
+                            if (parts.Length == 3 && int.TryParse(parts[2], out var bookingId))
+                                bookingsQuery = bookingsQuery.Where(b => b.Id == bookingId);
+                            else if (parts.Length == 3 && parts[2].Length > 0)
+                            {
+                                var suffix = parts[2].TrimStart('0');
+                                if (suffix.Length == 0) suffix = "0";
+                                bookingsQuery = bookingsQuery.Where(b => b.Id.ToString().Contains(suffix));
+                            }
+                        }
+                        else
+                            bookingsQuery = bookingsQuery.Where(b => false);
+                    }
+                    else
+                    {
+                        bookingsQuery = bookingsQuery.Where(b =>
+                            b.Id.ToString().Contains(term)
+                            || (b.Client != null && (b.Client.FullName.Contains(term) || b.Client.Email.Contains(term)))
+                            || (b.Service != null && b.Service.Name.Contains(term))
+                            || b.PartyVenue.Contains(term));
+                    }
+                }
+                totalCount = await bookingsQuery.CountAsync();
+                var totalPages = Math.Max(1, (int)Math.Ceiling(totalCount / (double)pageSize));
+                page = Math.Min(page, totalPages);
+                bookings = await bookingsQuery.OrderByDescending(b => b.CreatedAt).ThenByDescending(b => b.Id)
+                    .Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
             }
-
+            else
+            {
+                bookings = await bookingsQuery.OrderByDescending(b => b.CreatedAt).ToListAsync();
+                if (!string.IsNullOrWhiteSpace(search))
+                {
+                    var lowered = search.ToLowerInvariant();
+                    bookings = bookings.Where(b =>
+                        $"BK-{b.CreatedAt.Year}-{b.Id:D3}".Contains(search, StringComparison.OrdinalIgnoreCase) ||
+                        (b.Client?.FullName?.ToLowerInvariant().Contains(lowered) ?? false) ||
+                        (b.Client?.Email?.ToLowerInvariant().Contains(lowered) ?? false) ||
+                        (b.Service?.Name?.ToLowerInvariant().Contains(lowered) ?? false)
+                    ).ToList();
+                }
+                totalCount = bookings.Count;
+            }
             var bookingFinancials = await _financialService.GetSummariesAsync(bookings.Select(b => b.Id));
             var rows = bookings.Select(b =>
             {
@@ -136,7 +177,8 @@ namespace AriesMagicAppointmentSystem.Controllers
                     DistanceKm = b.DistanceKm,
                     ServiceZone = b.ServiceZone,
                     TravelFee = b.TravelFee,
-                    RequiresManualReview = b.RequiresManualReview
+                    RequiresManualReview = b.RequiresManualReview,
+                    TravelFeeStatus = b.TravelFeeStatus
                 };
             }).ToList();
 
@@ -148,6 +190,9 @@ namespace AriesMagicAppointmentSystem.Controllers
             var viewModel = new BookingManagementViewModel
             {
                 Search = search,
+                Page = page,
+                PageSize = pageSize,
+                TotalCount = totalCount,
                 BookingStatus = bookingStatus ?? "All",
                 PaymentStatus = paymentStatus ?? "All",
                 EventDate = eventDate,

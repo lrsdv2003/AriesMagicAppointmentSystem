@@ -1,11 +1,12 @@
 @model AriesMagicAppointmentSystem.ViewModels.BookingManagementViewModel
 @using AriesMagicAppointmentSystem.Models
+@using AriesMagicAppointmentSystem.Services
 @{
     Layout = "_DashboardLayout";
     ViewData["Title"] = "Booking Requests";
     var requests = Model.Bookings.ToList();
     var pendingCount = requests.Count(x => x.BookingStatus == BookingStatus.Pending);
-    var approvedCount = requests.Count(x => x.BookingStatus == BookingStatus.AwaitingDownpayment || x.BookingStatus == BookingStatus.AwaitingVerification);
+    var waitingClientCount = requests.Count(x => x.TravelFeeStatus == VenueLocationPolicy.AwaitingCustomerAcceptance);
     var reviewCount = requests.Count(x => x.RequiresManualReview);
     var staffOnly = User.IsInRole("Staff") && !User.IsInRole("Owner") && !User.IsInRole("Admin");
     string StatusClass(string status) => status switch {
@@ -18,19 +19,9 @@
         BookingStatus.Confirmed => "status-confirmed",
         _ => "status-read"
     };
-    string StatusLabel(string status) => status switch {
-        BookingStatus.AwaitingDownpayment => "Approved · Awaiting Payment",
-        BookingStatus.AwaitingVerification => "Approved · Awaiting Owner Verification",
-        _ => status
-    };
 }
 <div class="staff-booking-page">
-    <div class="ui-toolbar page-header staff-booking-header">
-
-        <a asp-controller="Calendar" asp-action="Index" class="btn btn-outline-primary">
-            <i class="bi bi-calendar3" aria-hidden="true"></i> Upcoming Events
-        </a>
-    </div>
+    <p class="staff-round2-intro">Staff action queue · Pending approvals and venue reviews only. Owner payment verification is managed separately.</p>
 
     @if (TempData["Success"] != null)
     {
@@ -42,32 +33,27 @@
     }
 
     <div class="staff-booking-stats" aria-label="Booking request summary">
-        <div class="staff-booking-stat"><span class="staff-stat-label"><i class="bi bi-card-checklist" aria-hidden="true"></i> Requests Shown</span><strong>@requests.Count</strong></div>
-        <div class="staff-booking-stat"><span class="staff-stat-label"><i class="bi bi-hourglass-split" aria-hidden="true"></i> Pending Staff Review</span><strong>@pendingCount</strong></div>
-        <div class="staff-booking-stat"><span class="staff-stat-label"><i class="bi bi-check-circle" aria-hidden="true"></i> Approved / Awaiting Payment</span><strong>@approvedCount</strong></div>
-        <div class="staff-booking-stat"><span class="staff-stat-label"><i class="bi bi-geo-alt" aria-hidden="true"></i> Venue Review Needed</span><strong>@reviewCount</strong></div>
+        <div class="staff-booking-stat"><span class="staff-stat-label"><i class="bi bi-card-checklist" aria-hidden="true"></i> Staff Queue Total</span><strong>@Model.TotalCount</strong></div>
+        <div class="staff-booking-stat"><span class="staff-stat-label"><i class="bi bi-hourglass-split" aria-hidden="true"></i> Requests on Page</span><strong>@requests.Count</strong></div>
+        <div class="staff-booking-stat"><span class="staff-stat-label"><i class="bi bi-hourglass" aria-hidden="true"></i> Awaiting Client Venue Confirmation (page)</span><strong>@waitingClientCount</strong></div>
+        <div class="staff-booking-stat"><span class="staff-stat-label"><i class="bi bi-geo-alt" aria-hidden="true"></i> Manual Venue Review (page)</span><strong>@reviewCount</strong></div>
     </div>
     <div class="am-filter-container">
-        <form method="get" asp-action="Index" class="am-filter-bar am-filter-row">
+        <form method="get" asp-action="Index" class="am-filter-bar am-filter-row" data-staff-autosearch="bookings" role="search">
             <div class="am-filter-search">
                 <label class="visually-hidden" for="staffBookingSearch">Search bookings</label>
-                <input id="staffBookingSearch" type="search" name="search" value="@Model.Search" class="form-control" placeholder="Booking ID, client, email, or package" />
+                <input id="staffBookingSearch" type="search" name="search" value="@Model.Search" class="form-control" placeholder="Search booking ID, client, package, or venue" autocomplete="off" />
             </div>
 <div class="dropdown"><button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false"><i class="bi bi-funnel" aria-hidden="true"></i> Filters</button><div class="dropdown-menu dropdown-menu-end"><h6>Filter requests</h6>
             <div>
                 <label class="form-label" for="staffBookingStatus">Booking status</label>
                 <select id="staffBookingStatus" name="bookingStatus" class="form-select">
-                    <option value="AllRequests" selected="@(Model.BookingStatus == "AllRequests")">All Requests</option>
+                    <option value="AllRequests" selected="@(Model.BookingStatus == "AllRequests")">All Staff Actions</option>
                     <option value="Pending" selected="@(Model.BookingStatus == "Pending")">Pending</option>
-                    <option value="ApprovedAwaitingPayment" selected="@(Model.BookingStatus == "ApprovedAwaitingPayment")">Approved / Awaiting Payment</option>
-                    <option value="Declined" selected="@(Model.BookingStatus == "Declined")">Declined</option>
-                    <option value="RequiresReview" selected="@(Model.BookingStatus == "RequiresReview")">Requires Review</option>
+                    <option value="RequiresReview" selected="@(Model.BookingStatus == "RequiresReview")">Venue / Client Confirmation Review</option>
                 </select>
             </div>
-            <div>
-                <label class="form-label" for="staffEventDate">Event date</label>
-                <input id="staffEventDate" type="date" name="eventDate" value="@(Model.EventDate?.ToString("yyyy-MM-dd"))" class="form-control" />
-            </div>
+
             <div>
                 <label class="form-label" for="staffService">Package</label>
                 <select id="staffService" name="serviceId" class="form-select">
@@ -81,7 +67,7 @@
 <div class="am-filter-actions">
             <a asp-action="Index" class="btn btn-outline-secondary">Clear Filters</a>
             <button type="submit" class="btn btn-primary"><i class="bi bi-funnel" aria-hidden="true"></i> Apply Filters</button>
-        </div></div></div><button type="submit" class="btn btn-primary">Search</button></form>
+        </div></div></div><button type="submit" class="visually-hidden">Search bookings</button></form>
     </div>
     <div class="dashboard-panel staff-booking-table-panel">
         <div class="staff-booking-panel-heading">
@@ -102,7 +88,7 @@
         else
         {
             <div class="table-responsive staff-booking-table-wrap">
-                <table class="table align-middle staff-booking-table" data-staff-paginate="bookings">
+                <table class="table align-middle staff-booking-table">
                     <thead>
                         <tr>
                             <th scope="col">Booking</th>
@@ -154,7 +140,9 @@
                                 </div>
                             </td>
                             <td>
-                                <span class="status-badge staff-status-badge @StatusClass(item.BookingStatus)">@StatusLabel(item.BookingStatus)</span>
+                                @if(item.TravelFeeStatus == VenueLocationPolicy.AwaitingCustomerAcceptance){<span class="status-badge status-pending">Awaiting Client Venue Confirmation</span>}
+                                else if(item.TravelFeeStatus == VenueLocationPolicy.PendingReview || item.RequiresManualReview){<span class="status-badge status-pending">Venue Review Needed</span>}
+                                else{<span class="status-badge staff-status-badge @StatusClass(item.BookingStatus)">Pending Staff Approval</span>}
                             </td>
                             <td class="text-end">
                                 <div class="staff-booking-actions">
@@ -182,6 +170,24 @@
         }
     </div>
 </div>
+@if(Model.TotalPages > 1 || Model.TotalCount > 0){
+<nav class="staff-round2-server-pager" aria-label="Booking queue pages">
+  <form method="get" asp-action="Index" class="staff-round2-page-size">
+    <input type="hidden" name="search" value="@Model.Search"/>
+    <input type="hidden" name="bookingStatus" value="@Model.BookingStatus"/>
+    <input type="hidden" name="serviceId" value="@Model.ServiceId"/>
+    <label for="staffBookingPageSize">Rows per page</label>
+    <select id="staffBookingPageSize" name="pageSize" class="form-select" onchange="this.form.requestSubmit()">
+      @foreach(var n in new[]{10,20,50}){<option value="@n" selected="@(Model.PageSize==n)">@n</option>}
+    </select>
+  </form>
+  <span>Page @Model.Page of @Model.TotalPages · @Model.TotalCount matching requests</span>
+  <div class="staff-round2-page-buttons">
+    @if(Model.Page>1){<a class="btn btn-outline-secondary" asp-action="Index" asp-route-page="@(Model.Page-1)" asp-route-pageSize="@Model.PageSize" asp-route-search="@Model.Search" asp-route-bookingStatus="@Model.BookingStatus" asp-route-serviceId="@Model.ServiceId">Previous</a>}
+    @if(Model.Page<Model.TotalPages){<a class="btn btn-primary" asp-action="Index" asp-route-page="@(Model.Page+1)" asp-route-pageSize="@Model.PageSize" asp-route-search="@Model.Search" asp-route-bookingStatus="@Model.BookingStatus" asp-route-serviceId="@Model.ServiceId">Next</a>}
+  </div>
+</nav>
+}
 
 <div class="modal fade staff-booking-modal" id="approveBookingModal" tabindex="-1" aria-labelledby="approveBookingModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">

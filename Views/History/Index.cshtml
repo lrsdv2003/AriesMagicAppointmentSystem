@@ -7,6 +7,7 @@
 }
 <div class="ui-page history-page">
 <partial name="_HistoryFilters" model="Model" />
+<div data-staff-search-results="history">
 <div class="ui-toolbar">
 <p class="ui-result-count">@Model.TotalCount record@(Model.TotalCount==1?"":"s")</p>
 @if(financial) {
@@ -42,4 +43,5 @@
 @if(Model.Filters.Page<Model.TotalPages) { <a class="btn btn-outline-secondary" asp-action="Index" asp-all-route-data="@HistoryPresentation.Routes(Model.Filters,Model.Filters.Page+1)">Next</a> }
 </nav>
 }
+</div>
 </div>
