@@ -1,7 +1,7 @@
 @model AriesMagicAppointmentSystem.ViewModels.HistoryIndexViewModel
 @using AriesMagicAppointmentSystem.Models
 @{ var f = Model.Filters; }
-<form method="get" asp-action="Index" class="am-filter-bar" data-staff-autosearch="history" role="search">
+<form method="get" asp-action="Index" class="am-filter-bar staff-final-filter-toolbar" data-staff-autosearch="history" role="search">
 <div class="am-filter-row">
 <div class="am-filter-search"><i class="bi bi-search" aria-hidden="true"></i><label for="historySearch" class="visually-hidden">Search booking or client</label><input id="historySearch" name="Search" value="@f.Search" placeholder="Search booking ID, client, or package" autocomplete="off" class="form-control" /></div>
 <div class="dropdown">
@@ -15,7 +15,7 @@
 <div><label for="historyPayment">Payment review state</label><select class="form-select" id="historyPayment" name="PaymentStatus"><option value="">All states</option>@foreach(var status in new[]{"No Payment",PaymentStatus.Pending,PaymentStatus.Verified,PaymentStatus.Rejected,PaymentStatus.AdditionalEvidenceRequired}) { <option value="@status" selected="@(f.PaymentStatus==status)">@AriesMagicAppointmentSystem.ViewModels.AdminActivityPresentation.Label(status)</option> }</select></div>
 }
 <div><label for="historySort">Sort by</label><select class="form-select" id="historySort" name="SortBy"><option value="Newest" selected="@(f.SortBy=="Newest"||string.IsNullOrEmpty(f.SortBy))">Newest event</option><option value="Oldest" selected="@(f.SortBy=="Oldest")">Oldest event</option><option value="ClientName" selected="@(f.SortBy=="ClientName")">Client name</option></select></div>
-<div class="am-filter-actions"><a asp-action="Index" class="btn btn-light">Clear Filters</a><button type="submit" class="btn btn-primary">Apply Filters</button></div>
+<div class="am-filter-actions">@if(!User.IsInRole("Staff")){<a asp-action="Index" class="btn btn-light">Clear Filters</a>}<button type="submit" class="btn btn-primary">Apply Filters</button></div>
 </div>
 </div>
 <input type="hidden" name="PageSize" value="@f.PageSize" />

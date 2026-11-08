@@ -64,14 +64,19 @@ else
                     }
                 </div>
 
-                <form method="get" asp-action="Index" class="am-filter-bar am-filter-row">
+                <form method="get" asp-action="Index" class="@(isStaff ? "staff-final-inbox-search" : "am-filter-bar am-filter-row")" role="search">
                     <input type="hidden" name="filter" value="@Model.Filter" />
                     @if (isClient) { <input type="hidden" name="view" value="inbox" /> }
-                    <div class="am-filter-search">
-                        <i class="bi bi-search" aria-hidden="true"></i>
-                        <input type="search" name="q" value="@Model.Search" placeholder="Search messages, names, booking #..." aria-label="Search conversations" />
+                    <div class="@(isStaff ? "staff-final-conversation-search" : "am-filter-search")">
+                        @if(!isStaff){<i class="bi bi-search" aria-hidden="true"></i>}
+                        <input type="search" name="q" value="@Model.Search" placeholder="@(isStaff ? "Search conversations" : "Search messages, names, booking #...")" aria-label="Search conversations" />
                     </div>
-                <button type="submit" class="btn btn-primary">Search</button><a asp-action="Index" class="btn btn-light">Reset</a></form>
+                    @if(isStaff){
+                      <button type="submit" class="staff-final-conversation-search-btn" aria-label="Search conversations"><i class="bi bi-search" aria-hidden="true"></i></button>
+                    }else{
+                      <button type="submit" class="btn btn-primary">Search</button><a asp-action="Index" class="btn btn-light">Reset</a>
+                    }
+                </form>
 
                 <div class="comm-filter-strip am-filter-chips" aria-label="Conversation filters">
                     <a asp-action="Index" asp-route-filter="all" asp-route-view="@(isClient ? "inbox" : null)" asp-route-q="@Model.Search" class="@(Model.Filter == "all" ? "active" : "")">All</a>
@@ -147,7 +152,8 @@ else
                 <div class="comm-chat-empty">
                     <div class="comm-empty-orbit"><i class="bi bi-chat-dots" aria-hidden="true"></i></div>
                     <span class="comm-eyebrow">Your conversations</span>
-                    <h2>@(isClient ? "A good plan starts with a conversation." : "Select a conversation to start messaging.")</h2>
+                    <h2>@(isStaff ? "Pick up the conversation." : isClient ? "A good plan starts with a conversation." : "Select a conversation to start messaging.")</h2>
+                    @if(isStaff){<p>Choose a Client or team conversation to view messages and respond.</p>}
                     @if (!useCompactInternal)
                     {
                         <p>Choose a conversation or use Aries Magic Support to ask a question.</p>
@@ -161,7 +167,7 @@ else
             else
             {
                 <header class="comm-chat-header">
-                    <a asp-action="Index" asp-route-id="" asp-route-view="@(isClient ? "inbox" : null)" asp-route-filter="@Model.Filter" asp-route-q="@Model.Search" class="comm-mobile-back" aria-label="Back to conversations"><i class="bi bi-arrow-left" aria-hidden="true"></i></a>
+                    <a asp-action="Index" asp-route-id="" asp-route-view="@((isClient || isStaff) ? "inbox" : null)" asp-route-filter="@Model.Filter" asp-route-q="@Model.Search" class="comm-mobile-back" aria-label="Back to conversations"><i class="bi bi-arrow-left" aria-hidden="true"></i></a>
                     <div class="comm-chat-title">
                         <span class="comm-avatar comm-avatar-lg">@if(!string.IsNullOrWhiteSpace(otherParticipant?.AvatarUrl)){<img src="@otherParticipant.AvatarUrl" alt="" style="width:100%;height:100%;object-fit:cover" onerror="this.hidden=true;this.nextElementSibling.hidden=false"/><span hidden>@otherParticipant.Initials</span>}else{@(otherParticipant?.Initials ?? "AM")}</span>
                         <div>
@@ -179,13 +185,6 @@ else
                         </a>
                     }
                 </header>
-                @if (isStaff && selected.Booking != null)
-                {
-                    <p class="staff-chat-context"><i class="bi bi-ticket-perforated" aria-hidden="true"></i>
-                        Booking #@selected.Booking.Id
-                        <span aria-hidden="true">·</span> @selected.Booking.PackageName
-                    </p>
-                }
 
                 @if (isClient)
                 {
@@ -209,6 +208,13 @@ else
                     @foreach (var message in selected.Messages)
                     {
                         <article class="comm-message @(message.IsMine ? "mine" : "theirs")" data-message-id="@message.Id">
+                            @if(isStaff && !message.IsMine){
+                              <span class="comm-sender-avatar comm-avatar" aria-hidden="true">
+                                @if(!string.IsNullOrWhiteSpace(message.SenderAvatarUrl)){
+                                  <img src="@message.SenderAvatarUrl" alt="" loading="lazy" onerror="this.hidden=true;this.nextElementSibling.hidden=false"/><span hidden>@string.Concat(message.SenderName.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(n => char.ToUpperInvariant(n[0])))</span>
+                                }else{@string.Concat(message.SenderName.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(n => char.ToUpperInvariant(n[0])))}
+                              </span>
+                            }
                             <div class="comm-message-meta"><strong>@(message.IsMine ? "You" : message.SenderName)</strong><span>@message.SenderRole</span><time>@message.SentAt.ToLocalTime().ToString("MMM d, h:mm tt")</time></div>
                             @if (message.RelatedBookingId.HasValue)
                             {
@@ -286,7 +292,7 @@ else
                         }
                         <div class="comm-composer-row">
                             <label for="commMessageInput" class="visually-hidden">Message</label><textarea name="messageContent" id="commMessageInput" rows="1" maxlength="4000" placeholder="Write a message..." required></textarea>
-                            <button class="comm-send-btn" type="submit" aria-label="Send message">@if(isClient){<span>Send</span>}else{<i class="bi bi-send-fill" aria-hidden="true"></i>}</button>
+                            <button class="comm-send-btn" type="submit" aria-label="Send message">@if(isClient||isStaff){<span>Send</span>}else{<i class="bi bi-send-fill" aria-hidden="true"></i>}</button>
                         </div>
                         <div class="comm-composer-note"><span id="commComposerStatus" role="status" aria-live="polite"></span><span><kbd>Enter</kbd> send - <kbd>Shift</kbd>+<kbd>Enter</kbd> new line</span></div>
                     </form>

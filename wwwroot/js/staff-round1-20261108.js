@@ -36,19 +36,15 @@
      [...document.querySelectorAll(".staff-reschedule-cards .staff-reschedule-card")]:[];
    const root=document.createElement("nav");root.className="staff-round1-pager";
    root.setAttribute("aria-label",table.dataset.staffPaginate+" pagination");
-   const label=document.createElement("label");label.textContent="Show";
-   const select=document.createElement("select");select.setAttribute("aria-label","Rows per page");
-   for(const n of [10,20,50]){const option=new Option(n+" per page",String(n));select.append(option)}
-   label.append(select);
    const buttons=document.createElement("div");buttons.className="staff-round1-page-controls";
    const prev=document.createElement("button");prev.type="button";prev.textContent="Previous";
    const position=document.createElement("span");position.setAttribute("aria-live","polite");
    const next=document.createElement("button");next.type="button";next.textContent="Next";
-   buttons.append(prev,position,next);root.append(label,buttons);
+   buttons.append(prev,position,next);root.append(buttons);
    table.closest(".table-responsive")?.after(root);
    let page=0;
    function render(){
-     const size=Number(select.value),total=Math.ceil(rows.length/size);
+     const size=10,total=Math.ceil(rows.length/size);
      page=Math.max(0,Math.min(page,total-1));
      rows.forEach((r,i)=>{r.hidden=(i<size*page||i>=size*(page+1))});
      cards.forEach((card,i)=>{if(i<rows.length)card.hidden=(i<size*page||i>=size*(page+1))});
@@ -57,7 +53,6 @@
    }
    prev.addEventListener("click",()=>{page--;render()});
    next.addEventListener("click",()=>{page++;render()});
-   select.addEventListener("change",()=>{page=0;render()});
    render();
  }
  document.querySelectorAll("table[data-staff-paginate]").forEach(createPagination);

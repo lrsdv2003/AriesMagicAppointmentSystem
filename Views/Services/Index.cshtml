@@ -10,13 +10,6 @@
             <div class="d-flex gap-2 flex-wrap"><a asp-action="Archived" class="btn btn-outline-secondary">Archived Packages</a><a asp-action="Create" class="btn btn-primary">Add Package</a></div>
         }
     </header>
-    @if(User.IsInRole("Staff")){
-      <div class="staff-round2-package-search">
-        <label for="staffPackageSearch">Find a package</label>
-        <input id="staffPackageSearch" type="search" class="form-control" placeholder="Search package name or inclusion" autocomplete="off" data-staff-package-search />
-      </div>
-      <p class="staff-round2-package-empty" role="status" hidden>No packages match this search.</p>
-    }
     @if (!Model.Any()) {
         <div class="staff-package-empty"><h2>No active packages yet</h2></div>
     } else {

@@ -233,7 +233,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                 PendingCount = await baseQuery.CountAsync(r => r.Status == RescheduleRequestStatus.Pending),
                 ApprovedCount = await baseQuery.CountAsync(r => r.Status == RescheduleRequestStatus.Approved),
                 RejectedCount = await baseQuery.CountAsync(r => r.Status == RescheduleRequestStatus.Rejected),
-                PageSize = pageSize is 10 or 20 or 50 ? pageSize : 10
+                PageSize = User.IsInRole("Staff") ? 10 : (pageSize is 10 or 20 or 50 ? pageSize : 10)
             };
 
             var query = baseQuery;

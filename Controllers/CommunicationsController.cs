@@ -129,7 +129,8 @@ namespace AriesMagicAppointmentSystem.Controllers
                 model.InternalUsers = await GetInternalUserOptionsAsync(userId);
             }
 
-            var selectedId = !isInternal && view == "inbox" ? (int?)null : id.HasValue && items.Any(x => x.Id == id.Value)
+            var selectedId = ((!isInternal || User.IsInRole("Staff")) && view == "inbox")
+                ? (int?)null : id.HasValue && items.Any(x => x.Id == id.Value)
                 ? id.Value
                 : items.FirstOrDefault()?.Id;
 

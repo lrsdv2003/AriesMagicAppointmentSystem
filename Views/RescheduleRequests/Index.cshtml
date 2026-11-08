@@ -40,11 +40,11 @@
     </section>
 
     <div class="am-filter-container">
-        <form method="get" asp-action="Index" class="am-filter-bar am-filter-row" data-staff-autosearch="reschedules" role="search">
+        <form method="get" asp-action="Index" class="am-filter-bar am-filter-row staff-final-filter-toolbar" data-staff-autosearch="reschedules" role="search">
             <input type="hidden" name="status" value="@Model.StatusFilter" />
-            <input type="hidden" name="pageSize" value="@Model.PageSize" />
+
             <label class="visually-hidden" for="rescheduleSearch">Search reschedule requests</label>
-            <div class="am-filter-search"><input id="rescheduleSearch" type="search" name="search" value="@Model.Search" class="form-control" placeholder="Booking ID, client, or package" /></div>
+            <div class="am-filter-search"><i class="bi bi-search" aria-hidden="true"></i><input id="rescheduleSearch" type="search" name="search" value="@Model.Search" class="form-control" placeholder="Booking ID, client, or package" /></div>
 <div class="dropdown"><button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false"><i class="bi bi-funnel" aria-hidden="true"></i> Filters</button><div class="dropdown-menu dropdown-menu-end"><h6>Filter requests</h6>
             <label class="form-label" for="rescheduleDate">Requested date</label>
             <input id="rescheduleDate" type="date" name="requestedDate" value="@(Model.RequestedDate?.ToString("yyyy-MM-dd"))" class="form-control mb-3" />
@@ -54,9 +54,8 @@
                 <option value="oldest" selected="@(Model.SortBy == "oldest")">Oldest first</option>
             </select>
 <div class="am-filter-actions">
-            <a asp-action="Index" asp-route-status="@Model.StatusFilter" class="btn btn-outline-secondary">Clear Filters</a>
-            <button type="submit" class="btn btn-primary"><i class="bi bi-search" aria-hidden="true"></i> Apply Filters</button>
-        </div></div></div><button type="submit" class="visually-hidden">Search reschedules</button></form>
+            <button type="submit" class="btn btn-primary"><i class="bi bi-funnel" aria-hidden="true"></i> Apply Filters</button>
+        </div></div></div><a asp-action="Index" asp-route-status="@Model.StatusFilter" class="btn btn-outline-secondary staff-final-clear">Clear Filters</a><button type="submit" class="visually-hidden">Search reschedules</button></form>
     </div>
 
     <div class="dashboard-panel staff-reschedule-table-panel">
@@ -193,15 +192,7 @@
     </div>
 @if(Model.TotalCount > 0){
 <nav class="staff-round2-server-pager" aria-label="Reschedule request pages">
- <form method="get" asp-action="Index" class="staff-round2-page-size">
-  <input type="hidden" name="status" value="@Model.StatusFilter"/>
-  <input type="hidden" name="search" value="@Model.Search"/>
-  <input type="hidden" name="requestedDate" value="@Model.RequestedDate?.ToString("yyyy-MM-dd")"/>
-  <input type="hidden" name="sortBy" value="@Model.SortBy"/>
-  <label for="staffReschedulePageSize">Rows per page</label><select name="pageSize" id="staffReschedulePageSize" class="form-select" onchange="this.form.requestSubmit()">
-   @foreach(var n in new[]{10,20,50}){<option value="@n" selected="@(Model.PageSize==n)">@n</option>}
-  </select>
- </form>
+
  <span>Page @Model.Page of @Model.TotalPages · @Model.TotalCount requests</span>
  <div class="staff-round2-page-buttons">
   @if(Model.Page>1){<a class="btn btn-outline-secondary" asp-action="Index" asp-route-status="@Model.StatusFilter" asp-route-search="@Model.Search" asp-route-requestedDate="@Model.RequestedDate?.ToString("yyyy-MM-dd")" asp-route-sortBy="@Model.SortBy" asp-route-pageSize="@Model.PageSize" asp-route-page="@(Model.Page-1)">Previous</a>}
