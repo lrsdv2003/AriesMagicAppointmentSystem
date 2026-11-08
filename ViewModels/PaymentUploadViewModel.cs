@@ -24,6 +24,9 @@ namespace AriesMagicAppointmentSystem.ViewModels
 
         public string GCashQrPath { get; set; } = "/images/gcash-qr.jpeg";
 
+        [Range(typeof(bool), "true", "true", ErrorMessage = "Confirm that your receipt reflects an actual payment and is subject to Owner verification.")]
+        public bool AcknowledgesPaymentTerms { get; set; }
+
         [Required]
         [Display(Name = "Payment Method")]
         public string PaymentMethod { get; set; } = "GCash";

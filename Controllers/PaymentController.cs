@@ -86,6 +86,8 @@ namespace AriesMagicAppointmentSystem.Controllers
         [Authorize(Roles = "Client")]
         public async Task<IActionResult> Upload(int? bookingId)
         {
+            await HttpContext.RequestServices.GetRequiredService<IBookingExpirationService>()
+                .ExpireOverdueBookingsAsync();
             var appUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
             var viewModel = new PaymentUploadViewModel
@@ -105,6 +107,10 @@ namespace AriesMagicAppointmentSystem.Controllers
                 viewModel.ExpectedLatestPaymentId = summary.Ledger.Select(p => p.PaymentId).DefaultIfEmpty(0).Max();
                 viewModel.Options = PaymentOptions.Build(summary.BookingTotal, summary.TotalVerifiedPayments);
             }
+            ViewBag.PaymentDeadlines = (await InitialPaymentWindowPolicy.GetDeadlinesUtcAsync(
+                _context, viewModel.Bookings.Where(b => int.TryParse(b.Value, out _))
+                    .Select(b => int.Parse(b.Value))))
+                .ToDictionary(kv => kv.Key, kv => InitialPaymentWindowPolicy.FormatManila(kv.Value));
             return View(viewModel);
         }
 
@@ -133,6 +139,15 @@ namespace AriesMagicAppointmentSystem.Controllers
             if (booking == null || !(booking.Status == BookingStatus.AwaitingDownpayment || booking.Status == BookingStatus.Confirmed || booking.Status == BookingStatus.Completed))
             {
                 ModelState.AddModelError("", "Selected booking is not eligible for a payment.");
+                model.Bookings = await GetPayableBookingsAsync(appUserId);
+                return View(model);
+            }
+
+            var initialDeadlineUtc = await InitialPaymentWindowPolicy.GetDeadlineUtcAsync(_context, booking.Id);
+            if (booking.Status == BookingStatus.AwaitingDownpayment
+                && InitialPaymentWindowPolicy.IsOverdue(initialDeadlineUtc, DateTime.UtcNow))
+            {
+                ModelState.AddModelError("", "This booking's 24-hour payment-proof submission deadline has passed. Please view the expired booking or contact Staff.");
                 model.Bookings = await GetPayableBookingsAsync(appUserId);
                 return View(model);
             }
@@ -215,6 +230,15 @@ namespace AriesMagicAppointmentSystem.Controllers
                 return View(model);
             }
 
+            // Check again after file validation; the current SERIALIZABLE transaction protects
+            // the booking/payment check against the scheduled expiration writer.
+            if (booking.Status == BookingStatus.AwaitingDownpayment
+                && InitialPaymentWindowPolicy.IsOverdue(initialDeadlineUtc, DateTime.UtcNow))
+            {
+                ModelState.AddModelError("", "The 24-hour payment-proof window closed while this form was being processed. The receipt was not recorded. Contact Staff for assistance.");
+                model.Bookings = await GetPayableBookingsAsync(appUserId);
+                return View(model);
+            }
             var savedProof = await SavePrivateProofAsync(model.ProofImage, "payments");
 
             var payment = new Payment
@@ -302,6 +326,9 @@ namespace AriesMagicAppointmentSystem.Controllers
                 .ToListAsync();
 
             ViewBag.FinancialSummaries = await _financialService.GetSummariesAsync(payments.Select(p => p.BookingId));
+            var payableOptions = await GetPayableBookingsAsync(appUserId);
+            ViewBag.PayableBookingIds = payableOptions.Select(p => int.TryParse(p.Value, out var id) ? id : 0).ToHashSet();
+            ViewBag.PayableBookingOptions = payableOptions;
             return View(payments);
         }
 
@@ -779,6 +806,9 @@ namespace AriesMagicAppointmentSystem.Controllers
             var appUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
             model.Bookings = await GetRefundableBookingsAsync(appUserId);
+            if (!model.RefundAcknowledged)
+                ModelState.AddModelError(nameof(model.RefundAcknowledged),
+                    "Acknowledge that your refund request requires Owner review.");
 
             if (!ModelState.IsValid)
             {
@@ -860,6 +890,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                 .OrderByDescending(r => r.RequestedAt)
                 .ToListAsync();
 
+            ViewBag.CanRequestRefund = (await GetRefundEligiblePaymentIdsAsync(appUserId)).Count > 0;
             return View(requests);
         }
 

@@ -8,6 +8,10 @@ namespace AriesMagicAppointmentSystem.Models
         public int ConversationId { get; set; }
         public Conversation? Conversation { get; set; }
 
+        // Optional validated booking context for messages inside the Client support thread.
+        public int? RelatedBookingId { get; set; }
+        public Booking? RelatedBooking { get; set; }
+
         [Required, MaxLength(450)]
         public string SenderId { get; set; } = string.Empty;
         public ApplicationUser? Sender { get; set; }

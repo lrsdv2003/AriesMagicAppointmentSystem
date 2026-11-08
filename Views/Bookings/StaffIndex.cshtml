@@ -7,6 +7,7 @@
     var pendingCount = requests.Count(x => x.BookingStatus == BookingStatus.Pending);
     var approvedCount = requests.Count(x => x.BookingStatus == BookingStatus.AwaitingDownpayment || x.BookingStatus == BookingStatus.AwaitingVerification);
     var reviewCount = requests.Count(x => x.RequiresManualReview);
+    var staffOnly = User.IsInRole("Staff") && !User.IsInRole("Owner") && !User.IsInRole("Admin");
     string StatusClass(string status) => status switch {
         BookingStatus.Pending => "status-pending",
         BookingStatus.AwaitingDownpayment => "status-confirmed",
@@ -41,10 +42,10 @@
     }
 
     <div class="staff-booking-stats" aria-label="Booking request summary">
-        <div class="staff-booking-stat"><span>Requests Shown</span><strong>@requests.Count</strong></div>
-        <div class="staff-booking-stat"><span>Pending Staff Review</span><strong>@pendingCount</strong></div>
-        <div class="staff-booking-stat"><span>Approved / Awaiting Payment</span><strong>@approvedCount</strong></div>
-        <div class="staff-booking-stat"><span>Venue Review Needed</span><strong>@reviewCount</strong></div>
+        <div class="staff-booking-stat"><span class="staff-stat-label"><i class="bi bi-card-checklist" aria-hidden="true"></i> Requests Shown</span><strong>@requests.Count</strong></div>
+        <div class="staff-booking-stat"><span class="staff-stat-label"><i class="bi bi-hourglass-split" aria-hidden="true"></i> Pending Staff Review</span><strong>@pendingCount</strong></div>
+        <div class="staff-booking-stat"><span class="staff-stat-label"><i class="bi bi-check-circle" aria-hidden="true"></i> Approved / Awaiting Payment</span><strong>@approvedCount</strong></div>
+        <div class="staff-booking-stat"><span class="staff-stat-label"><i class="bi bi-geo-alt" aria-hidden="true"></i> Venue Review Needed</span><strong>@reviewCount</strong></div>
     </div>
     <div class="am-filter-container">
         <form method="get" asp-action="Index" class="am-filter-bar am-filter-row">
@@ -157,7 +158,7 @@
                             </td>
                             <td class="text-end">
                                 <div class="staff-booking-actions">
-                                    @if (item.BookingStatus == BookingStatus.Pending)
+                                    @if (item.BookingStatus == BookingStatus.Pending && (!staffOnly || (!item.RequiresManualReview && item.IsServiceable)))
                                     {
                                         <button type="button" class="btn btn-sm btn-success js-approve-booking" data-booking-id="@item.Id" data-booking-code="@item.BookingCode" data-bs-toggle="modal" data-bs-target="#approveBookingModal">
                                             <i class="bi bi-check-lg" aria-hidden="true"></i> Approve
@@ -166,6 +167,8 @@
                                             <i class="bi bi-x-lg" aria-hidden="true"></i> Decline
                                         </button>
                                     }
+                                    @if (staffOnly && item.BookingStatus == BookingStatus.Pending && (item.RequiresManualReview || !item.IsServiceable))
+                                    {<span class="staff-review-guidance">Review venue before approval</span>}
                                     <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-outline-secondary">
                                         <i class="bi bi-eye" aria-hidden="true"></i> Details
                                     </a>

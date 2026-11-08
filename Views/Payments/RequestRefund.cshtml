@@ -4,66 +4,34 @@
     ViewData["Title"] = "Request Refund";
 }
 
-<div class="client-portal-header">
-    <div>
-        <div class="section-kicker">Client Portal</div>
-        <h1 class="client-portal-title">Request Refund</h1>
-        <p class="client-portal-text">
-            Refund review is available only for a system-recorded eligible payment scenario. The Owner reviews the original receipt and decides whether a refund is approved. Submission never triggers an automatic payment.
-        </p>
-    </div>
+<div class="cn-page client-final-refund">
+<header class="hub-heading"><div><span class="hub-kicker">Client Portal</span><h1>Request Refund</h1><p>Refund requests are available only for eligible payments and require Owner approval.</p></div></header>
+@if(!Model.Bookings.Any()){
+ <section class="hub-card hub-empty"><i class="bi bi-wallet2" aria-hidden="true"></i><h2>No eligible payments for refund</h2><p>You currently have no payments eligible for a refund request.</p><a asp-controller="Bookings" asp-action="MyBookings" class="cn-button cn-primary">View My Bookings</a></section>
+}else{
+<form asp-action="RequestRefund" method="post" id="clientFinalRefundForm">
+@Html.AntiForgeryToken()
+<div asp-validation-summary="ModelOnly" class="cn-error-summary"></div>
+<div class="client-final-refund-grid">
+<section class="hub-card client-final-refund-fields">
+<h2>Refund details</h2>
+<div class="cn-field"><label asp-for="PaymentId">Eligible payment</label><select asp-for="PaymentId" asp-items="Model.Bookings" class="cn-input" required><option value="">Select eligible payment</option></select><span asp-validation-for="PaymentId" class="text-danger"></span></div>
+<div class="cn-field"><label for="refundAmount">Refund amount</label><input id="refundAmount" value="Select an eligible payment" class="cn-input" readonly aria-describedby="refundAmountNote"/><p id="refundAmountNote" class="cn-help">Set from the original verified, eligible payment. You cannot edit this amount.</p></div>
+<div class="cn-field"><label for="refundChannel">Refund method</label><input id="refundChannel" class="cn-input" value="GCash" readonly/><p class="cn-help">GCash is the supported refund destination in the current request workflow.</p></div>
+<div class="cn-field"><label asp-for="GCashNumber"></label><input asp-for="GCashNumber" class="cn-input" autocomplete="tel" placeholder="Enter your GCash number" required/><span asp-validation-for="GCashNumber" class="text-danger"></span></div>
+<div class="cn-field"><label asp-for="GCashAccountName"></label><input asp-for="GCashAccountName" class="cn-input" autocomplete="name" placeholder="Enter your GCash account name" required/><span asp-validation-for="GCashAccountName" class="text-danger"></span></div>
+<label class="cn-check client-refund-ack"><input asp-for="RefundAcknowledged" type="checkbox" id="refundAcknowledgement" required/><span>I understand my request needs Owner approval and does not guarantee an immediate transfer.</span></label><span asp-validation-for="RefundAcknowledged" class="text-danger"></span>
+<div class="client-final-refund-buttons"><button type="submit" class="cn-button cn-primary">Submit Refund Request</button><a asp-controller="Bookings" asp-action="MyBookings" class="cn-button cn-secondary">Cancel</a></div>
+</section>
+<aside class="client-final-refund-side">
+<section class="hub-card"><h2>Refund summary</h2><dl class="client-final-refund-summary"><div><dt>Eligible payment</dt><dd id="refundSelectedBooking">Select a payment</dd></div><div><dt>Refund amount</dt><dd id="refundSelectedAmount">—</dd></div><div><dt>Refund reason</dt><dd id="refundSelectedReason">—</dd></div><div><dt>Approval</dt><dd>Owner review required</dd></div><div><dt>Payment method</dt><dd>GCash</dd></div></dl></section>
+<section class="hub-card client-final-refund-guide"><h2>Refund request guidelines</h2><ul><li>Only verified payments in eligible scenarios can be requested.</li><li>Owner review and approval are required.</li><li>Submitting a request does not guarantee approval or an immediate transfer.</li></ul></section>
+</aside>
 </div>
-
-<div class="dashboard-panel">
-    <form asp-action="RequestRefund" method="post" enctype="multipart/form-data">
-        @Html.AntiForgeryToken()
-
-        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
-
-        <div class="row g-3">
-            <div class="col-12">
-                <label asp-for="PaymentId" class="form-label">Eligible payment</label>
-                <select asp-for="PaymentId" asp-items="Model.Bookings" class="form-select">
-                    <option value="">-- Select an eligible payment --</option>
-                </select>
-                <span asp-validation-for="PaymentId" class="text-danger"></span>
-            </div>
-
-            <div class="col-md-6">
-                <label class="form-label" for="refundAmount">Refund Amount</label>
-                <input id="refundAmount" value="Set to the original eligible payment amount" class="form-control" readonly />
-            </div>
-
-            <div class="col-md-6">
-                <label asp-for="GCashNumber" class="form-label"></label>
-                <input asp-for="GCashNumber" class="form-control" placeholder="Enter your GCash number" />
-                <span asp-validation-for="GCashNumber" class="text-danger"></span>
-            </div>
-
-            <div class="col-md-6">
-                <label asp-for="GCashAccountName" class="form-label"></label>
-                <input asp-for="GCashAccountName" class="form-control" placeholder="Enter your GCash account name" />
-                <span asp-validation-for="GCashAccountName" class="text-danger"></span>
-            </div>
-
-            <div class="col-md-6">
-                <p class="form-text">The original payment receipt is already linked to this request and is available to the Owner through the protected proof route.</p>
-            </div>
-
-            <div class="col-12">
-                <p class="form-text">Eligibility reason comes from the system’s booking and payment records and cannot be changed here.</p>
-            </div>
-        </div>
-
-        <div class="upload-payment-actions mt-4">
-            <button type="submit" class="btn btn-danger btn-lg">Submit Refund Request</button>
-            <a asp-action="MyRefundRequests" class="btn btn-outline-secondary btn-lg">My Refund Requests</a>
-            <a asp-action="Upload" class="btn btn-outline-secondary btn-lg">Back to Payment Upload</a>
-        </div>
-    </form>
+</form>
+}
 </div>
-
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
-    <script src="~/js/proof-preview.js" asp-append-version="true"></script>
+    <script src="~/js/client-final-20261108.js" asp-append-version="true"></script>
 }

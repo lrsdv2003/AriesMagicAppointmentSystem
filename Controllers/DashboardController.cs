@@ -52,12 +52,20 @@ public class DashboardController : Controller
         await LoadAsync(model, "messages", async () =>
         {
             model.UnreadConversations = await _context.ConversationParticipants.AsNoTracking()
-                .CountAsync(p => p.UserId == uid && p.Conversation!.Messages.Any(m =>
+                .CountAsync(p => p.UserId == uid &&
+                    p.Conversation!.ConversationType != ConversationTypes.Booking &&
+                    (p.Conversation.ConversationType != ConversationTypes.ClientSupport ||
+                     p.Conversation.SupportClientId != null) &&
+                    p.Conversation.Messages.Any(m =>
                     m.SenderId != uid && (!p.LastReadAt.HasValue || m.SentAt > p.LastReadAt.Value)));
             // Presentation preview uses the same membership boundary as Communications.
             // Never load conversations merely because the viewer has an internal role.
             model.RecentConversations = await _context.ConversationParticipants.AsNoTracking()
-                .Where(p => p.UserId == uid && p.Conversation!.Messages.Any())
+                .Where(p => p.UserId == uid &&
+                    p.Conversation!.ConversationType != ConversationTypes.Booking &&
+                    (p.Conversation.ConversationType != ConversationTypes.ClientSupport ||
+                     p.Conversation.SupportClientId != null) &&
+                    p.Conversation.Messages.Any())
                 .OrderByDescending(p => p.Conversation!.Messages.Max(m => m.SentAt)).ThenBy(p => p.ConversationId)
                 .Take(3).Select(p => new WorkspaceConversation(p.ConversationId,
                     p.Conversation!.Title ?? "Conversation",

@@ -23,7 +23,7 @@ else
      data-conversation-id="@(selected?.Id ?? 0)"
      data-last-message-id="@lastMessageId"
      data-messages-url="@Url.Action("MessagesSince", "Communications")"
-     data-unread-url="@Url.Action("UnreadCount", "Communications")">
+     data-unread-url="@Url.Action("UnreadCount", "Communications")" data-read-states-url="@Url.Action("ReadStates", "Communications")">
 
     <div class="comm-page-header @(useCompactInternal ? "ui-toolbar" : "")">
         @if (isClient) {
@@ -116,7 +116,7 @@ else
                     {
                         var isSelected = selected?.Id == item.Id;
                         <a asp-action="Index" asp-route-id="@item.Id" asp-route-filter="@Model.Filter" asp-route-q="@Model.Search" class="comm-conversation-item @(isSelected ? "active" : "") @(item.UnreadCount > 0 ? "unread" : "")">
-                            <span class="comm-avatar">@item.Initials</span>
+                            <span class="comm-avatar">@if(!string.IsNullOrWhiteSpace(item.AvatarUrl)){<img src="@item.AvatarUrl" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover" onerror="this.hidden=true;this.nextElementSibling.hidden=false" /><span hidden>@item.Initials</span>}else{@item.Initials}</span>
                             <span class="comm-item-copy">
                                 <span class="comm-item-heading">
                                     <strong>@(useCompactInternal ? item.DisplayName : item.Title)</strong>
@@ -163,7 +163,7 @@ else
                 <header class="comm-chat-header">
                     <a asp-action="Index" asp-route-id="" asp-route-view="@(isClient ? "inbox" : null)" asp-route-filter="@Model.Filter" asp-route-q="@Model.Search" class="comm-mobile-back" aria-label="Back to conversations"><i class="bi bi-arrow-left" aria-hidden="true"></i></a>
                     <div class="comm-chat-title">
-                        <span class="comm-avatar comm-avatar-lg">@(otherParticipant?.Initials ?? "AM")</span>
+                        <span class="comm-avatar comm-avatar-lg">@if(!string.IsNullOrWhiteSpace(otherParticipant?.AvatarUrl)){<img src="@otherParticipant.AvatarUrl" alt="" style="width:100%;height:100%;object-fit:cover" onerror="this.hidden=true;this.nextElementSibling.hidden=false"/><span hidden>@otherParticipant.Initials</span>}else{@(otherParticipant?.Initials ?? "AM")}</span>
                         <div>
                             <div class="comm-title-line">
                                 <h2>@(useCompactInternal ? otherParticipant?.Name ?? selected.Title : selected.Title)</h2>
@@ -179,6 +179,13 @@ else
                         </a>
                     }
                 </header>
+                @if (isStaff && selected.Booking != null)
+                {
+                    <p class="staff-chat-context"><i class="bi bi-ticket-perforated" aria-hidden="true"></i>
+                        Booking #@selected.Booking.Id
+                        <span aria-hidden="true">·</span> @selected.Booking.PackageName
+                    </p>
+                }
 
                 @if (isClient)
                 {
@@ -203,6 +210,11 @@ else
                     {
                         <article class="comm-message @(message.IsMine ? "mine" : "theirs")" data-message-id="@message.Id">
                             <div class="comm-message-meta"><strong>@(message.IsMine ? "You" : message.SenderName)</strong><span>@message.SenderRole</span><time>@message.SentAt.ToLocalTime().ToString("MMM d, h:mm tt")</time></div>
+                            @if (message.RelatedBookingId.HasValue)
+                            {
+                                <div class="comm-booking-context-chip"><i class="bi bi-calendar-event" aria-hidden="true"></i><span>Regarding booking #@message.RelatedBookingId</span>
+                                @if(!User.IsInRole("Admin")){<a asp-controller="Bookings" asp-action="Details" asp-route-id="@message.RelatedBookingId">View booking</a>}</div>
+                            }
                             @if (message.MessageType == MessageTypes.ActionRequest)
                             {
                                 <div class="comm-action-card @(message.RequestStatus == MessageRequestStatuses.Completed ? "completed" : "")">
@@ -246,6 +258,14 @@ else
                     <form asp-action="SendMessage" method="post" id="commComposer" class="comm-composer">
                         @Html.AntiForgeryToken()
                         <input type="hidden" name="conversationId" value="@selected.Id" />
+                        @if(selected.SupportClientId != null)
+                        {
+                            <div class="comm-booking-selector"><label for="commBookingContext">Message about</label>
+                            <select id="commBookingContext" name="relatedBookingId">
+                            <option value="">General question · No specific booking</option>
+                            @foreach(var booking in selected.BookingOptions){<option value="@booking.Id" selected="@(selected.SelectedRelatedBookingId==booking.Id)">@booking.Label</option>}
+                            </select><span>Optional booking reference for the Client and team.</span></div>
+                        }
                         @if (Model.IsInternalUser && !useCompactInternal)
                         {
                             <details class="comm-request-tools">

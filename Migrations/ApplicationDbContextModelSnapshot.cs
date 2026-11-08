@@ -405,6 +405,10 @@ namespace AriesMagicAppointmentSystem.Migrations
                     b.Property<bool>("IsClosed")
                         .HasColumnType("bit");
 
+                    b.Property<string>("SupportClientId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
                     b.Property<string>("Title")
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
@@ -417,6 +421,10 @@ namespace AriesMagicAppointmentSystem.Migrations
                     b.HasIndex("BookingId");
 
                     b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("SupportClientId")
+                        .IsUnique()
+                        .HasFilter("[SupportClientId] IS NOT NULL");
 
                     b.HasIndex("UpdatedAt");
 
@@ -860,6 +868,9 @@ namespace AriesMagicAppointmentSystem.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<int?>("RelatedBookingId")
+                        .HasColumnType("int");
+
                     b.Property<string>("RequestStatus")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
@@ -877,6 +888,8 @@ namespace AriesMagicAppointmentSystem.Migrations
                         .HasColumnType("datetime2");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("RelatedBookingId");
 
                     b.HasIndex("SenderId");
 
@@ -1702,9 +1715,16 @@ namespace AriesMagicAppointmentSystem.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("AriesMagicAppointmentSystem.Models.ApplicationUser", "SupportClient")
+                        .WithMany()
+                        .HasForeignKey("SupportClientId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
                     b.Navigation("Booking");
 
                     b.Navigation("CreatedByUser");
+
+                    b.Navigation("SupportClient");
                 });
 
             modelBuilder.Entity("AriesMagicAppointmentSystem.Models.ConversationParticipant", b =>
@@ -1795,6 +1815,11 @@ namespace AriesMagicAppointmentSystem.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("AriesMagicAppointmentSystem.Models.Booking", "RelatedBooking")
+                        .WithMany()
+                        .HasForeignKey("RelatedBookingId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
                     b.HasOne("AriesMagicAppointmentSystem.Models.ApplicationUser", "Sender")
                         .WithMany()
                         .HasForeignKey("SenderId")
@@ -1802,6 +1827,8 @@ namespace AriesMagicAppointmentSystem.Migrations
                         .IsRequired();
 
                     b.Navigation("Conversation");
+
+                    b.Navigation("RelatedBooking");
 
                     b.Navigation("Sender");
                 });

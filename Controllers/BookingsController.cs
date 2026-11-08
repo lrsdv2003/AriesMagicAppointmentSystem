@@ -13,7 +13,7 @@ namespace AriesMagicAppointmentSystem.Controllers
 {
     public class BookingsController : Controller
     {
-        private const string CurrentTermsVersion = "2026-11-03-v2";
+        private const string CurrentTermsVersion = "2026-11-08-v3";
         private readonly ApplicationDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IHistoryService _historyService;
@@ -765,7 +765,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                 IsCompletedLocked = false,
 
                 EventType = model.EventType,
-                Motif = model.Motif,
+                Motif = model.Motif ?? string.Empty,
                 PartyTheme = model.PartyTheme,
                 PartyVenue = model.PartyVenue,
                 VenueLatitude = model.VenueLatitude,
@@ -843,21 +843,22 @@ namespace AriesMagicAppointmentSystem.Controllers
         }
 
         [Authorize(Roles = "Client")]
-        public async Task<IActionResult> Dashboard()
-        {
-            var result = await MyBookings();
-            if (result is ViewResult view) view.ViewName = "ClientDashboard";
-            return result;
-        }
+        public IActionResult Dashboard() => RedirectToAction(nameof(MyBookings));
 
         [Authorize(Roles = "Client")]
         public async Task<IActionResult> MyBookings()
         {
+            // Reconcile after an idle host restart; the background worker also processes these.
+            await HttpContext.RequestServices.GetRequiredService<IBookingExpirationService>()
+                .ExpireOverdueBookingsAsync();
             var appUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            var bookings = await _context.Bookings
+            var bookings = await _context.Bookings.AsNoTracking()
                 .Include(b => b.Client)
                 .Include(b => b.Service)
+                .Include(b => b.Payments)
+                .Include(b => b.RescheduleRequests)
+                .AsSplitQuery()
                 .Where(b => b.ApplicationUserId == appUserId)
                 .OrderByDescending(b => b.CreatedAt)
                 .ToListAsync();
@@ -865,6 +866,8 @@ namespace AriesMagicAppointmentSystem.Controllers
             var unavailableBookingIds = await GetUnavailableBookingIdsAsync(bookings);
 
             ViewBag.UnavailableBookingIds = unavailableBookingIds;
+            ViewBag.PaymentDeadlines = await InitialPaymentWindowPolicy.GetDeadlinesUtcAsync(
+                _context, bookings.Select(b => b.Id));
             ViewBag.FinancialSummaries = await _financialService.GetSummariesAsync(bookings.Select(b => b.Id));
 
             return View(bookings);
@@ -911,6 +914,8 @@ namespace AriesMagicAppointmentSystem.Controllers
         {
             if (id == null) return NotFound();
             await _historyService.ArchiveDueBookingsAsync();
+            await HttpContext.RequestServices.GetRequiredService<IBookingExpirationService>()
+                .ExpireOverdueBookingsAsync();
 
             var booking = await _context.Bookings
                 .Include(b => b.Client)
@@ -926,12 +931,16 @@ namespace AriesMagicAppointmentSystem.Controllers
                 ViewBag.CancellationRequestLinked = booking.CancellationRequestMessageId.HasValue
                     && await _context.Messages.AnyAsync(m => m.Id == booking.CancellationRequestMessageId
                         && m.SenderId == booking.CancellationRequestByUserId
-                        && m.Conversation != null && m.Conversation.BookingId == booking.Id
-                        && m.Conversation.ConversationType == ConversationTypes.Booking);
+                        && m.Conversation != null &&
+                        ((m.Conversation.BookingId == booking.Id && m.Conversation.ConversationType == ConversationTypes.Booking)
+                         || (m.RelatedBookingId == booking.Id &&
+                             m.Conversation.ConversationType == ConversationTypes.ClientSupport &&
+                             m.Conversation.SupportClientId == booking.ApplicationUserId)));
                 return View("StaffDetails", booking);
             }
 
             ViewBag.IsScheduleUnavailable = (await GetUnavailableBookingIdsAsync(new[] { booking })).Contains(booking.Id);
+            ViewBag.PaymentDeadline = await InitialPaymentWindowPolicy.GetDeadlineUtcAsync(_context, booking.Id);
             ViewBag.FinancialSummary = await _financialService.GetSummaryAsync(booking.Id);
             var initialPayment = booking.Payments.Where(p => p.Status == PaymentStatus.Verified && p.InitialVerificationAtUtc.HasValue)
                 .OrderBy(p => p.InitialVerificationAtUtc).FirstOrDefault();
@@ -944,11 +953,15 @@ namespace AriesMagicAppointmentSystem.Controllers
                 && ClientCancellableStatuses.Contains(booking.Status) && !booking.RefundEligible
                 && !booking.Payments.Any(p => p.Status is PaymentStatus.Pending or PaymentStatus.AdditionalEvidenceRequired);
             ViewBag.CancellationConversationId = booking.CancellationRequestMessageId.HasValue
-                ? await _context.Conversations.Where(c => c.BookingId == booking.Id && c.ConversationType == ConversationTypes.Booking)
+                ? await _context.Conversations.Where(c => c.SupportClientId == booking.ApplicationUserId &&
+                    c.ConversationType == ConversationTypes.ClientSupport)
                     .Select(c => (int?)c.Id).FirstOrDefaultAsync()
                 : null;
             ViewBag.HasRefundEligibility = booking.RefundEligible && booking.RefundEligibilityPaymentId.HasValue
                 && !await _context.RefundRequests.AnyAsync(r => r.OriginalPaymentId == booking.RefundEligibilityPaymentId);
+            if (User.IsInRole("Client"))
+                ViewBag.ClientRefunds = await _context.RefundRequests.AsNoTracking()
+                    .Where(r => r.BookingId == booking.Id).OrderByDescending(r => r.RequestedAt).ToListAsync();
             return View("ClientDetails", booking);
         }
 
@@ -1111,6 +1124,15 @@ namespace AriesMagicAppointmentSystem.Controllers
             }
 
             booking.Status = BookingStatus.AwaitingDownpayment;
+            var paymentOpensAtUtc = DateTime.UtcNow;
+            var paymentDeadlineUtc = paymentOpensAtUtc.Add(InitialPaymentWindowPolicy.Duration);
+            _context.BookingTimelines.Add(new BookingTimeline
+            {
+                BookingId = booking.Id,
+                EventType = TimelineEventType.PaymentWindowOpened,
+                Notes = $"Staff approval opened payment at {paymentOpensAtUtc:O}; deadline {paymentDeadlineUtc:O}.",
+                CreatedAt = paymentOpensAtUtc
+            });
 
             _context.BookingTimelines.Add(new BookingTimeline
             {
@@ -1126,7 +1148,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                 {
                     UserId = booking.ApplicationUserId,
                     Title = "Booking Approved",
-                    Message = $"Your booking for {booking.EventDate:MMMM dd, yyyy} was approved and is now awaiting downpayment.",
+                    Message = $"Your booking for {booking.EventDate:MMMM dd, yyyy} was approved. Upload a valid initial payment proof by {InitialPaymentWindowPolicy.FormatManila(paymentDeadlineUtc)} or the request will expire. Owner verification can follow after timely submission.",
                     Link = "/Bookings/MyBookings",
                     IsRead = false,
                     CreatedAt = DateTime.Now
@@ -1138,7 +1160,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                 $"Booking #{booking.Id} approved during Staff review.", staffUserId, staffName,
                 booking.Id.ToString(), "Booking", new { BookingId = booking.Id, Note = cleanNote, StaffUserId = staffUserId, StaffName = staffName, ActionTaken = "Approved", PreviousStatus = BookingStatus.Pending, NewStatus = BookingStatus.AwaitingDownpayment, Timestamp = now });
             await transaction.CommitAsync();
-            TempData["Success"] = "Booking approved. The client can now proceed to payment.";
+            TempData["Success"] = $"Booking approved. Client payment proof is due by {InitialPaymentWindowPolicy.FormatManila(paymentDeadlineUtc)}.";
             return RedirectToAction(nameof(Index));
         }
 
@@ -1396,8 +1418,11 @@ namespace AriesMagicAppointmentSystem.Controllers
             var linkedRequestExists = booking.CancellationRequestMessageId.HasValue
                 && await _context.Messages.AnyAsync(m => m.Id == booking.CancellationRequestMessageId
                     && m.SenderId == booking.CancellationRequestByUserId
-                    && m.Conversation != null && m.Conversation.BookingId == booking.Id
-                    && m.Conversation.ConversationType == ConversationTypes.Booking);
+                    && m.Conversation != null &&
+                    ((m.Conversation.BookingId == booking.Id && m.Conversation.ConversationType == ConversationTypes.Booking)
+                     || (m.RelatedBookingId == booking.Id &&
+                         m.Conversation.ConversationType == ConversationTypes.ClientSupport &&
+                         m.Conversation.SupportClientId == booking.ApplicationUserId)));
             if (!ClientCancellableStatuses.Contains(booking.Status) || booking.RefundEligible
                 || booking.Payments.Any(p => p.Status is PaymentStatus.Pending or PaymentStatus.AdditionalEvidenceRequired)
                 || verifiedInitial == null || booking.Status is BookingStatus.Cancelled or BookingStatus.Completed
@@ -1450,121 +1475,27 @@ namespace AriesMagicAppointmentSystem.Controllers
 
         private void SetCreateStepOneViewBags()
         {
-            ViewBag.EventTypes = new List<string>
-            {
-                "Birthday",
-                "Company Events",
-                "Bridal Shower",
-                "Gender Reveal",
-                "School Events",
-                "Halloween",
-                "Christmas Parties",
-                "Easter Events"
-            };
+            ViewBag.EventTypes = BookingEventDetailsPolicy.EventTypes.ToList();
         }
 
         private void ValidateEventSpecificFields(BookingStepOneViewModel model)
         {
-            if (string.IsNullOrWhiteSpace(model.EventType))
-            {
-                return;
-            }
-
-            if (model.EventType == "Birthday")
-            {
-                if (string.IsNullOrWhiteSpace(model.PartyTheme))
-                    ModelState.AddModelError("PartyTheme", "Party theme is required for birthday events.");
-
-                if (string.IsNullOrWhiteSpace(model.CelebrantName))
-                    ModelState.AddModelError("CelebrantName", "Celebrant name is required for birthday events.");
-
-                if (model.Age == null || model.Age <= 0)
-                    ModelState.AddModelError("Age", "Age is required for birthday events.");
-            }
-            else if (model.EventType == "Bridal Shower")
-            {
-                if (string.IsNullOrWhiteSpace(model.PartyTheme))
-                    ModelState.AddModelError("PartyTheme", "Party theme is required for bridal shower events.");
-
-                if (string.IsNullOrWhiteSpace(model.CelebrantName))
-                    ModelState.AddModelError("CelebrantName", "Celebrant name is required for bridal shower events.");
-
-                model.Age = null;
-            }
-            else if (
-                model.EventType == "Gender Reveal" ||
-                model.EventType == "Halloween" ||
-                model.EventType == "Christmas Parties" ||
-                model.EventType == "Easter Events"
-            )
-            {
-                if (string.IsNullOrWhiteSpace(model.PartyTheme))
-                    ModelState.AddModelError("PartyTheme", "Party theme is required for this event type.");
-
-                model.CelebrantName = null;
-                model.Age = null;
-            }
-            else if (
-                model.EventType == "Company Events" ||
-                model.EventType == "School Events"
-            )
-            {
-                model.PartyTheme = null;
-                model.CelebrantName = null;
-                model.Age = null;
-            }
+            var normalized = BookingEventDetailsPolicy.ValidateAndNormalize(
+                model.EventType, model.Motif, model.PartyTheme, model.CelebrantName, model.Age, ModelState);
+            model.Motif = normalized.Motif;
+            model.PartyTheme = normalized.Theme;
+            model.CelebrantName = normalized.Celebrant;
+            model.Age = normalized.Age;
         }
 
         private void ValidateEventSpecificFields(BookingStepTwoViewModel model)
         {
-            if (string.IsNullOrWhiteSpace(model.EventType))
-            {
-                return;
-            }
-
-            if (model.EventType == "Birthday")
-            {
-                if (string.IsNullOrWhiteSpace(model.PartyTheme))
-                    ModelState.AddModelError("PartyTheme", "Party theme is required for birthday events.");
-
-                if (string.IsNullOrWhiteSpace(model.CelebrantName))
-                    ModelState.AddModelError("CelebrantName", "Celebrant name is required for birthday events.");
-
-                if (model.Age == null || model.Age <= 0)
-                    ModelState.AddModelError("Age", "Age is required for birthday events.");
-            }
-            else if (model.EventType == "Bridal Shower")
-            {
-                if (string.IsNullOrWhiteSpace(model.PartyTheme))
-                    ModelState.AddModelError("PartyTheme", "Party theme is required for bridal shower events.");
-
-                if (string.IsNullOrWhiteSpace(model.CelebrantName))
-                    ModelState.AddModelError("CelebrantName", "Celebrant name is required for bridal shower events.");
-
-                model.Age = null;
-            }
-            else if (
-                model.EventType == "Gender Reveal" ||
-                model.EventType == "Halloween" ||
-                model.EventType == "Christmas Parties" ||
-                model.EventType == "Easter Events"
-            )
-            {
-                if (string.IsNullOrWhiteSpace(model.PartyTheme))
-                    ModelState.AddModelError("PartyTheme", "Party theme is required for this event type.");
-
-                model.CelebrantName = null;
-                model.Age = null;
-            }
-            else if (
-                model.EventType == "Company Events" ||
-                model.EventType == "School Events"
-            )
-            {
-                model.PartyTheme = null;
-                model.CelebrantName = null;
-                model.Age = null;
-            }
+            var normalized = BookingEventDetailsPolicy.ValidateAndNormalize(
+                model.EventType, model.Motif, model.PartyTheme, model.CelebrantName, model.Age, ModelState);
+            model.Motif = normalized.Motif;
+            model.PartyTheme = normalized.Theme;
+            model.CelebrantName = normalized.Celebrant;
+            model.Age = normalized.Age;
         }
 
         private async Task<VenueDistanceResult> CalculateVenueServiceabilityAsync(

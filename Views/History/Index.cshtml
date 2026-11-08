@@ -30,7 +30,7 @@
 <tr><td data-label="Booking / Client"><strong>@row.BookingCode</strong><span class="ui-cell-secondary">@row.ClientName</span></td>
 <td data-label="Event"><span>@row.EventDate.ToString("MMM d, yyyy")</span><span class="ui-cell-secondary">@row.StartTime.ToString("h:mm tt") &ndash; @row.EndTime.ToString("h:mm tt")</span></td>
 <td data-label="Package">@row.PackageName</td>
-<td data-label="@(financial?"Payment review":"Venue")">@if(financial){<partial name="_StatusBadge" model="row.PaymentStatus" />}else{@row.Venue}</td>
+<td data-label="@(financial?"Payment review":"Venue")">@if(financial){<partial name="_StatusBadge" model="row.PaymentStatus" />}else{<span class="staff-history-venue" title="@row.Venue">@row.Venue</span>}</td>
 <td data-label="Final status"><partial name="_StatusBadge" model="row.BookingStatus" /></td>
 <td data-label="Details"><a asp-action="Details" asp-route-id="@row.Id" class="btn btn-outline-secondary" aria-label="View @row.BookingCode details">Details</a></td></tr>
 }</tbody></table></div>

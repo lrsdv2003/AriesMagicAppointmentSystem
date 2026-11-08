@@ -10,6 +10,15 @@ static class ClientHubFixtureSeed
  {
   if(!System.Text.RegularExpressions.Regex.IsMatch(db.Database.GetDbConnection().Database,"^AriesBookingVisual_[0-9a-f]{32}$"))throw new InvalidOperationException("Unsafe hub fixture target.");
   var owner=await users.FindByEmailAsync("owner@example.test");var staff=await users.FindByEmailAsync("staff@example.test");
+  // Local synthetic avatar stored in the exact private Staff-profile location (no public exposure).
+  var avatarName=Guid.NewGuid().ToString("N")+".png";
+  var avatarFolder=Path.Combine(Directory.GetCurrentDirectory(),"App_Data","profiles");
+  Directory.CreateDirectory(avatarFolder);
+  File.Copy("tests/ReleaseIntegration/Fixtures/payment.png",Path.Combine(avatarFolder,avatarName),true);
+  await File.WriteAllTextAsync(Path.Combine(directory,"synthetic-staff-avatar.txt"),avatarName);
+  staff!.ProfilePicturePath="/private-profiles/"+avatarName;
+  if(!(await users.UpdateAsync(staff)).Succeeded)throw new InvalidOperationException("Synthetic Staff avatar fixture failed.");
+
   var proofRoot=Path.Combine(directory,"financial-proofs");Directory.CreateDirectory(proofRoot);var proof="synthetic-receipt.png";File.Copy("tests/ReleaseIntegration/Fixtures/payment.png",Path.Combine(proofRoot,proof),true);
   Booking Make(ApplicationUser user,User row,int offset,string status)=>new(){Client=row,ClientId=row.Id,ApplicationUserId=user.Id,ServiceId=package.Id,PackageName=package.Name,BasePrice=package.Price,FinalPrice=package.Price,Status=status,IsCompletedLocked=status==BookingStatus.Completed,EventDate=DateTime.Today.AddDays(offset),StartTime=DateTime.Today.AddDays(offset).AddHours(10),EndTime=DateTime.Today.AddDays(offset).AddHours(13),PartyVenue="Synthetic celebration venue, Philippines",EventType="Company Events",Motif="Champagne",PaxCount=50,ContactPerson="Synthetic Client",ContactNumber="09123456789",IsServiceable=true};
   Payment Receipt(Booking b,string status,decimal amount=2000)=>new(){Booking=b,Amount=amount,ProofImagePath=proof,Status=status,PaymentMethod="GCash",ReviewerNote=status==PaymentStatus.AdditionalEvidenceRequired?"Synthetic request: please upload a clearer receipt.":null,VerifiedAt=status==PaymentStatus.Verified?DateTime.Now.AddDays(-1):null,VerifiedByUserId=status==PaymentStatus.Verified?owner!.Id:null,VerifiedByUserName=status==PaymentStatus.Verified?"Synthetic Owner":null};

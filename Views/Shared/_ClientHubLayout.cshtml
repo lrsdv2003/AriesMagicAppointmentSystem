@@ -4,6 +4,11 @@
 @{
  var hubUid=User.FindFirstValue(ClaimTypes.NameIdentifier);
  var hubUnread=string.IsNullOrEmpty(hubUid)?0:await HubDb.Notifications.CountAsync(n=>n.UserId==hubUid&&!n.IsRead);
+ var hubAccount=string.IsNullOrEmpty(hubUid)?null:await HubDb.Users.AsNoTracking()
+  .Where(u=>u.Id==hubUid).Select(u=>new {u.FullName,u.ProfilePicturePath}).FirstOrDefaultAsync();
+ var hubName=string.IsNullOrWhiteSpace(hubAccount?.FullName)?"Your account":hubAccount.FullName;
+ var hubInitials=string.Concat(hubName.Split(' ',StringSplitOptions.RemoveEmptyEntries).Take(2).Select(x=>char.ToUpperInvariant(x[0])));
+ if(hubInitials.Length==0)hubInitials="AM";
  ViewData["HubUnread"]=hubUnread;
  var hubController=ViewContext.RouteData.Values["controller"]?.ToString()?.ToLowerInvariant();
  var hubAction=ViewContext.RouteData.Values["action"]?.ToString()?.ToLowerInvariant();
@@ -13,15 +18,38 @@
 <link rel="preload" href="~/fonts/wonder/dm-sans-latin.woff2" as="font" type="font/woff2" crossorigin/>
 <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css"/><link rel="stylesheet" href="~/lib/bootstrap-icons/font/bootstrap-icons.min.css" asp-append-version="true"/>
 @foreach(var sheet in new[]{"site","tokens","aries-client-theme","magic-client-v2","magic-client-consistency","communication-center","ocr-verification","package-cards","filters","notifications","client-refresh","app-ui","client-experience","feedback","booking-concierge","client-hub"}){<link rel="stylesheet" href="~/css/@(sheet).css" asp-append-version="true"/>}
-<link rel="stylesheet" href="~/AriesMagicAppointmentSystem.styles.css" asp-append-version="true"/>
+<link rel="stylesheet" href="~/AriesMagicAppointmentSystem.styles.css" asp-append-version="true"/><link rel="stylesheet" href="~/css/client-redesign-final.css" asp-append-version="true"/><link rel="stylesheet" href="~/css/client-improvements-20261107.css" asp-append-version="true"/><link rel="stylesheet" href="~/css/unified-support-20261108.css" asp-append-version="true"/><link rel="stylesheet" href="~/css/client-round2-20261108.css" asp-append-version="true"/><link rel="stylesheet" href="~/css/client-final-20261108.css" asp-append-version="true"/><link rel="stylesheet" href="~/css/client-ultra-20261108.css" asp-append-version="true"/><link rel="stylesheet" href="~/css/client-pro-max-20261108.css" asp-append-version="true"/><link rel="stylesheet" href="~/css/client-messaging-final-20261108.css" asp-append-version="true"/>
 </head>
 <body class="client-body client-inner-page client-booking-page client-concierge client-hub client-@hubController client-@hubController-@hubAction">
 <a class="hub-skip" href="#mainContent">Skip to content</a>
 <aside class="hub-sidebar" aria-label="Client workspace"><partial name="_ClientHubNavigation"/></aside>
-<header class="hub-mobile-header"><a asp-controller="Home" asp-action="Index" class="client-brand"><partial name="_WonderBrand"/></a><button id="hubMenu" type="button" aria-controls="hubDrawer" aria-haspopup="dialog" aria-expanded="false" hidden><i class="bi bi-list" aria-hidden="true"></i><span>Menu</span></button></header>
+
 <details class="hub-fallback" id="hubFallback"><summary>Your workspace</summary><partial name="_ClientHubNavigation"/></details>
 <dialog id="hubDrawer" class="hub-drawer" aria-labelledby="hubDrawerTitle"><div class="hub-drawer-heading"><h2 id="hubDrawerTitle">Your workspace</h2><button type="button" data-hub-close aria-label="Close navigation">×</button></div><partial name="_ClientHubNavigation"/></dialog>
-<div class="hub-stage"><main id="mainContent" tabindex="-1" class="client-main"><div class="container client-page-wrap hub-content">@RenderBody()</div></main><footer class="hub-footer"><span>&copy; @DateTime.Now.Year Aries d’ Magic Artist</span><a asp-controller="Home" asp-action="Privacy">Privacy</a></footer></div>
-<script src="~/lib/jquery/dist/jquery.min.js"></script><script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script><script src="~/js/app-ui.js" asp-append-version="true"></script><script src="~/js/communication-global.js" asp-append-version="true"></script><script src="~/js/client-hub.js" asp-append-version="true"></script>
-@await RenderSectionAsync("Scripts",required:false)
+<div class="hub-stage">
+<header class="hub-topbar" aria-label="Client workspace header">
+ <div class="hub-topbar-start">
+  <button id="hubMenu" class="hub-topbar-menu" type="button" aria-controls="hubDrawer" aria-haspopup="dialog" aria-expanded="false" hidden><i class="bi bi-list" aria-hidden="true"></i><span class="visually-hidden">Open navigation</span></button>
+  <div class="hub-topbar-heading"><small>Aries d’ Magic Artist · Client workspace</small><strong>@(ViewData["Title"] ?? "My bookings")</strong></div>
+ </div>
+ <div class="hub-topbar-actions">
+  <a asp-controller="Communications" asp-action="Index" asp-route-view="inbox" class="hub-topbar-icon" aria-label="Open messages" title="Messages"><i class="bi bi-chat-dots" aria-hidden="true"></i><span class="hub-count communication-unread-badge" hidden aria-label="Unread messages">0</span></a>
+  <a asp-controller="Notifications" asp-action="Index" class="hub-topbar-icon" aria-label="Notifications (@hubUnread unread)" title="Notifications"><i class="bi bi-bell" aria-hidden="true"></i>@if(hubUnread>0){<span class="hub-topbar-counter">@(hubUnread>99?"99+":hubUnread.ToString())</span>}</a>
+  <div class="dropdown hub-account">
+   <button type="button" class="hub-account-toggle" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Account menu for @hubName">
+    <span class="hub-account-photo">@if(!string.IsNullOrWhiteSpace(hubAccount?.ProfilePicturePath)){<img src="@hubAccount.ProfilePicturePath" alt="" width="38" height="38"/>}else{<span aria-hidden="true">@hubInitials</span>}</span>
+    <span class="hub-account-name">@hubName</span><i class="bi bi-chevron-down" aria-hidden="true"></i>
+   </button>
+   <div class="dropdown-menu dropdown-menu-end hub-account-dropdown">
+    <span class="dropdown-header">Signed in as @hubName</span>
+    <a class="dropdown-item" asp-controller="Profile" asp-action="Index"><i class="bi bi-person-circle" aria-hidden="true"></i> My profile</a>
+    <div class="dropdown-divider"></div>
+    <form asp-controller="Account" asp-action="Logout" method="post">@Html.AntiForgeryToken()<button type="submit" class="dropdown-item"><i class="bi bi-box-arrow-right" aria-hidden="true"></i> Sign out</button></form>
+   </div>
+  </div>
+ </div>
+</header>
+<main id="mainContent" tabindex="-1" class="client-main"><div class="container client-page-wrap hub-content">@RenderBody()</div></main><footer class="hub-footer"><span>&copy; @DateTime.Now.Year Aries d’ Magic Artist</span><a asp-controller="Home" asp-action="Privacy">Privacy</a></footer></div>
+<script src="~/lib/jquery/dist/jquery.min.js"></script><script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script><script src="~/js/app-ui.js" asp-append-version="true"></script><script src="~/js/communication-global.js" asp-append-version="true"></script><script src="~/js/client-hub.js" asp-append-version="true"></script><script src="~/js/client-reference-20261106.js" asp-append-version="true"></script><script src="~/js/client-improvements-20261107.js" asp-append-version="true"></script>
+@await RenderSectionAsync("Scripts",required:false)<script src="~/js/client-ultra-20261108.js" asp-append-version="true"></script>
 </body></html>

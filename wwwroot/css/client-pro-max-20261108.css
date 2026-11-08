@@ -1,0 +1,234 @@
+/* Pro Max Ultra Final: scoped Client-only refinements; no financial rule changes. */
+
+/* Context-aware Event Details: hidden conditional fields must never reserve a grid cell. */
+body.client-concierge .r2-booking-wizard [data-step="2"] [data-event-field][hidden]{
+  display:none!important;
+}
+body.client-concierge .r2-booking-wizard [data-step="2"] .cn-fields{
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:16px!important;
+  align-items:start;
+}
+body.client-concierge .r2-booking-wizard [data-step="2"] .cn-fields>.cn-field{
+  min-width:0!important;
+  margin:0!important;
+  align-self:start;
+}
+body.client-concierge .r2-booking-wizard [data-step="2"] .cn-fields label{
+  display:block;
+  line-height:1.45;
+  font-size:13px;
+  margin-bottom:5px;
+}
+body.client-concierge .r2-booking-wizard [data-step="2"] select.cn-input{
+  padding-right:36px!important;
+}
+body.client-concierge .r2-booking-wizard [data-step="2"] .cn-input{
+  width:100%;
+  min-width:0;
+  min-height:45px;
+}
+
+/* Pricing card: flex/nowrap rules in booking-concierge.css caused the screenshot overflow.
+   Keep labels and monetary amounts in flexible columns and totals on a dedicated line. */
+body.client-concierge .r2-booking-wizard .cn-quote,
+body.client-concierge .r2-booking-wizard .cn-quote dl{
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
+}
+body.client-concierge .r2-booking-wizard .cn-quote dl>div{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) minmax(0,auto)!important;
+  gap:8px 12px!important;
+  align-items:start!important;
+  min-width:0;
+}
+body.client-concierge .r2-booking-wizard .cn-quote dl>div dt{
+  min-width:0;
+  max-width:none!important;
+  overflow-wrap:anywhere;
+  white-space:normal!important;
+}
+body.client-concierge .r2-booking-wizard .cn-quote dl>div dd{
+  min-width:0;
+  max-width:100%;
+  margin:0;
+  text-align:right;
+  overflow-wrap:anywhere;
+  word-break:normal;
+  white-space:normal!important;
+}
+body.client-concierge .r2-booking-wizard .cn-quote dl>div.pro-estimate-total{
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:flex-start!important;
+  gap:5px!important;
+  padding-top:14px!important;
+  border-top:1px solid #43657b;
+}
+body.client-concierge .r2-booking-wizard .cn-quote .pro-estimate-total dt{
+  color:#d6e9f6;
+  font-size:12px;
+  line-height:1.3;
+}
+body.client-concierge .r2-booking-wizard .cn-quote .pro-estimate-total dd{
+  width:100%;
+  max-width:100%;
+  font-size:clamp(18px,2vw,23px)!important;
+  line-height:1.35;
+  font-weight:800;
+  color:#fff;
+  text-align:left;
+  overflow-wrap:anywhere;
+  white-space:normal!important;
+}
+body.client-concierge .r2-booking-wizard .cn-quote .pro-estimate-pending{
+  display:block;
+  background:#133c51;
+  color:#d9e9f3;
+  border-left:3px solid #e4b866;
+  border-radius:4px;
+  padding:10px 12px;
+  margin:7px 0 13px;
+  font-size:12px;
+  line-height:1.55;
+  overflow-wrap:anywhere;
+}
+body.client-concierge .r2-booking-wizard .cn-quote .pro-estimate-pending[hidden]{
+  display:none!important;
+}
+body.client-concierge .r2-booking-wizard .ultra-summary-header{
+  min-width:0;
+  flex-wrap:wrap;
+}
+body.client-concierge .r2-booking-wizard .ultra-summary-header strong,
+body.client-concierge .r2-booking-wizard .ultra-summary-header span{
+  min-width:0;
+  white-space:normal;
+  overflow-wrap:anywhere;
+}
+body.client-concierge .r2-booking-wizard .cn-deposit{
+  min-width:0;
+  max-width:100%;
+  overflow-wrap:anywhere;
+}
+body.client-concierge .r2-booking-wizard .cn-deposit strong{
+  white-space:normal;
+}
+
+/* Refund initiation matches the existing Payments empty-state and card vocabulary. */
+body.client-hub .pro-refund-home{
+  max-width:min(875px,100%);
+  margin:0 auto;
+  min-width:0;
+}
+body.client-hub .pro-refund-home>.hub-heading{
+  margin-bottom:22px;
+}
+body.client-hub .pro-refund-action{
+  display:grid!important;
+  grid-template-columns:48px minmax(0,1fr) auto;
+  gap:16px!important;
+  align-items:center;
+  padding:clamp(18px,2.7vw,25px)!important;
+  border-radius:13px;
+  min-width:0;
+}
+body.client-hub .pro-refund-action-icon{
+  display:grid;
+  place-items:center;
+  width:46px;height:46px;
+  border:1px solid #517894;
+  border-radius:12px;
+  background:#113f5d;
+  color:#8bd2f6;
+  font-size:22px;
+}
+body.client-hub .pro-refund-action-copy{
+  min-width:0;
+}
+body.client-hub .pro-refund-action h2{
+  margin:0 0 6px;
+  font-weight:760;
+  font-size:18px;
+  color:#fff;
+}
+body.client-hub .pro-refund-action p{
+  margin:0;
+  max-width:540px;
+  color:#cae0ee;
+  line-height:1.65;
+  font-size:13px;
+}
+body.client-hub .pro-refund-action .cn-button{
+  white-space:nowrap;
+  min-height:44px;
+}
+body.client-hub .pro-refund-empty{
+  display:flex!important;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  gap:12px;
+  min-height:255px;
+  padding:clamp(22px,5vw,38px)!important;
+  text-align:center;
+  border-radius:13px;
+  width:100%;
+  min-width:0;
+}
+body.client-hub .pro-refund-empty>i{
+  color:#6fd7ac;
+  font-size:30px;
+  line-height:1.2;
+}
+body.client-hub .pro-refund-empty h2{
+  color:#fff;
+  font-size:19px;
+  margin:0;
+}
+body.client-hub .pro-refund-empty p{
+  color:#cee2ef;
+  margin:0 0 5px;
+  max-width:470px;
+  font-size:13px;
+  line-height:1.65;
+}
+body.client-hub .pro-refund-footnote{
+  margin:14px 2px 0;
+  color:#a9c8da;
+  font-size:12px;
+  line-height:1.6;
+}
+body.client-hub .pro-refund-footnote i{margin-right:6px}
+@media(max-width:720px){
+  body.client-hub .pro-refund-action{
+    grid-template-columns:44px minmax(0,1fr);
+  }
+  body.client-hub .pro-refund-action .cn-button{
+    grid-column:2;
+    justify-self:start;
+  }
+}
+@media(max-width:560px){
+  body.client-concierge .r2-booking-wizard [data-step="2"] .cn-fields{
+    grid-template-columns:minmax(0,1fr)!important;
+    gap:12px!important;
+  }
+  body.client-concierge .r2-booking-wizard .cn-quote dl>div{
+    grid-template-columns:minmax(0,1fr)!important;
+    gap:3px!important;
+  }
+  body.client-concierge .r2-booking-wizard .cn-quote dl>div dd{
+    text-align:left;
+  }
+  body.client-hub .pro-refund-action{
+    grid-template-columns:minmax(0,1fr);
+    gap:10px!important;
+  }
+  body.client-hub .pro-refund-action .cn-button{
+    grid-column:1;
+  }
+}

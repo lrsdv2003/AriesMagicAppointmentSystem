@@ -21,6 +21,10 @@ namespace AriesMagicAppointmentSystem.ViewModels
         [StringLength(20)]
         public string GCashNumber { get; set; } = string.Empty;
 
+        // Enforced explicitly by PaymentsController.RequestRefund.
+        // MVC's boolean Range adapter incorrectly fails an otherwise checked checkbox in jQuery.
+        public bool RefundAcknowledged { get; set; }
+
         public IFormFile? PaymentProofImage { get; set; }
 
         [Display(Name = "Reason")]

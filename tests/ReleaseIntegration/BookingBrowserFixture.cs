@@ -54,6 +54,20 @@ static class BookingBrowserFixture
    for(var i=0;i<3;i++)db.Bookings.Add(NewBooking(40,BookingStatus.Confirmed,2+i*7));
    db.BlockedDates.Add(new(){Date=DateTime.Today.AddDays(41),Reason="Synthetic blocked-date test"});await db.SaveChangesAsync();
    var hub=hubPreview?await ClientHubFixtureSeed.AddAsync(db,users,client,password,legacy,packages[0],confirmed,directory):null;
+   if (releaseReview)
+   {
+    // Explicit synthetic approval marker and expired record for Ultra Final UI verification.
+    db.BookingTimelines.Add(new BookingTimeline {
+      BookingId=payable.Id,EventType=TimelineEventType.PaymentWindowOpened,
+      CreatedAt=DateTime.UtcNow,Notes="Synthetic Staff approval opened initial payment window."
+    });
+    var expiredExample=NewBooking(87,BookingStatus.Expired);
+    expiredExample.ArchivedAt=DateTime.UtcNow;
+    expiredExample.TrashReason=TrashReason.BookingRequestExpired;
+    expiredExample.TrashNotes="Synthetic payment proof deadline expiry for UI tests.";
+    db.Bookings.Add(expiredExample);
+    await db.SaveChangesAsync();
+   }
    var environment=scope.ServiceProvider.GetRequiredService<IWebHostEnvironment>().EnvironmentName;
    var effectiveConnection=scope.ServiceProvider.GetRequiredService<ApplicationDbContext>().Database.GetDbConnection();
    if(environment!="Development"||effectiveConnection.DataSource!=@"(localdb)\MSSQLLocalDB"||effectiveConnection.Database!=database)throw new InvalidOperationException("Preview isolation verification failed.");
@@ -87,6 +101,18 @@ static class BookingBrowserFixture
   } finally {
    if(!Regex.IsMatch(database,"^AriesBookingVisual_[0-9a-f]{32}$"))throw new Exception("Unsafe teardown target.");
    await db.Database.EnsureDeletedAsync();if(File.Exists(statePath))File.Delete(statePath);
+   // Only clean the exact synthetic image generated for this isolated browser fixture.
+   var avatarTracker=Path.Combine(directory,"synthetic-staff-avatar.txt");
+   if(File.Exists(avatarTracker)){
+    var avatarFile=(await File.ReadAllTextAsync(avatarTracker)).Trim();
+    if(avatarFile.EndsWith(".png",StringComparison.OrdinalIgnoreCase)
+       && Guid.TryParseExact(Path.GetFileNameWithoutExtension(avatarFile),"N",out _)
+       && avatarFile==Path.GetFileName(avatarFile)){
+     var avatarPath=Path.Combine(root,"App_Data","profiles",avatarFile);
+     if(File.Exists(avatarPath))File.Delete(avatarPath);
+    }
+    File.Delete(avatarTracker);
+   }
    if(fullPreview)foreach(var name in new[]{"manual-mailbox.json","manual-mailbox.json.pending"}){var file=Path.Combine(directory,name);if(File.Exists(file))File.Delete(file);}
   }
  }

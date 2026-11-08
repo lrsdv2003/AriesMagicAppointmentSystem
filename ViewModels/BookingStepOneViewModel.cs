@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace AriesMagicAppointmentSystem.ViewModels
 {
@@ -8,8 +8,8 @@ namespace AriesMagicAppointmentSystem.ViewModels
         [Display(Name = "Type of Event")]
         public string EventType { get; set; } = string.Empty;
 
-        [Required]
-        public string Motif { get; set; } = string.Empty;
+        // Optional; event-specific relevance is enforced by BookingEventDetailsPolicy.
+        public string? Motif { get; set; }
 
         [Required]
         [DataType(DataType.Date)]

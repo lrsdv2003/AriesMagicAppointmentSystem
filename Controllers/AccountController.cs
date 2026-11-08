@@ -342,7 +342,7 @@ namespace AriesMagicAppointmentSystem.Controllers
 
                 if (await _userManager.IsInRoleAsync(user, "Client"))
                 {
-                    return RedirectToAction("Dashboard", "Bookings");
+                    return RedirectToAction("MyBookings", "Bookings");
                 }
 
                 await _signInManager.SignOutAsync();

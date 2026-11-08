@@ -7,8 +7,8 @@ namespace AriesMagicAppointmentSystem.ViewModels
         // Step 1 Data
         [Required]
         public string EventType { get; set; } = string.Empty;
-        [Required]
-        public string Motif { get; set; } = string.Empty;
+        // Optional for supported events; irrelevant values are discarded before persistence.
+        public string? Motif { get; set; }
         public DateTime EventDate { get; set; }
         public TimeSpan StartTime { get; set; }
 

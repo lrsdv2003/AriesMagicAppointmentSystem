@@ -79,6 +79,23 @@ namespace AriesMagicAppointmentSystem.Data
                 .OnDelete(DeleteBehavior.Cascade);
 
             builder.Entity<Conversation>()
+                .HasIndex(c => c.SupportClientId)
+                .IsUnique()
+                .HasFilter("[SupportClientId] IS NOT NULL");
+
+            builder.Entity<Conversation>()
+                .HasOne(c => c.SupportClient)
+                .WithMany()
+                .HasForeignKey(c => c.SupportClientId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            builder.Entity<Message>()
+                .HasOne(m => m.RelatedBooking)
+                .WithMany()
+                .HasForeignKey(m => m.RelatedBookingId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            builder.Entity<Conversation>()
                 .HasOne(c => c.Booking)
                 .WithMany()
                 .HasForeignKey(c => c.BookingId)

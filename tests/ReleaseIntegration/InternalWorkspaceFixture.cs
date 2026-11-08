@@ -104,6 +104,9 @@ static class InternalWorkspaceFixture
         var confirmed=Enumerable.Range(1,4).Select(i=>Make(i*2-1,BookingStatus.Confirmed,i%3)).ToList(); db.Bookings.AddRange(confirmed);
         var payable=Enumerable.Range(1,5).Select(i=>Make(15+i,BookingStatus.AwaitingVerification,i%3)).ToList(); db.Bookings.AddRange(payable);
         var declined=Make(24,BookingStatus.Declined);db.Bookings.Add(declined);
+        // A genuine payment-eligible test record with no receipt, so the Round 2
+        // payment picker/acknowledgment can be exercised in the synthetic fixture.
+        db.Bookings.Add(Make(32,BookingStatus.AwaitingDownpayment));
         await db.SaveChangesAsync();
         foreach(var b in payable) db.Payments.Add(new(){Booking=b,Amount=2000,Status=PaymentStatus.Pending,ProofImagePath="synthetic-workspace.png",TransactionReference="SYNTHETIC-"+b.Id,OcrVerifications=[new(){VerificationPurpose=OcrVerificationPurposes.PaymentProof,ExtractedAmount=1900,VerificationResult=OcrVerificationResults.PartialMatch,WarningSummary="Synthetic advisory discrepancy; review the test image."}]});
         foreach(var b in confirmed) db.Payments.Add(new(){Booking=b,Amount=2000,Status=PaymentStatus.Verified,ProofImagePath="synthetic-workspace.png",VerifiedAt=DateTime.Now.AddDays(-1),VerifiedByUserId=users["Owner"].Id,VerifiedByUserName="Synthetic Owner"});

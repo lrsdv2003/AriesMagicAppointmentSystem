@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using System.IO;
 using AriesMagicAppointmentSystem.Data;
 using AriesMagicAppointmentSystem.Extensions;
 using AriesMagicAppointmentSystem.Models;
@@ -13,13 +14,59 @@ namespace AriesMagicAppointmentSystem.Controllers
     public class CommunicationsController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly IWebHostEnvironment? _environment;
 
-        public CommunicationsController(ApplicationDbContext context)
+        // Optional parameter preserves existing controller-only isolated integration tests.
+        public CommunicationsController(ApplicationDbContext context, IWebHostEnvironment? environment = null)
         {
             _context = context;
+            _environment = environment;
         }
 
-        public async Task<IActionResult> Index(int? id, string filter = "all", string? q = null, string? view = null)
+        // The original Staff photo is protected in App_Data, not a public URL.
+        private static string? SenderAvatarUrl(int conversationId, string userId, string? stored)
+        {
+            if (conversationId <= 0 || string.IsNullOrWhiteSpace(userId) ||
+                (stored?.StartsWith("/private-profiles/", StringComparison.Ordinal) != true &&
+                 stored?.StartsWith("/uploads/profiles/", StringComparison.Ordinal) != true))
+                return null;
+            return "/Communications/ParticipantAvatar?conversationId=" + conversationId
+                   + "&userId=" + Uri.EscapeDataString(userId);
+        }
+
+        [HttpGet]
+        [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+        public async Task<IActionResult> ParticipantAvatar(int conversationId, string? userId)
+        {
+            var viewer = CurrentUserId();
+            if (viewer == null) return Challenge();
+            if (conversationId <= 0 || string.IsNullOrWhiteSpace(userId)) return NotFound();
+            if (!await CanAccessConversationAsync(conversationId, viewer)) return Forbid();
+            if (!await _context.ConversationParticipants.AsNoTracking().AnyAsync(
+                    p => p.ConversationId == conversationId && p.UserId == userId))
+                return NotFound();
+            var stored = await _context.Users.AsNoTracking()
+                .Where(u => u.Id == userId).Select(u => u.ProfilePicturePath).FirstOrDefaultAsync();
+            if (string.IsNullOrWhiteSpace(stored) || _environment == null) return NotFound();
+            const string privatePrefix = "/private-profiles/", publicPrefix = "/uploads/profiles/";
+            var privatePhoto = stored.StartsWith(privatePrefix, StringComparison.Ordinal);
+            if (!privatePhoto && !stored.StartsWith(publicPrefix, StringComparison.Ordinal)) return NotFound();
+            var fileName = stored[(privatePhoto ? privatePrefix.Length : publicPrefix.Length)..];
+            var extension = Path.GetExtension(fileName).ToLowerInvariant();
+            if (fileName != Path.GetFileName(fileName) || fileName.Contains('\\')
+                || !Guid.TryParseExact(Path.GetFileNameWithoutExtension(fileName), "N", out _)
+                || !new[] { ".jpg", ".jpeg", ".png", ".webp" }.Contains(extension))
+                return NotFound();
+            var folder = privatePhoto
+                ? Path.Combine(_environment.ContentRootPath, "App_Data", "profiles")
+                : Path.Combine(_environment.WebRootPath, "uploads", "profiles");
+            var path = Path.Combine(folder, fileName);
+            if (!System.IO.File.Exists(path)) return NotFound();
+            Response.Headers["X-Content-Type-Options"] = "nosniff";
+            return PhysicalFile(path, extension switch { ".png"=>"image/png", ".webp"=>"image/webp", _=>"image/jpeg" });
+        }
+
+        public async Task<IActionResult> Index(int? id, string filter = "all", string? q = null, string? view = null, int? relatedBookingId = null)
         {
             var userId = CurrentUserId();
             if (userId == null) return Challenge();
@@ -37,12 +84,13 @@ namespace AriesMagicAppointmentSystem.Controllers
                 .AsSplitQuery()
                 .ToListAsync();
 
-            if (!isInternal)
-            {
-                memberships = memberships
-                    .Where(p => !IsInternalConversation(p.Conversation!))
-                    .ToList();
-            }
+            // Only canonical Client support threads appear in either inbox.
+            // Legacy per-booking test conversations remain in storage for compatibility/audit.
+            memberships = memberships.Where(p =>
+                p.Conversation!.ConversationType != ConversationTypes.Booking &&
+                (p.Conversation.ConversationType != ConversationTypes.ClientSupport ||
+                 p.Conversation.SupportClientId != null) &&
+                (isInternal || !IsInternalConversation(p.Conversation))).ToList();
 
             var allUserIds = memberships
                 .SelectMany(p => p.Conversation!.Participants)
@@ -88,6 +136,10 @@ namespace AriesMagicAppointmentSystem.Controllers
             if (selectedId.HasValue)
             {
                 model.SelectedConversation = await BuildConversationDetailAsync(selectedId.Value, userId, roleMap);
+                if (model.SelectedConversation != null &&
+                    relatedBookingId.HasValue &&
+                    model.SelectedConversation.BookingOptions.Any(b => b.Id == relatedBookingId.Value))
+                    model.SelectedConversation.SelectedRelatedBookingId = relatedBookingId;
                 var membership = await _context.ConversationParticipants
                     .FirstOrDefaultAsync(p => p.ConversationId == selectedId.Value && p.UserId == userId);
                 if (membership != null)
@@ -105,32 +157,11 @@ namespace AriesMagicAppointmentSystem.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> StartSupport()
         {
-            var userId = CurrentUserId();
-            if (userId == null) return Challenge();
-
-            var existingId = await _context.ConversationParticipants
-                .Where(p => p.UserId == userId && p.Conversation!.ConversationType == ConversationTypes.ClientSupport)
-                .Select(p => p.ConversationId)
-                .FirstOrDefaultAsync();
-
-            if (existingId > 0)
-                return RedirectToAction(nameof(Index), new { id = existingId });
-
-            var conversation = new Conversation
-            {
-                ConversationType = ConversationTypes.ClientSupport,
-                Title = "Aries Magic Support",
-                CreatedByUserId = userId,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
-            };
-            _context.Conversations.Add(conversation);
-            await _context.SaveChangesAsync();
-
-            var participantIds = await GetInternalUserIdsAsync(includeOwner: false);
-            participantIds.Add(userId);
-            await AddParticipantsAsync(conversation.Id, participantIds);
-
+            var clientId = CurrentUserId();
+            if (clientId == null) return Challenge();
+            await using var transaction = await _context.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
+            var conversation = await GetOrCreateClientSupportAsync(clientId, includeCurrentInternal: false);
+            await transaction.CommitAsync();
             return RedirectToAction(nameof(Index), new { id = conversation.Id });
         }
 
@@ -140,53 +171,20 @@ namespace AriesMagicAppointmentSystem.Controllers
         {
             var userId = CurrentUserId();
             if (userId == null) return Challenge();
-
-            var booking = await _context.Bookings
-                .Include(b => b.Client)
+            var booking = await _context.Bookings.AsNoTracking()
                 .FirstOrDefaultAsync(b => b.Id == bookingId);
             if (booking == null) return NotFound();
 
-            if (User.IsInRole("Client") && booking.ApplicationUserId != userId)
-                return Forbid();
-            if (!User.IsInRole("Client") && !IsInternalUser())
-                return Forbid();
+            if (User.IsInRole("Client") && booking.ApplicationUserId != userId) return Forbid();
+            if (!User.IsInRole("Client") && !IsInternalUser()) return Forbid();
+            if (string.IsNullOrWhiteSpace(booking.ApplicationUserId)) return NotFound();
 
-            var conversation = await _context.Conversations
-                .Include(c => c.Participants)
-                .FirstOrDefaultAsync(c => c.BookingId == bookingId && c.ConversationType == ConversationTypes.Booking);
-
-            if (conversation == null)
-            {
-                conversation = new Conversation
-                {
-                    ConversationType = ConversationTypes.Booking,
-                    BookingId = bookingId,
-                    Title = $"Booking #{bookingId}",
-                    CreatedByUserId = userId,
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
-                };
-                _context.Conversations.Add(conversation);
-                await _context.SaveChangesAsync();
-
-                var participantIds = await GetInternalUserIdsAsync(includeOwner: true);
-                if (!string.IsNullOrWhiteSpace(booking.ApplicationUserId))
-                    participantIds.Add(booking.ApplicationUserId);
-                participantIds.Add(userId);
-                await AddParticipantsAsync(conversation.Id, participantIds);
-            }
-            else if (!conversation.Participants.Any(p => p.UserId == userId))
-            {
-                _context.ConversationParticipants.Add(new ConversationParticipant
-                {
-                    ConversationId = conversation.Id,
-                    UserId = userId,
-                    JoinedAt = DateTime.UtcNow
-                });
-                await _context.SaveChangesAsync();
-            }
-
-            return RedirectToAction(nameof(Index), new { id = conversation.Id });
+            await using var transaction = await _context.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
+            var conversation = await GetOrCreateClientSupportAsync(
+                booking.ApplicationUserId, includeCurrentInternal: IsInternalUser());
+            await transaction.CommitAsync();
+            // The booking is context for the next message, never a separate conversation.
+            return RedirectToAction(nameof(Index), new { id = conversation.Id, relatedBookingId = booking.Id });
         }
 
         [HttpPost]
@@ -210,12 +208,9 @@ namespace AriesMagicAppointmentSystem.Controllers
 
             if (booking.CancellationRequestMessageId.HasValue)
             {
-                var existingConversationId = await _context.Conversations
-                    .Where(c => c.BookingId == bookingId && c.ConversationType == ConversationTypes.Booking)
-                    .Select(c => (int?)c.Id).FirstOrDefaultAsync();
-                return existingConversationId.HasValue
-                    ? RedirectToAction(nameof(Index), new { id = existingConversationId.Value })
-                    : RedirectToAction("Details", "Bookings", new { id = bookingId });
+                var existingConversation = await GetOrCreateClientSupportAsync(userId, includeCurrentInternal: false);
+                await transaction.CommitAsync();
+                return RedirectToAction(nameof(Index), new { id = existingConversation.Id, relatedBookingId = bookingId });
             }
 
             var initialPayment = booking.Payments.Where(p => p.Status == PaymentStatus.Verified && p.InitialVerificationAtUtc.HasValue)
@@ -229,31 +224,15 @@ namespace AriesMagicAppointmentSystem.Controllers
                 return RedirectToAction("Details", "Bookings", new { id = bookingId });
             }
 
-            var conversation = await _context.Conversations.Include(c => c.Participants)
-                .FirstOrDefaultAsync(c => c.BookingId == bookingId && c.ConversationType == ConversationTypes.Booking);
-            if (conversation == null)
-            {
-                conversation = new Conversation
-                {
-                    ConversationType = ConversationTypes.Booking,
-                    BookingId = bookingId,
-                    Title = $"Booking #{bookingId}",
-                    CreatedByUserId = userId,
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
-                };
-                _context.Conversations.Add(conversation);
-                await _context.SaveChangesAsync();
-            }
-            var participantIds = await GetInternalUserIdsAsync(includeOwner: true);
-            participantIds.Add(userId);
-            await AddParticipantsAsync(conversation.Id, participantIds);
+            var conversation = await GetOrCreateClientSupportAsync(userId, includeCurrentInternal: false);
+            var participantIds = conversation.Participants.Select(p => p.UserId).Distinct().ToList();
 
             var message = new Message
             {
                 ConversationId = conversation.Id,
                 SenderId = userId,
                 MessageContent = $"Client cancellation request · BK-{booking.CreatedAt.Year}-{booking.Id:D3}: {reason}",
+                RelatedBookingId = booking.Id,
                 SentAt = DateTime.UtcNow,
                 MessageType = MessageTypes.Text
             };
@@ -278,7 +257,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             await AddMessageNotificationsAsync(conversation, message, participantIds.Where(id => id != userId));
             await _context.SaveChangesAsync();
             await transaction.CommitAsync();
-            TempData["Success"] = "Your cancellation request was sent to Staff through the private booking conversation. Staff will review it; no refund has been approved or paid.";
+            TempData["Success"] = "Your cancellation request was sent to Staff through your private support conversation. Staff will review it; no refund has been approved or paid.";
             return RedirectToAction(nameof(Index), new { id = conversation.Id });
         }
 
@@ -370,7 +349,7 @@ namespace AriesMagicAppointmentSystem.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> SendMessage(int conversationId, string messageContent, string? requestType = null, string? actionLink = null)
+        public async Task<IActionResult> SendMessage(int conversationId, string messageContent, string? requestType = null, string? actionLink = null, int? relatedBookingId = null)
         {
             var userId = CurrentUserId();
             if (userId == null) return Unauthorized();
@@ -385,6 +364,16 @@ namespace AriesMagicAppointmentSystem.Controllers
                 .Include(c => c.Participants)
                 .FirstAsync(c => c.Id == conversationId);
             if (User.IsInRole("Client") && IsInternalConversation(conversation)) return Forbid();
+            if (conversation.IsClosed) return BadRequest(new { message = "This conversation is closed." });
+            // Never trust a client-submitted booking ID without validating the canonical owner.
+            if (relatedBookingId.HasValue)
+            {
+                if (conversation.ConversationType != ConversationTypes.ClientSupport ||
+                    string.IsNullOrWhiteSpace(conversation.SupportClientId) ||
+                    !await _context.Bookings.AnyAsync(b => b.Id == relatedBookingId &&
+                         b.ApplicationUserId == conversation.SupportClientId))
+                    return BadRequest(new { message = "Select a booking belonging to this conversation." });
+            }
 
             var canCreateRequest = IsInternalUser() && !string.IsNullOrWhiteSpace(requestType);
             var message = new Message
@@ -392,6 +381,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                 ConversationId = conversationId,
                 SenderId = userId,
                 MessageContent = content,
+                RelatedBookingId = relatedBookingId,
                 SentAt = DateTime.UtcNow,
                 MessageType = canCreateRequest ? MessageTypes.ActionRequest : MessageTypes.Text,
                 RequestType = canCreateRequest ? requestType?.Trim() : null,
@@ -452,7 +442,11 @@ namespace AriesMagicAppointmentSystem.Controllers
                 senderId = m.SenderId,
                 senderName = m.Sender?.FullName ?? m.Sender?.Email ?? "User",
                 senderRole = roleMap.GetValueOrDefault(m.SenderId, "User"),
+                senderAvatarUrl = SenderAvatarUrl(id, m.SenderId, m.Sender?.ProfilePicturePath),
                 content = m.MessageContent,
+                relatedBookingId = m.RelatedBookingId,
+                bookingUrl = m.RelatedBookingId.HasValue && (User.IsInRole("Client") || User.IsInRole("Staff") || User.IsInRole("Owner"))
+                    ? Url.Action("Details", "Bookings", new { id = m.RelatedBookingId.Value }) : null,
                 sentAt = m.SentAt,
                 isMine = m.SenderId == userId,
                 messageType = m.MessageType,
@@ -465,13 +459,36 @@ namespace AriesMagicAppointmentSystem.Controllers
         }
 
         [HttpGet]
+        public async Task<IActionResult> ReadStates(int id)
+        {
+            var userId = CurrentUserId();
+            if (userId == null) return Unauthorized();
+            if (!await CanAccessConversationAsync(id, userId)) return Forbid();
+            var conversation = await _context.Conversations.AsNoTracking()
+                .Include(c => c.Participants)
+                .FirstOrDefaultAsync(c => c.Id == id);
+            if (conversation == null) return NotFound();
+            var messages = await _context.Messages.AsNoTracking()
+                .Where(m => m.ConversationId == id && m.SenderId == userId)
+                .OrderByDescending(m => m.Id).Take(100)
+                .Select(m => new { m.Id, m.SenderId, m.SentAt }).ToListAsync();
+            return Json(messages.Select(m => new {
+                id = m.Id,
+                seen = HasRecipientRead(conversation, m.SenderId, m.SentAt)
+            }));
+        }
+
+        [HttpGet]
         public async Task<IActionResult> UnreadCount()
         {
             var userId = CurrentUserId();
             if (userId == null) return Json(new { count = 0 });
 
             var count = await _context.ConversationParticipants
-                .Where(p => p.UserId == userId)
+                .Where(p => p.UserId == userId &&
+                    p.Conversation!.ConversationType != ConversationTypes.Booking &&
+                    (p.Conversation.ConversationType != ConversationTypes.ClientSupport ||
+                     p.Conversation.SupportClientId != null))
                 .CountAsync(p => p.Conversation!.Messages.Any(m =>
                     m.SenderId != userId && (!p.LastReadAt.HasValue || m.SentAt > p.LastReadAt.Value)));
             return Json(new { count });
@@ -529,11 +546,21 @@ namespace AriesMagicAppointmentSystem.Controllers
             }
 
             var title = BuildConversationTitle(conversation, userId, roleMap);
+            var bookingOptions = string.IsNullOrWhiteSpace(conversation.SupportClientId)
+                ? new List<ClientBookingReferenceViewModel>()
+                : await _context.Bookings.AsNoTracking()
+                    .Where(b => b.ApplicationUserId == conversation.SupportClientId)
+                    .OrderByDescending(b => b.EventDate).ThenByDescending(b => b.Id)
+                    .Select(b => new ClientBookingReferenceViewModel {
+                        Id = b.Id, Label = "Booking #" + b.Id + " · " + b.PackageName
+                    }).Take(100).ToListAsync();
             return new ConversationDetailViewModel
             {
                 Id = conversation.Id,
                 Title = title,
                 ConversationType = conversation.ConversationType,
+                SupportClientId = conversation.SupportClientId,
+                BookingOptions = bookingOptions,
                 ParticipantSummary = string.Join(" · ", conversation.Participants
                     .Where(p => p.UserId != userId)
                     .Select(p => $"{p.User?.FullName ?? p.User?.Email ?? "User"} ({roleMap.GetValueOrDefault(p.UserId, "User")})")
@@ -555,6 +582,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                     Name = p.User?.FullName ?? p.User?.Email ?? "User",
                     Role = roleMap.GetValueOrDefault(p.UserId, "User"),
                     Initials = Initials(p.User?.FullName ?? p.User?.Email ?? "User"),
+                    AvatarUrl = SenderAvatarUrl(conversation.Id, p.UserId, p.User?.ProfilePicturePath),
                     LastLoginAt = p.User?.LastLoginAt
                 }).ToList(),
                 Messages = conversation.Messages.OrderBy(m => m.SentAt).ThenBy(m => m.Id).Select(m => new CommunicationMessageViewModel
@@ -563,10 +591,12 @@ namespace AriesMagicAppointmentSystem.Controllers
                     SenderId = m.SenderId,
                     SenderName = m.Sender?.FullName ?? m.Sender?.Email ?? "User",
                     SenderRole = roleMap.GetValueOrDefault(m.SenderId, "User"),
+                    SenderAvatarUrl = SenderAvatarUrl(conversation.Id, m.SenderId, m.Sender?.ProfilePicturePath),
                     Content = m.MessageContent,
+                    RelatedBookingId = m.RelatedBookingId,
                     SentAt = m.SentAt,
                     IsMine = m.SenderId == userId,
-                    IsReadByOthers = conversation.Participants.Where(p => p.UserId != m.SenderId).All(p => p.LastReadAt.HasValue && p.LastReadAt.Value >= m.SentAt),
+                    IsReadByOthers = HasRecipientRead(conversation, m.SenderId, m.SentAt),
                     MessageType = m.MessageType,
                     RequestType = m.RequestType,
                     RequestStatus = m.RequestStatus,
@@ -583,14 +613,18 @@ namespace AriesMagicAppointmentSystem.Controllers
             var latest = conversation.Messages.OrderByDescending(m => m.SentAt).ThenByDescending(m => m.Id).FirstOrDefault();
             var title = BuildConversationTitle(conversation, userId, roleMap);
             var others = conversation.Participants.Where(p => p.UserId != userId).ToList();
-            var primaryOther = others.FirstOrDefault(p => roleMap.GetValueOrDefault(p.UserId) == "Client") ?? others.FirstOrDefault();
+            var primaryOther = User.IsInRole("Client")
+                ? others.FirstOrDefault(p => roleMap.GetValueOrDefault(p.UserId) == "Staff") ?? others.FirstOrDefault()
+                : others.FirstOrDefault(p => roleMap.GetValueOrDefault(p.UserId) == "Client") ?? others.FirstOrDefault();
             var displayName = primaryOther?.User?.FullName ?? primaryOther?.User?.Email ?? title;
             var displayRole = primaryOther == null
                 ? "Conversation"
                 : roleMap.GetValueOrDefault(primaryOther.UserId, "User");
-            var subtitle = conversation.BookingId.HasValue
-                ? $"{displayRole} · Booking #{conversation.BookingId}"
-                : displayRole;
+            var subtitle = conversation.ConversationType == ConversationTypes.ClientSupport
+                ? $"{displayRole} · One chat for all bookings"
+                : conversation.BookingId.HasValue
+                    ? $"{displayRole} · Booking #{conversation.BookingId}"
+                    : displayRole;
             var preview = latest?.MessageContent ?? "No messages yet";
             if (preview.Length > 74) preview = preview[..74] + "…";
 
@@ -607,6 +641,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                 LastActivityAt = latest?.SentAt ?? conversation.UpdatedAt,
                 UnreadCount = unreadCount,
                 Initials = Initials(primaryOther?.User?.FullName ?? displayName),
+                AvatarUrl = primaryOther == null ? null : SenderAvatarUrl(conversation.Id, primaryOther.UserId, primaryOther.User?.ProfilePicturePath),
                 HasOpenRequest = hasOpenRequest
             };
         }
@@ -618,7 +653,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             {
                 "unread" => items.Where(x => x.UnreadCount > 0).ToList(),
                 "client" => items.Where(x => x.ConversationType == ConversationTypes.ClientSupport || x.ConversationType == ConversationTypes.Booking).ToList(),
-                "booking" => items.Where(x => x.ConversationType == ConversationTypes.Booking).ToList(),
+                "booking" => items.Where(x => x.ConversationType == ConversationTypes.ClientSupport).ToList(),
                 "internal" => items.Where(x => x.ConversationType == ConversationTypes.InternalDirect || x.ConversationType == ConversationTypes.InternalGroup).ToList(),
                 "requests" => items.Where(x => x.ConversationType == ConversationTypes.OperationalRequest || x.HasOpenRequest).ToList(),
                 "support" => items.Where(x => x.ConversationType == ConversationTypes.ClientSupport).ToList(),
@@ -644,12 +679,57 @@ namespace AriesMagicAppointmentSystem.Controllers
                 return $"Booking #{conversation.BookingId} · {conversation.Booking?.PackageName ?? conversation.Booking?.Service?.Name ?? "Event"}";
             if (conversation.ConversationType == ConversationTypes.ClientSupport)
             {
-                var client = conversation.Participants.FirstOrDefault(p => roleMap.GetValueOrDefault(p.UserId) == "Client");
+                var client = conversation.Participants.FirstOrDefault(p => p.UserId == conversation.SupportClientId)
+                    ?? conversation.Participants.FirstOrDefault(p => roleMap.GetValueOrDefault(p.UserId) == "Client");
                 return client?.UserId == userId ? "Aries Magic Support" : $"Support · {client?.User?.FullName ?? "Client"}";
             }
             if (!string.IsNullOrWhiteSpace(conversation.Title)) return conversation.Title;
             var others = conversation.Participants.Where(p => p.UserId != userId).Select(p => p.User?.FullName ?? p.User?.Email ?? "Team Member");
             return string.Join(", ", others);
+        }
+
+        private async Task<Conversation> GetOrCreateClientSupportAsync(string clientId, bool includeCurrentInternal)
+        {
+            var conversation = await _context.Conversations.Include(c => c.Participants)
+                .FirstOrDefaultAsync(c => c.ConversationType == ConversationTypes.ClientSupport &&
+                    c.SupportClientId == clientId);
+            if (conversation == null)
+            {
+                conversation = new Conversation {
+                    ConversationType = ConversationTypes.ClientSupport,
+                    SupportClientId = clientId,
+                    Title = "Aries Magic Support",
+                    CreatedByUserId = clientId,
+                    CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow
+                };
+                _context.Conversations.Add(conversation);
+                await _context.SaveChangesAsync();
+            }
+
+            var participants = await GetInternalUserIdsAsync(includeOwner: false);
+            participants.Add(clientId);
+            if (includeCurrentInternal && IsInternalUser() && CurrentUserId() is string caller)
+                participants.Add(caller);
+            await AddParticipantsAsync(conversation.Id, participants);
+            await _context.Entry(conversation).Collection(c => c.Participants).LoadAsync();
+            return conversation;
+        }
+
+        // Seen is grounded in an actual recipient read timestamp.
+        // Client messages need a support-team read, not every internal member's read.
+        private static bool HasRecipientRead(Conversation conversation, string senderId, DateTime sentAt)
+        {
+            if (conversation.ConversationType == ConversationTypes.ClientSupport &&
+                !string.IsNullOrWhiteSpace(conversation.SupportClientId))
+            {
+                if (senderId == conversation.SupportClientId)
+                    return conversation.Participants.Any(p => p.UserId != senderId &&
+                        p.LastReadAt.HasValue && p.LastReadAt.Value >= sentAt);
+                var client = conversation.Participants.FirstOrDefault(p => p.UserId == conversation.SupportClientId);
+                return client?.LastReadAt >= sentAt;
+            }
+            return conversation.Participants.Where(p => p.UserId != senderId)
+                .All(p => p.LastReadAt.HasValue && p.LastReadAt.Value >= sentAt);
         }
 
         private async Task AddParticipantsAsync(int conversationId, IEnumerable<string> userIds)

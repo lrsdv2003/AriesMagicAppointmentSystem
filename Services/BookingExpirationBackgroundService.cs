@@ -2,7 +2,7 @@ namespace AriesMagicAppointmentSystem.Services
 {
     public class BookingExpirationBackgroundService : BackgroundService
     {
-        private static readonly TimeSpan CheckInterval = TimeSpan.FromHours(1);
+        private static readonly TimeSpan CheckInterval = TimeSpan.FromMinutes(5);
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly ILogger<BookingExpirationBackgroundService> _logger;
 

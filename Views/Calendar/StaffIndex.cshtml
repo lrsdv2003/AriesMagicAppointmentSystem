@@ -5,7 +5,14 @@
 @{
     Layout = "_DashboardLayout";
     ViewData["Title"] = "Event Calendar";
-    var packageColors = ViewBag.PackageColors as IDictionary<string, string> ?? new Dictionary<string, string>();
+    var useStaffColors = User.IsInRole("Staff") && !User.IsInRole("Owner") && !User.IsInRole("Admin");
+    var originalPackageColors = ViewBag.PackageColors as IDictionary<string, string> ?? new Dictionary<string, string>();
+    var packageColors = originalPackageColors.ToDictionary(item => item.Key, item => useStaffColors
+        ? item.Key.Contains("All In", StringComparison.OrdinalIgnoreCase) ? "gold"
+        : item.Key.Contains("Deluxe", StringComparison.OrdinalIgnoreCase) ? "red"
+        : item.Key.Contains("Premium", StringComparison.OrdinalIgnoreCase) ? "blue"
+        : item.Value
+        : item.Value, StringComparer.OrdinalIgnoreCase);
     string PackageName(Booking b) => !string.IsNullOrWhiteSpace(b.PackageName) ? b.PackageName : b.Service?.Name ?? "Package";
     string PackageKey(string name) => packageColors.TryGetValue(name, out var key) ? key : "pink";
     var now = DateTime.Now;
@@ -59,7 +66,7 @@
                         <span class="package-dot package-@item.Value"></span><span>@item.Key</span>
                     </button>
                 }
-                <span class="package-legend-blocked"><span class="blocked-legend-mark">×</span> Blocked / Unavailable</span>
+                <span class="package-legend-blocked"><span class="blocked-legend-mark" aria-hidden="true">×</span> @(useStaffColors ? "Unavailable" : "Blocked / Unavailable")</span>
             </div>
         </div>
         <div class="staff-calendar-loading" id="calendarLoading" role="status">
@@ -186,7 +193,7 @@
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+@if (useStaffColors) {<script src="~/lib/fullcalendar/index.global.min.js" asp-append-version="true"></script>} else {<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>}
 
 @section Scripts {
 <script>

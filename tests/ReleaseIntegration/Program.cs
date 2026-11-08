@@ -58,6 +58,11 @@ internal static class ReleaseIntegrationRunner
         Check(!BookingCancellationPolicy.IsClientDirectCancellationAllowed(cancellationBooking, new Payment { Status = PaymentStatus.Verified }, cancellationTime.AddHours(1)), "Legacy verified records without an immutable UTC timestamp are not assigned a fabricated window");
         Check(!BookingCancellationPolicy.IsClientDirectCancellationAllowed(new Booking { Status = BookingStatus.Completed }, cancellationPayment, cancellationTime.AddHours(1)), "Completed booking cannot be directly cancelled");
         Check(!BookingCancellationPolicy.IsClientDirectCancellationAllowed(new Booking { Status = BookingStatus.Confirmed, RefundEligible = true }, cancellationPayment, cancellationTime.AddHours(1)), "Already refund-eligible booking cannot be cancelled again");
+        if(args.SequenceEqual(new[]{"--payment-window-only"})) { await InitialPaymentWindowTests.RunAsync(); return; }
+        if(args.SequenceEqual(new[]{"--pro-max-event-fields"})) { ProMaxEventDetailsTests.Run(); return; }
+        if(args.SequenceEqual(new[]{"--pro-max-refund-seed"})) { await ProMaxRefundFixtureSeed.RunAsync(); return; }
+        if(args.SequenceEqual(new[]{"--age-release-payment-window"})) { await PaymentWindowFixtureAdjust.RunAsync(); return; }
+        if(args.SequenceEqual(new[]{"--unified-messaging-only"})) { await UnifiedMessagingTests.RunAsync(); return; }
         if(args.SequenceEqual(new[]{"--internal-workspaces-ui-fixture"})) { await InternalWorkspaceFixture.RunAsync(); return; }
         if(args.SequenceEqual(new[]{"--internal-workspaces-empty-fixture"})) { await InternalWorkspaceFixture.RunAsync(empty:true); return; }
         if(args.SequenceEqual(new[]{"--auth-ui-fixture"})) { await AuthBrowserFixture.RunAsync(); return; }

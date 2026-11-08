@@ -9,7 +9,11 @@
     var role = User.IsInRole("Owner") ? "Owner" : User.IsInRole("Admin") ? "Admin" : "Staff";
     var account = string.IsNullOrEmpty(currentUserId) ? null : await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == currentUserId);
     var unreadMessageCount = string.IsNullOrEmpty(currentUserId) ? 0 : await _context.ConversationParticipants
-        .CountAsync(p => p.UserId == currentUserId && p.Conversation!.Messages.Any(m => m.SenderId != currentUserId && (!p.LastReadAt.HasValue || m.SentAt > p.LastReadAt.Value)));
+        .CountAsync(p => p.UserId == currentUserId &&
+            p.Conversation!.ConversationType != AriesMagicAppointmentSystem.Models.ConversationTypes.Booking &&
+            (p.Conversation.ConversationType != AriesMagicAppointmentSystem.Models.ConversationTypes.ClientSupport ||
+             p.Conversation.SupportClientId != null) &&
+            p.Conversation.Messages.Any(m => m.SenderId != currentUserId && (!p.LastReadAt.HasValue || m.SentAt > p.LastReadAt.Value)));
     var unreadNotificationCount = string.IsNullOrEmpty(currentUserId) ? 0 : await _context.Notifications.CountAsync(n => n.UserId == currentUserId && !n.IsRead);
     var navigation = new List<(string Group, string Label, string Controller, string Action, string Icon)>();
     if (User.IsInRole("Staff")) {
@@ -67,9 +71,12 @@
         <link rel="stylesheet" href="~/css/@(sheet).css" asp-append-version="true" />
     }
     <link rel="stylesheet" href="~/AriesMagicAppointmentSystem.styles.css" asp-append-version="true" />
+    @if(role=="Staff"){<link rel="stylesheet" href="~/css/staff-reference-20261106.css" asp-append-version="true" />}
+    @if(role=="Admin"){<link rel="stylesheet" href="~/css/admin-reference-20261106.css" asp-append-version="true" />}
     @if(currentController=="Personnel"){<link rel="stylesheet" href="~/css/personnel.css" asp-append-version="true" />}
+    @if(currentController=="Communications"){<link rel="stylesheet" href="~/css/unified-support-20261108.css" asp-append-version="true" />}
 </head>
-<body class="internal-ui dashboard-body midnight-workspace @(role.ToLowerInvariant())-dashboard">
+<body class="internal-ui dashboard-body midnight-workspace @(role.ToLowerInvariant())-dashboard @(role=="Admin" ? $"admin-route-{currentController.ToLowerInvariant()}" : "")">
 <a class="ui-skip-link" href="#mainContent">Skip to content</a>
 <div class="dashboard-shell">
     <header class="dashboard-topbar">

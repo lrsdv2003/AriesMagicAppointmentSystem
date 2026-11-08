@@ -26,6 +26,7 @@ namespace AriesMagicAppointmentSystem.ViewModels
         public DateTime LastActivityAt { get; set; }
         public int UnreadCount { get; set; }
         public string Initials { get; set; } = "AM";
+        public string? AvatarUrl { get; set; }
         public bool HasOpenRequest { get; set; }
     }
 
@@ -39,6 +40,9 @@ namespace AriesMagicAppointmentSystem.ViewModels
         public BookingConversationContextViewModel? Booking { get; set; }
         public List<CommunicationParticipantViewModel> Participants { get; set; } = new();
         public List<CommunicationMessageViewModel> Messages { get; set; } = new();
+        public string? SupportClientId { get; set; }
+        public List<ClientBookingReferenceViewModel> BookingOptions { get; set; } = new();
+        public int? SelectedRelatedBookingId { get; set; }
         public bool CanSend { get; set; } = true;
         public bool IsInternal { get; set; }
     }
@@ -54,12 +58,19 @@ namespace AriesMagicAppointmentSystem.ViewModels
         public string Status { get; set; } = string.Empty;
     }
 
+    public class ClientBookingReferenceViewModel
+    {
+        public int Id { get; set; }
+        public string Label { get; set; } = string.Empty;
+    }
+
     public class CommunicationParticipantViewModel
     {
         public string UserId { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
         public string Role { get; set; } = string.Empty;
         public string Initials { get; set; } = string.Empty;
+        public string? AvatarUrl { get; set; }
         public DateTime? LastLoginAt { get; set; }
     }
 
@@ -69,6 +80,7 @@ namespace AriesMagicAppointmentSystem.ViewModels
         public string SenderId { get; set; } = string.Empty;
         public string SenderName { get; set; } = string.Empty;
         public string SenderRole { get; set; } = string.Empty;
+        public string? SenderAvatarUrl { get; set; }
         public string Content { get; set; } = string.Empty;
         public DateTime SentAt { get; set; }
         public bool IsMine { get; set; }
@@ -77,6 +89,7 @@ namespace AriesMagicAppointmentSystem.ViewModels
         public string? RequestType { get; set; }
         public string? RequestStatus { get; set; }
         public string? ActionLink { get; set; }
+        public int? RelatedBookingId { get; set; }
     }
 
     public class CommunicationUserOptionViewModel

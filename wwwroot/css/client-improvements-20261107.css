@@ -1,0 +1,167 @@
+/* Client UI Improvement/Fixes — 2026-11-07. Scopes: Client Hub + booking/payment/reschedule experience. */
+body.client-hub{
+ --ci-surface:#0a2942;--ci-raised:#10354e;--ci-line:#355875;--ci-ink:#f2f9ff;
+ --ci-sub:#bbd2e4;--ci-blue:#63bdfa;--ci-gold:#f3c766;--ci-rose:#ec6c8d;
+}
+body.client-hub .client-page-wrap,
+body.client-hub .hub-content{width:100%;max-width:1420px!important;min-width:0}
+body.client-hub :is(.cn-page,.cn-records,.cn-detail-layout,.hub-booking-record,.hub-profile-layout){min-width:0}
+body.client-hub .hub-heading{gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:15px}
+body.client-hub .hub-heading h1{font-size:clamp(24px,2.2vw,34px);font-weight:750}
+body.client-hub .hub-heading p{color:#c3d6e5;line-height:1.5}
+body.client-hub :is(.cn-button,.ref-view-link,.cn-edit,.cn-text-link,.hub-row-links a){
+ min-height:39px;display:inline-flex;align-items:center;justify-content:center;gap:7px;
+ border:1px solid #417fab;border-radius:8px;padding:9px 13px;text-decoration:none!important;
+ font-weight:680;font-size:13px;line-height:1.4;max-width:100%;text-align:center;
+}
+body.client-hub :is(.cn-text-link,.cn-edit,.hub-row-links a){background:#0c446b!important;color:#f6fbff!important}
+body.client-hub :is(.cn-button.cn-secondary,.ref-view-link){background:#155c87!important;color:white!important;border-color:#4da3d6!important}
+body.client-hub :is(.cn-button.cn-primary,.cn-record-actions .hub-row-links a:first-child){background:#1477b7!important;color:#fff!important;border-color:#4fa9dd!important}
+body.client-hub :is(.cn-button,.cn-edit,.ref-view-link,.hub-row-links a):hover{background:#1b89cc!important;color:white!important}
+body.client-hub :is(.cn-button,.cn-edit,.ref-view-link,.hub-row-links a):focus-visible{outline:3px solid #f5c674!important;outline-offset:3px}
+body.client-hub :is(.cn-input,.form-select,.form-control){min-height:43px;padding-right:36px!important;font-size:14px;line-height:1.4;max-width:100%}
+body.client-hub select.cn-input,body.client-hub select.form-select{
+ appearance:none;-webkit-appearance:none;
+ background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='%23c2dcee' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m3 6 5 5 5-5'/%3E%3C/svg%3E")!important;
+ background-position:right 13px center!important;background-size:13px 13px!important;background-repeat:no-repeat!important;
+}
+body.client-hub .cn-record{padding:clamp(15px,1.7vw,23px)!important;border-radius:12px}
+body.client-hub .hub-booking-record{display:grid!important;grid-template-columns:minmax(0,1.3fr) minmax(200px,.85fr);gap:14px!important}
+body.client-hub .hub-booking-main{display:flex;flex-direction:column;align-items:flex-start;gap:6px;min-width:0}
+body.client-hub .hub-booking-main .status-badge{order:-1;margin-bottom:7px}
+body.client-hub .hub-booking-main h2{font-size:19px!important;line-height:1.4;color:var(--ci-ink)!important}
+body.client-hub .hub-booking-main>p{margin:0;color:#deedf8;overflow-wrap:anywhere;line-height:1.6}
+body.client-hub .hub-booking-finance{min-width:0;background:#10334d;border:1px solid #315a74;border-radius:10px;padding:12px}
+body.client-hub .cn-record-actions{grid-column:1/-1;border-top:1px solid #345973;padding-top:12px}
+body.client-hub .cn-record-actions>p{color:#d9eaf6!important;background:#113b57;border-left:3px solid #64b7ef;padding:10px 12px;border-radius:5px;line-height:1.55}
+body.client-hub .hub-row-links{display:flex;flex-wrap:wrap;gap:8px}
+body.client-hub .hub-row-links a:last-child{background:#176c9b!important;color:#fff!important}
+body.client-hub .cn-reference,body.client-hub .hub-reference{color:var(--ci-gold)!important;letter-spacing:.025em}
+body.client-hub .cn-detail-layout{display:grid;grid-template-columns:minmax(0,1.8fr) minmax(265px,.9fr);align-items:start;gap:15px}
+body.client-hub .cn-event,body.client-hub .cn-balance,body.client-hub .cn-details-block,body.client-hub .cn-booking-actions{
+ min-width:0;background:var(--ci-surface)!important;border:1px solid var(--ci-line)!important;border-radius:12px!important;padding:clamp(15px,2vw,23px)!important;color:var(--ci-ink);
+}
+body.client-hub .cn-event-head{align-items:flex-start;gap:10px;flex-wrap:wrap}
+body.client-hub .cn-event-head h2{font-size:clamp(21px,2vw,27px);line-height:1.3}
+body.client-hub .cn-facts{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px!important;margin:12px 0!important}
+body.client-hub .cn-facts>div{min-width:0;padding:12px 13px;background:#103850;border:1px solid #365d79;border-radius:8px}
+body.client-hub .cn-facts dt,body.client-hub .client-details-record dt{font-size:11px;font-weight:700;color:#b9d3e6}
+body.client-hub .cn-facts dd,body.client-hub .client-details-record dd{margin:5px 0 0;overflow-wrap:anywhere;font-size:13px;line-height:1.5;color:#f2f8ff}
+body.client-hub .cn-details-section{border-top:1px solid #395d77;margin-top:18px;padding-top:17px;background:transparent}
+body.client-hub .cn-details-section h3{font-size:15px;font-weight:740;color:#f7fbff}
+body.client-hub .cn-details-block{margin-top:14px}
+body.client-hub .client-details-block-header{display:flex;align-items:baseline;flex-wrap:wrap;justify-content:space-between;gap:9px;border-bottom:1px solid #345873;padding-bottom:11px;margin-bottom:12px}
+body.client-hub .client-details-block-header h2,body.client-hub .cn-booking-actions h3{font-size:17px!important;margin:0;font-weight:740;color:#f4faff}
+body.client-hub .client-details-block-header>span{font-size:12px;color:#c1d4e4}
+body.client-hub .client-details-records{display:grid;gap:9px}
+body.client-hub .client-details-record{min-width:0;padding:12px 14px;background:#10354e;border:1px solid #345c77;border-radius:9px;display:flex;flex-wrap:wrap;align-items:center;gap:12px;justify-content:space-between}
+body.client-hub .client-details-record>div,body.client-hub .client-details-record dl{min-width:0;margin:0;flex:1 1 190px}
+body.client-hub .client-details-record p{font-size:12px;color:#c7d9e8;margin:5px 0}
+body.client-hub .client-details-record dl{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:9px}
+body.client-hub .cn-booking-actions{margin-top:14px;display:flex;align-items:flex-start;flex-wrap:wrap;gap:10px}
+body.client-hub .cn-booking-actions h3{width:100%}
+body.client-hub .cn-booking-actions :is(.cn-text-link,.cn-edit,.cn-button){margin:3px 0}
+body.client-hub .cn-booking-actions>p,body.client-hub .cn-booking-actions .cn-links{width:100%;color:#cbdeec}
+body.client-hub .cn-booking-actions .cn-support{width:100%;max-width:680px;margin:4px 0}
+body.client-hub .client-card-event-context{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:12px;background:#123750;border:1px solid #335973;border-radius:9px;margin:12px 0}
+body.client-hub .client-card-event-context dt{color:#b7cfdf;font-size:11px}
+body.client-hub .client-card-event-context dd{overflow-wrap:anywhere;color:#f2f8ff;font-size:12px;margin:5px 0 0}
+body.client-hub .ref-payment-card .ref-record-footer,body.client-hub .ref-reschedule-card .ref-record-footer{justify-content:flex-end}
+body.client-hub .ref-refund-card .ref-refund-summary{background:#113750;border:1px solid #315a75;border-radius:9px;padding:12px;margin:10px 0}
+body.client-hub .ref-refund-card .ref-refund-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:0 0 10px}
+body.client-hub .ref-refund-card .ref-refund-metrics div{min-width:0}
+body.client-hub .ref-refund-card .cn-next-step{margin:0;color:#dfedf9!important;font-size:13px}
+body.client-hub .client-notice-filter{margin-bottom:14px;max-width:350px}
+body.client-hub .client-notice-filter label{display:flex;align-items:center;gap:7px;font-weight:700;color:#e1f1fc}
+body.client-hub .hub-notice-group{min-width:0}
+body.client-hub .hub-notice-group .notice-unread{border-left:3px solid #70bff7!important;background:#103653!important}
+body.client-hub .hub-notice-group .notice-read{background:#0a263e!important}
+body.client-hub .hub-profile-layout{display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:15px!important;max-width:950px;margin-inline:auto}
+body.client-hub .hub-profile-side{display:contents!important}
+body.client-hub .hub-profile-photo{order:-1;display:flex;flex-direction:column;align-items:center;text-align:center;gap:7px;padding:20px!important}
+body.client-hub .hub-personal{order:0}
+body.client-hub .hub-security{order:1}
+body.client-hub .client-photo-trigger{position:relative;display:inline-flex;align-items:center;justify-content:center;width:94px;height:94px;border:2px solid #74c2f6!important;overflow:visible;border-radius:50%;background:#123d60;color:#fff;cursor:pointer;padding:0}
+body.client-hub .client-photo-trigger img{width:100%;height:100%;border-radius:50%;object-fit:cover}
+body.client-hub .client-photo-trigger .client-photo-edit{position:absolute;right:-7px;bottom:0;width:29px;height:29px;border-radius:50%;display:grid;place-items:center;background:#177dbb;border:2px solid #0b2942;color:white;font-size:13px}
+body.client-hub .client-photo-menu{background:#102f4a;border:1px solid #477594;color:#f4faff;min-width:160px}
+body.client-hub .client-photo-menu .dropdown-item{color:#eef7ff;padding:9px 12px}
+body.client-hub .client-photo-menu .dropdown-item:hover{background:#1c4b70;color:#fff}
+body.client-hub .hub-profile-photo .hub-help{margin:0;color:#c3d6e4}
+body.client-hub .cn-payment-record .ref-record-footer{margin-top:10px}
+body.client-hub :is(.client-payment-ack,.client-refund-ack){display:flex;align-items:flex-start;gap:10px;padding:12px 14px;background:#113a55;border:1px solid #42738e;border-radius:9px;line-height:1.55;color:#f0f8fe}
+body.client-hub .client-refund-fields{display:grid;grid-template-columns:1fr;gap:13px;max-width:810px}
+body.client-hub .client-refund-fields>.col-md-6,body.client-hub .client-refund-fields>.col-12{width:100%;max-width:none;padding:0}
+body.client-hub .client-refund-ack{margin-top:16px}
+body.client-hub .upload-payment-actions{display:flex;gap:9px;flex-wrap:wrap}
+body.client-hub .upload-payment-actions .btn{min-height:43px;border-radius:8px}
+body.client-booking-page:not(.client-hub) .cn-page{max-width:min(96%,1340px)!important;margin-inline:auto}
+body.client-booking-page:not(.client-hub) .cn-workspace{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(265px,290px)!important;align-items:start;gap:17px}
+body.client-booking-page:not(.client-hub) .cn-task{grid-column:1!important;grid-row:1!important;min-width:0}
+body.client-booking-page:not(.client-hub) .cn-summary-slot{grid-column:2!important;grid-row:1!important;min-width:0;position:sticky;top:20px}
+body.client-booking-page:not(.client-hub) .cn-location-intro,body.client-booking-page:not(.client-hub) .cn-package-story{display:none!important}
+body.client-booking-page:not(.client-hub) .cn-panel{min-width:0}
+body.client-booking-page:not(.client-hub) .cn-payment-instructions{grid-template-columns:minmax(0,1fr) minmax(230px,.7fr)!important}
+body.client-booking-page:not(.client-hub) .cn-qr img{width:100%!important;max-width:340px;height:auto;aspect-ratio:1;object-fit:contain}
+body.client-booking-page:not(.client-hub) .cn-review-grid{display:flex!important;flex-direction:column;gap:14px}
+body.client-booking-page:not(.client-hub) #bookingReview,body.client-booking-page:not(.client-hub) #reviewPricing{width:100%;max-width:100%}
+body.client-booking-page:not(.client-hub) #reviewPricing{order:2;border-top:2px solid #4388b9;margin-top:15px;padding-top:15px}
+body.client-booking-page:not(.client-hub) .cn-terms-clauses{display:none!important}
+body.client-booking-page:not(.client-hub) .client-terms-summary{display:grid;gap:8px;justify-items:start;padding:15px;border:1px solid #436983;border-radius:10px;background:#10334e}
+body.client-booking-page:not(.client-hub) .client-terms-summary h3{font-size:16px;margin:0}
+body.client-booking-page:not(.client-hub) .client-terms-summary p{color:#d0e3f2}
+body.client-booking-page:not(.client-hub) .cn-terms-dialog{max-width:min(93vw,760px);max-height:86dvh;overflow:auto}
+body.client-booking-page:not(.client-hub) .client-terms-consent{margin:15px 0;padding:13px;background:#123750;border:1px solid #44718d;border-radius:9px;color:#f2faff}
+body.client-booking-page:not(.client-hub) .client-help-tip{border:1px solid #62b4e8;background:#155a83;color:#fff;font-size:12px;font-weight:750;line-height:20px;width:22px;height:22px;border-radius:50%;vertical-align:middle}
+body.client-booking-page:not(.client-hub) select.cn-input{padding-right:39px!important}
+body.client-booking-page:not(.client-hub) :is(.cn-button,.cn-edit){min-height:43px;border:1px solid #5ca4d7!important;border-radius:8px!important;padding:10px 15px;display:inline-flex;align-items:center;justify-content:center;gap:8px;font-weight:720}
+body.client-booking-page:not(.client-hub) .cn-button.cn-primary{background:#126a9d!important;color:white!important}
+body.client-booking-page:not(.client-hub) .cn-button.cn-secondary,body.client-booking-page:not(.client-hub) .cn-edit{background:#143e5d!important;color:#f2f8ff!important}
+body.client-booking-page:not(.client-hub) .cn-reschedule-layout{display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:12px}
+body.client-booking-page:not(.client-hub) .cn-calendar-panel,body.client-booking-page:not(.client-hub) .cn-time-panel{padding:15px!important}
+body.client-booking-page:not(.client-hub) .cn-reschedule-page .cn-panel{max-width:950px}
+body.client-booking-page:not(.client-hub) .cn-payment-options{margin:12px 0 15px}
+body.client-booking-page:not(.client-hub) :is(.client-payment-ack,.client-refund-ack){padding:14px;border:1px solid #4c7e9a;border-radius:9px;background:#103c59;color:white;line-height:1.6}
+body.client-booking-page:not(.client-hub) .cn-payment-option{min-width:0}
+body.client-booking-page :is(.cn-input,.form-select){min-height:43px}
+body.client-booking-page select.cn-input{padding-right:38px!important}
+body.client-booking-page .cn-reschedule-layout .cn-panel{min-width:0}
+@media(max-width:1060px){
+ body.client-hub .cn-detail-layout{grid-template-columns:1fr}
+ body.client-booking-page:not(.client-hub) .cn-workspace{grid-template-columns:minmax(0,1fr)!important}
+ body.client-booking-page:not(.client-hub) .cn-task{grid-column:1;grid-row:1}
+ body.client-booking-page:not(.client-hub) .cn-summary-slot{grid-column:1!important;grid-row:2!important;position:static}
+}
+@media(max-width:720px){
+ body.client-hub .hub-booking-record{grid-template-columns:1fr!important}
+ body.client-hub .cn-record-actions{grid-column:auto}
+ body.client-hub .cn-facts,body.client-hub .client-card-event-context{grid-template-columns:1fr!important}
+ body.client-hub .ref-refund-card .ref-refund-metrics{grid-template-columns:1fr}
+ body.client-hub .cn-booking-actions{display:block}
+ body.client-hub .cn-booking-actions :is(a,button){margin:7px 0}
+ body.client-booking-page:not(.client-hub) .cn-payment-instructions{grid-template-columns:1fr!important}
+}
+@media(max-width:420px){
+ body.client-hub .client-details-record{display:block}
+ body.client-hub .client-details-record>*,body.client-hub .client-details-record a{margin-top:9px}
+ body.client-hub .client-photo-trigger{width:80px;height:80px}
+ body.client-hub .cn-record{padding:13px!important}
+ body.client-booking-page:not(.client-hub) .cn-page{max-width:100%!important}
+}
+@media(prefers-reduced-motion:reduce){body.client-hub *,body.client-booking-page *{animation:none!important;transition:none!important}}body.client-hub .hub-messages .comm-workspace{min-height:570px;max-height:min(78dvh,870px);grid-template-columns:minmax(265px,32%) minmax(0,1fr);border:1px solid #396680;border-radius:12px;overflow:hidden}
+body.client-hub .hub-messages .comm-conversation-panel{background:#0b2942;min-width:0}
+body.client-hub .hub-messages .comm-chat-panel{background:#0c2c44;min-width:0}
+body.client-hub .hub-messages .comm-conversation-item{padding:13px 14px;gap:12px;overflow-wrap:anywhere}
+body.client-hub .hub-messages .comm-conversation-item.active{background:#164561;border:1px solid #d2a654}
+body.client-hub .hub-messages .comm-avatar{width:43px;height:43px;flex:0 0 43px;display:inline-flex;align-items:center;justify-content:center;border:1px solid #437c9b;border-radius:50%;overflow:hidden;color:#e7f5ff;background:#164a6b;font-weight:750;font-size:13px}
+body.client-hub .hub-messages .comm-avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+body.client-hub .hub-messages .comm-item-copy{min-width:0}
+body.client-hub .hub-messages .comm-item-heading strong{font-size:13px;color:#f6fbff;overflow-wrap:anywhere}
+body.client-hub .hub-messages .comm-message{max-width:min(82%,690px)}
+body.client-hub .hub-messages .comm-message .comm-bubble{font-size:14px;line-height:1.6;padding:12px 14px;overflow-wrap:anywhere;color:#eff8ff}
+body.client-hub .hub-messages .comm-message.mine .comm-bubble{background:#175781;border-color:#418fb8}
+body.client-hub .hub-messages .comm-delivery-state{display:flex;align-items:center;justify-content:flex-end;gap:4px;font-size:11px;color:#bfe1f7;margin-top:5px}
+body.client-hub .hub-messages .comm-composer textarea{font-size:14px;min-height:54px;padding:13px 14px}
+body.client-hub .hub-messages .comm-send-btn{background:#146ca5!important;color:#fff!important;border:1px solid #4aa2da!important;min-height:44px;min-width:72px}
+body.internal-ui .comm-avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+@media(max-width:700px){body.client-hub .hub-messages .comm-workspace{display:block;max-height:none;min-height:400px}body.client-hub .hub-messages .comm-message{max-width:92%}}

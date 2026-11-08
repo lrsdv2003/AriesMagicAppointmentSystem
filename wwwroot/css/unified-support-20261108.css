@@ -1,0 +1,9 @@
+/* Unified Client support: booking reference belongs to each message, not the thread. */
+.comm-page .comm-booking-selector{display:grid;gap:5px;padding:10px 14px;background:rgba(14,45,68,.86);border-top:1px solid #345772}
+.comm-page .comm-booking-selector label{font-size:13px;font-weight:730;color:#e8f5ff}
+.comm-page .comm-booking-selector select{min-height:42px;width:100%;color:#f3f9fd;background:#0b2b45;border:1px solid #587d99;border-radius:8px;padding:8px 32px 8px 12px}
+.comm-page .comm-booking-selector span{color:#bed8e9;font-size:12px;line-height:1.45}
+.comm-page .comm-booking-context-chip{display:flex;align-items:center;flex-wrap:wrap;gap:7px;margin:0 0 6px;padding:6px 10px;border:1px solid #3b6787;background:#123c5a;border-radius:7px;color:#f1d28d;font-size:12px}
+.comm-page .comm-booking-context-chip a{color:#b9e4ff;font-weight:700;text-underline-offset:3px;margin-left:auto}
+.comm-page .comm-booking-selector select:focus-visible,.comm-page .comm-booking-context-chip a:focus-visible{outline:3px solid #f6ca75;outline-offset:2px}
+@media(max-width:650px){.comm-page .comm-booking-selector{padding:9px 11px}.comm-page .comm-booking-context-chip{font-size:11px}}
