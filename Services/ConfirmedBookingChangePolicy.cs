@@ -31,6 +31,8 @@ public sealed class ConfirmedBookingChangeProposal
     public string? OriginalServiceZone { get; set; }
     public string? OriginalTravelFeeStatus { get; set; }
     public string? OriginalRemovedInclusionsJson { get; set; }
+    public double? OriginalDistanceKm { get; set; }
+    public bool OriginalRequiresManualReview { get; set; }
     public decimal VerifiedPaymentsAtProposal { get; set; }
     public int VerifiedPaymentCountAtProposal { get; set; }
     public int NewServiceId { get; set; }
@@ -80,7 +82,9 @@ public static class ConfirmedBookingChangePolicy
         && b.EventDate == p.OriginalEventDate && b.StartTime == p.OriginalStartTime
         && b.VenueLatitude == p.OriginalLatitude && b.VenueLongitude == p.OriginalLongitude
         && b.ServiceZone == p.OriginalServiceZone && b.TravelFeeStatus == p.OriginalTravelFeeStatus
-        && b.RemovedInclusionsJson == p.OriginalRemovedInclusionsJson;
+        && b.RemovedInclusionsJson == p.OriginalRemovedInclusionsJson
+        && b.DistanceKm == p.OriginalDistanceKm
+        && b.RequiresManualReview == p.OriginalRequiresManualReview;
 
     public static bool IsSafeTotal(decimal newTotal, decimal verified)
         => newTotal >= 0m && newTotal >= verified && newTotal <= 999999m;

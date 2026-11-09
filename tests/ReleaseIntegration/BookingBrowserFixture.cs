@@ -101,7 +101,7 @@ static class BookingBrowserFixture
    using var http=new HttpClient(factory.Server.CreateHandler()){BaseAddress=new Uri("http://localhost")};
    proxy.Run(async context=>{
     var path=context.Request.Path.Value??"/";
-    var allowed=path=="/"||path=="/favicon.ico"||new[]{"/Account/","/Home/","/Bookings/","/Payments/","/RescheduleRequests/","/css/","/js/","/lib/","/fonts/","/images/"}.Any(path.StartsWith)||path.EndsWith(".styles.css")||path=="/Communications/UnreadCount";
+    var allowed=path=="/"||path=="/favicon.ico"||new[]{"/Account/","/Home/","/Bookings/","/Payments/","/RescheduleRequests/","/css/","/js/","/lib/","/fonts/","/images/"}.Any(path.StartsWith)||path.EndsWith(".styles.css")||path=="/Communications/UnreadCount"||(releaseReview&&path.StartsWith("/BookingChanges/"));
     if(!fullPreview&&!allowed){context.Response.StatusCode=404;return;}
     using var request=new HttpRequestMessage(new HttpMethod(context.Request.Method),context.Request.Path+context.Request.QueryString);
     if(context.Request.ContentLength>0){using var memory=new MemoryStream();await context.Request.Body.CopyToAsync(memory);request.Content=new ByteArrayContent(memory.ToArray());}

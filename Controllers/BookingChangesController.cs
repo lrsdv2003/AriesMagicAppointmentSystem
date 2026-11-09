@@ -149,6 +149,8 @@ public sealed partial class BookingChangesController : Controller
             OriginalLatitude=booking.VenueLatitude,OriginalLongitude=booking.VenueLongitude,
             OriginalServiceZone=booking.ServiceZone,OriginalTravelFeeStatus=booking.TravelFeeStatus,
             OriginalRemovedInclusionsJson=booking.RemovedInclusionsJson,
+            OriginalDistanceKm=booking.DistanceKm,
+            OriginalRequiresManualReview=booking.RequiresManualReview,
             VerifiedPaymentsAtProposal=verified,VerifiedPaymentCountAtProposal=PaidCount(booking),
             NewServiceId=service.Id,NewPackageName=packageChanged?service.Name:booking.PackageName,
             NewBasePrice=newBase,NewFinalPrice=total,NewTravelFee=fee,
@@ -195,7 +197,8 @@ public sealed partial class BookingChangesController : Controller
             var prior=_distance.Calculate(before.VenueLatitude!.Value,before.VenueLongitude!.Value,lat,lng);
             if(!prior.IsServiceable||prior.EstimatedTravelTimeMinutes>(current.StartTime-before.EndTime).TotalMinutes)
                 return("Not enough travel time from the previous event.",null);
-            quote=prior;
+            // The prior-event route is only a travel-feasibility check.
+            // Do not replace the venue's official office-to-event fee with that route.
         }
         if(after!=null){
             if(!VenueLocationPolicy.HasCoordinatePair(after.VenueLatitude,after.VenueLongitude))

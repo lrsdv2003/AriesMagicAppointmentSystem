@@ -56,7 +56,9 @@ internal static class ConfirmedBookingChangePolicyTests
             OriginalEventDate=booking.EventDate,OriginalStartTime=booking.StartTime,
             OriginalLatitude=booking.VenueLatitude,OriginalLongitude=booking.VenueLongitude,
             OriginalServiceZone=booking.ServiceZone,OriginalTravelFeeStatus=booking.TravelFeeStatus,
-            OriginalRemovedInclusionsJson=booking.RemovedInclusionsJson
+            OriginalRemovedInclusionsJson=booking.RemovedInclusionsJson,
+            OriginalDistanceKm=booking.DistanceKm,
+            OriginalRequiresManualReview=booking.RequiresManualReview
         };
         Check(ConfirmedBookingChangePolicy.OriginalMatches(booking,proposal),
             "Unmodified original contract matches pending quote snapshot");
@@ -71,6 +73,14 @@ internal static class ConfirmedBookingChangePolicyTests
         booking.FinalPrice++;
         Check(!ConfirmedBookingChangePolicy.OriginalMatches(booking,proposal),
             "Changed payment total invalidates pending Client approval");
+        booking.FinalPrice=proposal.OriginalFinalPrice;
+        booking.RequiresManualReview=true;
+        Check(!ConfirmedBookingChangePolicy.OriginalMatches(booking,proposal),
+            "Changed manual travel review state invalidates pending Client approval");
+        booking.RequiresManualReview=false;
+        booking.DistanceKm=42.5;
+        Check(!ConfirmedBookingChangePolicy.OriginalMatches(booking,proposal),
+            "Changed journey distance invalidates pending Client approval");
         Console.WriteLine("CONFIRMED_CHANGE_POLICY_CHECKS="+count);
     }
 }
