@@ -8,6 +8,7 @@
     var finance = ViewBag.FinancialSummary as BookingFinancialSummaryViewModel;
     var paymentDeadline = ViewBag.PaymentDeadline as DateTime?;
     var clientRefunds = ViewBag.ClientRefunds as List<RefundRequest> ?? new();
+    var changeProposal = ViewBag.PendingConfirmedChange as ConfirmedBookingChangeProposal;
     var canCancel = new[] { BookingStatus.Pending, BookingStatus.AwaitingDownpayment, BookingStatus.AwaitingVerification, BookingStatus.Confirmed }.Contains(Model.Status);
     var canDirectCancel = ViewBag.CanDirectCancel is bool direct && direct;
     var directCancelDeadline = ViewBag.CancellationDeadline as DateTime?;
@@ -19,12 +20,44 @@
 }
 <div class="cn-page">
 <header class="cn-page-heading"><div><p class="cn-kicker">BK-@Model.CreatedAt.Year-@Model.Id.ToString("D3")</p><h1>@(Model.Status == BookingStatus.Confirmed ? "Your event is confirmed." : "Your booking.")</h1></div><a asp-action="MyBookings" class="cn-text-link">All bookings</a></header>
+@if(TempData["Error"] is string changeError){<div class="cn-notice" role="alert">@changeError</div>}
+@if(TempData["Success"] is string changeSuccess){<div class="cn-notice" role="status">@changeSuccess</div>}
 <div class="cn-next-step" role="status">@(scheduleUnavailable ? "This time is no longer available. Request another schedule or message Staff before making a payment." : ClientBookingPresentation.NextAction(Model,finance))</div>
 @if(Model.Status==BookingStatus.AwaitingDownpayment && paymentDeadline.HasValue){
 <div class="ultra-payment-deadline" role="status"><strong>Initial payment proof deadline:</strong> @AriesMagicAppointmentSystem.Services.InitialPaymentWindowPolicy.FormatManila(paymentDeadline.Value) <span>Submit a valid receipt before the deadline. Owner verification can follow afterward.</span></div>
 }
 @if(Model.Status==BookingStatus.Expired){<div class="cn-notice" role="status"><strong>Booking expired.</strong> No qualifying initial payment proof was submitted within the 24-hour window. Message Staff if you need assistance.</div>}
 <partial name="_FeedbackEntry" model="Model"/>
+@if(changeProposal != null && Model.Status == BookingStatus.Confirmed){
+<section class="booking-change-pending" aria-labelledby="clientChangeReviewTitle">
+  <h2 id="clientChangeReviewTitle">Review your proposed confirmed booking change</h2>
+  <p>Staff proposed a change. Nothing has been altered yet. Your verified payments stay credited to this booking, and your acceptance updates the remaining balance.</p>
+  <dl>
+    <div><dt>Package</dt><dd><span>@changeProposal.OriginalPackageName</span> → <strong>@changeProposal.NewPackageName</strong></dd></div>
+    <div><dt>Venue</dt><dd><span>@changeProposal.OriginalVenue</span> → <strong>@changeProposal.NewVenue</strong></dd></div>
+    <div><dt>End time</dt><dd>@changeProposal.OriginalEndTime.ToString("h:mm tt") → <strong>@changeProposal.NewEndTime.ToString("h:mm tt")</strong></dd></div>
+    <div><dt>Travel fee</dt><dd>&#8369;@changeProposal.OriginalTravelFee.ToString("N2") → <strong>&#8369;@changeProposal.NewTravelFee.ToString("N2")</strong></dd></div>
+    <div><dt>Booking total</dt><dd>&#8369;@changeProposal.OriginalFinalPrice.ToString("N2") → <strong>&#8369;@changeProposal.NewFinalPrice.ToString("N2")</strong></dd></div>
+    <div><dt>Already verified</dt><dd>&#8369;@changeProposal.VerifiedPaymentsAtProposal.ToString("N2")</dd></div>
+    <div><dt>New balance due</dt><dd><strong>&#8369;@changeProposal.NewRemainingBalance.ToString("N2")</strong></dd></div>
+    <div><dt>Staff explanation</dt><dd>@changeProposal.Reason</dd></div>
+  </dl>
+  <div class="booking-change-actions">
+    <form asp-controller="BookingChanges" asp-action="Accept" method="post">
+      @Html.AntiForgeryToken()
+      <input type="hidden" name="id" value="@Model.Id"/><input type="hidden" name="token" value="@changeProposal.Token"/>
+      <label class="form-check"><input type="checkbox" name="acceptChange" value="true" required/>
+        <span>I agree to the revised venue, package, event time, total and remaining balance shown above.</span></label>
+      <button type="submit" class="btn btn-primary">Accept revised booking</button>
+    </form>
+    <form asp-controller="BookingChanges" asp-action="Reject" method="post">
+      @Html.AntiForgeryToken()
+      <input type="hidden" name="id" value="@Model.Id"/><input type="hidden" name="token" value="@changeProposal.Token"/>
+      <button type="submit" class="btn btn-outline-secondary">Decline changes</button>
+    </form>
+  </div>
+</section>
+}
 <div class="cn-detail-layout">
 <section class="cn-event"><div class="cn-event-head"><div><span class="cn-reference">Your experience</span><h2>@Model.PackageName</h2></div><partial name="_StatusBadge" model="@(scheduleUnavailable ? "Schedule unavailable" : ClientBookingPresentation.Status(Model.Status))"/></div>
 <dl class="cn-facts"><div><dt>Event date</dt><dd>@Model.EventDate.ToString("dddd, MMMM d, yyyy")</dd></div><div><dt>Time</dt><dd>@Model.StartTime.ToString("h:mm tt")–@Model.EndTime.ToString("h:mm tt") @if(Model.EndTime.Date!=Model.StartTime.Date){<span>(@Model.EndTime.ToString("MMM d"))</span>}</dd></div><div><dt>Venue</dt><dd>@Model.PartyVenue</dd></div></dl>

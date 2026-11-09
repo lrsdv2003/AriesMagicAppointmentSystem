@@ -6,6 +6,10 @@
     Layout = "_DashboardLayout";
     ViewData["Title"] = "Booking Details";
     var isPending = Model.Status == BookingStatus.Pending;
+    var changeProposal = ViewBag.PendingConfirmedChange as ConfirmedBookingChangeProposal;
+    var canProposeChange = User.IsInRole("Staff")
+        && ConfirmedBookingChangePolicy.MayStart(Model,
+            TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, FeedbackPolicy.BusinessZone));
     var verifiedInitial = Model.Payments.Where(p => p.Status == PaymentStatus.Verified && p.InitialVerificationAtUtc.HasValue)
         .OrderBy(p => p.InitialVerificationAtUtc).FirstOrDefault();
     var hasClientCancelRequest = User.IsInRole("Staff")
@@ -54,6 +58,10 @@
     @if (TempData["Error"] != null)
     {
         <div class="alert alert-danger" role="alert">@TempData["Error"]</div>
+    }
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success" role="status">@TempData["Success"]</div>
     }
 
     <div class="staff-detail-grid">
@@ -189,6 +197,36 @@
                 </div>
             </div>
         }
+    @if(Model.Status == BookingStatus.Confirmed && User.IsInRole("Staff")){
+      @if(changeProposal != null){
+        <section class="booking-change-pending" aria-labelledby="staffChangePending">
+          <h2 id="staffChangePending">Awaiting Client approval</h2>
+          <p>Proposal sent @changeProposal.ProposedAtUtc.ToString("MMM d, yyyy") (UTC). The confirmed details and all verified payments remain unchanged until Client acceptance.</p>
+          <dl>
+            <div><dt>Proposed package</dt><dd>@changeProposal.NewPackageName</dd></div>
+            <div><dt>Proposed venue</dt><dd>@changeProposal.NewVenue</dd></div>
+            <div><dt>Revised total</dt><dd>&#8369;@changeProposal.NewFinalPrice.ToString("N2")</dd></div>
+            <div><dt>Verified payments</dt><dd>&#8369;@changeProposal.VerifiedPaymentsAtProposal.ToString("N2")</dd></div>
+            <div><dt>New balance</dt><dd>&#8369;@changeProposal.NewRemainingBalance.ToString("N2")</dd></div>
+            <div><dt>Reason</dt><dd>@changeProposal.Reason</dd></div>
+          </dl>
+          <form asp-controller="BookingChanges" asp-action="Withdraw" method="post" class="booking-change-actions">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="id" value="@Model.Id"/>
+            <input type="hidden" name="token" value="@changeProposal.Token"/>
+            <button type="submit" class="btn btn-outline-secondary">Withdraw proposal</button>
+          </form>
+        </section>
+      }else if(canProposeChange){
+        <div class="booking-change-pending">
+          <h2>Revise confirmed event</h2>
+          <p>Staff may propose a new venue or package. Travel fees, booking duration and payment balance are checked before the Client is asked to accept.</p>
+          <a class="btn btn-primary" asp-controller="BookingChanges" asp-action="Edit" asp-route-id="@Model.Id">
+             <i class="bi bi-pencil-square" aria-hidden="true"></i> Edit Booking Venue / Package
+          </a>
+        </div>
+      }
+    }
     @if(canStaffCancel){
       <div class="staff-round2-cancel-review">
         <h3>Client cancellation review</h3>

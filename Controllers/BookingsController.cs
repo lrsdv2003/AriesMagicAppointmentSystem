@@ -970,6 +970,8 @@ namespace AriesMagicAppointmentSystem.Controllers
                 .FirstOrDefaultAsync(b => b.Id == id && (!User.IsInRole("Client") || b.ApplicationUserId == User.FindFirstValue(ClaimTypes.NameIdentifier)));
 
             if (booking == null) return NotFound();
+            ViewBag.PendingConfirmedChange = booking.Status == BookingStatus.Confirmed
+                ? await ConfirmedBookingChangePolicy.PendingAsync(_context, booking.Id) : null;
 
             if (User.IsInRole("Staff") || User.IsInRole("Owner"))
             {

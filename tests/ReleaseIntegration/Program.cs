@@ -58,6 +58,7 @@ internal static class ReleaseIntegrationRunner
         Check(!BookingCancellationPolicy.IsClientDirectCancellationAllowed(cancellationBooking, new Payment { Status = PaymentStatus.Verified }, cancellationTime.AddHours(1)), "Legacy verified records without an immutable UTC timestamp are not assigned a fabricated window");
         Check(!BookingCancellationPolicy.IsClientDirectCancellationAllowed(new Booking { Status = BookingStatus.Completed }, cancellationPayment, cancellationTime.AddHours(1)), "Completed booking cannot be directly cancelled");
         Check(!BookingCancellationPolicy.IsClientDirectCancellationAllowed(new Booking { Status = BookingStatus.Confirmed, RefundEligible = true }, cancellationPayment, cancellationTime.AddHours(1)), "Already refund-eligible booking cannot be cancelled again");
+        if(args.SequenceEqual(new[]{"--confirmed-booking-change-policy-only"})) { ConfirmedBookingChangePolicyTests.Run(); return; }
         if(args.SequenceEqual(new[]{"--payment-window-only"})) { await InitialPaymentWindowTests.RunAsync(); return; }
         if(args.SequenceEqual(new[]{"--pro-max-event-fields"})) { ProMaxEventDetailsTests.Run(); return; }
         if(args.SequenceEqual(new[]{"--pro-max-refund-seed"})) { await ProMaxRefundFixtureSeed.RunAsync(); return; }
