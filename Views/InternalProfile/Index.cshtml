@@ -24,7 +24,8 @@
 }
 <h2>@Model.DisplayName</h2>
 <partial name="_DashboardBadge" model="Model.Role" />
-<p class="account-email">@Model.Email</p>
+<p class="account-email"><span class="owner-login-email-label">Login email</span><strong>@Model.Email</strong></p>
+@if(User.IsInRole("Owner")){<p><a asp-controller="OwnerEmail" asp-action="Index" class="btn btn-sm btn-outline-secondary">Manage login email securely</a></p>}
 <form asp-action="UploadPhoto" method="post" enctype="multipart/form-data" data-account-form>
 <label for="profilePhoto" class="form-label">@(Model.HasPhoto ? "Change photo" : "Upload photo")</label>
 <input id="profilePhoto" name="photo" type="file" accept="image/jpeg,image/png,image/webp" class="form-control" aria-describedby="photoHelp photoError" required />

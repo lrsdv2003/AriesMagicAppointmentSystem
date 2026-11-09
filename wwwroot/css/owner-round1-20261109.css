@@ -1,0 +1,71 @@
+/* Owner UI Improvements / Round 1 — scoped to Owner routes */
+.owner-dashboard .dashboard-topbar {position:sticky;top:0;z-index:1040;background:#061a30;border-bottom:1px solid #29415a;min-height:72px}
+.owner-dashboard .dashboard-sidebar {background:#06172a;border-right:1px solid #243e58}
+.owner-dashboard .dashboard-content {max-width:1500px;margin:0 auto}
+.owner-dashboard .dashboard-title,.owner-dashboard .workspace-breadcrumb {color:#e6edf9}
+.owner-dashboard .dashboard-shell {background:#06172a;color:#eaf1fb}
+.owner-dashboard .dash-panel,.owner-dashboard .dashboard-panel,.owner-dashboard .account-card,.owner-dashboard .owner-report-section {background:#0a233c;border:1px solid #27445e;border-radius:12px}
+.owner-dashboard .sidebar-link.active {background:#bc1741;color:#fff}
+.owner-dashboard .sidebar-link:focus-visible,.owner-dashboard button:focus-visible,.owner-dashboard a:focus-visible {outline:3px solid #69b2ff;outline-offset:2px}
+.owner-dashboard .btn-primary,.owner-dashboard .workspace-table-action {background:#1375d5;border-color:#1375d5;color:#fff}
+.owner-dashboard .btn-primary:hover,.owner-dashboard .workspace-table-action:hover {background:#0d60b2;border-color:#0d60b2}
+.owner-dashboard .owner-booking-code {color:#f9c23c}
+.owner-dashboard .owner-login-email-label {display:block;color:#a9bcd4;font-size:.77rem;text-transform:uppercase;letter-spacing:.06em}
+.owner-dashboard .account-email strong {overflow-wrap:anywhere}
+.owner-round1-heading {margin:0 0 24px}
+.owner-round1-heading h1 {font-size:clamp(1.65rem,2.5vw,2.2rem);margin:.35rem 0}
+.owner-round1-heading p,.owner-round1-requests .dash-section-heading p {color:#a8bad0;margin:0}
+.owner-round1-grid {display:grid;grid-template-columns:minmax(0,1.8fr) minmax(270px,.8fr);align-items:start;gap:16px}
+.owner-round1-requests {min-width:0;padding:20px}
+.owner-round1-requests .dash-section-heading h2 {font-size:1.2rem}
+.owner-round1-tabs {display:flex;gap:4px;border-bottom:1px solid #304c65;margin:18px 0 12px;flex-wrap:wrap}
+.owner-round1-tab {color:#b7cbe0;padding:10px 14px;border:0;border-bottom:3px solid transparent;background:transparent;border-radius:6px 6px 0 0;font-weight:600}
+.owner-round1-tab[aria-selected=true] {background:#114471;border-color:#55a9ff;color:#fff}
+.owner-round1-request-list {display:grid;gap:8px}
+.owner-round1-request-row {display:grid;grid-template-columns:minmax(130px,1.15fr) minmax(100px,.85fr) minmax(100px,.8fr) minmax(100px,.85fr) auto;gap:12px;align-items:center;border:1px solid #24445e;background:#0c2a45;border-radius:9px;padding:13px}
+.owner-round1-request-row>div {display:flex;flex-direction:column;min-width:0;gap:4px}
+.owner-round1-request-row span,.owner-round1-request-row small {font-size:.78rem;color:#b3c6db;overflow-wrap:anywhere}
+.owner-round1-request-row strong {font-size:.9rem;overflow-wrap:anywhere}
+.owner-round1-request-row .owner-booking-code {color:#f9c23c}
+.owner-round1-indicator {display:inline-block!important;border-radius:16px;padding:5px 8px;background:#403719;color:#ffda6b!important;max-width:max-content}
+.owner-round1-view-all {display:block;text-align:right;margin-top:16px;font-weight:600;color:#6bb6ff}
+.owner-round1-metrics {display:grid;gap:12px}
+.owner-round1-metric {display:flex;gap:14px;align-items:center;padding:18px;min-width:0}
+.owner-round1-metric>div {display:grid;gap:5px;min-width:0}
+.owner-round1-metric>div>span {color:#c6d7e9;font-size:.84rem}
+.owner-round1-metric strong {font-size:clamp(1.25rem,1.7vw,1.6rem);overflow-wrap:anywhere}
+.owner-round1-metric small {color:#a9bdd3}
+.owner-round1-metric-icon {flex:none;display:grid;place-items:center;width:40px;height:40px;border-radius:10px;color:#71c3ff;background:#123c61}
+.owner-round1-helper {color:#a9bed5;font-size:.85rem;padding:12px}
+.owner-dashboard .owner-audit-table {width:100%;font-size:.88rem}
+.owner-dashboard .owner-audit-table th {white-space:nowrap}
+.owner-dashboard .owner-proof-thumb {object-fit:cover}
+.owner-dashboard .owner-report-metrics {display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.owner-dashboard .owner-report-metrics>article {min-width:0;overflow-wrap:anywhere}
+.owner-dashboard .owner-report-metrics strong {font-size:clamp(1.1rem,1.7vw,1.5rem)}
+.owner-personnel-search {margin:12px 0;max-width:360px}
+.owner-personnel-search label {display:block;margin-bottom:5px}
+@media(max-width:1100px){.owner-round1-grid{grid-template-columns:1fr}.owner-round1-metrics{grid-template-columns:repeat(3,minmax(0,1fr))}.owner-round1-metric{align-items:flex-start}.owner-dashboard .owner-report-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:760px){.owner-round1-requests{padding:13px}.owner-round1-request-row{grid-template-columns:repeat(2,minmax(0,1fr))}.owner-round1-request-row .btn{justify-self:start}.owner-round1-metrics{grid-template-columns:1fr}.owner-dashboard .owner-report-metrics{grid-template-columns:1fr}}
+@media(max-width:440px){.owner-round1-request-row{grid-template-columns:1fr}.owner-round1-tabs{flex-direction:column}.owner-round1-tab{text-align:left}}
+
+/* Owner financial booking history — read-only review */
+.owner-dashboard .owner-booking-financial-details {margin-top:20px;padding:20px;min-width:0}
+.owner-dashboard .owner-booking-financial-details h3 {font-size:1rem;margin:24px 0 8px}
+.owner-booking-financial-metrics {display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:16px 0}
+.owner-booking-financial-metrics>div {background:#0e2b47;border:1px solid #294861;padding:14px;border-radius:9px;min-width:0}
+.owner-booking-financial-metrics dt {font-size:.82rem;color:#b0c4d9;font-weight:500}
+.owner-booking-financial-metrics dd {font-size:1.15rem;font-weight:700;margin:6px 0 0;overflow-wrap:anywhere}
+.owner-financial-caption {color:#aabfd4;font-size:.86rem}
+.owner-dashboard .owner-personnel-search input {background:#0a233d;color:#e9f1fc;border-color:#38536d}
+.owner-dashboard .personnel-console .dash-panel {padding:20px;margin-bottom:14px}
+.owner-dashboard .personnel-console form[method="post"] {row-gap:10px}
+.owner-dashboard .personnel-console label {color:#dbe7f6;font-weight:500}
+.owner-dashboard .personnel-console input,.owner-dashboard .personnel-console select {min-height:42px}
+.owner-dashboard .owner-financial-page .am-filter-bar,.owner-dashboard .owner-reports-page .am-filter-bar {border-radius:10px}
+.owner-dashboard .owner-report-section .owner-chart-card {min-width:0}
+.owner-dashboard .owner-report-section .owner-chart-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.owner-dashboard .owner-booking-financial-details .owner-audit-table td {vertical-align:top}
+.owner-dashboard .owner-cell-subtext {display:block;color:#afc0d6;font-size:.77rem;overflow-wrap:anywhere}
+@media(max-width:900px){.owner-booking-financial-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:650px){.owner-dashboard .owner-report-section .owner-chart-grid{grid-template-columns:1fr}.owner-booking-financial-metrics{grid-template-columns:1fr}}

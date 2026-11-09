@@ -5,7 +5,7 @@
 @{
     Layout = "_DashboardLayout";
     ViewData["Title"] = "Booking Details";
-    var isPending = Model.Status == BookingStatus.Pending;
+    var isPending = User.IsInRole("Staff") && Model.Status == BookingStatus.Pending;
     var changeProposal = ViewBag.PendingConfirmedChange as ConfirmedBookingChangeProposal;
     var canProposeChange = User.IsInRole("Staff")
         && ConfirmedBookingChangePolicy.MayStart(Model,
@@ -191,7 +191,7 @@
                         }
                         else
                         {
-                            <span>No further Staff booking decision is required for this record.</span>
+                            <span>@(User.IsInRole("Owner") ? "Booking actions are managed by Staff. Review this booking\u0027s financial history below." : "No further Staff booking decision is required for this record.")</span>
                         }
                     </p>
                 </div>
@@ -290,6 +290,8 @@
         </div>
     </div>
 }
+
+@if(User.IsInRole("Owner")){<partial name="_OwnerBookingFinancialDetails" model="Model" />}
 
 @section Scripts {
 <script>

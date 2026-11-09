@@ -966,6 +966,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                 .Include(b => b.Client)
                 .Include(b => b.Service)
                 .Include(b => b.Payments)
+                .ThenInclude(p => p.OcrVerifications)
                 .Include(b => b.RescheduleRequests)
                 .FirstOrDefaultAsync(b => b.Id == id && (!User.IsInRole("Client") || b.ApplicationUserId == User.FindFirstValue(ClaimTypes.NameIdentifier)));
 
@@ -983,6 +984,13 @@ namespace AriesMagicAppointmentSystem.Controllers
                          || (m.RelatedBookingId == booking.Id &&
                              m.Conversation.ConversationType == ConversationTypes.ClientSupport &&
                              m.Conversation.SupportClientId == booking.ApplicationUserId)));
+                if (User.IsInRole("Owner"))
+                {
+                    ViewBag.FinancialSummary = await _financialService.GetSummaryAsync(booking.Id);
+                    ViewBag.OwnerRefunds = await _context.RefundRequests.AsNoTracking()
+                        .Where(r => r.BookingId == booking.Id)
+                        .OrderByDescending(r => r.RequestedAt).ToListAsync();
+                }
                 return View("StaffDetails", booking);
             }
 
