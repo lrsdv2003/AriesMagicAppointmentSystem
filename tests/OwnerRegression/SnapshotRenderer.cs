@@ -82,7 +82,7 @@ static class SnapshotRenderer
         pages = pages.Concat(new (string Controller,string Action,object Model)[] {
             ("Personnel","Index",new AriesMagicAppointmentSystem.Controllers.PersonnelPage([
                 new("synthetic-staff","Synthetic Staff","staff@example.test","Staff","Active"),
-                new("synthetic-pending","Synthetic Admin","pending@example.test","Admin","Pending")],[],true,true)),
+                new("synthetic-pending","Former personnel","pending@example.test","Legacy internal","Disabled")],[],true,true)),
             ("PersonnelEnrollment","Accept",new AriesMagicAppointmentSystem.Controllers.PersonnelEnrollmentInput()),
             ("Feedback","Create",new FeedbackInput {BookingId=booking.Id,EventLabel=displayPackage.Name}),
             ("Feedback","Index",new ClientFeedbackPage([feedback],[feedbackBooking],1,1)),
@@ -126,9 +126,6 @@ static class SnapshotRenderer
                 PartyVenue="Synthetic review venue",ContactPerson="Synthetic client",ContactNumber="09123456789",
                 CancellationRequestAtUtc=DateTime.UtcNow.AddHours(-1),CancellationRequestReason="The client has a documented venue conflict.",
                 Payments=[new(){Status=PaymentStatus.Verified,Amount=2000,InitialVerificationAtUtc=DateTime.UtcNow.AddHours(-25)}]}),
-            ("UserManagement","Index",Enumerable.Range(1,12).Select(i=>new ApplicationUser {Id="fixture-"+i,FullName="Test User "+i,Email="user"+i+"@example.test",EmailConfirmed=i%2==0,IsActive=i%3!=0}).ToArray()),
-            ("UserManagement","Details",new ApplicationUser {Id="fixture-1",FullName="Test Staff",Email="staff@example.test",PhoneNumber="123456789",EmailConfirmed=true}),
-            ("Calendar","Index",new CalendarIndexViewModel {Manage=new CalendarManageViewModel {MaxBookingsPerDay=3,BlockedDates=[new BlockedDate {Id=1,Date=DateTime.Today.AddDays(10),Reason="System maintenance"}]}}),
             ("Calendar","Settings",new CalendarIndexViewModel {Manage=new CalendarManageViewModel {MaxBookingsPerDay=3,BlockedDates=[new BlockedDate {Id=1,Date=DateTime.Today.AddDays(10),Reason="System maintenance"}]}}),
             ("Personnel","EditStaff",new AriesMagicAppointmentSystem.Controllers.StaffProfileInput {Id="fixture-1",FullName="Test Staff",PhoneNumber="09123456789"}),
             ("TrashHistory","Details",new TrashHistoryDetailsViewModel {Trash=new TrashHistoryDetailViewModel {BookingCode="BK-2026-001",ClientName="Test Client",PackageName="Test Package",ReasonNotes="Request expired."}}),
@@ -137,13 +134,13 @@ static class SnapshotRenderer
         };
         pages = pages.Concat(filterPages).ToArray();
         if (dashboards != null)
-            pages = pages.Concat(new[]{"Staff","Owner","Admin"}.Select(role => (Controller:"Dashboard",Action:role,Model:(object)dashboards[role]))).ToArray();
-        var rendered = 0;
+            pages = pages.Concat(new[]{"Staff","Owner"}.Select(role => (Controller:"Dashboard",Action:role,Model:(object)dashboards[role]))).ToArray();
+        var rendered = 0;var renderedNames=new List<string>();
         foreach(var page in pages)
         {
             var isClientPage = page.Controller == "Feedback" || page.Controller == "Home" || page.Controller == "Profile" || page.Controller == "RescheduleRequests" && page.Action is "Create" or "MyRequests" || page.Controller == "Bookings" && new[]{"ClientDashboard","ClientDetails","Create","Cancel"}.Contains(page.Action) || page.Controller == "Payments" && new[]{"Upload","MyUploads","RequestRefund","MyRefundRequests"}.Contains(page.Action);
-            var defaultRole = page.Controller == "PersonnelEnrollment" ? "Guest" : isClientPage ? "Client" : page.Controller == "Testimonials" ? "Staff" : page.Controller == "Dashboard" ? page.Action : page.Action == "Admin" || page.Controller == "Calendar" && page.Action == "Index" ? "Admin" : page.Action == "MyBookings" ? "Client" : page.Action is "StaffIndex" or "StaffDetails" || page.Controller == "RescheduleRequests" ? "Staff" : page.Controller is "UserManagement" ? "Admin" : "Owner";
-            var roles = page.Controller == "Calendar" && page.Action == "StaffIndex" || page.Controller == "Bookings" && page.Action == "StaffDetails" ? new[] {"Staff", "Owner"} : page.Controller == "Account" ? new[] {"Guest"} : page.Controller == "Home" && (page.Action == "Index" || page.Action == "About" || page.Action == "Gallery") ? new[] {"Client","Guest"} : page.Controller == "History" ? new[] {"Owner","Staff"} : page.Controller == "InternalProfile" ? new[] { "Owner", "Staff", "Admin" } : page.Controller == "Services" && page.Action is "Index" or "Details" ? new[] { "Owner", "Staff", "Admin" } : page.Controller == "Communications" ? new[] { "Owner", "Admin", "Staff", "Client" } : page.Controller == "Notifications" ? new[] { "Owner", "Client" } : new[] { defaultRole };
+            var defaultRole = page.Controller == "PersonnelEnrollment" ? "Guest" : isClientPage ? "Client" : page.Controller == "Testimonials" ? "Staff" : page.Controller == "Dashboard" ? page.Action : page.Action == "MyBookings" ? "Client" : page.Action is "StaffIndex" or "StaffDetails" || page.Controller == "RescheduleRequests" ? "Staff" : "Owner";
+            var roles = page.Controller == "Calendar" && page.Action == "StaffIndex" || page.Controller == "Bookings" && page.Action == "StaffDetails" ? new[] {"Staff", "Owner"} : page.Controller == "Account" ? new[] {"Guest"} : page.Controller == "Home" && (page.Action == "Index" || page.Action == "About" || page.Action == "Gallery") ? new[] {"Client","Guest"} : page.Controller == "History" ? new[] {"Owner","Staff"} : page.Controller == "InternalProfile" ? new[] { "Owner", "Staff" } : page.Controller == "Services" && page.Action is "Index" or "Details" ? new[] { "Owner", "Staff" } : page.Controller == "Communications" ? new[] { "Owner", "Staff", "Client" } : page.Controller == "Notifications" ? new[] { "Owner", "Client" } : new[] { defaultRole };
             foreach (var role in roles)
             {
             foreach(var state in page.Controller == "Account" && page.Action == "Login" ? new[]{"populated","error","recovery-sent","reset-success","invalid-link","locked"} : page.Controller == "Account" && page.Action == "VerifyEmail" ? new[]{"populated","error","locked","expired"} : page.Controller == "Account" && page.Action is "Register" or "ResetPassword" ? new[]{"populated","error"} : page.Controller == "Home" && (page.Action == "Index" || page.Action == "About") ? new[]{"populated","published"} : page.Controller == "Home" && page.Action == "Packages" ? new[]{"populated","empty","edge"} : page.Controller == "Communications" ? (role=="Client" ? new[]{"populated","empty","inbox"} : new[]{"populated","empty"}) : page.Controller == "Dashboard" ? new[]{"populated","empty","error"} : page.Controller == "History" && page.Action == "Index" || page.Controller == "Bookings" && page.Action is "ClientDashboard" or "MyBookings" ? new[]{"populated","empty"} : new[]{"populated"})
@@ -195,7 +192,7 @@ static class SnapshotRenderer
             data["CancellationRequestLinked"]=true;
             data["PackageColors"] = new Dictionary<string,string> { ["Regression Package"] = "pink", ["Other Package"] = "blue" };
             data["BlockedDates"] = new[] { new { date=DateTime.Today.AddDays(2).ToString("yyyy-MM-dd"), reason="Fixture blocked date" } };
-            data["UserRoles"] = Enumerable.Range(1,12).ToDictionary(i=>"fixture-"+i,i=>new[]{"Client","Staff","Owner","Admin"}[i%4]);
+            data["UserRoles"] = Enumerable.Range(1,12).ToDictionary(i=>"fixture-"+i,i=>new[]{"Client","Staff","Owner"}[i%3]);
             data["Roles"]="Staff";data["CanManage"]=true;
             if(page.Controller=="Home" && state=="published") data["PublicTestimonials"]=new[] {
                 new ClientTestimonial("Synthetic visual test: a wonderful celebration from the first welcome to the final applause.","Consented fixture name","Birthday celebration",true,true,true) {OverallRating=5,PublicImageIds=[701]},
@@ -216,11 +213,13 @@ static class SnapshotRenderer
             using var writer = new StringWriter();
             var viewContext = new ViewContext(context,result.View,data,tempData,writer,new HtmlHelperOptions());
             await result.View.RenderAsync(viewContext);
-            await File.WriteAllTextAsync(Path.Combine(output,page.Controller+"-"+page.Action+(role != defaultRole && page.Controller != "Account" ? "-"+role : "")+(state=="populated" ? "" : "-"+state)+".html"),writer.ToString());
+            var fixtureName=page.Controller+"-"+page.Action+(role != defaultRole && page.Controller != "Account" ? "-"+role : "")+(state=="populated" ? "" : "-"+state)+".html";
+            await File.WriteAllTextAsync(Path.Combine(output,fixtureName),writer.ToString());renderedNames.Add(fixtureName);
             rendered++;
             }
             }
         }
+        await File.WriteAllTextAsync(Path.Combine(output,"current-fixtures.json"),System.Text.Json.JsonSerializer.Serialize(renderedNames));
         Console.WriteLine($"Rendered {rendered} role fixture pages to " + output);
     }
 }

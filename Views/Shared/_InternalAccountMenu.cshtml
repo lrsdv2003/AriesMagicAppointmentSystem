@@ -1,6 +1,6 @@
 @model AriesMagicAppointmentSystem.Models.ApplicationUser
 @{
-    var role = User.IsInRole("Owner") ? "Owner" : User.IsInRole("Admin") ? "Admin" : "Staff";
+    var role = User.IsInRole("Owner") ? "Owner" : "Staff";
     var name = string.IsNullOrWhiteSpace(Model.FullName) ? role + " User" : Model.FullName;
     var initials = string.Concat(name.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(n => n[0])).ToUpperInvariant();
 }

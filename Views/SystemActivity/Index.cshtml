@@ -45,7 +45,7 @@
                             {
                                 foreach (var t in Model.ActivityTypes)
                                 {
-                                    <option value="@((int)t)" selected="@(Model.TypeFilter == t)">@AdminActivityPresentation.Label(t)</option>
+                                    <option value="@((int)t)" selected="@(Model.TypeFilter == t)">@BusinessActivityPresentation.Label(t)</option>
                                 }
                             }
                         </select>
@@ -86,12 +86,12 @@
 @foreach(var activity in Model.Activities) {
 <tr>
 <td data-label="User">@(activity.PerformedByUserName ?? "Not recorded")</td>
-<td data-label="Role at time"><span class="admin-badge">@AdminActivityPresentation.ActorRole(activity)</span></td>
-<td data-label="Activity"><div><strong>@AdminActivityPresentation.Label(activity.Type)</strong><details><summary>View Details</summary><p>@activity.Description</p></details></div></td>
-<td data-label="Module"><span class="admin-badge">@AdminActivityPresentation.Category(activity.Type)</span></td>
-<td data-label="Target">@(activity.AffectedRecordType == null ? "Not recorded" : AdminActivityPresentation.Label(activity.AffectedRecordType) + " #" + activity.AffectedRecordId)</td>
+<td data-label="Role at time"><span class="admin-badge">@BusinessActivityPresentation.ActorRole(activity)</span></td>
+<td data-label="Activity"><div><strong>@BusinessActivityPresentation.Label(activity.Type)</strong><details><summary>View Details</summary><p>@activity.Description</p></details></div></td>
+<td data-label="Module"><span class="admin-badge">@BusinessActivityPresentation.Category(activity.Type)</span></td>
+<td data-label="Target">@(activity.AffectedRecordType == null ? "Not recorded" : BusinessActivityPresentation.Label(activity.AffectedRecordType) + " #" + activity.AffectedRecordId)</td>
 <td data-label="Date & time"><time datetime="@activity.CreatedAt.ToString("O")">@activity.CreatedAt.ToString("MMM d, yyyy h:mm tt")</time></td>
-<td data-label="Result"><span class="admin-badge @(AdminActivityPresentation.Result(activity.Type) == "Success" ? "admin-state-success" : "admin-state-neutral")">@AdminActivityPresentation.Result(activity.Type)</span></td>
+<td data-label="Result"><span class="admin-badge @(BusinessActivityPresentation.Result(activity.Type) == "Success" ? "admin-state-success" : "admin-state-neutral")">@BusinessActivityPresentation.Result(activity.Type)</span></td>
 </tr>
 }
 </tbody></table>@if(!Model.Activities.Any()) { <p class="admin-empty">No business activity found for the selected filters.</p> }</div>

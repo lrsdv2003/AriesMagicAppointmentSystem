@@ -9,7 +9,7 @@ namespace AriesMagicAppointmentSystem.Data
         {
             var roleManager = serviceProvider.GetRequiredService<RoleManager<IdentityRole>>();
 
-            string[] roles = { "Client", "Staff", "Admin", "Owner" };
+            var roles = ApplicationRoles.All;
 
             foreach (var role in roles)
             {

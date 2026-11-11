@@ -7,7 +7,7 @@
 <div><dt>Type</dt><dd><span class="admin-badge">Booking</span></dd></div><div><dt>Client</dt><dd>@item.ClientName</dd></div>
 <div><dt>Package</dt><dd>@item.PackageName</dd></div><div><dt>Created</dt><dd>@item.CreatedAt.ToString("MMM d, yyyy h:mm tt")</dd></div>
 <div><dt>Archived date</dt><dd>@(item.ArchiveDateRecorded ? item.ArchivedAt.ToString("MMM d, yyyy h:mm tt") : "Not recorded")</dd></div>
-<div><dt>Reason</dt><dd>@AdminActivityPresentation.Label(item.Reason)</dd></div>
+<div><dt>Reason</dt><dd>@BusinessActivityPresentation.Label(item.Reason)</dd></div>
 </dl>
 @if(!string.IsNullOrWhiteSpace(item.ReasonNotes)) { <details><summary>View archive notes</summary><p>@item.ReasonNotes</p></details> }
 </section><p class="admin-note">Archived bookings cannot be restored or permanently deleted through this module.</p>

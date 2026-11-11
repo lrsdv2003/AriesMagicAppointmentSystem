@@ -5,7 +5,7 @@
 @{
     Layout = "_DashboardLayout";
     ViewData["Title"] = "Event Calendar";
-    var useStaffColors = User.IsInRole("Staff") && !User.IsInRole("Owner") && !User.IsInRole("Admin");
+    var useStaffColors = User.IsInRole("Staff") && !User.IsInRole("Owner");
     var originalPackageColors = ViewBag.PackageColors as IDictionary<string, string> ?? new Dictionary<string, string>();
     var packageColors = originalPackageColors.ToDictionary(item => item.Key, item => useStaffColors
         ? item.Key.Contains("All In", StringComparison.OrdinalIgnoreCase) ? "gold"

@@ -1,13 +1,12 @@
 @model AriesMagicAppointmentSystem.ViewModels.RoleDashboardViewModel
 @{
-    var description = Model.RoleName == "Staff" ? "Manage booking requests, schedules, reschedules and client conversations." : Model.RoleName == "Admin" ? "Maintain accounts, packages and calendar settings with a clear view of system activity." : "Review payment proofs, refund requests and verified financial activity.";
+    var description = Model.RoleName == "Staff" ? "Manage booking requests, schedules, reschedules and client conversations." : "Review payment proofs, refund requests and verified financial activity.";
     var metrics = Model.WorkspaceMetrics.Any() ? Model.WorkspaceMetrics : Model.Metrics.Take(4).Select(m => new AriesMagicAppointmentSystem.ViewModels.WorkspaceMetric(m.Label,m.Value,m.Context ?? "","bi-grid","blue")).ToList();
 }
 <header class="dash-welcome">
     <div><span class="dash-eyebrow">@Model.RoleName workspace</span><h1>@Model.RoleName Dashboard</h1><p>@description</p></div>
     <div class="workspace-date-action"><time datetime="@Model.AsOf.ToString("O")"><i class="bi bi-calendar3" aria-hidden="true"></i>@Model.AsOf.ToString("MMM dd, yyyy")</time>
-    @if(Model.RoleName == "Admin"){<a class="dash-button" asp-controller="SystemActivity" asp-action="Index">View activity</a>}
-    else if(Model.RoleName == "Staff"){<a class="dash-button" asp-controller="Calendar" asp-action="Index">View calendar</a>}
+    @if(Model.RoleName == "Staff"){<a class="dash-button" asp-controller="Calendar" asp-action="Index">View calendar</a>}
     else{<a class="dash-button" asp-controller="Reports" asp-action="Index">Financial summary</a>}</div>
 </header>
 @if(Model.UnavailableSections.Any()){
@@ -19,7 +18,7 @@
 }
 </section>
 <section class="dash-attention" aria-labelledby="attentionHeading">
-    <h2 id="attentionHeading">@(Model.RoleName == "Admin" ? "Account attention" : "Needs attention")</h2>
+    <h2 id="attentionHeading">Needs attention</h2>
     @if(Model.Attention.Any()) {<nav aria-label="Items requiring attention">@foreach(var item in Model.Attention){<a href="@item.Href">@item.Label <strong>@item.Detail</strong><i class="bi bi-arrow-up-right" aria-hidden="true"></i></a>}</nav>}
     else if(!Model.UnavailableSections.Any()){<p>No items currently require your attention.</p>}
 </section>

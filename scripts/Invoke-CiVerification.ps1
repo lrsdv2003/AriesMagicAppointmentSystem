@@ -15,7 +15,7 @@ try {
     $env:BackgroundJobs__Enabled = 'false'
     & SqlLocalDB start $testInstance *> $null
     if ($LASTEXITCODE) { throw 'Could not start the isolated SQL instance.' }
-    foreach ($project in @('AriesMagicAppointmentSystem.csproj','tests/OwnerRegression/OwnerRegression.csproj','tests/ReleaseIntegration/ReleaseIntegration.csproj','tests/DataProtection/DataProtection.csproj','tests/ReleasePackaging/ReleasePackaging.csproj','tests/ClientVisual/ClientVisual.csproj')) {
+    foreach ($project in @('AriesMagicAppointmentSystem.csproj','tests/OwnerRegression/OwnerRegression.csproj','tests/ReleaseIntegration/ReleaseIntegration.csproj','tests/DataProtection/DataProtection.csproj','tests/ReleasePackaging/ReleasePackaging.csproj','tests/ClientVisual/ClientVisual.csproj','tests/PersonnelOperator/PersonnelOperator.csproj','tests/OwnerEmailDelivery/OwnerEmailDelivery.csproj')) {
         & dotnet restore $project
         if ($LASTEXITCODE) { throw 'Dependency restore failed.' }
         & dotnet build $project --configuration Release --no-restore
@@ -31,6 +31,12 @@ try {
         & dotnet @arguments
         if ($LASTEXITCODE) { throw "Isolated $suite checks failed." }
     }
+    & dotnet tests/ReleaseIntegration/bin/Release/net10.0/ReleaseIntegration.dll --personnel-only
+    if ($LASTEXITCODE) { throw 'Three-role personnel, legacy-session and Identity enrollment checks failed.' }
+    & dotnet tests/ReleaseIntegration/bin/Release/net10.0/ReleaseIntegration.dll --personnel-operator-only
+    if ($LASTEXITCODE) { throw 'Offline exact-identity operator safeguards failed.' }
+    & dotnet tests/OwnerEmailDelivery/bin/Release/net10.0/OwnerEmailDelivery.dll
+    if ($LASTEXITCODE) { throw 'Owner email security checks failed.' }
     & npm ci --ignore-scripts --no-audit --no-fund
     if ($LASTEXITCODE) { throw 'Locked DOM tooling install failed.' }
     & npm run test:dom

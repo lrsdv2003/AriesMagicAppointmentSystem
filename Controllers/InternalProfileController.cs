@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 namespace AriesMagicAppointmentSystem.Controllers;
 
-[Authorize(Roles = "Staff,Admin,Owner")]
+[Authorize(Roles = "Staff,Owner")]
 [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
 public sealed class InternalProfileController(UserManager<ApplicationUser> users, SignInManager<ApplicationUser> signIn,
     IWebHostEnvironment environment, ISystemActivityService activity, ILogger<InternalProfileController> logger) : Controller

@@ -10,16 +10,18 @@ namespace AriesMagicAppointmentSystem.Extensions
     /// </summary>
     public static class RoleAccessExtensions
     {
+        public static bool IsAuthenticatedWithActiveRole(this ClaimsPrincipal user) => user.Identity?.IsAuthenticated==true && AriesMagicAppointmentSystem.Models.ApplicationRoles.All.Any(user.IsInRole);
+
         // Bookings
         public static bool CanManageBookingRecords(this ClaimsPrincipal user) =>
             user.IsInRole("Staff") || user.IsInRole("Owner");
 
         // Packages / Services
         public static bool CanViewPackages(this ClaimsPrincipal user) =>
-            user.IsInRole("Staff") || user.IsInRole("Admin") || user.IsInRole("Owner");
+            user.IsInRole("Staff") || user.IsInRole("Owner");
 
         public static bool CanEditPackages(this ClaimsPrincipal user) =>
-            user.IsInRole("Admin") || user.IsInRole("Owner");
+            user.IsInRole("Owner");
 
         // Payments / Refunds (business decisions belong to Owner only)
         public static bool CanVerifyPayments(this ClaimsPrincipal user) =>
@@ -37,10 +39,10 @@ namespace AriesMagicAppointmentSystem.Extensions
 
         // Calendar
         public static bool CanViewCalendar(this ClaimsPrincipal user) =>
-            user.IsInRole("Staff") || user.IsInRole("Admin") || user.IsInRole("Owner");
+            user.IsInRole("Staff") || user.IsInRole("Owner");
 
         public static bool CanManageCalendarSettings(this ClaimsPrincipal user) =>
-            user.IsInRole("Admin");
+            user.IsInRole("Owner");
 
         // Reports
         public static bool CanViewReports(this ClaimsPrincipal user) =>
@@ -48,7 +50,7 @@ namespace AriesMagicAppointmentSystem.Extensions
 
         // Users
         public static bool CanManageUsers(this ClaimsPrincipal user) =>
-            user.IsInRole("Admin");
+            user.IsInRole("Owner");
 
         // History (archived / completed bookings)
         public static bool CanViewHistory(this ClaimsPrincipal user) =>
@@ -61,10 +63,11 @@ namespace AriesMagicAppointmentSystem.Extensions
         // Presentation guard for historical links; destination endpoints enforce authorization.
         public static bool CanFollowModuleLink(this ClaimsPrincipal user, string? link)
         {
-            if (!user.IsInRole("Admin") || string.IsNullOrWhiteSpace(link)) return true;
-            var module = link.TrimStart('/').Split('/', '?', '#')[0];
-            return !new[] { "Payments", "Bookings", "RescheduleRequests", "Reports", "History" }
-                .Contains(module, StringComparer.OrdinalIgnoreCase);
+            if(!user.IsAuthenticatedWithActiveRole() || string.IsNullOrWhiteSpace(link))return false;
+            var path=link.TrimStart('/').Split('?', '#')[0];
+            return !path.Equals("UserManagement",StringComparison.OrdinalIgnoreCase) && !path.StartsWith("UserManagement/",StringComparison.OrdinalIgnoreCase)
+                && !path.Equals("Dashboard/Admin",StringComparison.OrdinalIgnoreCase);
+
         }
 
         // Nobody can edit an archived/completed booking through the History module -

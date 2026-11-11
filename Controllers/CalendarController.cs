@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AriesMagicAppointmentSystem.Controllers
 {
-    [Authorize(Roles = "Staff,Admin,Owner")]
+    [Authorize(Roles = "Staff,Owner")]
     public class CalendarController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -25,17 +25,12 @@ namespace AriesMagicAppointmentSystem.Controllers
         }
 
         /// <summary>
-        /// For Admin: shows calendar administration tools (blocked dates, limits).
+        /// Owner Settings manages blocked dates; fixed capacity remains unchanged.
         /// For Staff/Owner: shows operational calendar with bookings.
         /// </summary>
        [HttpGet]
         public async Task<IActionResult> Index(bool showHistorical = false)
         {
-            if (User.IsInRole("Admin"))
-            {
-                return await AdminIndexAsync();
-            }
-
             // Keep the operational calendar honest: anything whose event time has passed moves
             // out of "Confirmed" (and off this calendar) automatically.
             await _historyService.ArchiveDueBookingsAsync();
@@ -121,13 +116,11 @@ namespace AriesMagicAppointmentSystem.Controllers
         [HttpGet,Authorize(Roles="Owner")]
         public Task<IActionResult> Settings() => AvailabilitySettingsAsync();
 
-        private Task<IActionResult> AdminIndexAsync() => AvailabilitySettingsAsync();
-
         private async Task<IActionResult> AvailabilitySettingsAsync()
         {
             var model = new CalendarIndexViewModel
             {
-                Bookings = new List<Booking>(), // Admin doesn't see operational bookings
+                Bookings = new List<Booking>(), // Availability configuration is separate from Staff event coordination
                 Manage = new CalendarManageViewModel
                 {
                     MaxBookingsPerDay = BookingRules.MaximumDailyBookings,
@@ -186,7 +179,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             return Json(reservations);
         }
 
-        [Authorize(Roles = "Admin,Owner")]
+        [Authorize(Roles = "Owner")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> BlockDateAjax(
@@ -279,11 +272,12 @@ namespace AriesMagicAppointmentSystem.Controllers
             }
         }
 
-        [Authorize(Roles = "Admin,Owner")]
+        [Authorize(Roles = "Owner")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> UnblockDateAjax(int id)
         {
+            await using var transaction = await _context.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
             var blocked = await _context.BlockedDates.FindAsync(id);
             if (blocked == null)
             {
@@ -305,6 +299,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                 "BlockedDate"
             );
 
+            await transaction.CommitAsync();
             return Json(new { success = true, message = "Blocked date removed successfully." });
         }
 

@@ -17,6 +17,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 static class OwnerTransferRegression
 {
+ static bool Deadlock(Exception? error)=>error!=null&&(error is Microsoft.Data.SqlClient.SqlException sql&&sql.Number==1205||Deadlock(error.InnerException));
  public static async Task RunAsync(ApplicationDbContext db,Action<bool,string> check)
  {
   var services=new ServiceCollection().AddLogging().AddAuthorization().AddSingleton(db);
@@ -66,6 +67,20 @@ static class OwnerTransferRegression
   var free=day.AddDays(1);var blocked=(JsonResult)await calendar.BlockDateAjax(new(){BlockDate=free,BlockReason="Authorized fixture closure"});check(JsonSerializer.SerializeToElement(blocked.Value).GetProperty("success").GetBoolean(),"Owner can block an unreserved date");
   var block=await db.BlockedDates.SingleAsync(x=>x.Date==free);await calendar.UnblockDateAjax(block.Id);check(!await db.BlockedDates.AnyAsync(x=>x.Date==free),"Owner can unblock date through existing audited flow");
   check(booking.Status==BookingStatus.Confirmed&&booking.EventDate==day,"Availability administration preserves confirmed booking");
+  // Independent SQL contexts race availability administration against actual payment confirmation.
+  var raceDay=day.AddDays(2);var raceBooking=new Booking{Client=client,Service=package,PackageName=package.Name,FinalPrice=10000,RequiredDownpayment=2000,EventDate=raceDay,StartTime=raceDay.AddHours(9),EndTime=raceDay.AddHours(12),Status=BookingStatus.AwaitingVerification};
+  var racePayment=new Payment{Booking=raceBooking,Amount=2000,Status=PaymentStatus.Pending};db.Add(racePayment);await db.SaveChangesAsync();
+  var raceOptions=new DbContextOptionsBuilder<ApplicationDbContext>().UseSqlServer(db.Database.GetConnectionString()).Options;
+  async Task Race(bool blocking){
+   await using var connection=new ApplicationDbContext(raceOptions);var request=new DefaultHttpContext{User=principal};
+   try{
+    if(blocking)await new CalendarController(connection,null!,new SystemActivityService(connection)){ControllerContext=new(){HttpContext=request}}.BlockDateAjax(new(){BlockDate=raceDay,BlockReason="Synthetic concurrent closure"});
+    else await new PaymentsController(connection,null!,null!,null!,null!,null!,new SystemActivityService(connection),new Microsoft.Extensions.Configuration.ConfigurationBuilder().Build(),new PaymentFinancialService(connection)){ControllerContext=new(){HttpContext=request},TempData=new TempDataDictionary(request,new EmptyTempData())}.VerifyConfirmed(racePayment.Id,2000,null,null);
+   }catch(Exception ex) when(Deadlock(ex)){/* A SQL deadlock victim rolls back; invariant is read afresh below. */}
+  }
+  await Task.WhenAll(Race(true),Race(false));
+  var dateIsBlocked=await db.BlockedDates.AsNoTracking().AnyAsync(x=>x.Date==raceDay);var eventIsConfirmed=await db.Bookings.AsNoTracking().AnyAsync(x=>x.Id==raceBooking.Id&&x.Status==BookingStatus.Confirmed);
+  check(dateIsBlocked!=eventIsConfirmed,"Concurrent calendar block and payment confirmation cannot commit an invalid confirmed schedule");
   db.SystemActivities.Add(new(){Type=SystemActivityType.LoginFailed,Description="Technical diagnostic sentinel",PerformedByUserId="fixture"});await db.SaveChangesAsync();
   var activity=(SystemActivityIndexViewModel)((ViewResult)await new SystemActivityController(audit).Index()).Model!;
   check(activity.Activities.All(x=>BusinessActivityTypes.All.Contains(x.Type))&&!activity.ActivityTypes.Contains(SystemActivityType.LoginFailed),"Business activity excludes protected technical authentication diagnostics");

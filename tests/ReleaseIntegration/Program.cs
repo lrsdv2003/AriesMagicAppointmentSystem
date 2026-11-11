@@ -84,7 +84,7 @@ internal static class ReleaseIntegrationRunner
         var database = "AriesReleaseIntegration_" + Guid.NewGuid().ToString("N");
         var localInstance = Environment.GetEnvironmentVariable("ARIES_TEST_LOCALDB_INSTANCE") ?? "MSSQLLocalDB";
         if (!Regex.IsMatch(localInstance, "^[A-Za-z][A-Za-z0-9_-]{0,63}$")) throw new Exception("Invalid local test instance name.");
-        var connection = $"Server=(localdb)\\{localInstance};Database={database};Integrated Security=True;TrustServerCertificate=True";
+        var connection = Environment.GetEnvironmentVariable("ARIES_TEST_USE_DEFAULT_SQL")=="true"?$"Server=.;Database={database};Integrated Security=True;TrustServerCertificate=True":$"Server=(localdb)\\{localInstance};Database={database};Integrated Security=True;TrustServerCertificate=True";
         var options = new DbContextOptionsBuilder<ApplicationDbContext>().UseSqlServer(connection).Options;
         // Native Windows OCR cannot reliably open deeply nested checkout paths.
         var root = Path.Combine(Path.GetTempPath(), database);
@@ -122,7 +122,7 @@ internal static class ReleaseIntegrationRunner
             await IdentitySeeder.SeedAsync(scope.ServiceProvider);
             var users = scope.ServiceProvider.GetRequiredService<Microsoft.AspNetCore.Identity.UserManager<ApplicationUser>>();
             var passwords = new Dictionary<string,string>();
-            foreach (var role in new[] {"Client","Staff","Admin","Owner"})
+            foreach (var role in ApplicationRoles.All)
             {
                 var user = new ApplicationUser { UserName=role.ToLowerInvariant()+"@example.test", Email=role.ToLowerInvariant()+"@example.test", FullName="Isolated "+role, EmailConfirmed=true, PhoneNumber="09123456789" };
                 passwords[role] = Password();
@@ -131,13 +131,12 @@ internal static class ReleaseIntegrationRunner
             var package = new Service {Name="Release fixture",Price=10000,DurationInHours=1}; db.Services.Add(package); await db.SaveChangesAsync();
             using var client = await Login(factory,"Client",passwords["Client"]);
             using var staff = await Login(factory,"Staff",passwords["Staff"]);
-            using var admin = await Login(factory,"Admin",passwords["Admin"]);
             using var owner = await Login(factory,"Owner",passwords["Owner"]);
             var otherPassword=Password();
             var otherUser=new ApplicationUser{UserName="otherclient@example.test",Email="otherclient@example.test",EmailConfirmed=true,FullName="Other isolated Client"};
             Check((await users.CreateAsync(otherUser,otherPassword)).Succeeded&&(await users.AddToRoleAsync(otherUser,"Client")).Succeeded,"Provision unrelated Client with generated credentials");
             using var otherClient=await Login(factory,"OtherClient",otherPassword);
-            foreach(var pair in new[]{(client,"/Bookings/MyBookings"),(staff,"/Dashboard/Staff"),(admin,"/Dashboard/Admin"),(owner,"/Dashboard/Owner")})
+            foreach(var pair in new[]{(client,"/Bookings/MyBookings"),(staff,"/Dashboard/Staff"),(owner,"/Dashboard/Owner")})
                 Check((await pair.Item1.GetAsync(pair.Item2)).StatusCode==HttpStatusCode.OK,"Real cookie opens "+pair.Item2);
             var clientToken=await GetToken(client,"/Account/Login");
             var staffToken=await GetToken(staff,"/Dashboard/Staff");
@@ -159,7 +158,7 @@ internal static class ReleaseIntegrationRunner
                 Check(reply.StatusCode==HttpStatusCode.Redirect,"Staff reply persists through the existing endpoint");
             using (var inbox=await client.GetAsync("/Communications/Index?view=inbox")) {
                 var html=await inbox.Content.ReadAsStringAsync();
-                Check(inbox.StatusCode==HttpStatusCode.OK&&!html.Contains("id=\"commComposer\"")&&html.Contains("Aries Magic Support"),"Client inbox shows conversations without automatically opening a thread");
+                Check(inbox.StatusCode==HttpStatusCode.OK&&!html.Contains("id=\"commComposer\"")&&html.Contains("data-conversation-id=\"0\"")&&html.Contains("hub-messages")&&html.Contains("Your inbox"),"Client inbox shows conversations without automatically opening a thread");
             }
             using (var unread=await client.GetAsync("/Communications/UnreadCount"))
                 Check((await unread.Content.ReadAsStringAsync()).Contains("\"count\":1"),"Opening the inbox preserves an unread staff reply");
@@ -174,14 +173,14 @@ internal static class ReleaseIntegrationRunner
                 Check(deniedSend.StatusCode==HttpStatusCode.Forbidden||deniedSend.StatusCode==HttpStatusCode.Redirect,"Unrelated client cannot send into private conversation");
             using (var noCsrf=await client.PostAsync("/Communications/SendMessage",new FormUrlEncodedContent(new Dictionary<string,string>{{"conversationId",supportId.ToString()},{"messageContent","Missing token"}})))
                 Check(noCsrf.StatusCode==HttpStatusCode.BadRequest,"Message sending still requires anti-forgery token");
-            foreach(var denied in new[]{client,staff,admin}) {
+            foreach(var denied in new[]{client,staff}) {
                 using var response=await Post(denied,"/Payments/Verify/1",clientToken);
                 Check(response.StatusCode==HttpStatusCode.Redirect && response.Headers.Location!.ToString().Contains("AccessDenied"),"Real cookie cannot bypass Owner-only payment verification");
             }
             var date=DateTime.Today.AddDays(40).ToString("yyyy-MM-dd");
             (string,string)[] bookingFields=[("EventType","Company Events"),("Motif","Blue"),("PartyTheme","Corporate"),("EventDate",date),("StartTime","09:00:00"),
                 ("PartyVenue","Fixture venue"),("PaxCount","25"),("ContactPerson","Fixture Client"),("ContactNumber","09123456789"),("ServiceId",package.Id.ToString()),
-                ("AcceptTerms","true"),("AcceptedTermsVersion","2026-11-03-v2"),("FinalPrice","0.01"),("TravelFee","-99999"),("VenueLatitude","14.58125"),("VenueLongitude","121.1258"),("VenueSelectionMethod","Search"),("CustomerConfirmedLocation","true")];
+                ("AcceptTerms","true"),("AcceptedTermsVersion","2026-11-08-v3"),("FinalPrice","0.01"),("TravelFee","-99999"),("VenueLatitude","14.58125"),("VenueLongitude","121.1258"),("VenueSelectionMethod","Search"),("CustomerConfirmedLocation","true")];
             using(var response=await Post(client,"/Bookings/SubmitBooking",clientToken,bookingFields)) Check(response.StatusCode==HttpStatusCode.Redirect,"Client booking submitted over authenticated HTTP");
             var booking=await db.Bookings.AsNoTracking().SingleAsync();
             Check(booking.FinalPrice==10000 && booking.TravelFee==0 && booking.VenueLatitude==14.58125
@@ -196,16 +195,12 @@ internal static class ReleaseIntegrationRunner
                 Check(row.GetProperty("PaymentOptions").EnumerateArray().Select(o=>(o.GetProperty("Key").GetString()!,o.GetProperty("Amount").GetDecimal())).SequenceEqual(new[]{("Minimum",2000m),("Half",5000m),("Full",10000m)}),"Payment choice amounts are serialized from server-calculated options");
             }
             using(var contextPage=await otherClient.GetAsync($"/Payments/Upload?bookingId={booking.Id}"))Check(!(await contextPage.Content.ReadAsStringAsync()).Contains("id=\"clientBookingContext\""),"Concierge payment metadata does not expose an unrelated booking");
-            using(var contextPage=await client.GetAsync($"/RescheduleRequests/Create?bookingId={booking.Id}")) {
-                var html=await contextPage.Content.ReadAsStringAsync();var payload=Regex.Match(html,"id=\"clientBookingContext\">(.*?)</script>",RegexOptions.Singleline).Groups[1].Value;
-                using var doc=System.Text.Json.JsonDocument.Parse(payload);var row=doc.RootElement.EnumerateArray().Single();
-                Check(row.GetProperty("DurationHours").GetInt32()==package.DurationInHours&&row.GetProperty("Start").GetString()=="09:00","Concierge calendar receives actual own-booking duration and current time");
-            }
+            using(var unavailable=await client.GetAsync($"/RescheduleRequests/Create?bookingId={booking.Id}"))Check(!(await unavailable.Content.ReadAsStringAsync()).Contains("id=\"clientBookingContext\""),"Unconfirmed booking cannot expose eligible reschedule metadata");
             using(var contextPage=await otherClient.GetAsync($"/RescheduleRequests/Create?bookingId={booking.Id}"))Check(!(await contextPage.Content.ReadAsStringAsync()).Contains("id=\"clientBookingContext\""),"Concierge schedule metadata does not expose an unrelated booking");
             var png=await File.ReadAllBytesAsync("tests/ReleaseIntegration/Fixtures/payment.png");
             async Task<HttpResponseMessage> Upload(string option, int expectedLatestPaymentId = 0, decimal forgedAmount = 99999m) {
                 var form=new MultipartFormDataContent(); form.Add(new StringContent(clientToken),"__RequestVerificationToken");
-                form.Add(new StringContent(expectedLatestPaymentId.ToString()),"ExpectedLatestPaymentId");
+                form.Add(new StringContent(expectedLatestPaymentId.ToString()),"ExpectedLatestPaymentId");form.Add(new StringContent("true"),"AcknowledgesPaymentTerms");
                 form.Add(new StringContent(booking.Id.ToString()),"BookingId");form.Add(new StringContent(forgedAmount.ToString(System.Globalization.CultureInfo.InvariantCulture)),"Amount");form.Add(new StringContent(option),"PaymentOption");form.Add(new StringContent("GCash"),"PaymentMethod");
                 var image=new ByteArrayContent(png);image.Headers.ContentType=new("image/png");form.Add(image,"ProofImage","proof.png");
                 return await client.PostAsync("/Payments/Upload",form);
@@ -238,6 +233,12 @@ internal static class ReleaseIntegrationRunner
                 &&p.ExpectedAmountAtUpload==2000m&&p.Amount==2000m),
                 "Correction preserves original expected amount and Owner confirmed financial ledger");
             Check(await db.Bookings.AsNoTracking().AnyAsync(b=>b.Id==booking.Id&&b.Status==BookingStatus.Confirmed),"Verified downpayment confirms booking in SQL");
+            using(var contextPage=await client.GetAsync($"/RescheduleRequests/Create?bookingId={booking.Id}")) {
+                var html=await contextPage.Content.ReadAsStringAsync();var payload=Regex.Match(html,"id=\"clientBookingContext\">(.*?)</script>",RegexOptions.Singleline).Groups[1].Value;
+                using var doc=System.Text.Json.JsonDocument.Parse(payload);var row=doc.RootElement.EnumerateArray().Single();
+                Check(row.GetProperty("DurationHours").GetInt32()==package.DurationInHours&&row.GetProperty("Start").GetString()=="09:00","Concierge calendar receives actual own-booking duration and current time");
+            }
+
             var finance=await new PaymentFinancialService(db).GetSummaryAsync(booking.Id);
             Check(finance.TotalVerifiedPayments==2000 && finance.RemainingBalance==8000,"Verified downpayment reduces outstanding balance exactly once");
             using(var response=await Post(owner,$"/Payments/Verify/{payment.Id}",ownerToken)) Check(response.StatusCode==HttpStatusCode.Redirect,"Duplicate verification safely redirects");
@@ -262,7 +263,7 @@ internal static class ReleaseIntegrationRunner
             using(var cancel=await Post(client,"/Bookings/Cancel",clientToken,("id",booking.Id.ToString()))) Check(cancel.StatusCode==HttpStatusCode.Redirect,"Client cancels within the verified 24-hour window");
             Check(await db.Bookings.AnyAsync(b=>b.Id==booking.Id&&b.Status==BookingStatus.Cancelled&&b.RefundEligible&&b.RefundEligibilityReason=="ClientCancellationWithin24Hours"),"Client cancellation and system refund eligibility are recorded together");
             var refundToken=await GetToken(client,$"/Payments/RequestRefund?bookingId={booking.Id}");
-            using(var refundForm=new FormUrlEncodedContent(new Dictionary<string,string>{{"PaymentId",payment.Id.ToString()},{"GCashAccountName","Isolated Client"},{"GCashNumber","09123456789"},{"__RequestVerificationToken",refundToken}}))
+            using(var refundForm=new FormUrlEncodedContent(new Dictionary<string,string>{{"PaymentId",payment.Id.ToString()},{"GCashAccountName","Isolated Client"},{"GCashNumber","09123456789"},{"RefundAcknowledged","true"},{"__RequestVerificationToken",refundToken}}))
             using(var response=await client.PostAsync("/Payments/RequestRefund",refundForm)) Check(response.StatusCode==HttpStatusCode.Redirect,"Client requests review for the verified payment linked to the recorded cancellation");
             var refund=await db.RefundRequests.AsNoTracking().SingleAsync();
             Check(refund.EligibilityReason=="ClientCancellationWithin24Hours"&&refund.Amount==payment.Amount&&refund.OriginalPaymentId==payment.Id,"Refund amount and reason come from the verified eligible payment record");
@@ -298,7 +299,7 @@ internal static class ReleaseIntegrationRunner
             using(var staffCancel=await Post(staff,"/Bookings/CancelAfterReview",staffToken,("id",reviewBooking.Id.ToString()),("reason","Venue conflict was reviewed and the client request is valid.")))
                 Check(staffCancel.StatusCode==HttpStatusCode.Redirect&&await db.Bookings.AnyAsync(b=>b.Id==reviewBooking.Id&&b.Status==BookingStatus.Cancelled&&b.RefundEligible&&b.RefundEligibilityReason=="StaffApprovedCancellation"),"Staff cancellation creates audit and Owner refund eligibility without approving payment");
             var staffRefundToken=await GetToken(client,$"/Payments/RequestRefund?bookingId={reviewBooking.Id}");
-            using(var form=new FormUrlEncodedContent(new Dictionary<string,string>{{"PaymentId",reviewPayment.Id.ToString()},{"GCashAccountName","Isolated Client"},{"GCashNumber","09123456789"},{"__RequestVerificationToken",staffRefundToken}}))
+            using(var form=new FormUrlEncodedContent(new Dictionary<string,string>{{"PaymentId",reviewPayment.Id.ToString()},{"GCashAccountName","Isolated Client"},{"GCashNumber","09123456789"},{"RefundAcknowledged","true"},{"__RequestVerificationToken",staffRefundToken}}))
             using(var response=await client.PostAsync("/Payments/RequestRefund",form)) Check(response.StatusCode==HttpStatusCode.Redirect,"Client may request refund review after Staff-approved cancellation");
             var staffRefund=await db.RefundRequests.AsNoTracking().SingleAsync(r=>r.OriginalPaymentId==reviewPayment.Id);
             Check(staffRefund.EligibilityReason=="StaffApprovedCancellation"&&staffRefund.Amount==reviewPayment.Amount,"Staff cancellation refund ties to the system-approved reason and exact verified amount");
@@ -539,7 +540,16 @@ internal static class ReleaseIntegrationRunner
         var restored=database+"_restored";
         var master=new SqlConnectionStringBuilder(connection){InitialCatalog="master"}.ConnectionString;
         await using var sql=new SqlConnection(master);await sql.OpenAsync();
-        var backup=Path.Combine(root,"synthetic.bak");
+        // LocalDB runs as the operator; the explicitly opted-in local Windows SQL service does not.
+        // Use that instance's existing SQL-owned directories, never change ACLs or service identity.
+        var backupRoot=root;var dataRoot=root;var logRoot=root;
+        if(Environment.GetEnvironmentVariable("ARIES_TEST_USE_DEFAULT_SQL")=="true") {
+            using var paths=new SqlCommand("SELECT CONVERT(nvarchar(4000),SERVERPROPERTY('InstanceDefaultBackupPath')), CONVERT(nvarchar(4000),SERVERPROPERTY('InstanceDefaultDataPath')), CONVERT(nvarchar(4000),SERVERPROPERTY('InstanceDefaultLogPath'))",sql);
+            using var reader=await paths.ExecuteReaderAsync();await reader.ReadAsync();
+            backupRoot=reader.GetString(0);dataRoot=reader.GetString(1);logRoot=reader.GetString(2);
+            if(!Path.IsPathFullyQualified(backupRoot)||!Path.IsPathFullyQualified(dataRoot)||!Path.IsPathFullyQualified(logRoot))throw new Exception("SQL-owned local staging paths unavailable.");
+        }
+        var backup=Path.Combine(backupRoot,database+"_synthetic.bak");
         async Task Execute(string text,params (string,object)[] values) {using var cmd=new SqlCommand(text,sql){CommandTimeout=120};foreach(var pair in values)cmd.Parameters.AddWithValue(pair.Item1,pair.Item2);await cmd.ExecuteNonQueryAsync();}
         await Execute($"BACKUP DATABASE [{database}] TO DISK=@path WITH COPY_ONLY, CHECKSUM",("@path",backup));
         await Execute("RESTORE VERIFYONLY FROM DISK=@path WITH CHECKSUM",("@path",backup));
@@ -549,7 +559,7 @@ internal static class ReleaseIntegrationRunner
             using(var cmd=new SqlCommand("RESTORE FILELISTONLY FROM DISK=@path",sql)) {cmd.Parameters.AddWithValue("@path",backup);using var reader=await cmd.ExecuteReaderAsync();while(await reader.ReadAsync()){if(reader["Type"].ToString()=="D")data=reader["LogicalName"].ToString();else if(reader["Type"].ToString()=="L")log=reader["LogicalName"].ToString();}}
             if(data==null||log==null)throw new Exception("Backup logical files missing.");
             await Execute($"IF DB_ID('{restored}') IS NOT NULL THROW 50000, 'Restore target already exists', 1; RESTORE DATABASE [{restored}] FROM DISK=@path WITH MOVE @data TO @mdf, MOVE @log TO @ldf, RECOVERY, CHECKSUM",
-                ("@path",backup),("@data",data),("@log",log),("@mdf",Path.Combine(root,"restored.mdf")),("@ldf",Path.Combine(root,"restored_log.ldf")));
+                ("@path",backup),("@data",data),("@log",log),("@mdf",Path.Combine(dataRoot,restored+".mdf")),("@ldf",Path.Combine(logRoot,restored+"_log.ldf")));
             await Execute($"DBCC CHECKDB ([{restored}]) WITH NO_INFOMSGS");
             var restoredConnection=new SqlConnectionStringBuilder(connection){InitialCatalog=restored}.ConnectionString;
             await using(var integrityConnection=new SqlConnection(restoredConnection)) {
@@ -589,6 +599,9 @@ internal static class ReleaseIntegrationRunner
         finally {
             if(!Regex.IsMatch(restored,"^AriesReleaseIntegration_[0-9a-f]{32}_restored$"))throw new Exception("Unsafe restore cleanup target.");
             await Execute($"IF DB_ID('{restored}') IS NOT NULL BEGIN ALTER DATABASE [{restored}] SET SINGLE_USER WITH ROLLBACK IMMEDIATE; DROP DATABASE [{restored}]; END");
+            // Delete only this generated synthetic backup; no recursive cleanup or permission edits.
+            try {File.Delete(backup);}catch(UnauthorizedAccessException){Console.WriteLine("Synthetic SQL backup retained in protected SQL-owned backup directory; operator cleanup may be required.");}
+
         }
     }
 }

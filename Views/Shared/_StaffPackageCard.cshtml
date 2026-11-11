@@ -1,7 +1,7 @@
 @model AriesMagicAppointmentSystem.Models.Service
 @{
     var inclusions = Model.Inclusions.OrderBy(i => i.Id).ToList();
-    var showAllForStaff = (User.IsInRole("Staff") || User.IsInRole("Admin")) && !User.IsInRole("Owner");
+    var showAllForStaff = User.IsInRole("Staff") && !User.IsInRole("Owner");
     var preview = showAllForStaff ? inclusions : inclusions.Take(3).ToList();
     var packageName = Model.Name ?? string.Empty;
     var packageTone = packageName.Contains("All In", StringComparison.OrdinalIgnoreCase) ? "all-in" : packageName.Contains("Deluxe", StringComparison.OrdinalIgnoreCase) ? "deluxe" : packageName.Contains("Premium", StringComparison.OrdinalIgnoreCase) ? "premium" : "standard";

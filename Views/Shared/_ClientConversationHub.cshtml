@@ -4,7 +4,7 @@
  var lastStaff=selected?.Messages.LastOrDefault(m=>!m.IsMine&&m.SenderRole=="Staff");
  var staff=selected?.Participants.FirstOrDefault(p=>p.UserId==lastStaff?.SenderId)
     ??selected?.Participants.FirstOrDefault(p=>p.Role=="Staff")
-    ??selected?.Participants.FirstOrDefault(p=>p.Role=="Owner"||p.Role=="Admin");
+    ??selected?.Participants.FirstOrDefault(p=>p.Role=="Owner");
  var staffImage=lastStaff?.SenderAvatarUrl??staff?.AvatarUrl;
  var staffName=lastStaff?.SenderName??staff?.Name??"Aries Magic Support";
  var initials=staff?.Initials??"AM";

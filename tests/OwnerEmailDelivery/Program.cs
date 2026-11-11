@@ -24,7 +24,9 @@ foreach(var provider in new[]{"Brevo","Resend"}) {
 Check(EmailFailure.Classify(new TaskCanceledException())=="Timeout","timeout diagnostics");Check(EmailFailure.Classify(new System.Net.Sockets.SocketException())=="NetworkOrTransport","network diagnostics");
 Check(EmailFailure.Classify(new HttpRequestException("synthetic",new System.Security.Authentication.AuthenticationException()))=="Tls","HTTPS TLS diagnostics");
 var name="AriesOwnerEmail_"+Guid.NewGuid().ToString("N");
-var connection=$"Server=localhost;Database={name};Integrated Security=True;Encrypt=True;TrustServerCertificate=True";
+var instance=Environment.GetEnvironmentVariable("ARIES_TEST_LOCALDB_INSTANCE")??"MSSQLLocalDB";
+if(!Regex.IsMatch(instance,"^[A-Za-z][A-Za-z0-9_-]{0,63}$"))throw new Exception("Invalid local test instance.");
+var connection=Environment.GetEnvironmentVariable("ARIES_TEST_USE_DEFAULT_SQL")=="true"?$"Server=.;Database={name};Integrated Security=True;Encrypt=True;TrustServerCertificate=True":$"Server=(localdb)\\{instance};Database={name};Integrated Security=True;TrustServerCertificate=True";
 var services=new ServiceCollection();services.AddLogging();services.AddDataProtection().UseEphemeralDataProtectionProvider();services.AddDbContext<ApplicationDbContext>(o=>o.UseSqlServer(connection));
 services.AddIdentityCore<ApplicationUser>(o=>{o.User.RequireUniqueEmail=true;o.Password.RequiredLength=12;}).AddRoles<IdentityRole>().AddEntityFrameworkStores<ApplicationDbContext>().AddDefaultTokenProviders();
 var mail=new FakeEmail();services.AddSingleton<IEmailService>(mail);services.Configure<PersonnelOptions>(o=>o.PublicOrigin="https://example.test");services.AddScoped<OwnerEmailChangeService>();

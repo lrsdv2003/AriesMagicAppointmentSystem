@@ -12,7 +12,6 @@ namespace AriesMagicAppointmentSystem.Services;
 
 public sealed class PersonnelOptions
 {
-    public bool AdminMayManageStaff { get; set; }
     public string? PublicOrigin { get; set; } = "https://ariesmagicartist-001-site1.htempurl.com";
     public int InvitationHours { get; set; } = 24;
 }
@@ -39,9 +38,7 @@ public sealed class PersonnelProvisioning(ApplicationDbContext db,UserManager<Ap
     public async Task<bool> CanManageAsync(ApplicationUser actor,string role)
     {
         await db.Entry(actor).ReloadAsync();
-        return actor.IsActive&&actor.EmailConfirmed&&
-            (await users.IsInRoleAsync(actor,"Owner")&&role is "Admin" or "Staff" ||
-             Options.AdminMayManageStaff&&role=="Staff"&&await users.IsInRoleAsync(actor,"Admin")&&!await users.IsInRoleAsync(actor,"Staff"));
+        return actor.IsActive&&actor.EmailConfirmed&&role=="Staff"&&await users.IsInRoleAsync(actor,"Owner");
     }
     public async Task<EnrollmentDelivery> InviteAsync(ApplicationUser? actor,string email,string name,string role,bool bootstrap=false)
     {
@@ -88,7 +85,7 @@ public sealed class PersonnelProvisioning(ApplicationDbContext db,UserManager<Ap
            !CryptographicOperations.FixedTimeEquals(Encoding.ASCII.GetBytes(Hash(secret)),Encoding.ASCII.GetBytes(pending.Digest))||
            user.IsActive||await users.HasPasswordAsync(user)||(await users.GetRolesAsync(user)).Count!=0)
             return IdentityResult.Failed(new IdentityError {Code="EnrollmentUnavailable",Description="Enrollment is invalid, expired or already used. Request a new invitation."});
-        if(pending.Role is not ("Owner" or "Admin" or "Staff"))throw new InvalidOperationException("Invalid enrollment role.");
+        if(pending.Role is not ("Owner" or "Staff"))return IdentityResult.Failed(new IdentityError {Code="EnrollmentUnavailable",Description="Enrollment is unavailable. Request an authorized Staff invitation."});
         if(pending.Role=="Owner"&&(await users.GetUsersInRoleAsync("Owner")).Count!=0)throw new InvalidOperationException("An Owner already exists.");
         if(pending.Role!="Owner") {
             var issuer=await users.FindByIdAsync(pending.Issuer);
@@ -140,9 +137,7 @@ public sealed class PersonnelProvisioning(ApplicationDbContext db,UserManager<Ap
                 if(!user.EmailConfirmed||!await users.HasPasswordAsync(user)||roles.Count!=1)throw new InvalidOperationException("Complete enrollment first.");
                 user.IsActive=true;Require(await users.UpdateAsync(user));break;
             case "RevokeSessions": break;
-            case "Role":
-                if(role is not ("Admin" or "Staff")||roles.Count!=1||!await users.IsInRoleAsync(actor,"Owner")||!await CanManageAsync(actor,role))throw new UnauthorizedAccessException();
-                Require(await users.RemoveFromRoleAsync(user,current));Require(await users.AddToRoleAsync(user,role));break;
+            case "Role": throw new UnauthorizedAccessException(); // Active personnel have one fixed Staff role; no promotion API.
             default:throw new InvalidOperationException("Unsupported account action.");
         }
         Require(await users.UpdateSecurityStampAsync(user));

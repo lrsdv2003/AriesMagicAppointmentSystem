@@ -33,7 +33,7 @@ static class ProfileRegression
         ClaimsPrincipal Principal(string role,string id) => new(new ClaimsIdentity([new Claim(ClaimTypes.Role,role),new Claim(ClaimTypes.NameIdentifier,id)],"Fixture"));
         var policy=await AuthorizationPolicy.CombineAsync(policies,typeof(InternalProfileController).GetCustomAttributes<AuthorizeAttribute>());
         foreach(var role in new[]{"Staff","Admin","Owner","Client"})
-            check((await authorization.AuthorizeAsync(Principal(role,"fixture"),null,policy!)).Succeeded==(role!="Client"),role+" profile authorization");
+            check((await authorization.AuthorizeAsync(Principal(role,"fixture"),null,policy!)).Succeeded==(role is "Staff" or "Owner"),role+" profile authorization");
         check(!(await authorization.AuthorizeAsync(new ClaimsPrincipal(new ClaimsIdentity()),null,policy!)).Succeeded,"Anonymous profile access denied");
         foreach(var name in new[]{"Edit","ChangePassword","UploadPhoto","RemovePhoto"})
             check(typeof(InternalProfileController).GetMethod(name)!.IsDefined(typeof(ValidateAntiForgeryTokenAttribute)),"Profile "+name+" requires anti-forgery");
@@ -44,7 +44,7 @@ static class ProfileRegression
         try {
             var other=new ApplicationUser {UserName="profile-other",Email="profile-other@example.test",FullName="Other User"};
             await manager.CreateAsync(other,"initial");
-            foreach(var role in new[]{"Staff","Admin","Owner"}) {
+            foreach(var role in new[]{"Staff","Owner"}) {
                 var user=new ApplicationUser {UserName="profile-"+role,Email="profile-"+role+"@example.test",FullName="Original Name",EmailConfirmed=true};
                 check((await manager.CreateAsync(user,"initial")).Succeeded,"Create profile test "+role);
                 await manager.AddToRoleAsync(user,role);

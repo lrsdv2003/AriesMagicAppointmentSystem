@@ -17,7 +17,7 @@ const go=async name=>{current=name;await page.goto('http://owner.test/fixture/'+
 try{
  for(const width of (process.env.SKIP_LAYOUT ? [] : [1440,1024,768,390])){
   await page.setViewport({width,height:900});
-  for(const name of ['InternalProfile-Index','InternalProfile-Index-Staff','InternalProfile-Index-Admin','UserManagement-Index']){
+  for(const name of ['InternalProfile-Index','InternalProfile-Index-Staff']){
    await go(name);
    const issues=await page.evaluate(()=>{
     const result=[];
@@ -75,16 +75,5 @@ try{
  const body=new URLSearchParams(lastRequest.body);
  assert.equal(body.get('Personal.FullName'),'Updated Browser User');
  assert(body.has('__RequestVerificationToken'));
- await go('UserManagement-Index');
- await page.type('#userSearch','staff@example.test');
- await page.select('#userRole','Staff');await page.select('#userStatus','Active');await page.select('#userVerification','Verified');
- await Promise.all([page.waitForNavigation(),page.click('.am-filter-bar button')]);
- assert.equal(lastRequest.url.searchParams.get('search'),'staff@example.test');
- assert.equal(lastRequest.url.searchParams.get('role'),'Staff');
- assert.equal(lastRequest.url.searchParams.get('status'),'Active');
- assert.equal(lastRequest.url.searchParams.get('verification'),'Verified');
- await Promise.all([page.waitForNavigation(),page.click('.am-filter-bar a')]);
- assert.equal(lastRequest.url.pathname,'/UserManagement/Index');
- assert.equal(lastRequest.url.search,'');
- console.log('PASS account menu, keyboard focus, password visibility/reset, photo preview/cancel, profile submission and filter apply/clear');
+ console.log('PASS account menu, keyboard focus, password visibility/reset, photo preview/cancel, profile submission');
 }finally{await browser.close();}

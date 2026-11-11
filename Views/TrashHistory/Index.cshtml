@@ -45,7 +45,7 @@
                             <option value="">All Reasons</option>
                             @foreach (TrashReason reason in Enum.GetValues(typeof(TrashReason)))
                             {
-                                <option value="@((int)reason)" selected="@(f?.Reason == reason)">@AriesMagicAppointmentSystem.ViewModels.AdminActivityPresentation.Label(reason)</option>
+                                <option value="@((int)reason)" selected="@(f?.Reason == reason)">@AriesMagicAppointmentSystem.ViewModels.BusinessActivityPresentation.Label(reason)</option>
                             }
                         </select>
                     </div>

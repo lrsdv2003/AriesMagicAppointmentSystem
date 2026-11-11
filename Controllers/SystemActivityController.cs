@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace AriesMagicAppointmentSystem.Controllers
 {
-    [Authorize(Roles = "Admin,Owner")]
+    [Authorize(Roles = "Owner")]
     public class SystemActivityController : Controller
     {
         private readonly ISystemActivityService _activityService;

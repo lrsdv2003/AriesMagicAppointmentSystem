@@ -133,7 +133,7 @@
                         }
                         else if (User.Identity?.IsAuthenticated == true)
                         {
-                            var dashboardAction = User.IsInRole("Owner") ? "Owner" : User.IsInRole("Admin") ? "Admin" : "Staff";
+                            var dashboardAction = User.IsInRole("Owner") ? "Owner" : "Staff";
                             <a asp-controller="Dashboard" asp-action="@dashboardAction" class="btn magic-primary-cta">Go to Dashboard</a>
                             <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
                                 @Html.AntiForgeryToken()

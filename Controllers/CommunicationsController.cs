@@ -263,7 +263,7 @@ namespace AriesMagicAppointmentSystem.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "Staff,Admin,Owner")]
+        [Authorize(Roles = "Staff,Owner")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateInternal(
             string[] participantIds,
@@ -780,7 +780,7 @@ namespace AriesMagicAppointmentSystem.Controllers
 
         private async Task<HashSet<string>> GetInternalUserIdsAsync(bool includeOwner)
         {
-            var roles = includeOwner ? new[] { "Staff", "Admin", "Owner" } : new[] { "Staff", "Admin" };
+            var roles = includeOwner ? new[] { "Staff", "Owner" } : new[] { "Staff" };
             var roleIds = await _context.Roles.Where(r => roles.Contains(r.Name!)).Select(r => r.Id).ToListAsync();
             var ids = await _context.UserRoles.Where(ur => roleIds.Contains(ur.RoleId)).Select(ur => ur.UserId).Distinct().ToListAsync();
             var activeIds = await _context.Users.Where(u => u.IsActive && ids.Contains(u.Id)).Select(u => u.Id).ToListAsync();
@@ -806,7 +806,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             if (userIds.Count == 0) return new Dictionary<string, string>();
             var rows = await (from ur in _context.UserRoles
                               join r in _context.Roles on ur.RoleId equals r.Id
-                              where userIds.Contains(ur.UserId)
+                              where userIds.Contains(ur.UserId) && ApplicationRoles.All.Contains(r.Name!)
                               select new { ur.UserId, RoleName = r.Name! })
                 .AsNoTracking()
                 .ToListAsync();
@@ -814,7 +814,7 @@ namespace AriesMagicAppointmentSystem.Controllers
         }
 
         private string? CurrentUserId() => User.FindFirstValue(ClaimTypes.NameIdentifier);
-        private bool IsInternalUser() => User.IsInRole("Staff") || User.IsInRole("Admin") || User.IsInRole("Owner");
+        private bool IsInternalUser() => User.IsInRole("Staff") || User.IsInRole("Owner");
         private static bool IsInternalConversation(Conversation conversation) =>
             conversation.ConversationType is ConversationTypes.InternalDirect or ConversationTypes.InternalGroup or ConversationTypes.OperationalRequest;
 

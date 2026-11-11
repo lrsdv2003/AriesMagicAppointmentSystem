@@ -48,20 +48,20 @@ static class RecoveryRegressionTests
         await using var db=new ApplicationDbContext(new DbContextOptionsBuilder<ApplicationDbContext>().UseSqlServer(connection).AddInterceptors(counter).Options);
         var client=await db.Users.SingleAsync(u=>u.Email=="client@example.test");
         var staff=await db.Users.SingleAsync(u=>u.Email=="staff@example.test");
-        var conversation=new Conversation {Title="Recovery chat fixture",ConversationType=ConversationTypes.ClientSupport,CreatedByUserId=client.Id,
+        var conversation=new Conversation {Title="Recovery chat fixture",ConversationType=ConversationTypes.OperationalRequest,CreatedByUserId=client.Id,
             Participants=[new(){UserId=client.Id},new(){UserId=staff.Id}]};
         var start=DateTime.UtcNow.AddDays(-2);
-        conversation.Messages=Enumerable.Range(0,1000).Select(i=>new Message {SenderId=staff.Id,SentAt=start.AddSeconds(i),
+        conversation.Messages=Enumerable.Range(0,1000).Select(i=>new Message {SenderId=client.Id,SentAt=start.AddSeconds(i),
             MessageContent=i==0?"historic-search-sentinel":"fixture-message-"+i,
             MessageType=i==0?MessageTypes.ActionRequest:MessageTypes.Text,RequestStatus=i==0?MessageRequestStatuses.Open:null}).ToList();
         db.Conversations.Add(conversation);await db.SaveChangesAsync();db.ChangeTracker.Clear();
         counter.Reset();
-        await db.ConversationParticipants.AsNoTracking().Where(p=>p.UserId==client.Id&&p.ConversationId==conversation.Id).Include(p=>p.Conversation!).ThenInclude(c=>c.Messages).AsSplitQuery().ToListAsync();
+        await db.ConversationParticipants.AsNoTracking().Where(p=>p.UserId==staff.Id&&p.ConversationId==conversation.Id).Include(p=>p.Conversation!).ThenInclude(c=>c.Messages).AsSplitQuery().ToListAsync();
         await db.Conversations.AsNoTracking().Where(c=>c.Id==conversation.Id).Include(c=>c.Messages).AsSplitQuery().SingleAsync();
         var legacy=counter.Count;
         counter.Reset();
         var controller=new CommunicationsController(db) {ControllerContext=new ControllerContext {HttpContext=new DefaultHttpContext {
-            User=new ClaimsPrincipal(new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier,client.Id),new Claim(ClaimTypes.Role,"Client")],"Fixture"))}}};
+            User=new ClaimsPrincipal(new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier,staff.Id),new Claim(ClaimTypes.Role,"Staff")],"Fixture"))}}};
         var result=(ViewResult)await controller.Index(conversation.Id);
         var model=(CommunicationCenterViewModel)result.Model!;
         var materialized=counter.Count;

@@ -87,22 +87,10 @@ static class DashboardRegression
         var failed=(RoleDashboardViewModel)((ViewResult)await Controller("Owner",owner.Id,new FailingDashboardFinance(finance)).Owner()).Model!;
         check(failed.UnavailableSections.SetEquals(new[]{"financial overview"}) && failed.QuickActions.Count>0 && failed.PendingPayments==ownerModel.PendingPayments,"Financial widget failure preserves queues and navigation without fake zero totals");
 
-        var adminModel=(RoleDashboardViewModel)((ViewResult)await Controller("Admin","fixture-admin").Admin()).Model!;
-        check(adminModel.UnavailableSections.Count==0,"Admin dashboard sections load successfully");
-        var userController=new UserManagementController(manager,new SystemActivityService(db));
-        var activeUsers=(IEnumerable<ApplicationUser>)((ViewResult)await userController.Index(null,"Active")).Model!;
-        check(adminModel.TotalUsers==await db.Users.CountAsync() && adminModel.ActiveUsers==activeUsers.Count(),"Admin account totals match User Management");
-        check(adminModel.RecentUsers.Count<=5 && adminModel.RecentUsers.All(u=>db.Users.Any(a=>a.Id==u.Id && (a.Email ?? "Not recorded")==u.Email)),"Admin workspace uses bounded authoritative identity previews");
-        check(adminModel.TotalBookings==await db.Bookings.CountAsync() && adminModel.RecentBookings.Count==0,"Admin booking metric is aggregate-only and adds no operational record access");
-        check(adminModel.PackagePreviews.All(p=>!p.IsArchived) && adminModel.PackagePreviews.Count<=3,"Admin package preview retains real active catalog records");
-        check(adminModel.TrashedBookingsCount==await db.Bookings.CountAsync(b=>b.Status==BookingStatus.Declined||b.Status==BookingStatus.Cancelled||b.Status==BookingStatus.Expired),"Admin archive count matches Trash History");
-        check(adminModel.RecentPaymentsToVerify.Count==0 && adminModel.UpcomingEvents.Count==0 && adminModel.VerifiedRevenue==0,"Admin model excludes operational and financial data");
-        check(adminModel.RecentActivity.All(a=>a.Type!=SystemActivityType.PaymentVerified && a.Type!=SystemActivityType.BookingApproved),"Admin activity preview stays system-focused");
-        check(adminModel.QuickActions.All(a=>!a.Href.StartsWith("/Payments")&&!a.Href.StartsWith("/Reports")&&!a.Href.StartsWith("/Bookings")),"Admin shortcuts respect role boundaries");
-
+        check(typeof(DashboardController).GetMethod("Admin")==null,"Only Owner and Staff dashboards remain active");
         var authorization=provider.GetRequiredService<IAuthorizationService>();
         var policies=provider.GetRequiredService<IAuthorizationPolicyProvider>();
-        foreach(var action in new[]{"Staff","Owner","Admin"})
+        foreach(var action in new[]{"Staff","Owner"})
         {
             var policy=await AuthorizationPolicy.CombineAsync(policies,typeof(DashboardController).GetMethod(action)!.GetCustomAttributes<AuthorizeAttribute>());
             foreach(var role in new[]{"Staff","Owner","Admin","Client"})
@@ -111,7 +99,7 @@ static class DashboardRegression
                 check((await authorization.AuthorizeAsync(user,null,policy!)).Succeeded==(role==action),role+" dashboard authorization for "+action);
             }
         }
-        return new() {["Staff"]=staffModel,["Owner"]=ownerModel,["Admin"]=adminModel,["OwnerFailure"]=failed};
+        return new() {["Staff"]=staffModel,["Owner"]=ownerModel,["OwnerFailure"]=failed};
     }
 }
 sealed class FailingDashboardFinance(IPaymentFinancialService inner) : IPaymentFinancialService

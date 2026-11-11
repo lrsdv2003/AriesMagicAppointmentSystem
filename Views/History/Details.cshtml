@@ -43,7 +43,7 @@
 <section class="ui-panel" aria-labelledby="historyTimelineHeading"><h2 id="historyTimelineHeading">Activity Timeline</h2>
 @if(events.Count==0){<p class="ui-muted">No timeline events recorded.</p>}else{
 <ol class="ui-timeline">@foreach(var item in events) {
-<li><span>@AdminActivityPresentation.Label(item.EventType)</span><time datetime="@item.CreatedAt.ToString("O")">@item.CreatedAt.ToString("MMM d, yyyy h:mm tt")</time></li>
+<li><span>@BusinessActivityPresentation.Label(item.EventType)</span><time datetime="@item.CreatedAt.ToString("O")">@item.CreatedAt.ToString("MMM d, yyyy h:mm tt")</time></li>
 }</ol>
 }
 </section>

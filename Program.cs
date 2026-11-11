@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.RateLimiting;
 using System.Threading.RateLimiting;
 using Microsoft.Data.SqlClient;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
 
 var builder = WebApplication.CreateBuilder(args);
 if (!builder.Environment.IsDevelopment()) ProductionSafeLogging.Configure(builder.Services);
@@ -133,6 +134,8 @@ builder.Services
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddDefaultTokenProviders();
 
+builder.Services.AddAuthorization(options => options.DefaultPolicy = new AuthorizationPolicyBuilder().RequireAuthenticatedUser().RequireRole(ApplicationRoles.All).Build());
+
 builder.Services.ConfigureApplicationCookie(options =>
 {
     options.LoginPath = "/Account/Login";
@@ -147,7 +150,7 @@ builder.Services.ConfigureApplicationCookie(options =>
         if(context.Principal?.Identity?.IsAuthenticated!=true)return;
         var users=context.HttpContext.RequestServices.GetRequiredService<UserManager<ApplicationUser>>();
         var user=await users.GetUserAsync(context.Principal);
-        if(user==null||!user.IsActive){context.RejectPrincipal();await context.HttpContext.SignOutAsync(IdentityConstants.ApplicationScheme);}
+        if(user==null||!user.IsActive||!(await users.GetRolesAsync(user)).Any(ApplicationRoles.IsActive)){context.RejectPrincipal();await context.HttpContext.SignOutAsync(IdentityConstants.ApplicationScheme);}
     };
 });
 builder.Services.Configure<SecurityStampValidatorOptions>(options => options.ValidationInterval = TimeSpan.Zero);

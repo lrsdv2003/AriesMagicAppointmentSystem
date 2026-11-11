@@ -21,7 +21,7 @@ public sealed class PersonnelInviteInput
 public sealed record PersonnelRow(string Id,string FullName,string Email,string Role,string Status);
 public sealed record PersonnelPage(List<PersonnelRow> Accounts,List<SystemActivity> Audit,bool Owner,bool CanInvite,string? Search=null,string? RoleFilter=null,string? StatusFilter=null);
 public sealed class StaffProfileInput { [Required] public string Id {get;set;}=""; [Required,StringLength(100)] public string FullName {get;set;}=""; [Phone,StringLength(30)] public string? PhoneNumber {get;set;} }
-[Authorize(Roles="Owner,Admin"),ResponseCache(NoStore=true,Location=ResponseCacheLocation.None)]
+[Authorize(Roles="Owner"),ResponseCache(NoStore=true,Location=ResponseCacheLocation.None)]
 public sealed class PersonnelController(UserManager<ApplicationUser> users,PersonnelProvisioning provisioning,
     ApplicationDbContext db,IEmailService email,IOptions<PersonnelOptions> settings) : Controller
 {
@@ -35,8 +35,10 @@ public sealed class PersonnelController(UserManager<ApplicationUser> users,Perso
         foreach(var user in await users.Users.OrderBy(x=>x.FullName).ToListAsync()) {
             var roles=await users.GetRolesAsync(user);var invite=await provisioning.PendingAsync(user);
             var role=roles.Contains("Owner")?"Owner":roles.Count==1?roles[0]:roles.Count==0?invite?.Role??"Unassigned":"Multiple (read-only)";
+            if(!ApplicationRoles.IsActive(role))role="Legacy internal";
             if(!owner&&role!="Staff")continue;
             var status=invite!=null?invite.State+(invite.ExpiresUtc<=DateTime.UtcNow?" (expired)":""):!user.IsActive?"Disabled":user.LockoutEnd>DateTimeOffset.UtcNow?"Locked":!user.EmailConfirmed?"Unverified":"Active";
+            if(role=="Legacy internal")status="Retired access";
             if(!string.IsNullOrWhiteSpace(search)&&!user.FullName.Contains(search,StringComparison.OrdinalIgnoreCase)&&!(user.Email?.Contains(search,StringComparison.OrdinalIgnoreCase)??false))continue;
             if(!string.IsNullOrEmpty(roleFilter)&&role!=roleFilter)continue;
             if(!string.IsNullOrEmpty(statusFilter)&&!status.StartsWith(statusFilter,StringComparison.Ordinal))continue;
@@ -65,6 +67,7 @@ public sealed class PersonnelController(UserManager<ApplicationUser> users,Perso
     [HttpPost,ValidateAntiForgeryToken,EnableRateLimiting("account")]
     public async Task<IActionResult> Invite(PersonnelInviteInput input)
     {
+        if(input.Role!="Staff")return Forbid();
         if(!ModelState.IsValid){TempData["ErrorMessage"]="Enter a valid name, email and permitted role.";return RedirectToAction(nameof(Index));}
         try {
             // Validate trusted destination before issuing; never derive enrollment links from Host headers.

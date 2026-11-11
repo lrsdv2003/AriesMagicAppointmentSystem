@@ -15,12 +15,12 @@ page.on('request',async req=>{
  try{return req.respond({contentType:url.pathname.endsWith('.css')?'text/css':url.pathname.endsWith('.js')?'application/javascript':'application/octet-stream',body:await fs.readFile(path.join(root,'wwwroot',url.pathname))});}catch{return req.respond({status:404,body:''});}
 });
 const go=async name=>{current=name;await page.goto('http://owner.test/fixture/'+name,{waitUntil:'networkidle0'});};
-const pages=['Dashboard-Staff','Dashboard-Admin','Dashboard-Owner','Bookings-StaffIndex','Bookings-StaffDetails',
- 'RescheduleRequests-Index','RescheduleRequests-Details','Calendar-StaffIndex','Calendar-Index','Services-Index','Services-Index-Staff','Services-Index-Admin',
- 'Services-Edit','Services-Create','Services-Details','Services-Details-Staff','Services-Details-Admin','Payments-PendingVerification','Payments-Verify','Payments-RefundRequests','Payments-RefundReview','Reports-Index',
- 'UserManagement-Index','UserManagement-Details','SystemActivity-Index','TrashHistory-Index','TrashHistory-Details',
- 'Communications-Index','Communications-Index-Admin','Notifications-Index',
- 'InternalProfile-Index','InternalProfile-Index-Staff','InternalProfile-Index-Admin',
+const pages=['Dashboard-Staff','Dashboard-Owner','Bookings-StaffIndex','Bookings-StaffDetails',
+ 'RescheduleRequests-Index','RescheduleRequests-Details','Calendar-StaffIndex','Calendar-Settings','Services-Index','Services-Index-Staff',
+ 'Services-Edit','Services-Create','Services-Details','Services-Details-Staff','Payments-PendingVerification','Payments-Verify','Payments-RefundRequests','Payments-RefundReview','Reports-Index',
+ 'SystemActivity-Index','TrashHistory-Index','TrashHistory-Details',
+ 'Communications-Index','Notifications-Index',
+ 'InternalProfile-Index','InternalProfile-Index-Staff',
  'History-Index','History-Index-Staff','History-Index-empty','History-Index-Staff-empty','History-Details','History-Details-Staff'];
 const selected=process.env.UI_PAGES?process.env.UI_PAGES.split(','):pages;
 try{
@@ -54,7 +54,7 @@ try{
     if(name.includes('Details'))assert.equal(await page.$$eval('.ui-page form',els=>els.length),0,'History detail is read-only');
     if(name.includes('empty'))assert(text.includes('No records match the selected filters.'));
    }
-   if(['Dashboard-Owner','History-Index-Staff','History-Details','Payments-Verify','UserManagement-Index','InternalProfile-Index'].includes(name)&&[1440,390].includes(width))
+   if(['Dashboard-Owner','History-Index-Staff','History-Details','Payments-Verify','InternalProfile-Index'].includes(name)&&[1440,390].includes(width))
       await page.screenshot({path:path.join(snapshots,'polish-'+name+'-'+width+'.png'),fullPage:false});
    console.log('PASS internal UI',name,width);
   }

@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AriesMagicAppointmentSystem.Controllers;
 
-[Authorize(Roles = "Owner,Admin,Staff")]
+[Authorize(Roles = "Owner,Staff")]
 [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
 public class DashboardController : Controller
 {
@@ -28,7 +28,7 @@ public class DashboardController : Controller
     }
 
     public IActionResult Index() => RedirectToAction(User.IsInRole("Owner") ? nameof(Owner)
-        : User.IsInRole("Admin") ? nameof(Admin) : nameof(Staff));
+        : nameof(Staff));
 
     private async Task LoadAsync(RoleDashboardViewModel model, string section, Func<Task> load)
     {
@@ -293,81 +293,4 @@ public class DashboardController : Controller
         return View(model);
     }
 
-    [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> Admin()
-    {
-        var model = await StartAsync("Admin");
-        await LoadAsync(model, "users", async () =>
-        {
-            var users = _context.Users.AsNoTracking();
-            var now = DateTimeOffset.UtcNow;
-            model.TotalUsers = await users.CountAsync();
-            model.ActiveUsers = await users.CountAsync(u => u.IsActive && !(u.LockoutEnd > now));
-            model.InactiveUsers = await users.CountAsync(u => !u.IsActive);
-            model.UnverifiedUsers = await users.CountAsync(u => !u.EmailConfirmed);
-            model.LockedUsers = await users.CountAsync(u => u.LockoutEnd > now);
-            model.UserRoles = await (from ur in _context.UserRoles join r in _context.Roles on ur.RoleId equals r.Id
-                group ur by r.Name into g select new { Role = g.Key ?? "Unassigned", Count = g.Count() })
-                .ToDictionaryAsync(r => r.Role, r => r.Count);
-            var recent = await users.OrderByDescending(u => u.CreatedAt).ThenBy(u => u.Id).Take(5)
-                .Select(u => new { u.Id, u.FullName, u.Email, u.IsActive, u.LockoutEnd }).ToListAsync();
-            var ids = recent.Select(u => u.Id).ToList();
-            var assignments = await (from ur in _context.UserRoles join r in _context.Roles on ur.RoleId equals r.Id
-                where ids.Contains(ur.UserId) select new { ur.UserId, r.Name }).ToListAsync();
-            model.RecentUsers = recent.Select(u => new WorkspaceUser(u.Id, u.FullName, u.Email ?? "Not recorded",
-                string.Join(", ", assignments.Where(r => r.UserId == u.Id).Select(r => r.Name).OrderBy(n => n)),
-                !u.IsActive ? "Disabled" : u.LockoutEnd > now ? "Locked" : "Active")).ToList();
-        });
-        await LoadAsync(model, "system overview", async () =>
-        {
-            model.ActivePackages = await _context.Services.CountAsync(s => !s.IsArchived);
-            model.PackagePreviews = await _context.Services.AsNoTracking().Include(s => s.Inclusions)
-                .Where(s => !s.IsArchived).OrderBy(s => s.Price).ThenBy(s => s.Id).Take(3).ToListAsync();
-            model.TotalBookings = await _context.Bookings.CountAsync(); // Aggregate only; no Admin operational record access.
-            model.ArchivedPackages = await _context.Services.CountAsync(s => s.IsArchived);
-            model.BlockedDates = await _context.BlockedDates.CountAsync(d => d.Date >= model.AsOf.Date);
-            model.TrashedBookingsCount = await _context.Bookings.CountAsync(b =>
-                b.Status == BookingStatus.Declined || b.Status == BookingStatus.Cancelled || b.Status == BookingStatus.Expired);
-            var since = DateTime.UtcNow.AddHours(-24);
-            model.FailedLogins = await _context.SystemActivities.CountAsync(a => a.Type == SystemActivityType.LoginFailed && a.CreatedAt >= DateTime.UtcNow.Date);
-            model.RecentActivityCount = await _context.SystemActivities.CountAsync(a => a.CreatedAt >= since);
-        });
-        await LoadActivityAsync(model, [SystemActivityType.UserCreated, SystemActivityType.UserUpdated,
-            SystemActivityType.UserEnabled, SystemActivityType.UserDisabled, SystemActivityType.RoleAssigned,
-            SystemActivityType.RoleRemoved, SystemActivityType.ServiceCreated, SystemActivityType.ServiceUpdated,
-            SystemActivityType.ServiceArchived, SystemActivityType.ServiceRestored, SystemActivityType.CalendarModified,
-            SystemActivityType.SettingsChanged, SystemActivityType.LoginFailed]);
-        if (!model.UnavailableSections.Contains("users"))
-        {
-            AddAttention(model, "Unverified accounts", model.UnverifiedUsers, "/UserManagement?verification=Unverified", "bi-person-exclamation");
-            AddAttention(model, "Inactive accounts", model.InactiveUsers, "/UserManagement?status=Disabled", "bi-person-dash");
-            AddAttention(model, "Locked accounts", model.LockedUsers, "/UserManagement?status=Locked", "bi-lock");
-            model.Metrics.AddRange([
-                new("Total users", model.TotalUsers.ToString("N0"), "All account roles"),
-                new("Active users", model.ActiveUsers.ToString("N0"), "Enabled and not locked"),
-                new("Staff accounts", model.UserRoles.GetValueOrDefault("Staff").ToString("N0"), "All Staff account statuses"),
-                new("Client accounts", model.UserRoles.GetValueOrDefault("Client").ToString("N0"), "All Client account statuses")]);
-        }
-        if (!model.UnavailableSections.Contains("system overview"))
-        {
-            AddAttention(model, "Failed logins today (UTC)", model.FailedLogins, "/SystemActivity?type=LoginFailed&fromDate=" + DateTime.UtcNow.ToString("yyyy-MM-dd"), "bi-shield-exclamation");
-            model.Metrics.Add(new("Archived records", (model.TrashedBookingsCount + model.ArchivedPackages).ToString("N0"), "Booking archives and archived packages"));
-            model.Metrics.Add(new("System activity", model.RecentActivityCount.ToString("N0"), "Recorded in the last 24 hours"));
-        }
-        AddMessages(model);
-        model.QuickActions = [
-            new("User Management", "/UserManagement", "bi-people"),
-            new("Packages", "/Services", "bi-box-seam"),
-            new("Calendar Management", "/Calendar", "bi-calendar3"),
-            new("Trash History", "/TrashHistory", "bi-trash"),
-            new("System Activity", "/SystemActivity", "bi-activity"),
-            new("Messages", "/Communications", "bi-chat-dots")];
-        if (!model.UnavailableSections.Contains("users")) model.WorkspaceMetrics.Add(
-            new("Registered users", model.TotalUsers.ToString("N0"), "Client and internal accounts", "bi-people", "blue"));
-        if (!model.UnavailableSections.Contains("system overview")) model.WorkspaceMetrics.AddRange([
-            new("Active packages", model.ActivePackages.ToString("N0"), "Available in the catalog", "bi-box-seam", "gold"),
-            new("Total bookings", model.TotalBookings.ToString("N0"), "All statuses · aggregate only", "bi-journal-text", "green"),
-            new("Failed logins", model.FailedLogins.ToString("N0"), "Recorded today · UTC", "bi-shield-check", "burgundy")]);
-        return View(model);
-    }
 }

@@ -298,6 +298,12 @@ namespace AriesMagicAppointmentSystem.Controllers
                 return View(model);
             }
 
+            if(!(await _userManager.GetRolesAsync(user)).Any(ApplicationRoles.IsActive))
+            {
+                ModelState.AddModelError(string.Empty,"Incorrect Email or Password.");
+                return View(model);
+            }
+
             if (!user.EmailConfirmed)
             {
                 if (!await CheckPasswordWithLockoutAsync(user, model.Password))
@@ -330,11 +336,6 @@ namespace AriesMagicAppointmentSystem.Controllers
                 {
                     return RedirectToAction("Owner", "Dashboard");
                 }
-                if (await _userManager.IsInRoleAsync(user, "Admin"))
-                {
-                    return RedirectToAction("Admin", "Dashboard");
-                }
-
                 if (await _userManager.IsInRoleAsync(user, "Staff"))
                 {
                     return RedirectToAction("Staff", "Dashboard");

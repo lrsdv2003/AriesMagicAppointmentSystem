@@ -852,7 +852,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             });
 
             var staffUsers = await _userManager.GetUsersInRoleAsync("Staff");
-            var adminUsers = await _userManager.GetUsersInRoleAsync("Admin");
+            var ownerUsers = await _userManager.GetUsersInRoleAsync("Owner");
 
             foreach (var staff in staffUsers)
             {
@@ -867,11 +867,11 @@ namespace AriesMagicAppointmentSystem.Controllers
                 });
             }
 
-            foreach (var admin in adminUsers)
+            foreach (var owner in ownerUsers.Where(x=>x.IsActive))
             {
                 _context.Notifications.Add(new Notification
                 {
-                    UserId = admin.Id,
+                    UserId = owner.Id,
                     Title = "New Booking Submitted",
                     Message = $"A new booking request was submitted by {appUser.FullName} for {booking.EventDate:MMMM dd, yyyy}.",
                     Link = $"/Bookings/Details/{booking.Id}",
@@ -1426,9 +1426,9 @@ namespace AriesMagicAppointmentSystem.Controllers
             });
 
             var staffUsers = await _userManager.GetUsersInRoleAsync("Staff");
-            var adminUsers = await _userManager.GetUsersInRoleAsync("Admin");
+            var ownerUsers = await _userManager.GetUsersInRoleAsync("Owner");
 
-            foreach (var recipient in staffUsers.Concat(adminUsers))
+            foreach (var recipient in staffUsers.Concat(ownerUsers).Where(x=>x.IsActive).DistinctBy(x=>x.Id))
             {
                 _context.Notifications.Add(new Notification
                 {
