@@ -30,3 +30,9 @@ No existing privileged password is exposed or replaced. Password/reset/enrollmen
 7. Stop on startup, database, authentication or private-file-security failure. Keep writes paused and use the reviewed coherent application-file rollback; no mixed DLLs, automatic SQL restore, Down migration, account reset or key replacement. If an explicit identity retirement was already performed, rolling back application files does not automatically regrant the old role; assess that separately.
 
 No deployment or production account retirement is part of local implementation validation. Release acceptance must distinguish three active application roles from retained historical database records.
+
+## Prepared candidate (not deployed)
+
+See `THREE_ROLE_MIGRATION_REPORT_20261111.md` for the exact commit and hashes. `publish-net10-owner-three-role-20261111` contains 591 files, with 588 application-owned paths inventoried. Its prospective delta is exactly five files: application DLL, static-endpoint manifest and Owner stylesheet plus `.br`/`.gz`. The launcher and runtime/configuration JSON remain preserved. Use `.tmp-owner-build/three-role/release/transfer-allowlist.json`; do not reuse the earlier 506/509-file packets.
+
+The protected application download is the pre-Owner-Round-1 checkpoint. Reconstruct the last verified deployed baseline with its eight verified Owner Round 1 transfer files before comparing or rolling back; do not restore that older DLL alone and accidentally undo Owner Round 1. Fresh remote baseline confirmation and coordinated recovery are still future deployment gates.

@@ -28,3 +28,7 @@ Documentation will describe three active roles and retain historical research ma
 ## Transfer gate completed before Admin retirement
 Owner transfer passed 546 SQL/controller/security checks and 75/75 rendered page/viewport checks (1440,1024,768,390,320), zero axe violations and zero document overflow. Desktop financial dashboard and mobile Calendar Settings visually inspected. Existing four-role/legacy paths are intentionally retained until this gate; retirement follows on this branch. Evidence: tmp/three-role/owner-transfer-tests.log, owner-transfer-browser.log and after/results.json. An inherited duplicate archive table-region name was corrected.
 
+
+## Final local retirement and release gate
+
+Owner transfer was committed at `308b72d` before active Admin retirement. Final application implementation is `85efc2996122b7593b901ab55a0c826121958508`. Final checks: 531 Owner regression, 253 integration plus 112 independent findings, 117 personnel, 13 offline operator, 37 email-service plus 27 HTTP, 910 DOM, 80 browser/viewport cases with zero axe violations/overflow, and 57 CI/deployment-safety checks. Coherent win-x64 publish and all 591 hashes passed. No schema migration or production operation. Exact packet and limitations: `THREE_ROLE_MIGRATION_REPORT_20261111.md`.
