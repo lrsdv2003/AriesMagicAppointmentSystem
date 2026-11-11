@@ -21,7 +21,7 @@ static class CatalogInclusionRegression
     public static async Task RunAsync(ApplicationDbContext db, Action<bool,string> check)
     {
         var connection = new SqlConnectionStringBuilder(db.Database.GetDbConnection().ConnectionString);
-        if (!connection.DataSource.StartsWith(@"(localdb)\", StringComparison.OrdinalIgnoreCase)
+        if (!(connection.DataSource == "." || connection.DataSource.StartsWith(@"(localdb)\", StringComparison.OrdinalIgnoreCase))
             || !connection.InitialCatalog.StartsWith("AriesOwnerRegression_", StringComparison.Ordinal)
             || !connection.IntegratedSecurity)
             throw new InvalidOperationException("Catalog fixtures require the isolated Owner regression database.");

@@ -15,6 +15,7 @@
         panel.hidden = panel.dataset.ownerPanel !== name;
       }
     };
+    activate(tabs.find(tab => tab.getAttribute('aria-selected') === 'true')?.dataset.ownerTab || 'payments');
     tabs.forEach((tab, index) => {
       tab.addEventListener('click', () => activate(tab.dataset.ownerTab));
       tab.addEventListener('keydown', event => {
@@ -25,6 +26,11 @@
       });
     });
   }
+  document.querySelectorAll('[data-personnel-confirm]').forEach(form => {
+    form.addEventListener('submit', event => {
+      if (!window.confirm('Apply this personnel access change? Existing sessions may be revoked.')) event.preventDefault();
+    });
+  });
   const search = document.getElementById('ownerPersonnelSearch');
   const table = document.getElementById('ownerPersonnelTable');
   if (search && table) {
@@ -35,6 +41,8 @@
         const cell = row.querySelector('td');
         row.hidden = !!q && !(cell?.textContent || '').toLocaleLowerCase().includes(q);
       }
+      const result = document.getElementById('ownerPersonnelSearchResult');
+      if (result) result.textContent = q ? `${rows.filter(row => !row.hidden).length} matching personnel accounts` : '';
     };
     search.addEventListener('input', filter);
   }

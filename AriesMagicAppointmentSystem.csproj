@@ -12,7 +12,7 @@
     <!-- Match the verified live runtime configuration on shared IIS hosting. -->
     <ServerGarbageCollection>false</ServerGarbageCollection>
     <!-- Folder publishes inside the checkout must never become input to another publish. -->
-    <DefaultItemExcludes>$(DefaultItemExcludes);publish\**;publish-*\**;.tmp-owner-build\**;App_Data\**</DefaultItemExcludes>
+    <DefaultItemExcludes>$(DefaultItemExcludes);publish\**;publish-*\**;.tmp-owner-build\**;App_Data\**;tmp\**;output\**</DefaultItemExcludes>
   </PropertyGroup>
 
   <ItemGroup>

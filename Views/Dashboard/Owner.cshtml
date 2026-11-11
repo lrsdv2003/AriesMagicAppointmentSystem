@@ -17,19 +17,19 @@
             </div>
             <div class="owner-round1-tabs" role="tablist" aria-label="Financial request type">
                 <button id="ownerPaymentsTab" class="owner-round1-tab active" type="button" role="tab" aria-controls="ownerPaymentsPanel" aria-selected="true" data-owner-tab="payments">Verify Payments (@Model.PendingPayments)</button>
-                <button id="ownerRefundsTab" class="owner-round1-tab" type="button" role="tab" aria-controls="ownerRefundsPanel" aria-selected="false" data-owner-tab="refunds">Refund Requests (@(Model.PendingRefunds + Model.RefundProofsAwaitingVerification))</button>
+                <button id="ownerRefundsTab" class="owner-round1-tab" type="button" role="tab" aria-controls="ownerRefundsPanel" aria-selected="false" tabindex="-1" data-owner-tab="refunds">Refund Requests (@(Model.PendingRefunds + Model.RefundProofsAwaitingVerification))</button>
             </div>
-            <div id="ownerPaymentsPanel" class="owner-round1-tabpanel" role="tabpanel" aria-labelledby="ownerPaymentsTab" data-owner-panel="payments">
+            <div id="ownerPaymentsPanel" class="owner-round1-tabpanel" role="tabpanel" tabindex="0" aria-labelledby="ownerPaymentsTab" data-owner-panel="payments">
                 @if(Model.UnavailableSections.Contains("queues")){<p class="dash-empty">Unable to load payment requests.</p>}
                 else if(!Model.RecentPaymentsToVerify.Any()){<p class="dash-empty">No payment proofs currently require review.</p>}
                 else {
                     <div class="owner-round1-request-list">
                     @foreach(var payment in Model.RecentPaymentsToVerify) {
                         var ocr = payment.OcrVerifications.Where(o => o.VerificationPurpose == OcrVerificationPurposes.PaymentProof).OrderByDescending(o => o.ProcessedAt).FirstOrDefault();
-                        var indicator = ocr?.VerificationResult == OcrVerificationResults.MismatchDetected ? "Amount mismatch" : ocr?.VerificationResult == OcrVerificationResults.OcrFailed ? "OCR unclear" : ocr?.IsDuplicateReference == true || ocr?.IsDuplicateImage == true ? "Possible duplicate" : "Needs manual review";
+                        var indicator = ocr?.VerificationResult == OcrVerificationResults.MismatchDetected ? "Receipt details conflict" : ocr?.VerificationResult == OcrVerificationResults.OcrFailed ? "OCR unclear" : ocr?.IsDuplicateReference == true || ocr?.IsDuplicateImage == true ? "Possible duplicate" : "Needs manual review";
                         <article class="owner-round1-request-row">
                             <div><strong class="owner-booking-code">BK-@(payment.Booking?.CreatedAt.Year)-@payment.BookingId.ToString("D3")</strong><span>@(payment.Booking?.Client?.FullName ?? "Client not recorded")</span></div>
-                            <div><small>Claimed Amount</small><strong>&#8369;@payment.Amount.ToString("N2")</strong></div>
+                            <div><small>Claimed Amount</small><strong>&#8369;@((payment.ExpectedAmountAtUpload ?? payment.Amount).ToString("N2"))</strong></div>
                             <div><small>Submitted</small><span>@payment.UploadedAt.ToString("MMM d, yyyy")</span></div>
                             <div><span class="owner-round1-indicator">@indicator</span></div>
                             <a class="btn btn-primary btn-sm" asp-controller="Payments" asp-action="Verify" asp-route-id="@payment.Id">Review<span class="visually-hidden"> payment @payment.Id</span></a>
@@ -39,7 +39,7 @@
                 }
                 <a class="owner-round1-view-all" asp-controller="Payments" asp-action="PendingVerification">View all payment requests <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
             </div>
-            <div id="ownerRefundsPanel" class="owner-round1-tabpanel" role="tabpanel" aria-labelledby="ownerRefundsTab" data-owner-panel="refunds" hidden>
+            <div id="ownerRefundsPanel" class="owner-round1-tabpanel" role="tabpanel" tabindex="0" aria-labelledby="ownerRefundsTab" data-owner-panel="refunds" hidden>
                 @if(Model.UnavailableSections.Contains("queues")){<p class="dash-empty">Unable to load refund requests.</p>}
                 else if(!Model.RecentRefundRequests.Any()){<p class="dash-empty">No refund requests currently require review.</p>}
                 else {

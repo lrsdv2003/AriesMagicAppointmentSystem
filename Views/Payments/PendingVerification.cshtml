@@ -8,7 +8,7 @@
     string OcrClass(string? result) => result switch {
         OcrVerificationResults.LikelyMatch => "ocr-likely", OcrVerificationResults.PartialMatch => "ocr-partial",
         OcrVerificationResults.MismatchDetected => "ocr-mismatch", OcrVerificationResults.OcrFailed => "ocr-failed", _ => "ocr-manual" };
-    string OcrLabel(string? result) => result switch { OcrVerificationResults.MismatchDetected => "Amount Mismatch", OcrVerificationResults.OcrFailed => "OCR Unclear", OcrVerificationResults.PartialMatch => "Needs Manual Review", OcrVerificationResults.LikelyMatch => "Needs Manual Review", _ => "Needs Manual Review" };
+    string OcrLabel(string? result) => result switch { OcrVerificationResults.MismatchDetected => "Receipt Details Conflict", OcrVerificationResults.OcrFailed => "OCR Unclear", OcrVerificationResults.PartialMatch => "Needs Manual Review", OcrVerificationResults.LikelyMatch => "Needs Manual Review", _ => "Needs Manual Review" };
     string StatusClass(string status) => status switch {
         PaymentStatus.Verified => "status-verified", PaymentStatus.Rejected => "status-rejected", _ => "status-pending" };
     string StatusLabel(string status) => status switch {

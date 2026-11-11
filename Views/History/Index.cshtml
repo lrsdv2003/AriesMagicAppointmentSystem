@@ -33,7 +33,7 @@
 <td data-label="Package">@row.PackageName</td>
 <td data-label="Payment status"><partial name="_StatusBadge" model="row.PaymentStatus" /></td>
 <td data-label="Final status"><partial name="_StatusBadge" model="row.BookingStatus" /></td>
-<td data-label="Details"><a asp-action="Details" asp-route-id="@row.Id" class="btn btn-outline-primary" aria-label="View @row.BookingCode details">View Details</a></td></tr>
+<td data-label="Details"><a asp-action="Details" asp-route-id="@row.Id" class="btn btn-outline-primary" aria-label="View Details for @row.BookingCode">View Details</a></td></tr>
 }</tbody></table></div>
 }
 @if(Model.TotalPages>1) {

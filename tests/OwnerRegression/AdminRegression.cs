@@ -63,9 +63,9 @@ static class AdminRegression
         var payments=new PaymentsController(db,null!,null!,null!,null!,null!,new SystemActivityService(db),new ConfigurationBuilder().Build(),new PaymentFinancialService(db)) {
             ControllerContext=new ControllerContext {HttpContext=http},TempData=new TempDataDictionary(http,new EmptyTempData())
         };
-        await payments.VerifyConfirmed(thirdPayment.Id);
+        await payments.VerifyConfirmed(thirdPayment.Id, 2000m, null, null);
         check(third.Status==BookingStatus.Confirmed && thirdPayment.Status==PaymentStatus.Verified,"Third confirmed booking is accepted");
-        await payments.VerifyConfirmed(fourthPayment.Id);
+        await payments.VerifyConfirmed(fourthPayment.Id, 2000m, null, null);
         check(fourth.Status==BookingStatus.AwaitingVerification && fourthPayment.Status==PaymentStatus.Pending,"Fourth confirmation rejected despite legacy limits of 99");
         var bookings=new BookingsController(db,null!,null!,null!,null!,null!,null!);
         var availability=(JsonResult)await bookings.CheckDateAvailability(date);
