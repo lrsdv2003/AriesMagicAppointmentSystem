@@ -96,6 +96,7 @@ try
     Check(!((IEnumerable<Payment>)queue.Model!).Any(), "Old OCR mismatch is excluded after replacement");
     await InterfaceRegression.RunAsync(db, Check);
     await AdminRegression.RunAsync(db, Check);
+    await OwnerTransferRegression.RunAsync(db,Check);
     var dashboards = await DashboardRegression.RunAsync(db, Check);
     await ProfileRegression.RunAsync(db, Check);
     await HistoryRegression.RunAsync(db, Check);

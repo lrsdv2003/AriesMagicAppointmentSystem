@@ -107,3 +107,6 @@ body.internal-ui.midnight-workspace.owner-dashboard .btn-primary:hover {backgrou
 .owner-dashboard #ownerPersonnelTable td{display:block;min-width:0!important;width:auto;border:0;padding:6px 0}
 .owner-dashboard #ownerPersonnelTable td:last-child form{padding:12px;background:#0e2b47;border-radius:8px}
 }
+
+/* Consolidated personnel filters follow the existing Owner workspace. */
+.owner-account-filters{display:flex;align-items:end;gap:.8rem;flex-wrap:wrap;margin:1rem 0 1.5rem}.owner-account-filters>div{flex:1 1 10rem}.owner-staff-profile{max-width:48rem}.owner-staff-profile form>div{margin-top:1rem}@media(max-width:575px){.owner-account-filters{display:grid;grid-template-columns:1fr}.owner-account-filters>div{min-width:0}}

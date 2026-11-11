@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace AriesMagicAppointmentSystem.Controllers
 {
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,Owner")]
     public class SystemActivityController : Controller
     {
         private readonly ISystemActivityService _activityService;
@@ -28,7 +28,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             pageSize = Math.Clamp(pageSize, 1, 100);
 
             var (items, totalCount) = await _activityService.GetPagedAsync(
-                page, pageSize, type, fromDate, toDate, search);
+                page, pageSize, type, fromDate, toDate, search, businessOnly:true);
 
             var viewModel = new SystemActivityIndexViewModel
             {
@@ -41,7 +41,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                 FromDateFilter = fromDate,
                 ToDateFilter = toDate,
                 SearchFilter = search,
-                ActivityTypes = Enum.GetValues(typeof(SystemActivityType)).Cast<SystemActivityType>().ToList()
+                ActivityTypes = BusinessActivityTypes.All.ToList()
             };
 
             return View(viewModel);

@@ -118,7 +118,12 @@ namespace AriesMagicAppointmentSystem.Controllers
             return new[] { "purple", "gold", "blue", "pink" }[(int)((uint)stable % 4)];
         }
 
-        private async Task<IActionResult> AdminIndexAsync()
+        [HttpGet,Authorize(Roles="Owner")]
+        public Task<IActionResult> Settings() => AvailabilitySettingsAsync();
+
+        private Task<IActionResult> AdminIndexAsync() => AvailabilitySettingsAsync();
+
+        private async Task<IActionResult> AvailabilitySettingsAsync()
         {
             var model = new CalendarIndexViewModel
             {
@@ -138,7 +143,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                 .OrderBy(a => a.CreatedAt).ToListAsync();
             ViewBag.BlockCreators = creatorLogs.GroupBy(a => a.AffectedRecordId ?? "")
                 .ToDictionary(g => g.Key, g => g.First().PerformedByUserName ?? "Not recorded");
-            return View(model);
+            return View("Settings",model);
         }
 
         [Authorize(Roles = "Staff,Owner")]
@@ -181,7 +186,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             return Json(reservations);
         }
 
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin,Owner")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> BlockDateAjax(
@@ -218,6 +223,10 @@ namespace AriesMagicAppointmentSystem.Controllers
                 });
             }
 
+            await using var transaction = await _context.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
+            if(await _context.Bookings.AnyAsync(b=>b.EventDate.Date==blockDate && b.Status==BookingStatus.Confirmed))
+                return Json(new {success=false,message="This date has a confirmed booking. Coordinate an authorized reschedule before blocking it."});
+
             var exists = await _context.BlockedDates
                 .AnyAsync(x => x.Date.Date == blockDate.Date);
 
@@ -252,6 +261,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                     "BlockedDate"
                 );
 
+                await transaction.CommitAsync();
                 return Json(new
                 {
                     success = true,
@@ -269,7 +279,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             }
         }
 
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin,Owner")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> UnblockDateAjax(int id)

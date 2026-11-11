@@ -1,7 +1,7 @@
 @model AriesMagicAppointmentSystem.ViewModels.SystemActivityIndexViewModel
 @using AriesMagicAppointmentSystem.Models
 @using AriesMagicAppointmentSystem.ViewModels
-@{ Layout = "_DashboardLayout"; ViewData["Title"] = "System Activity"; }
+@{ Layout = "_DashboardLayout"; ViewData["Title"] = "Business Activity"; }
 <div class="admin-console">
 <header class="admin-heading"><div><p>Dates and times are UTC.</p></div></header>
 <div class="am-filter-container">
@@ -94,7 +94,7 @@
 <td data-label="Result"><span class="admin-badge @(AdminActivityPresentation.Result(activity.Type) == "Success" ? "admin-state-success" : "admin-state-neutral")">@AdminActivityPresentation.Result(activity.Type)</span></td>
 </tr>
 }
-</tbody></table>@if(!Model.Activities.Any()) { <p class="admin-empty">No system activity found for the selected filters.</p> }</div>
+</tbody></table>@if(!Model.Activities.Any()) { <p class="admin-empty">No business activity found for the selected filters.</p> }</div>
         @if (Model.TotalPages > 1)
         {
             <nav class="mt-3">

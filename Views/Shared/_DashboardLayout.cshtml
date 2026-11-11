@@ -43,7 +43,11 @@
             ("Overview", "Financial summary", "Reports", "Index", "bi-bar-chart"),
             ("Overview", "Packages", "Services", "Index", "bi-box-seam"),
             ("Overview", "History", "History", "Index", "bi-clock-history") });
-        navigation.Add(("Management", "Personnel accounts", "Personnel", "Index", "bi-people"));
+        navigation.AddRange(new[] {
+            ("Management", "Personnel accounts", "Personnel", "Index", "bi-people"),
+            ("Management", "Calendar settings", "Calendar", "Settings", "bi-calendar3"),
+            ("Oversight", "Business activity", "SystemActivity", "Index", "bi-activity"),
+            ("Oversight", "Archives", "TrashHistory", "Index", "bi-archive") });
     }
     if(User.IsInRole("Admin")&&!User.IsInRole("Owner")&&PersonnelSettings.Value.AdminMayManageStaff)
         navigation.Add(("Management","Personnel invitations","Personnel","Index","bi-person-plus"));
@@ -56,7 +60,7 @@
             ("Communication", "Notifications", "Notifications", "Index", "bi-bell"),
             ("Account", "Profile", "InternalProfile", "Index", "bi-person") });
     bool IsActive(string controller, string action) => currentController == controller &&
-        (controller == "Dashboard" ? currentAction == action : controller == "Payments"
+        (controller is "Dashboard" or "Calendar" ? currentAction == action : controller == "Payments"
             ? (action == "RefundRequests" ? currentAction.Contains("Refund") : !currentAction.Contains("Refund")) : true);
 }
 <!DOCTYPE html>

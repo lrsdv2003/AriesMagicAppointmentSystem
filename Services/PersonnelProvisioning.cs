@@ -103,6 +103,21 @@ public sealed class PersonnelProvisioning(ApplicationDbContext db,UserManager<Ap
         await audit.LogAsync(SystemActivityType.RoleAssigned,"Personnel completed verified enrollment and password setup.",user.Id,affectedRecordId:user.Id,affectedRecordType:"ApplicationUser");
         await tx.CommitAsync();return IdentityResult.Success;
     }
+    public async Task<bool> CanEditStaffProfileAsync(ApplicationUser actor,ApplicationUser target)
+    {
+        var roles=await users.GetRolesAsync(target);
+        return actor.Id!=target.Id && roles.Count==1 && roles[0]=="Staff" && await CanManageAsync(actor,"Staff") && await users.IsInRoleAsync(actor,"Owner");
+    }
+    public async Task UpdateStaffProfileAsync(ApplicationUser actor,string id,string name,string? phone)
+    {
+        name=name.Trim();if(name.Length is <1 or >100 || phone?.Length>30)throw new InvalidOperationException("Valid profile fields required.");
+        await using var tx=await db.Database.BeginTransactionAsync();await LockAsync();
+        var target=await users.FindByIdAsync(id)??throw new InvalidOperationException("Account unavailable.");await db.Entry(target).ReloadAsync();
+        if(!await CanEditStaffProfileAsync(actor,target))throw new UnauthorizedAccessException();
+        target.FullName=name;target.PhoneNumber=phone?.Trim();Require(await users.UpdateAsync(target));Require(await users.UpdateSecurityStampAsync(target));
+        await audit.LogAsync(SystemActivityType.UserUpdated,"Personnel Staff profile updated; login credentials preserved.",actor.Id,affectedRecordId:id,affectedRecordType:"ApplicationUser");
+        await tx.CommitAsync();
+    }
     public async Task ManageAsync(ApplicationUser actor,string id,string action,string? role=null)
     {
         await using var tx=await db.Database.BeginTransactionAsync();await LockAsync();

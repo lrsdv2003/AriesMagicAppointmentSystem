@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace AriesMagicAppointmentSystem.Controllers
 {
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,Owner")]
     public class TrashHistoryController : Controller
     {
         private readonly ITrashHistoryService _trashHistoryService;

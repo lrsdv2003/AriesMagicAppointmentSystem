@@ -131,7 +131,7 @@
         <section class="dashboard-panel staff-detail-section" aria-labelledby="packageInfoTitle">
             <h2 id="packageInfoTitle"><i class="bi bi-box-seam" aria-hidden="true"></i> Booking / Package Information</h2>
             <div class="staff-detail-list">
-                <div><span>Selected Service</span><strong>@(Model.Service?.Name ?? "Not available")</strong></div>
+                <div><span>Selected Service</span><strong>@(!string.IsNullOrWhiteSpace(Model.PackageName) ? Model.PackageName : Model.Service?.Name ?? "Not available")</strong></div>
                 <div><span>Selected Package</span><strong>@Model.PackageName</strong></div>
                 <div><span>Package Price</span><strong>₱@Model.FinalPrice.ToString("N2")</strong></div>
                 <div>

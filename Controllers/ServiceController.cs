@@ -82,6 +82,7 @@ namespace AriesMagicAppointmentSystem.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(ServiceManageViewModel model)
         {
+            await using var transaction = await _context.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
             if (model.Inclusions.Count == 0)
                 ModelState.AddModelError("Inclusions", "Add at least one inclusion.");
 
@@ -123,6 +124,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                 new { service.Name, service.Price, service.DurationInHours }
             );
 
+            await transaction.CommitAsync();
             return RedirectToAction(nameof(Index));
         }
         // ADMIN + OWNER: edit package
@@ -167,6 +169,7 @@ namespace AriesMagicAppointmentSystem.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, ServiceManageViewModel model)
         {
+            await using var transaction = await _context.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
             if (id != model.Id) return NotFound();
             var existing = await _context.Services.AsNoTracking().FirstOrDefaultAsync(s => s.Id == id);
             if (existing == null) return NotFound();
@@ -220,6 +223,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                 new { oldName, oldPrice, newName = service.Name, newPrice = service.Price }
             );
 
+            await transaction.CommitAsync();
             return RedirectToAction(nameof(Index));
         }
 
@@ -241,6 +245,7 @@ namespace AriesMagicAppointmentSystem.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ArchiveConfirmed(int id)
         {
+            await using var transaction = await _context.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
             var package = await _context.Services.FindAsync(id);
             if (package == null) return NotFound();
 
@@ -248,7 +253,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             package.IsArchived = true;
             await _context.SaveChangesAsync();
 
-            if (User.IsInRole("Admin"))
+            if (User.IsInRole("Admin") || User.IsInRole("Owner"))
             {
                 await _activityService.LogAsync(
                     SystemActivityType.ServiceArchived,
@@ -260,6 +265,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                 );
             }
 
+            await transaction.CommitAsync();
             return RedirectToAction(nameof(Index));
         }
 
@@ -282,6 +288,7 @@ namespace AriesMagicAppointmentSystem.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RestoreConfirmed(int id)
         {
+            await using var transaction = await _context.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
             var package = await _context.Services.FindAsync(id);
             if (package == null) return NotFound();
 
@@ -289,7 +296,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             package.IsArchived = false;
             await _context.SaveChangesAsync();
 
-            if (User.IsInRole("Admin"))
+            if (User.IsInRole("Admin") || User.IsInRole("Owner"))
             {
                 await _activityService.LogAsync(
                     SystemActivityType.ServiceRestored,
@@ -301,6 +308,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                 );
             }
 
+            await transaction.CommitAsync();
             return RedirectToAction(nameof(Archived));
         }
 

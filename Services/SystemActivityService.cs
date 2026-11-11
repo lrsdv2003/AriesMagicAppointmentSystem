@@ -23,7 +23,7 @@ namespace AriesMagicAppointmentSystem.Services
             SystemActivityType? type = null,
             DateTime? fromDate = null,
             DateTime? toDate = null,
-            string? search = null);
+            string? search = null, bool businessOnly = false);
     }
 
     public class SystemActivityService : ISystemActivityService
@@ -85,12 +85,13 @@ namespace AriesMagicAppointmentSystem.Services
             SystemActivityType? type = null,
             DateTime? fromDate = null,
             DateTime? toDate = null,
-            string? search = null)
+            string? search = null, bool businessOnly = false)
         {
             page = Math.Max(page, 1);
             pageSize = Math.Clamp(pageSize, 1, 100);
 
             var query = _context.SystemActivities.AsNoTracking().AsQueryable();
+            if(businessOnly)query=query.Where(a=>BusinessActivityTypes.All.Contains(a.Type));
 
             if (type.HasValue)
             {
