@@ -1,4 +1,4 @@
-# Owner UI Round 1 completion — 11 November 2026
+# Owner UI Round 1 completion â€” 11 November 2026
 
 ## Scope and baseline
 Read the entire operator request and visually inspected all four pages of `OWNER_UI_IMPROVEMENTSFIXES_ROUND_1.pdf` before application edits. PDF screenshots are design references, never catalog/account/financial data. Written removals override the older sidebar shown in screenshots.
@@ -32,12 +32,12 @@ Work continued in `.worktrees/cancellation-payment-feedback-policy`, on new bran
 - Read-only live homepage and `/health` checks: both HTTP 200 from the authorized network process. This does not establish the currently deployed source hash or authenticated acceptance.
 
 ## Limits and release decision
-No schema changes, migration, production uploads, account changes, financial writes, invitations, key changes or deployment-settings changes performed.
+During the implementation-only phase, no schema changes, migrations, production uploads, account changes, financial writes, invitations, key changes or deployment-settings changes were performed. See the subsequent authorized live deployment below.
 
 Do not claim this full feature set is newly created here: the baseline already implements much of Round 1. No fabricated personnel invitation date is shown: the current personnel row/invitation model has no reliable issued-at field. Existing queue filtering/search behavior is retained; scalable server pagination is not newly implemented in this completion and remains a follow-up for large datasets. Reports deliberately preserve existing event-date cohort semantics, not an unapproved cash-date accounting policy.
 
-Deployment remains HOLD: no current coordinated application/config/private-file/SQL recovery checkpoint, freshly reconciled live source identity, transfer inventory for this new build, or authenticated postdeployment acceptance has been established in this operation. Historical November 5 backups and the frozen 509-file email allowlist must not be relabeled current or used for this newer release. Complete the established protected checkpoint, publish from this current source, review exact changed files/exclusions and live baseline, then coordinate maintenance/FTPS and authenticated financial/personnel checks. Do not transfer an older UI artifact, reset SQL, activate H4 or enable feedback media.
+Subsequent operator authorization was executed on 11 November 2026. The current win-x64 release was deployed using an exact eight-file delta after a fresh coordinated application/config/private-file/SQL checkpoint and verified isolated SQL restore. Live startup, 22 public/security/asset checks and 13 authenticated Owner pages passed. See `OWNER_UI_ROUND1_LIVE_DEPLOYMENT_20261111.md` for exact hashes, transferred files, recovery evidence and test limits. Historical frozen email allowlists were not used.
 
-No full production release acceptance is claimed. All local evidence is in `tmp/pdfs/owner-round1/`; private backups and credentials are excluded.
+Live acceptance is limited to the documented UI deployment and smoke-test scope; no new live financial, invitation or credential-changing actions were exercised. All local evidence is in `tmp/pdfs/owner-round1/`; private backups and credentials are excluded.
 
 Final browser result: **52/52 page/viewport combinations passed; zero axe violations and zero document overflow**. Screenshots and assertions were rerun after the final mobile personnel-card styles. The full 510-check SQL suite passed after the final Razor/component changes; the later change was CSS-only.
