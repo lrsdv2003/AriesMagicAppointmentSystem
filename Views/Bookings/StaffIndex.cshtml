@@ -11,8 +11,8 @@
 
     string StatusClass(string status) => status switch {
         BookingStatus.Pending => "status-pending",
-        BookingStatus.AwaitingDownpayment => "status-confirmed",
-        BookingStatus.AwaitingVerification => "status-confirmed",
+        BookingStatus.AwaitingDownpayment => "status-pending",
+        BookingStatus.AwaitingVerification => "status-pending",
         BookingStatus.Declined => "status-declined",
         BookingStatus.Cancelled => "status-declined",
         BookingStatus.Completed => "status-completed",
@@ -55,18 +55,13 @@
             </div>
 
             <div>
-                <label class="form-label" for="staffService">Package</label>
-                <select id="staffService" name="serviceId" class="form-select">
-                    <option value="">All Packages</option>
-                    @foreach (var service in Model.AvailableServices)
-                    {
-                        <option value="@service.Id" selected="@(Model.ServiceId == service.Id)">@service.Name</option>
-                    }
+                <label class="form-label" for="staffBookingSort">Sort requests by submission</label>
+                <select id="staffBookingSort" name="sortBy" class="form-select">
+                    <option value="newest" selected="@((string?)ViewBag.StaffSort != "oldest")">Newest to Oldest</option>
+                    <option value="oldest" selected="@((string?)ViewBag.StaffSort == "oldest")">Oldest to Newest</option>
                 </select>
             </div>
-<div class="am-filter-actions">
-            <button type="submit" class="btn btn-primary"><i class="bi bi-funnel" aria-hidden="true"></i> Apply Filters</button>
-        </div></div></div><a asp-action="Index" class="btn btn-outline-secondary staff-final-clear">Clear Filters</a><button type="submit" class="visually-hidden">Search bookings</button></form>
+</div></div><button type="button" class="btn btn-outline-secondary aries-refresh-now" aria-label="Refresh booking requests"><i class="bi bi-arrow-clockwise" aria-hidden="true"></i></button><button type="submit" class="visually-hidden">Search bookings</button></form>
     </div>
     <div class="dashboard-panel staff-booking-table-panel">
         <div class="staff-booking-panel-heading">
@@ -142,8 +137,8 @@
 
   <span>Page @Model.Page of @Model.TotalPages · @Model.TotalCount matching requests</span>
   <div class="staff-round2-page-buttons">
-    @if(Model.Page>1){<a class="btn btn-outline-secondary" asp-action="Index" asp-route-page="@(Model.Page-1)" asp-route-pageSize="@Model.PageSize" asp-route-search="@Model.Search" asp-route-bookingStatus="@Model.BookingStatus" asp-route-serviceId="@Model.ServiceId">Previous</a>}
-    @if(Model.Page<Model.TotalPages){<a class="btn btn-primary" asp-action="Index" asp-route-page="@(Model.Page+1)" asp-route-pageSize="@Model.PageSize" asp-route-search="@Model.Search" asp-route-bookingStatus="@Model.BookingStatus" asp-route-serviceId="@Model.ServiceId">Next</a>}
+    @if(Model.Page>1){<a class="btn btn-outline-secondary" asp-action="Index" asp-route-page="@(Model.Page-1)" asp-route-pageSize="@Model.PageSize" asp-route-search="@Model.Search" asp-route-bookingStatus="@Model.BookingStatus" asp-route-sortBy="@ViewBag.StaffSort">Previous</a>}
+    @if(Model.Page<Model.TotalPages){<a class="btn btn-primary" asp-action="Index" asp-route-page="@(Model.Page+1)" asp-route-pageSize="@Model.PageSize" asp-route-search="@Model.Search" asp-route-bookingStatus="@Model.BookingStatus" asp-route-sortBy="@ViewBag.StaffSort">Next</a>}
   </div>
 </nav>
 }

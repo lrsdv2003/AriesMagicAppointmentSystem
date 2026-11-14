@@ -46,16 +46,12 @@
             <label class="visually-hidden" for="rescheduleSearch">Search reschedule requests</label>
             <div class="am-filter-search"><i class="bi bi-search" aria-hidden="true"></i><input id="rescheduleSearch" type="search" name="search" value="@Model.Search" class="form-control" placeholder="Booking ID, client, or package" /></div>
 <div class="dropdown"><button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false"><i class="bi bi-funnel" aria-hidden="true"></i> Filters</button><div class="dropdown-menu dropdown-menu-end"><h6>Filter requests</h6>
-            <label class="form-label" for="rescheduleDate">Requested date</label>
-            <input id="rescheduleDate" type="date" name="requestedDate" value="@(Model.RequestedDate?.ToString("yyyy-MM-dd"))" class="form-control mb-3" />
             <label class="form-label" for="rescheduleSort">Sort requests</label>
             <select id="rescheduleSort" name="sortBy" class="form-select mb-3">
                 <option value="newest" selected="@(Model.SortBy == "newest")">Newest first</option>
                 <option value="oldest" selected="@(Model.SortBy == "oldest")">Oldest first</option>
             </select>
-<div class="am-filter-actions">
-            <button type="submit" class="btn btn-primary"><i class="bi bi-funnel" aria-hidden="true"></i> Apply Filters</button>
-        </div></div></div><a asp-action="Index" asp-route-status="@Model.StatusFilter" class="btn btn-outline-secondary staff-final-clear">Clear Filters</a><button type="submit" class="visually-hidden">Search reschedules</button></form>
+</div></div><button type="button" class="btn btn-outline-secondary aries-refresh-now"><i class="bi bi-arrow-clockwise" aria-hidden="true"></i><span class="visually-hidden">Refresh requests</span></button><button type="submit" class="visually-hidden">Search reschedules</button></form>
     </div>
 
     <div class="dashboard-panel staff-reschedule-table-panel">
@@ -64,9 +60,7 @@
                 <h2>@(Model.StatusFilter == RescheduleRequestStatus.Pending ? "Pending Reschedule Requests" : "Reschedule Request History")</h2>
                 <p>@(Model.StatusFilter == RescheduleRequestStatus.Pending ? "Only requests still requiring a Staff decision appear here by default." : "Processed requests remain available for audit and reference.")</p>
             </div>
-            @if(Model.StatusFilter == RescheduleRequestStatus.Pending){
-              <a class="btn btn-outline-primary staff-round2-history-link" asp-action="Index" asp-route-status="All">Request history</a>
-            } else {
+            @if(Model.StatusFilter != RescheduleRequestStatus.Pending){
               <a class="btn btn-outline-primary staff-round2-history-link" asp-action="Index" asp-route-status="Pending">Back to pending reviews</a>
             }
         </div>
@@ -110,16 +104,16 @@
                             : "Historical original schedule unavailable|—";
                         var requestedDisplay = $"{request.RequestedDate:MMMM dd, yyyy}|{request.RequestedStartTime:hh:mm tt} – {request.RequestedEndTime:hh:mm tt}";
                         <tr>
-                            <td><strong class="staff-booking-code">@bookingCode</strong><span class="staff-booking-subtext">@(booking.PackageName ?? booking.Service?.Name)</span></td>
-                            <td><strong>@(booking.Client?.FullName ?? "Unknown client")</strong></td>
-                            <td>
+                            <td data-label="Booking"><strong class="staff-booking-code">@bookingCode</strong><span class="staff-booking-subtext">@(booking.PackageName ?? booking.Service?.Name)</span></td>
+                            <td data-label="Client"><strong>@(booking.Client?.FullName ?? "Unknown client")</strong></td>
+                            <td data-label="Original schedule">
                                 <div class="reschedule-schedule neutral">
                                     <span>Original Schedule</span>
                                     <strong>@originalDisplay.Split('|')[0]</strong>
                                     <small>@originalDisplay.Split('|')[1]</small>
                                 </div>
                             </td>
-                            <td>
+                            <td data-label="Requested schedule">
                                 <div class="reschedule-schedule requested">
                                     <span>Requested Schedule</span>
                                     <strong>@requestedDisplay.Split('|')[0]</strong>
@@ -130,11 +124,11 @@
                                     }
                                 </div>
                             </td>
-                            <td class="staff-round1-table-package">@(booking.PackageName ?? booking.Service?.Name ?? "Package not recorded")</td>
-                            <td><time datetime="@request.CreatedAt.ToString("O")">@request.CreatedAt.ToString("MMM d, yyyy")</time></td>
-                            <td><span class="status-badge @StatusClass(request.Status)">@request.Status</span></td>
-                            <td><a asp-action="Details" asp-route-id="@request.Id" class="btn btn-sm btn-outline-secondary"><i class="bi bi-eye" aria-hidden="true"></i> View Details</a></td>
-                            <td class="text-end">
+                            <td data-label="Package" class="staff-round1-table-package">@(booking.PackageName ?? booking.Service?.Name ?? "Package not recorded")</td>
+                            <td data-label="Requested on"><time datetime="@request.CreatedAt.ToString("O")">@request.CreatedAt.ToString("MMM d, yyyy")</time></td>
+                            <td data-label="Status"><span class="status-badge @StatusClass(request.Status)">@request.Status</span></td>
+                            <td data-label="Details"><a asp-action="Details" asp-route-id="@request.Id" class="btn btn-sm btn-outline-secondary"><i class="bi bi-eye" aria-hidden="true"></i> View Details</a></td>
+                            <td data-label="Actions" class="text-end">
                                 <div class="staff-reschedule-actions">
                                     @if (request.Status == RescheduleRequestStatus.Pending && canDecide)
                                     {
@@ -242,6 +236,10 @@
 <script>
 (() => {
     'use strict';
+    const filterForm = document.querySelector('[data-staff-autosearch="reschedules"]');
+    filterForm?.querySelectorAll('select[name="sortBy"], input[name="requestedDate"]').forEach(control => {
+        control.addEventListener('change', () => filterForm.requestSubmit());
+    });
     document.querySelectorAll('.js-reschedule-approve').forEach(button => {
         button.addEventListener('click', () => {
             document.getElementById('approveRescheduleId').value = button.dataset.requestId || '';

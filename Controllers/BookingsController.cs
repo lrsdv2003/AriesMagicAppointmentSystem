@@ -50,7 +50,7 @@ namespace AriesMagicAppointmentSystem.Controllers
         }
 
         [Authorize(Roles = "Staff,Owner")]
-        public async Task<IActionResult> Index(string? search, string? bookingStatus, string? paymentStatus, DateTime? eventDate, int? serviceId, int page = 1, int pageSize = 10)
+        public async Task<IActionResult> Index(string? search, string? bookingStatus, string? paymentStatus, DateTime? eventDate, int? serviceId, int page = 1, int pageSize = 10, string? sortBy = null)
         {
             // Lazily flip any bookings whose event has already ended into Completed/archived
             // before we build this list, so nothing that has already happened lingers here.
@@ -77,6 +77,9 @@ namespace AriesMagicAppointmentSystem.Controllers
                         || b.TravelFeeStatus == VenueLocationPolicy.AwaitingCustomerAcceptance);
                 // This date filter was intentionally removed from the Staff UI.
                 eventDate = null;
+                serviceId = null;
+                sortBy = sortBy == "oldest" ? "oldest" : "newest";
+                ViewBag.StaffSort = sortBy;
             }
             else if (!string.IsNullOrWhiteSpace(bookingStatus) && bookingStatus != "All")
             {
@@ -135,7 +138,9 @@ namespace AriesMagicAppointmentSystem.Controllers
                 totalCount = await bookingsQuery.CountAsync();
                 var totalPages = Math.Max(1, (int)Math.Ceiling(totalCount / (double)pageSize));
                 page = Math.Min(page, totalPages);
-                bookings = await bookingsQuery.OrderByDescending(b => b.CreatedAt).ThenByDescending(b => b.Id)
+                bookings = await (sortBy == "oldest"
+                    ? bookingsQuery.OrderBy(b => b.CreatedAt).ThenBy(b => b.Id)
+                    : bookingsQuery.OrderByDescending(b => b.CreatedAt).ThenByDescending(b => b.Id))
                     .Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
             }
             else
@@ -968,6 +973,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                 .Include(b => b.Payments)
                 .ThenInclude(p => p.OcrVerifications)
                 .Include(b => b.RescheduleRequests)
+                .Include(b => b.TimelineEvents)
                 .FirstOrDefaultAsync(b => b.Id == id && (!User.IsInRole("Client") || b.ApplicationUserId == User.FindFirstValue(ClaimTypes.NameIdentifier)));
 
             if (booking == null) return NotFound();

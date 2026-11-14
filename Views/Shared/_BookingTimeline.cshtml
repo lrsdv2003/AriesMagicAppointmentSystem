@@ -1,0 +1,52 @@
+@model AriesMagicAppointmentSystem.Models.Booking
+@using AriesMagicAppointmentSystem.Models
+@{
+    var events = Model.TimelineEvents.OrderBy(e => e.CreatedAt).ThenBy(e => e.Id).ToList();
+    var labels = new Dictionary<string, string> {
+        [TimelineEventType.BookingCreated] = "Booking Created",
+        [TimelineEventType.BookingApproved] = "Booking Approved",
+        [TimelineEventType.PaymentWindowOpened] = "Payment Window Opened",
+        [TimelineEventType.DownpaymentUploaded] = "Payment Proof Uploaded",
+        [TimelineEventType.PaymentVerified] = "Payment Verified",
+        [TimelineEventType.BookingConfirmed] = "Booking Confirmed",
+        [TimelineEventType.BookingCompleted] = "Booking Completed",
+        [TimelineEventType.BookingReopened] = "Booking Reopened",
+        [TimelineEventType.RescheduleRequested] = "Reschedule Requested",
+        [TimelineEventType.RescheduleApproved] = "Reschedule Approved",
+        [TimelineEventType.RescheduleRejected] = "Reschedule Declined",
+        [TimelineEventType.BookingExpired] = "Booking Expired",
+        [TimelineEventType.BookingDeclined] = "Booking Declined",
+        [TimelineEventType.BookingCancelled] = "Booking Cancelled",
+        [TimelineEventType.RefundRequested] = "Refund Requested",
+        [TimelineEventType.BookingArchived] = "Booking Archived"
+    };
+    string statusTone = Model.Status switch {
+        BookingStatus.Confirmed => "is-confirmed",
+        BookingStatus.Cancelled or BookingStatus.Declined => "is-cancelled",
+        BookingStatus.Expired => "is-expired",
+        BookingStatus.AwaitingVerification => "is-payment",
+        _ => "is-pending"
+    };
+}
+<section class="aries-timeline" aria-labelledby="aries-timeline-title">
+    <header class="aries-timeline-head">
+        <div><h2 id="aries-timeline-title"><i class="bi bi-clock-history" aria-hidden="true"></i> Booking Timeline</h2><p>Recorded activity and progress for this booking.</p></div>
+        <span class="aries-timeline-status @statusTone">Current status: @Model.Status</span>
+    </header>
+    @if(events.Count == 0) {
+        <p class="aries-timeline-empty">No recorded activity is available for this booking.</p>
+    } else {
+        <ol class="aries-timeline-list">
+        @foreach(var entry in events) {
+            var label = labels.TryGetValue(entry.EventType, out var known) ? known : System.Text.RegularExpressions.Regex.Replace(entry.EventType, "(?<=[a-z])(?=[A-Z])", " ");
+            var stamp = entry.CreatedAt;
+            var local = stamp.Kind == DateTimeKind.Utc
+                ? TimeZoneInfo.ConvertTimeFromUtc(stamp, TimeZoneInfo.FindSystemTimeZoneById("Asia/Manila"))
+                : stamp;
+            <li><span class="aries-timeline-marker" aria-hidden="true"></span>
+                <div class="aries-timeline-entry"><strong>@label</strong><time datetime="@stamp.ToString("O")">@local.ToString("MMM d, yyyy · h:mm tt")@(stamp.Kind == DateTimeKind.Utc ? " PHT" : "")</time></div>
+            </li>
+        }
+        </ol>
+    }
+</section>
