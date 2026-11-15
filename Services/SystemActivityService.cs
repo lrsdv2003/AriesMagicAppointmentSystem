@@ -23,7 +23,7 @@ namespace AriesMagicAppointmentSystem.Services
             SystemActivityType? type = null,
             DateTime? fromDate = null,
             DateTime? toDate = null,
-            string? search = null, bool businessOnly = false);
+            string? search = null, bool businessOnly = false, string sortBy = "newest");
     }
 
     public class SystemActivityService : ISystemActivityService
@@ -85,7 +85,7 @@ namespace AriesMagicAppointmentSystem.Services
             SystemActivityType? type = null,
             DateTime? fromDate = null,
             DateTime? toDate = null,
-            string? search = null, bool businessOnly = false)
+            string? search = null, bool businessOnly = false, string sortBy = "newest")
         {
             page = Math.Max(page, 1);
             pageSize = Math.Clamp(pageSize, 1, 100);
@@ -121,8 +121,10 @@ namespace AriesMagicAppointmentSystem.Services
 
             var totalCount = await query.CountAsync();
 
-            var items = await query
-                .OrderByDescending(a => a.CreatedAt)
+            var ordered = string.Equals(sortBy, "oldest", StringComparison.OrdinalIgnoreCase)
+                ? query.OrderBy(a => a.CreatedAt).ThenBy(a => a.Id)
+                : query.OrderByDescending(a => a.CreatedAt).ThenByDescending(a => a.Id);
+            var items = await ordered
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();

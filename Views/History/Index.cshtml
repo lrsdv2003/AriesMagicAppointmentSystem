@@ -37,12 +37,10 @@
 <td data-label="Details"><a asp-action="Details" asp-route-id="@row.Id" class="btn btn-outline-primary" aria-label="View Details for @row.BookingCode">View Details</a></td></tr>
 }</tbody></table></div>
 }
-@if(Model.TotalPages>1) {
-<nav class="ui-pagination" aria-label="History pages">
-@if(Model.Filters.Page>1) { <a class="btn btn-outline-secondary" asp-action="Index" asp-all-route-data="@HistoryPresentation.Routes(Model.Filters,Model.Filters.Page-1)">Previous</a> }
-<span aria-live="polite">Page @Model.Filters.Page of @Model.TotalPages</span>
-@if(Model.Filters.Page<Model.TotalPages) { <a class="btn btn-outline-secondary" asp-action="Index" asp-all-route-data="@HistoryPresentation.Routes(Model.Filters,Model.Filters.Page+1)">Next</a> }
-</nav>
+@{
+    var historyPager = new AriesMagicAppointmentSystem.ViewModels.QueuePaginationViewModel(
+        Model.TotalCount, Model.Filters.Page, 5, "Index", HistoryPresentation.Routes(Model.Filters));
 }
+<partial name="_QueuePagination" model="historyPager" />
 </div>
 </div>

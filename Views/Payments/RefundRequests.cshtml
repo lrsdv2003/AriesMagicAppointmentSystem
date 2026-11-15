@@ -5,7 +5,7 @@
     ViewData["Title"] = "Refund Requests";
     var requests = Model.ToList();
     var pagination = ViewData["QueuePage"] as AriesMagicAppointmentSystem.ViewModels.QueuePaginationViewModel
-        ?? new(requests.Count, 1, 10, "RefundRequests", new() { ["filter"] = "all" }) {
+        ?? new(requests.Count, 1, 5, "RefundRequests", new() { ["filter"] = "all" }) {
             AwaitingReviewCount = requests.Count(x => x.Status is RefundStatus.Pending or RefundStatus.UnderReview),
             AwaitingFinalVerificationCount = requests.Count(x => x.Status == RefundStatus.RefundProcessing) };
     string OcrClass(string? result) => result switch { OcrVerificationResults.MismatchDetected => "ocr-mismatch", OcrVerificationResults.OcrFailed => "ocr-failed", _ => "ocr-manual" };
@@ -21,8 +21,7 @@
         <div><span>Awaiting Review</span><strong>@pagination.AwaitingReviewCount</strong></div>
         <div><span>Awaiting Final Verification</span><strong>@pagination.AwaitingFinalVerificationCount</strong></div>
     </div>
-    <form method="get" class="am-filter-bar am-filter-row" aria-label="Refund verification filters">
-        <input type="hidden" name="pageSize" value="@pagination.PageSize" />
+    <form method="get" class="am-filter-bar am-filter-row aries-round3-toolbar" data-aries-round3-filter="true" aria-label="Refund verification filters">
         <div class="am-filter-search"><i class="bi bi-search" aria-hidden="true"></i><input type="search" name="q" value="@ViewBag.Search" placeholder="Search booking, client, or reference" aria-label="Search refund queue" /></div>
         <div class="dropdown">
             <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false"><i class="bi bi-funnel" aria-hidden="true"></i> Filters</button>
@@ -36,10 +35,15 @@
                     <option value="Refunded" selected="@(ViewBag.Filter==RefundStatus.Refunded)">Completed</option>
                     <option value="Rejected" selected="@(ViewBag.Filter==RefundStatus.Rejected)">Rejected</option>
                 </select>
-                <div class="d-flex justify-content-end gap-2"><a asp-action="RefundRequests" class="btn btn-light">Clear Filters</a><button class="btn btn-primary">Apply Filters</button></div>
+                <a asp-action="RefundRequests" class="btn btn-outline-secondary btn-sm">Reset filters</a>
+                <label class="form-label" for="round3Sort_Payments">Submission order</label>
+                <select class="form-select mb-3" id="round3Sort_Payments" name="sortBy">
+                    <option value="newest" selected="@((string?)ViewBag.SortBy != "oldest")">Newest to Oldest</option>
+                    <option value="oldest" selected="@((string?)ViewBag.SortBy == "oldest")">Oldest to Newest</option>
+                </select>
             </div>
         </div>
-        <button class="btn btn-primary" type="submit">Search</button>
+        <button class="visually-hidden" type="submit">Search</button>
         <a class="btn btn-outline-secondary" asp-action="RefundRequests" asp-all-route-data="pagination.Routes()" data-queue-refresh><i class="bi bi-arrow-clockwise" aria-hidden="true"></i> Refresh</a>
     </form>
     <div class="dashboard-panel owner-table-panel">

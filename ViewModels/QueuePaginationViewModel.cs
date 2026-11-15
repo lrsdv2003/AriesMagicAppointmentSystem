@@ -6,7 +6,7 @@ public sealed class QueuePaginationViewModel
     public QueuePaginationViewModel(int totalCount, int page, int pageSize, string action, Dictionary<string, string> filters)
     {
         TotalCount = totalCount;
-        PageSize = pageSize is 10 or 25 or 50 ? pageSize : 10;
+        PageSize = 5;
         TotalPages = Math.Max(1, (int)Math.Ceiling(totalCount / (double)PageSize));
         Page = Math.Clamp(page, 1, TotalPages);
         Action = action;
@@ -26,9 +26,20 @@ public sealed class QueuePaginationViewModel
     public string Action { get; }
     public Dictionary<string, string> Filters { get; }
 
-    public Dictionary<string, string> Routes(int? page = null) => new(Filters)
+    public Dictionary<string, string> Routes(int? page = null)
     {
-        ["page"] = (page ?? Page).ToString(System.Globalization.CultureInfo.InvariantCulture),
-        ["pageSize"] = PageSize.ToString(System.Globalization.CultureInfo.InvariantCulture)
-    };
+        // Routing values are case-insensitive; inherited Page/PageSize may not
+        // coexist with the canonical lower-case pager parameters.
+        var routes = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var filter in Filters)
+        {
+            if (filter.Key.Equals("page", StringComparison.OrdinalIgnoreCase) ||
+                filter.Key.Equals("pageSize", StringComparison.OrdinalIgnoreCase))
+                continue;
+            routes[filter.Key] = filter.Value;
+        }
+        routes["page"] = (page ?? Page).ToString(System.Globalization.CultureInfo.InvariantCulture);
+        routes["pageSize"] = "5";
+        return routes;
+    }
 }

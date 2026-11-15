@@ -5,7 +5,7 @@
 <div class="admin-console">
 <header class="admin-heading"><div><p>Dates and times are UTC.</p></div></header>
 <div class="am-filter-container">
-    <form method="get" asp-action="Index" class="am-filter-bar">
+    <form method="get" asp-action="Index" class="am-filter-bar aries-round3-toolbar" data-aries-round3-filter="true">
         <div class="am-filter-row">
 
             <!-- Direct Search Input -->
@@ -63,20 +63,24 @@
 
                     <hr class="my-3" />
 
-                    <div class="d-flex justify-content-end gap-2">
-                        <a asp-action="Index" class="btn btn-light btn-sm">Clear Filters</a>
-                        <button type="submit" class="btn btn-primary btn-sm">Apply Filters</button>
-                    </div>
+                    <label for="systemActivitySort" class="form-label">Sort by</label>
+                    <select id="systemActivitySort" name="sortBy" class="form-select mb-3">
+                      <option value="newest" selected="@((string?)ViewBag.ActivitySort != "oldest")">Newest to Oldest</option>
+                      <option value="oldest" selected="@((string?)ViewBag.ActivitySort == "oldest")">Oldest to Newest</option>
+                    </select>
+                    <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Reset filters</a>
                 </div>
             </div>
 
             <!-- Quick Submit & Clear -->
-            <button type="submit" class="btn btn-primary">Search</button>
+            <button type="submit" class="visually-hidden">Search</button>
 
-            @if (Model != null && (!string.IsNullOrEmpty(Model.SearchFilter) || Model.TypeFilter.HasValue || Model.FromDateFilter.HasValue || Model.ToDateFilter.HasValue))
-            {
-                <a asp-action="Index" class="btn btn-link text-decoration-none text-muted">Clear Filters</a>
-            }
+            <a asp-action="Index" class="btn btn-outline-secondary aries-round3-refresh"
+               asp-route-page="@Model?.Page" asp-route-search="@Model?.SearchFilter"
+               asp-route-type="@(Model?.TypeFilter?.ToString("d"))"
+               asp-route-fromDate="@(Model?.FromDateFilter?.ToString("yyyy-MM-dd"))"
+               asp-route-toDate="@(Model?.ToDateFilter?.ToString("yyyy-MM-dd"))"
+               asp-route-sortBy="@ViewBag.ActivitySort" aria-label="Refresh business activity"><i class="bi bi-arrow-clockwise" aria-hidden="true"></i><span>Refresh</span></a>
         </div>
     </form>
 </div>
@@ -95,23 +99,17 @@
 </tr>
 }
 </tbody></table>@if(!Model.Activities.Any()) { <p class="admin-empty">No business activity found for the selected filters.</p> }</div>
-        @if (Model.TotalPages > 1)
-        {
-            <nav class="mt-3">
-                <ul class="pagination justify-content-center">
-                    @for (var p = Math.Max(1, Model.Page - 2); p <= Math.Min(Model.TotalPages, Model.Page + 2); p++)
-                    {
-                        <li class="page-item @(p == Model.Page ? "active" : "")">
-                            <a class="page-link" asp-action="Index" asp-route-page="@p"
-                               asp-route-type="@(Model.TypeFilter?.ToString("d"))"
-                               asp-route-fromDate="@(Model.FromDateFilter?.ToString("yyyy-MM-dd"))"
-                               asp-route-toDate="@(Model.ToDateFilter?.ToString("yyyy-MM-dd"))"
-                               asp-route-search="@Model.SearchFilter">@p</a>
-                        </li>
-                    }
-                </ul>
-            </nav>
+        @{
+            var activityPager = new AriesMagicAppointmentSystem.ViewModels.QueuePaginationViewModel(
+                Model.TotalCount, Model.Page, 5, "Index", new Dictionary<string,string> {
+                    ["type"] = Model.TypeFilter?.ToString("d") ?? "",
+                    ["fromDate"] = Model.FromDateFilter?.ToString("yyyy-MM-dd") ?? "",
+                    ["toDate"] = Model.ToDateFilter?.ToString("yyyy-MM-dd") ?? "",
+                    ["search"] = Model.SearchFilter ?? "",
+                    ["sortBy"] = (string?)ViewBag.ActivitySort ?? "newest"
+                });
         }
+        <partial name="_QueuePagination" model="activityPager" />
 
 <p class="admin-note">@Model.TotalCount recorded activities. Historical roles are shown only when recorded.</p>
 </div>

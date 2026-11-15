@@ -64,6 +64,6 @@ sealed class FailingAudit(ApplicationDbContext db, AriesMagicAppointmentSystem.M
     public Task LogAsync(AriesMagicAppointmentSystem.Models.SystemActivityType type,string description,string performedByUserId,string? performedByUserName=null,string? affectedRecordId=null,string? affectedRecordType=null,object? metadata=null)
         => type==failOn ? throw new InvalidOperationException("Synthetic audit outage") : inner.LogAsync(type,description,performedByUserId,performedByUserName,affectedRecordId,affectedRecordType,metadata);
     public Task<List<AriesMagicAppointmentSystem.Models.SystemActivity>> GetRecentAsync(int count=50)=>inner.GetRecentAsync(count);
-    public Task<(List<AriesMagicAppointmentSystem.Models.SystemActivity> Items,int TotalCount)> GetPagedAsync(int page=1,int pageSize=20,AriesMagicAppointmentSystem.Models.SystemActivityType? type=null,DateTime? fromDate=null,DateTime? toDate=null,string? search=null,bool businessOnly=false)
-        =>inner.GetPagedAsync(page,pageSize,type,fromDate,toDate,search,businessOnly);
+    public Task<(List<AriesMagicAppointmentSystem.Models.SystemActivity> Items,int TotalCount)> GetPagedAsync(int page=1,int pageSize=20,AriesMagicAppointmentSystem.Models.SystemActivityType? type=null,DateTime? fromDate=null,DateTime? toDate=null,string? search=null,bool businessOnly=false,string sortBy="newest")
+        =>inner.GetPagedAsync(page,pageSize,type,fromDate,toDate,search,businessOnly,sortBy);
 }

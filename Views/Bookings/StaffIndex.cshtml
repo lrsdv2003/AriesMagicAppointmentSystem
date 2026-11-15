@@ -39,7 +39,7 @@
         <div class="staff-booking-stat"><span class="staff-stat-label"><i class="bi bi-geo-alt" aria-hidden="true"></i> Manual Venue Review (page)</span><strong>@reviewCount</strong></div>
     </div>
     <div class="am-filter-container">
-        <form method="get" asp-action="Index" class="am-filter-bar am-filter-row staff-final-filter-toolbar" data-staff-autosearch="bookings" role="search">
+        <form method="get" asp-action="Index" class="am-filter-bar am-filter-row staff-final-filter-toolbar aries-round3-toolbar" data-staff-autosearch="bookings" role="search">
             <div class="am-filter-search">
                 <label class="visually-hidden" for="staffBookingSearch">Search bookings</label>
                 <i class="bi bi-search" aria-hidden="true"></i><input id="staffBookingSearch" type="search" name="search" value="@Model.Search" class="form-control" placeholder="Search booking ID, client, package, or venue" autocomplete="off" />
@@ -132,13 +132,12 @@
         }
     </div>
 </div>
-@if(Model.TotalPages > 1 || Model.TotalCount > 0){
-<nav class="staff-round2-server-pager" aria-label="Booking queue pages">
-
-  <span>Page @Model.Page of @Model.TotalPages · @Model.TotalCount matching requests</span>
-  <div class="staff-round2-page-buttons">
-    @if(Model.Page>1){<a class="btn btn-outline-secondary" asp-action="Index" asp-route-page="@(Model.Page-1)" asp-route-pageSize="@Model.PageSize" asp-route-search="@Model.Search" asp-route-bookingStatus="@Model.BookingStatus" asp-route-sortBy="@ViewBag.StaffSort">Previous</a>}
-    @if(Model.Page<Model.TotalPages){<a class="btn btn-primary" asp-action="Index" asp-route-page="@(Model.Page+1)" asp-route-pageSize="@Model.PageSize" asp-route-search="@Model.Search" asp-route-bookingStatus="@Model.BookingStatus" asp-route-sortBy="@ViewBag.StaffSort">Next</a>}
-  </div>
-</nav>
+@{
+    var staffPager = new AriesMagicAppointmentSystem.ViewModels.QueuePaginationViewModel(
+        Model.TotalCount, Model.Page, 5, "Index", new Dictionary<string,string> {
+            ["search"] = Model.Search ?? "",
+            ["bookingStatus"] = Model.BookingStatus ?? "AllRequests",
+            ["sortBy"] = (string?)ViewBag.StaffSort ?? "newest"
+        });
 }
+<partial name="_QueuePagination" model="staffPager" />

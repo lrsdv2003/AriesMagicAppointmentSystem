@@ -40,12 +40,19 @@
     </section>
 
     <div class="am-filter-container">
-        <form method="get" asp-action="Index" class="am-filter-bar am-filter-row staff-final-filter-toolbar" data-staff-autosearch="reschedules" role="search">
-            <input type="hidden" name="status" value="@Model.StatusFilter" />
+        <form method="get" asp-action="Index" class="am-filter-bar am-filter-row staff-final-filter-toolbar aries-round3-toolbar" data-staff-autosearch="reschedules" role="search">
+
 
             <label class="visually-hidden" for="rescheduleSearch">Search reschedule requests</label>
             <div class="am-filter-search"><i class="bi bi-search" aria-hidden="true"></i><input id="rescheduleSearch" type="search" name="search" value="@Model.Search" class="form-control" placeholder="Booking ID, client, or package" /></div>
 <div class="dropdown"><button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false"><i class="bi bi-funnel" aria-hidden="true"></i> Filters</button><div class="dropdown-menu dropdown-menu-end"><h6>Filter requests</h6>
+            <label for="rescheduleStatus" class="form-label">Request status</label>
+            <select id="rescheduleStatus" name="status" class="form-select mb-3">
+                <option value="Pending" selected="@(Model.StatusFilter == RescheduleRequestStatus.Pending)">Pending review</option>
+                <option value="All" selected="@(Model.StatusFilter == "All")">All requests</option>
+                <option value="Approved" selected="@(Model.StatusFilter == RescheduleRequestStatus.Approved)">Approved</option>
+                <option value="Rejected" selected="@(Model.StatusFilter == RescheduleRequestStatus.Rejected)">Rejected</option>
+            </select>
             <label class="form-label" for="rescheduleSort">Sort requests</label>
             <select id="rescheduleSort" name="sortBy" class="form-select mb-3">
                 <option value="newest" selected="@(Model.SortBy == "newest")">Newest first</option>
@@ -184,16 +191,16 @@
             </div>
         }
     </div>
-@if(Model.TotalCount > 0){
-<nav class="staff-round2-server-pager" aria-label="Reschedule request pages">
-
- <span>Page @Model.Page of @Model.TotalPages · @Model.TotalCount requests</span>
- <div class="staff-round2-page-buttons">
-  @if(Model.Page>1){<a class="btn btn-outline-secondary" asp-action="Index" asp-route-status="@Model.StatusFilter" asp-route-search="@Model.Search" asp-route-requestedDate="@Model.RequestedDate?.ToString("yyyy-MM-dd")" asp-route-sortBy="@Model.SortBy" asp-route-pageSize="@Model.PageSize" asp-route-page="@(Model.Page-1)">Previous</a>}
-  @if(Model.Page<Model.TotalPages){<a class="btn btn-primary" asp-action="Index" asp-route-status="@Model.StatusFilter" asp-route-search="@Model.Search" asp-route-requestedDate="@Model.RequestedDate?.ToString("yyyy-MM-dd")" asp-route-sortBy="@Model.SortBy" asp-route-pageSize="@Model.PageSize" asp-route-page="@(Model.Page+1)">Next</a>}
- </div>
-</nav>
+@{
+    var reschedulePager = new AriesMagicAppointmentSystem.ViewModels.QueuePaginationViewModel(
+        Model.TotalCount, Model.Page, 5, "Index", new Dictionary<string,string> {
+            ["status"] = Model.StatusFilter ?? "Pending",
+            ["search"] = Model.Search ?? "",
+            ["requestedDate"] = Model.RequestedDate?.ToString("yyyy-MM-dd") ?? "",
+            ["sortBy"] = Model.SortBy
+        });
 }
+<partial name="_QueuePagination" model="reschedulePager" />
 </div>
 
 @if (canDecide)
@@ -237,7 +244,7 @@
 (() => {
     'use strict';
     const filterForm = document.querySelector('[data-staff-autosearch="reschedules"]');
-    filterForm?.querySelectorAll('select[name="sortBy"], input[name="requestedDate"]').forEach(control => {
+    filterForm?.querySelectorAll('select[name="sortBy"], select[name="status"], input[name="requestedDate"]').forEach(control => {
         control.addEventListener('change', () => filterForm.requestSubmit());
     });
     document.querySelectorAll('.js-reschedule-approve').forEach(button => {

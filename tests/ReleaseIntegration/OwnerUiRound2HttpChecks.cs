@@ -21,9 +21,9 @@ static class OwnerUiRound2HttpChecks
         var staffCalendar=await Html(staff,"/Calendar");
         check(!staffCalendar.Contains("href=\"/Calendar/Settings\""),"Staff Calendar does not expose Owner Settings control");
         var verified=await Html(owner,"/Payments/PendingVerification?filter=verified&q="+Uri.EscapeDataString(code)+"&page=999&pageSize=25");
-        check(verified.Contains("name=\"pageSize\" value=\"25\"") && verified.Contains("data-queue-refresh") && verified.Contains(code) && verified.Contains("Page 1 of 1"),"Real payment GET binds code/filter/size, clamps paging and renders refresh");
+        check(!verified.Contains("Rows per page") && verified.Contains("data-queue-refresh") && verified.Contains(code) && verified.Contains("Page 1 of 1") && verified.Contains("aries-five-pager"),"Real payment GET binds code/filter, ignores old page size, and renders fixed-five controls");
         var returned=await Html(owner,"/Payments/RefundRequests?filter=Refunded&q="+Uri.EscapeDataString(code));
-        check(returned.Contains(code) && returned.Contains("COMPLETED") && returned.Contains("owner-queue-pagination"),"Completed refund remains visible after cancellation through actual Owner queue");
+        check(returned.Contains(code) && returned.Contains("COMPLETED") && returned.Contains("aries-five-pager"),"Completed refund remains visible after cancellation through actual Owner queue");
         var history=await Html(owner,"/History?Search="+Uri.EscapeDataString(code));
         check(!history.Contains("aria-label=\"View Details for "+code+"\""),"Real completed History does not list cancelled booking");
         using(var legacy=await owner.GetAsync("/History/Details/"+bookingId))

@@ -31,14 +31,28 @@ static class OwnerRound2Regression
         var expected = pending.Select(p=>p.Id).OrderDescending().ToArray();
         var paymentPage = (ViewResult)await controller.PendingVerification(q:client.FullName,page:2,pageSize:25);
         var paymentNavigation = (QueuePaginationViewModel)paymentPage.ViewData["QueuePage"]!;
-        check(((IEnumerable<Payment>)paymentPage.Model!).Select(p=>p.Id).SequenceEqual(expected.Skip(25).Take(25)),"Payment SQL paging is stable for identical submission times");
-        check(paymentNavigation.TotalCount==263 && paymentNavigation.AwaitingReviewCount==263 && paymentNavigation.Page==2 && paymentNavigation.TotalPages==11,"Payment counts cover all matching records, beyond the old 250-row cap");
+        check(((IEnumerable<Payment>)paymentPage.Model!).Select(p=>p.Id).SequenceEqual(expected.Skip(5).Take(5)),"Payment SQL paging is stable for identical submission times");
+        check(paymentNavigation.TotalCount==263 && paymentNavigation.AwaitingReviewCount==263 && paymentNavigation.Page==2 && paymentNavigation.TotalPages==53,"Payment counts cover all matching records, beyond the old 250-row cap");
         var last = (ViewResult)await controller.PendingVerification(q:client.FullName,page:int.MaxValue,pageSize:25);
         var lastNavigation = (QueuePaginationViewModel)last.ViewData["QueuePage"]!;
-        check(lastNavigation.Page==11 && ((IEnumerable<Payment>)last.Model!).Count()==13 && lastNavigation.First==251 && lastNavigation.Last==263,"Old payment records after row 250 remain reachable and oversized pages clamp safely");
+        check(lastNavigation.Page==53 && ((IEnumerable<Payment>)last.Model!).Count()==3 && lastNavigation.First==261 && lastNavigation.Last==263,"Old payment records after row 250 remain reachable and oversized pages clamp safely");
         var invalid = (ViewResult)await controller.PendingVerification(q:client.FullName,page:-10,pageSize:int.MaxValue);
         var invalidNavigation = (QueuePaginationViewModel)invalid.ViewData["QueuePage"]!;
-        check(invalidNavigation.Page==1 && invalidNavigation.PageSize==10 && ((IEnumerable<Payment>)invalid.Model!).Count()==10,"Untrusted page and page-size inputs are bounded");
+        check(invalidNavigation.Page==1 && invalidNavigation.PageSize==5 && ((IEnumerable<Payment>)invalid.Model!).Count()==5,"Untrusted page and page-size inputs are bounded");
+        // Round 3: fixed five entries, independent of arbitrary page-size arguments.
+        foreach (var (records, expectedPages, finalCount) in new[] {(0,1,0),(1,1,1),(5,1,5),(6,2,1),(11,3,1),(263,53,3)})
+        {
+            var sample = new QueuePaginationViewModel(records, int.MaxValue, 100, "PendingVerification", new());
+            check(sample.PageSize==5 && sample.TotalPages==expectedPages &&
+                sample.Page==expectedPages && (sample.TotalCount==0 ? 0 : sample.Last-sample.First+1)==finalCount,
+                $"Five-record pager boundary {records}");
+        }
+        var oldestPayment=(ViewResult)await controller.PendingVerification(q:client.FullName,sortBy:"oldest");
+        check(((IEnumerable<Payment>)oldestPayment.Model!).Select(p=>p.Id).SequenceEqual(expected.Order().Take(5)),"Payment Oldest sorting covers actual SQL order");
+        check(((QueuePaginationViewModel)oldestPayment.ViewData["QueuePage"]!).Routes()["sortBy"]=="oldest","Payment sort persists across paging");
+        var oldestRefund=(ViewResult)await controller.RefundRequests(q:client.FullName,sortBy:"oldest");
+        check(((IEnumerable<RefundRequest>)oldestRefund.Model!).Select(p=>p.Id).SequenceEqual(refunds.Select(x=>x.Id).Order().Take(5)),
+            "Refund Oldest sorting uses stable SQL tie-breaks");
         var code=$"BK-{pending[0].Booking!.CreatedAt.Year}-{pending[0].BookingId:D3}";
         var codeSearch=(ViewResult)await controller.PendingVerification(q:code,paymentMethod:"GCash",date:timestamp.Date);
         check(((IEnumerable<Payment>)codeSearch.Model!).Single().Id==pending[0].Id,"Payment search finds full displayed booking code with combined method/date filters");
@@ -48,7 +62,7 @@ static class OwnerRound2Regression
         check(emptyNavigation.TotalCount==0 && emptyNavigation.Page==1 && emptyNavigation.First==0 && emptyNavigation.Last==0,"Empty payment results render valid zero ranges");
         var refundPage=(ViewResult)await controller.RefundRequests(q:client.FullName,page:11,pageSize:25);
         var refundNavigation=(QueuePaginationViewModel)refundPage.ViewData["QueuePage"]!;
-        check(refundNavigation.TotalCount==263 && ((IEnumerable<RefundRequest>)refundPage.Model!).Count()==13,"Refund paging retains all records beyond 250, including archived bookings");
+        check(refundNavigation.TotalCount==263 && ((IEnumerable<RefundRequest>)refundPage.Model!).Count()==5,"Refund paging retains all records beyond 250, including archived bookings");
         check(refundNavigation.AwaitingReviewCount==88 && refundNavigation.AwaitingFinalVerificationCount==88,"Refund summary counts include every matching page");
         var refundSearch=(ViewResult)await controller.RefundRequests(q:code);
         check(((IEnumerable<RefundRequest>)refundSearch.Model!).Single().Id==refunds[0].Id,"Refund search accepts full displayed booking IDs");

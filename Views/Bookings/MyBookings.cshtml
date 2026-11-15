@@ -15,9 +15,11 @@
 </header>
 @if(TempData["Success"] is string success){<div class="cn-success" role="status"><strong>Booking update:</strong> @success</div>}
 @if(TempData["Error"] is string error){<div class="cn-error-summary" role="alert">@error</div>}
-<div class="cn-list-tools hub-search-row r2-bookings-tools">
- <div class="cn-field"><label for="bookingSearch">Find a booking</label><input id="bookingSearch" type="search" class="cn-input" placeholder="Search booking ID, package, venue, or contact" autocomplete="off"/></div>
- <div class="cn-field"><label for="bookingStatusFilter">Booking status</label><select id="bookingStatusFilter" class="cn-input"><option value="all">Any status</option><option value="staff-review">Pending Staff review</option><option value="awaiting-payment">Awaiting payment</option><option value="payment-review">Payment under review</option><option value="confirmed">Confirmed</option><option value="reschedule">Reschedule requested</option><option value="rejected">Payment proof rejected</option><option value="completed">Completed</option><option value="cancelled">Cancelled</option><option value="declined">Declined</option><option value="expired">Expired</option></select></div>
+<div class="cn-list-tools hub-search-row r2-bookings-tools aries-client-round3-toolbar" role="search" aria-label="Search and filter my bookings">
+ <div class="am-filter-search"><i class="bi bi-search" aria-hidden="true"></i><label for="bookingSearch" class="visually-hidden">Search bookings</label><input id="bookingSearch" type="search" class="cn-input" placeholder="Search booking ID, package, venue, or contact" autocomplete="off" /></div>
+ <div class="dropdown"><button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false"><i class="bi bi-funnel" aria-hidden="true"></i> Filters</button>
+ <div class="dropdown-menu dropdown-menu-end p-3"><label for="bookingStatusFilter">Booking status</label><select id="bookingStatusFilter" class="cn-input"><option value="all">Any status</option><option value="staff-review">Pending Staff review</option><option value="awaiting-payment">Awaiting payment</option><option value="payment-review">Payment under review</option><option value="confirmed">Confirmed</option><option value="reschedule">Reschedule requested</option><option value="rejected">Payment proof rejected</option><option value="completed">Completed</option><option value="cancelled">Cancelled</option><option value="declined">Declined</option><option value="expired">Expired</option></select><button class="btn btn-outline-secondary btn-sm mt-2" type="button" id="clientClearFilters">Reset filters</button></div></div>
+ <button class="btn btn-outline-secondary" type="button" id="clientBookingRefresh" aria-label="Refresh my bookings"><i class="bi bi-arrow-clockwise" aria-hidden="true"></i><span>Refresh</span></button>
 </div>
 <div class="r2-booking-grid" id="clientBookingList">
 @foreach(var booking in bookings){
@@ -105,8 +107,14 @@
 }
 </div>
 <section class="hub-card hub-empty" id="bookingListEmpty" hidden="@(bookings.Count>0)"><h2>No bookings to show.</h2><p>@(bookings.Any()?"Try another search or change the booking filter.":"When you book your first event, it will appear here with schedules, payments and next actions.")</p><a asp-action="CreateStepOne" class="cn-button cn-primary">Plan an event</a></section>
-<p id="bookingListCount" class="cn-help r2-booking-count" role="status"></p>
+<nav class="aries-five-pager aries-client-five-pager" aria-label="My booking pages">
+ <span id="bookingListCount" class="aries-five-total" role="status"></span>
+ <div class="aries-five-actions">
+  <button type="button" class="btn btn-outline-secondary" id="clientBookingPrev" aria-label="Previous page" disabled><i class="bi bi-chevron-left" aria-hidden="true"></i></button>
+  <span class="aries-five-page" id="clientBookingPage" aria-live="polite">Page 1 of 1</span>
+  <button type="button" class="btn btn-primary" id="clientBookingNext" aria-label="Next page" disabled><i class="bi bi-chevron-right" aria-hidden="true"></i></button>
+ </div>
+</nav>
 @section Scripts {
-<script>(()=>{const search=document.getElementById('bookingSearch'),status=document.getElementById('bookingStatusFilter'),cards=[...document.querySelectorAll('.cr-booking-item')];function filter(){let count=0;for(const card of cards){const states=(card.dataset.status||'').split(' '),show=(status.value==='all'||states.includes(status.value))&&card.textContent.toLowerCase().includes(search.value.trim().toLowerCase());card.hidden=!show;if(show)count++;}document.getElementById('bookingListEmpty').hidden=count>0;document.getElementById('bookingListCount').textContent=count+' booking'+(count===1?'':'s')+' shown';}search.addEventListener('input',filter);status.addEventListener('change',filter);window.addEventListener('pageshow',filter);filter();})();</script>
+<script src="~/js/aries-round3-client-bookings.js" asp-append-version="true"></script>
 }
-

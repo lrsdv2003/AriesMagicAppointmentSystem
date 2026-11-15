@@ -81,13 +81,16 @@ namespace AriesMagicAppointmentSystem.Services
             }
 
             var totalCount = await query.CountAsync();
-            var pageSize = Math.Clamp(filters.PageSize, 1, 100);
+            var pageSize = 5;
             var page = Math.Clamp(filters.Page, 1, Math.Max(1, (int)Math.Ceiling(totalCount / (double)pageSize)));
             filters.Page = page;
             filters.PageSize = pageSize;
 
-            var bookings = await query
-                .OrderByDescending(b => b.ArchivedAt)
+            var ordered = string.Equals(filters.SortBy, "oldest", StringComparison.OrdinalIgnoreCase)
+                ? query.OrderBy(b => b.ArchivedAt ?? b.CreatedAt).ThenBy(b => b.Id)
+                : query.OrderByDescending(b => b.ArchivedAt ?? b.CreatedAt).ThenByDescending(b => b.Id);
+            filters.SortBy = string.Equals(filters.SortBy, "oldest", StringComparison.OrdinalIgnoreCase) ? "oldest" : "newest";
+            var bookings = await ordered
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();

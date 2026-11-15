@@ -439,10 +439,12 @@ namespace AriesMagicAppointmentSystem.Controllers
         }
 
         [Authorize(Roles = "Owner")]
-        public async Task<IActionResult> PendingVerification(string filter = "awaiting", string? q = null, string? paymentMethod = null, DateTime? date = null, int page = 1, int pageSize = 10)
+        public async Task<IActionResult> PendingVerification(string filter = "awaiting", string? q = null, string? paymentMethod = null, DateTime? date = null, int page = 1, int pageSize = 5, string sortBy = "newest")
         {
             filter = filter?.ToLowerInvariant() is "verified" or "rejected" or "evidence" or "mismatch" or "ocrfailed" ? filter.ToLowerInvariant() : "awaiting";
             q = q?.Trim();
+            sortBy = string.Equals(sortBy, "oldest", StringComparison.OrdinalIgnoreCase) ? "oldest" : "newest";
+            ViewBag.SortBy = sortBy;
             var query = _context.Payments
                 .AsNoTracking()
                 .Include(p => p.Booking).ThenInclude(b => b!.Client)
@@ -477,7 +479,7 @@ namespace AriesMagicAppointmentSystem.Controllers
 
             ViewBag.Filter = filter; ViewBag.Search = q; ViewBag.PaymentMethod = paymentMethod; ViewBag.Date = date?.ToString("yyyy-MM-dd");
             var pagination = new QueuePaginationViewModel(await query.CountAsync(), page, pageSize, nameof(PendingVerification),
-                new() { ["filter"] = filter, ["q"] = q ?? "", ["paymentMethod"] = paymentMethod ?? "", ["date"] = date?.ToString("yyyy-MM-dd") ?? "" })
+                new() { ["filter"] = filter, ["q"] = q ?? "", ["paymentMethod"] = paymentMethod ?? "", ["date"] = date?.ToString("yyyy-MM-dd") ?? "", ["sortBy"] = sortBy })
             {
                 AwaitingReviewCount = await query.CountAsync(p => p.Status == PaymentStatus.Pending),
                 OcrAttentionCount = await query.CountAsync(p => p.OcrVerifications.Where(o => o.VerificationPurpose == OcrVerificationPurposes.PaymentProof)
@@ -486,7 +488,10 @@ namespace AriesMagicAppointmentSystem.Controllers
                     .OrderByDescending(o => o.ProcessedAt).ThenByDescending(o => o.Id).Select(o => o.VerificationResult).FirstOrDefault() == OcrVerificationResults.OcrFailed)
             };
             ViewData["QueuePage"] = pagination;
-            var payments = await query.OrderByDescending(p => p.UploadedAt).ThenByDescending(p => p.Id)
+            var sortedPayments = sortBy == "oldest"
+                ? query.OrderBy(p => p.UploadedAt).ThenBy(p => p.Id)
+                : query.OrderByDescending(p => p.UploadedAt).ThenByDescending(p => p.Id);
+            var payments = await sortedPayments
                 .Skip(pagination.Skip).Take(pagination.PageSize).ToListAsync();
             return View(payments);
         }
@@ -912,10 +917,12 @@ namespace AriesMagicAppointmentSystem.Controllers
         }
 
         [Authorize(Roles = "Owner")]
-        public async Task<IActionResult> RefundRequests(string filter = "all", string? q = null, int page = 1, int pageSize = 10)
+        public async Task<IActionResult> RefundRequests(string filter = "all", string? q = null, int page = 1, int pageSize = 5, string sortBy = "newest")
         {
             filter = filter is RefundStatus.Pending or RefundStatus.UnderReview or RefundStatus.Approved or RefundStatus.RefundProcessing or RefundStatus.Refunded or RefundStatus.Rejected ? filter : "all";
             q = q?.Trim();
+            sortBy = string.Equals(sortBy, "oldest", StringComparison.OrdinalIgnoreCase) ? "oldest" : "newest";
+            ViewBag.SortBy = sortBy;
             var query = _context.RefundRequests.AsNoTracking()
                 .Include(r => r.Booking).ThenInclude(b => b!.Client)
                 .Include(r => r.Booking).ThenInclude(b => b!.Service)
@@ -936,13 +943,16 @@ namespace AriesMagicAppointmentSystem.Controllers
                     (r.OriginalPayment != null && r.OriginalPayment.TransactionReference != null && r.OriginalPayment.TransactionReference.Contains(term)));
             }
             ViewBag.Filter = filter; ViewBag.Search = q;
-            var pagination = new QueuePaginationViewModel(await query.CountAsync(), page, pageSize, nameof(RefundRequests), new() { ["filter"] = filter, ["q"] = q ?? "" })
+            var pagination = new QueuePaginationViewModel(await query.CountAsync(), page, pageSize, nameof(RefundRequests), new() { ["filter"] = filter, ["q"] = q ?? "", ["sortBy"] = sortBy })
             {
                 AwaitingReviewCount = await query.CountAsync(r => r.Status == RefundStatus.Pending || r.Status == RefundStatus.UnderReview),
                 AwaitingFinalVerificationCount = await query.CountAsync(r => r.Status == RefundStatus.RefundProcessing)
             };
             ViewData["QueuePage"] = pagination;
-            return View(await query.OrderByDescending(r => r.RequestedAt).ThenByDescending(r => r.Id)
+            var sortedRefunds = sortBy == "oldest"
+                ? query.OrderBy(r => r.RequestedAt).ThenBy(r => r.Id)
+                : query.OrderByDescending(r => r.RequestedAt).ThenByDescending(r => r.Id);
+            return View(await sortedRefunds
                 .Skip(pagination.Skip).Take(pagination.PageSize).ToListAsync());
         }
 

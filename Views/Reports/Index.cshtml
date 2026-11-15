@@ -66,11 +66,60 @@
     </details>
 
     <section class="owner-report-section" aria-labelledby="recordsTitle">
-        <div class="owner-report-heading"><div><h2 id="recordsTitle">Booking Financial Records</h2></div><span class="owner-report-note">Showing @Model.BookingRecords.Count of @Model.TotalBookings records</span></div>
+        <div class="owner-report-heading"><div><h2>Booking Financial Records</h2><p>All matching booking financial records, including payment and refund context.</p></div><span>Showing @Model.BookingRecords.Count of @Model.RecordsTotalCount records</span></div>
+        <form asp-action="Index" method="get" class="am-filter-bar am-filter-row aries-round3-toolbar" data-aries-round3-filter="true" role="search" aria-label="Search financial booking records">
+            <input type="hidden" name="startDate" value="@(Model.StartDate?.ToString("yyyy-MM-dd"))" />
+            <input type="hidden" name="endDate" value="@(Model.EndDate?.ToString("yyyy-MM-dd"))" />
+            <input type="hidden" name="month" value="@Model.Month" />
+            <input type="hidden" name="year" value="@Model.Year" />
+            <input type="hidden" name="package" value="@Model.PackageFilter" />
+            <input type="hidden" name="bookingStatus" value="@Model.BookingStatusFilter" />
+            <div class="am-filter-search"><i class="bi bi-search" aria-hidden="true"></i><label for="ownerFinancialRecordSearch" class="visually-hidden">Search booking financial records</label>
+                <input id="ownerFinancialRecordSearch" class="form-control" name="recordSearch" type="search" value="@Model.RecordSearch" placeholder="Search booking, client, package, or venue" /></div>
+            <div class="dropdown">
+                <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false"><i class="bi bi-funnel" aria-hidden="true"></i> Filters</button>
+                <div class="dropdown-menu dropdown-menu-end p-3">
+                    <label class="form-label" for="ownerRecordStatus">Financial record status</label>
+                    <select id="ownerRecordStatus" name="recordStatus" class="form-select mb-3">
+                        <option value="" selected="@(string.IsNullOrWhiteSpace(Model.RecordStatus))">All statuses</option>
+                        @foreach(var status in Model.AvailableBookingStatuses) {
+                            <option value="@status" selected="@(status == Model.RecordStatus)">@status</option>
+                        }
+                    </select>
+                    <a asp-action="Index" asp-route-startDate="@(Model.StartDate?.ToString("yyyy-MM-dd"))"
+                       asp-route-endDate="@(Model.EndDate?.ToString("yyyy-MM-dd"))"
+                       asp-route-month="@Model.Month" asp-route-year="@Model.Year"
+                       asp-route-package="@Model.PackageFilter" asp-route-bookingStatus="@Model.BookingStatusFilter"
+                       class="btn btn-outline-secondary btn-sm">Reset record filters</a>
+                </div>
+            </div>
+            <button type="submit" class="visually-hidden">Search records</button>
+            <a asp-action="Index" class="btn btn-outline-secondary aries-round3-refresh"
+               asp-route-startDate="@(Model.StartDate?.ToString("yyyy-MM-dd"))"
+               asp-route-endDate="@(Model.EndDate?.ToString("yyyy-MM-dd"))"
+               asp-route-month="@Model.Month" asp-route-year="@Model.Year"
+               asp-route-package="@Model.PackageFilter" asp-route-bookingStatus="@Model.BookingStatusFilter"
+               asp-route-recordSearch="@Model.RecordSearch" asp-route-recordStatus="@Model.RecordStatus"
+               asp-route-page="@Model.RecordPage" aria-label="Refresh booking financial records"><i class="bi bi-arrow-clockwise" aria-hidden="true"></i><span>Refresh</span></a>
+        </form>
         @if(!Model.BookingRecords.Any()){<div class="owner-empty-state"><i class="bi bi-bar-chart" aria-hidden="true"></i><h2>No report data found for the selected filters.</h2></div>}
         else{<div class="table-responsive"><table class="table owner-audit-table align-middle"><thead><tr><th scope="col">Booking</th><th scope="col">Client</th><th scope="col">Package</th><th scope="col">Event Date</th><th scope="col">Booking Value</th><th scope="col">Collected</th><th scope="col">Outstanding</th><th scope="col">Status</th><th scope="col">Action</th></tr></thead><tbody>
         @foreach(var booking in Model.BookingRecords){Model.BookingFinancials.TryGetValue(booking.Id,out var finance);<tr><td><strong class="owner-booking-code">BK-@booking.CreatedAt.Year-@booking.Id.ToString("D3")</strong></td><td>@(booking.Client?.FullName??"Unknown Client")</td><td>@booking.PackageName</td><td>@booking.EventDate.ToString("MMM dd, yyyy")</td><td>₱@((finance?.BookingTotal??booking.FinalPrice).ToString("N2"))</td><td>₱@((finance?.TotalVerifiedPayments??0m).ToString("N2"))</td><td>₱@((booking.Status is AriesMagicAppointmentSystem.Models.BookingStatus.Cancelled or AriesMagicAppointmentSystem.Models.BookingStatus.Declined or AriesMagicAppointmentSystem.Models.BookingStatus.Expired ? 0m : finance?.RemainingBalance??booking.FinalPrice).ToString("N2"))</td><td><span class="status-badge status-read">@booking.Status</span></td><td><a asp-controller="Bookings" asp-action="Details" asp-route-id="@booking.Id" class="btn btn-sm btn-primary">Details</a></td></tr>}
         </tbody></table></div>}
+        @{
+            var recordsPager = new AriesMagicAppointmentSystem.ViewModels.QueuePaginationViewModel(
+                Model.RecordsTotalCount, Model.RecordPage, 5, "Index", new Dictionary<string,string> {
+                    ["startDate"] = Model.StartDate?.ToString("yyyy-MM-dd") ?? "",
+                    ["endDate"] = Model.EndDate?.ToString("yyyy-MM-dd") ?? "",
+                    ["month"] = Model.Month?.ToString() ?? "",
+                    ["year"] = Model.Year?.ToString() ?? "",
+                    ["package"] = Model.PackageFilter,
+                    ["bookingStatus"] = Model.BookingStatusFilter,
+                    ["recordSearch"] = Model.RecordSearch,
+                    ["recordStatus"] = Model.RecordStatus
+                });
+        }
+        <partial name="_QueuePagination" model="recordsPager" />
     </section>
 </div>
 @section Scripts{

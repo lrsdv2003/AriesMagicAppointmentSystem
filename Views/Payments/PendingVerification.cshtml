@@ -6,7 +6,7 @@
     var payments = Model.ToList();
     var isOwner = User.IsInRole("Owner");
     var pagination = ViewData["QueuePage"] as AriesMagicAppointmentSystem.ViewModels.QueuePaginationViewModel
-        ?? new(payments.Count, 1, 10, "PendingVerification", new() { ["filter"] = "awaiting" }) {
+        ?? new(payments.Count, 1, 5, "PendingVerification", new() { ["filter"] = "awaiting" }) {
             AwaitingReviewCount = payments.Count(x => x.Status == PaymentStatus.Pending) };
     string OcrClass(string? result) => result switch {
         OcrVerificationResults.LikelyMatch => "ocr-likely", OcrVerificationResults.PartialMatch => "ocr-partial",
@@ -27,8 +27,7 @@
         <div><span>Awaiting Review</span><strong>@pagination.AwaitingReviewCount</strong></div>
         <div><span>OCR Attention</span><strong>@pagination.OcrAttentionCount</strong></div>
     </div>
-    <form method="get" class="am-filter-bar am-filter-row" aria-label="Payment verification filters">
-        <input type="hidden" name="pageSize" value="@pagination.PageSize" />
+    <form method="get" class="am-filter-bar am-filter-row aries-round3-toolbar" data-aries-round3-filter="true" aria-label="Payment verification filters">
         <div class="am-filter-search"><i class="bi bi-search" aria-hidden="true"></i><input type="search" name="q" value="@ViewBag.Search" placeholder="Search booking or client" aria-label="Search payment verification queue" /></div>
         <div class="dropdown">
             <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false"><i class="bi bi-funnel" aria-hidden="true"></i> Filters</button>
@@ -36,10 +35,15 @@
                 <label class="form-label" for="PendingVerificationfilter">Verification Status</label><select id="PendingVerificationfilter" name="filter" class="form-select mb-3"><option value="awaiting" selected="@(ViewBag.Filter == "awaiting")">Awaiting Owner Verification</option><option value="verified" selected="@(ViewBag.Filter == "verified")">Verified</option><option value="rejected" selected="@(ViewBag.Filter == "rejected")">Rejected</option><option value="evidence" selected="@(ViewBag.Filter == "evidence")">Additional Evidence</option><option value="mismatch" selected="@(ViewBag.Filter == "mismatch")">OCR Mismatch</option><option value="ocrfailed" selected="@(ViewBag.Filter == "ocrfailed")">OCR Failed</option></select>
                 <label class="form-label" for="PendingVerificationpaymentMethod">Payment Method</label><select id="PendingVerificationpaymentMethod" name="paymentMethod" class="form-select mb-3"><option value="">All methods</option><option selected="@(ViewBag.PaymentMethod == "GCash")">GCash</option><option selected="@(ViewBag.PaymentMethod == "Maya")">Maya</option><option selected="@(ViewBag.PaymentMethod == "Bank Transfer")">Bank Transfer</option><option selected="@(ViewBag.PaymentMethod == "Online Banking")">Online Banking</option></select>
                 <label class="form-label" for="PendingVerificationdate">Submitted Date</label><input id="PendingVerificationdate" type="date" name="date" value="@ViewBag.Date" class="form-control mb-3" />
-                <div class="d-flex justify-content-end gap-2"><a asp-action="PendingVerification" class="btn btn-light">Clear Filters</a><button class="btn btn-primary">Apply Filters</button></div>
+                <label class="form-label" for="round3Sort_Payments">Submission order</label>
+                <select class="form-select mb-3" id="round3Sort_Payments" name="sortBy">
+                    <option value="newest" selected="@((string?)ViewBag.SortBy != "oldest")">Newest to Oldest</option>
+                    <option value="oldest" selected="@((string?)ViewBag.SortBy == "oldest")">Oldest to Newest</option>
+                </select>
+                <a asp-action="PendingVerification" class="btn btn-outline-secondary btn-sm">Reset filters</a>
             </div>
         </div>
-        <button class="btn btn-primary" type="submit">Search</button>
+        <button class="visually-hidden" type="submit">Search</button>
         <a class="btn btn-outline-secondary" asp-action="PendingVerification" asp-all-route-data="pagination.Routes()" data-queue-refresh><i class="bi bi-arrow-clockwise" aria-hidden="true"></i> Refresh</a>
     </form>
     <div class="dashboard-panel owner-table-panel">

@@ -88,10 +88,6 @@
                 <h2 id="upcomingHeading">Upcoming Confirmed Bookings</h2>
                 <p>Nearest event date and time first.</p>
             </div>
-            <div class="staff-upcoming-tools am-filter-bar am-filter-row" data-local-filter="calendar" data-filter-search="upcomingSearch" data-filter-chips="calendarPackageChips">
-                <label class="visually-hidden" for="upcomingSearch">Search upcoming bookings</label>
-                <div class="am-filter-search"><input id="upcomingSearch" type="search" class="form-control" placeholder="Search booking, client, or venue" /></div><button type="button" class="btn btn-light" data-filter-reset>Reset</button>
-            </div>
         </div>
         }
         @if (!upcoming.Any())
@@ -138,16 +134,9 @@
             </div>
             <div class="staff-upcoming-empty d-none" id="upcomingFilteredEmpty" role="status"><i class="bi bi-calendar-x" aria-hidden="true"></i><span>No confirmed bookings match the selected package.</span></div>
             <nav class="staff-round2-calendar-pager" aria-label="Upcoming confirmed booking pages">
-              @if(!useStaffColors){
-              <label for="staffUpcomingPageSize">Rows per page
-                <select id="staffUpcomingPageSize" class="form-select">
-                  <option value="10">10</option><option value="20">20</option><option value="50">50</option>
-                </select>
-              </label>
-              }
-              <span id="staffUpcomingPageInfo" aria-live="polite"></span>
-              <div><button type="button" class="btn btn-outline-secondary" id="staffUpcomingPrev">Previous</button>
-                <button type="button" class="btn btn-primary" id="staffUpcomingNext">Next</button></div>
+              <button type="button" class="btn btn-outline-secondary" id="staffUpcomingPrev" aria-label="Previous confirmed booking page"><i class="bi bi-chevron-left" aria-hidden="true"></i></button>
+              <span id="staffUpcomingPageInfo" aria-live="polite">Page 1 of 1</span>
+              <button type="button" class="btn btn-primary" id="staffUpcomingNext" aria-label="Next confirmed booking page"><i class="bi bi-chevron-right" aria-hidden="true"></i></button>
             </nav>
         }
     </section>
@@ -567,23 +556,19 @@
     }
 
     function initOwnerUpcomingFilters() {
-        const search = document.getElementById('upcomingSearch');
         const tableRows = [...document.querySelectorAll('#upcomingTable tbody .js-upcoming-row')];
         const cards = [...document.querySelectorAll('#upcomingCards .js-upcoming-row')];
         const empty = document.getElementById('upcomingFilteredEmpty');
-        const pageSelect = document.getElementById('staffUpcomingPageSize');
         const info = document.getElementById('staffUpcomingPageInfo');
         const prev = document.getElementById('staffUpcomingPrev');
         const next = document.getElementById('staffUpcomingNext');
         let page = 1;
         const matched = row => {
-            const query = (search?.value || '').trim().toLowerCase();
-            return (!query || (row.dataset.search || '').toLowerCase().includes(query))
-                && (!activePackageFilter || row.dataset.package === activePackageFilter);
+            return !activePackageFilter || row.dataset.package === activePackageFilter;
         };
         applyUpcomingFilters = (resetPage = false) => {
             if (resetPage === true) page = 1;
-            const size = Number(pageSelect?.value) || 10;
+            const size = 5;
             const matching = tableRows.filter(matched);
             const count = matching.length;
             const totalPages = Math.max(1, Math.ceil(count / size));
@@ -593,12 +578,10 @@
             cards.forEach((card,i) => card.classList.toggle('d-none',
                 !tableRows[i] || !visible.has(tableRows[i])));
             empty?.classList.toggle('d-none', count > 0);
-            if (info) info.textContent = count + ' matching confirmed bookings · page ' + page + ' of ' + totalPages;
+            if (info) info.textContent = 'Page ' + page + ' of ' + totalPages;
             if (prev) prev.disabled = page <= 1;
             if (next) next.disabled = page >= totalPages;
         };
-        search?.addEventListener('input', () => applyUpcomingFilters(true));
-        pageSelect?.addEventListener('change', () => applyUpcomingFilters(true));
         prev?.addEventListener('click', () => { page--;applyUpcomingFilters(); });
         next?.addEventListener('click', () => { page++;applyUpcomingFilters(); });
         applyUpcomingFilters(true);
@@ -614,7 +597,7 @@
         const info = document.getElementById('staffUpcomingPageInfo');
         const prev = document.getElementById('staffUpcomingPrev');
         const next = document.getElementById('staffUpcomingNext');
-        const size = 10;
+        const size = 5;
         let page = 1;
         applyUpcomingFilters = (resetPage = false) => {
             if (resetPage === true) page = 1;
@@ -625,7 +608,7 @@
             tableRows.forEach(row => row.classList.toggle('d-none', !visible.has(row)));
             cards.forEach((card,i) => card.classList.toggle('d-none', !tableRows[i] || !visible.has(tableRows[i])));
             empty?.classList.toggle('d-none', matching.length > 0);
-            if (info) info.textContent = matching.length + ' confirmed bookings · Page ' + page + ' of ' + pages;
+            if (info) info.textContent = 'Page ' + page + ' of ' + pages;
             if (prev) prev.disabled = page <= 1;
             if (next) next.disabled = page >= pages;
             if (pager) pager.hidden = matching.length === 0;

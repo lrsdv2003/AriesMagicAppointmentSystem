@@ -2,8 +2,8 @@
 (() => {
   "use strict";
   const scopes = {
-    bookings: [".staff-booking-stats", ".staff-booking-table-panel", ".staff-round2-server-pager"],
-    reschedules: [".staff-round2-reschedule-metrics", ".staff-reschedule-table-panel", ".staff-round2-server-pager"],
+    bookings: [".staff-booking-stats", ".staff-booking-table-panel", ".aries-five-pager"],
+    reschedules: [".staff-round2-reschedule-metrics", ".staff-reschedule-table-panel", ".aries-five-pager"],
     history: ['[data-staff-search-results="history"]']
   };
   for (const form of document.querySelectorAll("form[data-staff-autosearch]")) {

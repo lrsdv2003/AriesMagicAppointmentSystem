@@ -97,7 +97,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             }
 
             search = search?.Trim();
-            pageSize = 10; // Fixed Staff operational page size; UI exposes Previous/Next only.
+            pageSize = 5; // Round 3 fixed page size, unrelated filters remain database-backed.
             page = Math.Max(1, page);
             int totalCount;
             List<Booking> bookings;

@@ -52,6 +52,11 @@ namespace AriesMagicAppointmentSystem.ViewModels
         public List<int> PackageBookingCounts { get; set; } = new();
         public List<decimal> PackageRevenue { get; set; } = new();
 
+        public int RecordPage { get; set; } = 1;
+        public int RecordsTotalCount { get; set; }
+        public string RecordSearch { get; set; } = string.Empty;
+        public string RecordStatus { get; set; } = string.Empty;
+        public int RecordPageCount => Math.Max(1, (int)Math.Ceiling(RecordsTotalCount / 5.0));
         public List<Booking> BookingRecords { get; set; } = new();
         public Dictionary<int, BookingFinancialSummaryViewModel> BookingFinancials { get; set; } = new();
     }

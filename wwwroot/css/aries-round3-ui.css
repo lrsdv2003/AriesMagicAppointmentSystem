@@ -1,0 +1,125 @@
+/* Owner UI Round 3 / consistent three-role paging. No business-rule changes. */
+.aries-five-pager{display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;padding:1rem 0 .25rem;margin-top:.9rem;border-top:1px solid #2a4760;color:#d0e2f1;max-width:100%;min-width:0}
+.aries-five-actions{display:flex;align-items:center;justify-content:flex-end;gap:.6rem;min-width:0}
+.aries-five-page{font-size:.86rem;color:#dce9f5;white-space:nowrap;min-width:6.7rem;text-align:center}
+.aries-five-total{font-size:.81rem;color:#b4c9d9}
+.aries-five-pager .btn{width:37px;height:37px;min-width:37px;border-radius:9px;display:inline-grid;place-items:center;padding:0;line-height:1}
+.aries-five-pager button:disabled{opacity:.35;cursor:not-allowed;pointer-events:none}
+.aries-five-pager :is(a,button):focus-visible,.aries-round3-toolbar :is(a,button,input,select):focus-visible,
+.aries-client-round3-toolbar :is(input,button,select):focus-visible,.staff-round2-calendar-pager button:focus-visible{outline:3px solid #f6ca53;outline-offset:3px}
+body.internal-ui .aries-round3-toolbar{display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;padding:.7rem;border:1px solid #25465d;border-radius:14px;background:#0b2741;box-shadow:none;min-width:0}
+body.internal-ui .aries-round3-toolbar .am-filter-row{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;width:100%;min-width:0}
+body.internal-ui .aries-round3-toolbar .am-filter-search{position:relative;min-width:170px;flex:1 1 280px;background:transparent;border:0;padding:0;box-shadow:none}
+body.internal-ui .aries-round3-toolbar .am-filter-search .input-group{background:transparent;box-shadow:none}
+body.internal-ui .aries-round3-toolbar .am-filter-search input{min-height:40px;border:1px solid #42617d;border-radius:10px!important;color:#e8f4ff;background:#102e49;box-shadow:none;padding-left:2.25rem;width:100%}
+body.internal-ui .aries-round3-toolbar .am-filter-search i.bi-search{position:absolute;left:.8rem;top:50%;transform:translateY(-50%);z-index:1;color:#afc7dd;pointer-events:none}
+body.internal-ui .aries-round3-toolbar .am-filter-search input::placeholder{color:#a8bfd2;opacity:1}
+body.internal-ui .aries-round3-toolbar .btn:not(.visually-hidden){min-height:40px;border-radius:10px;white-space:nowrap}
+body.internal-ui .aries-round3-toolbar .dropdown{position:relative}
+body.internal-ui .aries-round3-toolbar .dropdown-menu{min-width:min(310px,calc(100vw - 48px));max-width:calc(100vw - 36px);padding:1rem;background:#11344f;color:#ecf5fd;border:1px solid #496882;border-radius:12px;box-shadow:0 18px 28px #0007}
+body.internal-ui .aries-round3-toolbar .dropdown-menu :is(label,h6){color:#eaf5ff}
+body.internal-ui .aries-round3-toolbar .dropdown-menu :is(input,select){min-height:38px;background:#0a2742;color:#f3f9ff;border:1px solid #4b6f8e}
+body.internal-ui .aries-round3-toolbar .dropdown-menu a{margin-top:.3rem}
+body.internal-ui .aries-round3-toolbar .aries-round3-refresh{display:inline-flex;align-items:center;justify-content:center;gap:.4rem}
+.owner-dashboard .owner-round1-dashboard{max-width:100%;min-width:0}
+.owner-dashboard .owner-round3-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px;margin-bottom:15px;min-width:0}
+.owner-dashboard .owner-round3-metric{display:flex;align-items:center;gap:14px;min-width:0;min-height:109px;padding:17px;background:linear-gradient(125deg,#0c3152,#09253e);border:1px solid #275176;border-radius:13px}
+.owner-dashboard .owner-round3-metric>div{min-width:0;display:flex;flex-direction:column;gap:5px}
+.owner-dashboard .owner-round3-metric>div>span{font-size:.83rem;color:#c7dcf0}
+.owner-dashboard .owner-round3-metric strong{font-size:clamp(1.15rem,2vw,1.75rem);font-weight:750;color:#fff;overflow-wrap:anywhere;line-height:1.25}
+.owner-dashboard .owner-round3-metric small{color:#acc1d1;font-size:.73rem;overflow-wrap:anywhere}
+.owner-dashboard .owner-round3-metric-icon{flex:0 0 44px;width:44px;height:44px;display:grid;place-items:center;border-radius:10px;background:#124a6c;color:#80d8ff;font-size:1.3rem}
+.owner-dashboard .owner-round3-outstanding .owner-round3-metric-icon{background:#60304c;color:#ffa3c6}
+.owner-dashboard .owner-round3-value .owner-round3-metric-icon{background:#5a4824;color:#ffdb88}
+.owner-dashboard .owner-round3-grid{grid-template-columns:minmax(0,1.75fr) minmax(260px,.77fr);gap:14px;align-items:start}
+.owner-dashboard .owner-round3-upcoming{padding:17px;background:#0a2742;border:1px solid #244a67;border-radius:12px;min-width:0}
+.owner-dashboard .owner-round3-upcoming .dash-section-heading{margin-bottom:1rem}
+.owner-dashboard .owner-round3-upcoming h2{color:#f2f8ff;font-size:1.06rem;line-height:1.3}
+.owner-dashboard .owner-round3-upcoming p{color:#b6ccdd;font-size:.82rem;margin:.2rem 0 0}
+.owner-dashboard .owner-round3-event-list{margin:0;padding:0;list-style:none;display:flex;flex-direction:column}
+.owner-dashboard .owner-round3-event{display:flex;gap:.7rem;padding:.75rem 0;border-bottom:1px solid #294c66;min-width:0}
+.owner-dashboard .owner-round3-event:last-child{border-bottom:0;padding-bottom:0}
+.owner-dashboard .owner-round3-event-icon{flex:0 0 32px;display:grid;place-items:center;height:32px;background:#174365;border-radius:9px;color:#a1daff}
+.owner-dashboard .owner-round3-event>div{display:flex;flex-direction:column;gap:.3rem;min-width:0;overflow-wrap:anywhere}
+.owner-dashboard .owner-round3-event a{color:#f7c84c!important;text-decoration:none;font-size:.82rem;font-weight:700}
+.owner-dashboard .owner-round3-event :is(time,span){font-size:.75rem;color:#b9d0df}
+.owner-dashboard .owner-round3-requests{min-width:0}
+.owner-dashboard .owner-round3-grid .owner-round1-request-row{grid-template-columns:minmax(110px,1.25fr) minmax(95px,.85fr) minmax(80px,.8fr) minmax(100px,1fr) auto;gap:9px;padding:11px}
+.owner-dashboard .owner-round3-grid .owner-round1-request-row .btn{border-radius:8px}
+body.internal-ui .owner-financial-page .owner-audit-table td{padding:.65rem .55rem}
+body.internal-ui .owner-financial-page .owner-proof-thumb{max-width:68px;max-height:48px;object-fit:contain}
+body.internal-ui .owner-financial-page .owner-booking-code{color:#f5c647}
+body.internal-ui .owner-financial-page .ocr-badge{white-space:normal;line-height:1.3}
+body.internal-ui .owner-financial-page .status-badge{white-space:normal}
+body.internal-ui .staff-round2-calendar-pager{display:flex;gap:.7rem;align-items:center;justify-content:flex-end;flex-wrap:wrap}
+body.internal-ui .staff-round2-calendar-pager>span{font-size:.86rem;color:#cfe0ed;white-space:nowrap}
+body.internal-ui .staff-round2-calendar-pager button{min-width:37px;min-height:37px;border-radius:9px}
+body.internal-ui .staff-round2-calendar-pager button:disabled{opacity:.35}
+body.internal-ui .staff-upcoming-panel .staff-upcoming-tools{display:none!important}
+body.client-body .aries-client-round3-toolbar{display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;max-width:100%;min-width:0;padding:.75rem;background:#09273f;border:1px solid #31516d;border-radius:14px;box-shadow:none}
+body.client-body .aries-client-round3-toolbar .am-filter-search{position:relative;flex:1 1 250px;min-width:0;background:transparent;border:0;padding:0}
+body.client-body .aries-client-round3-toolbar .am-filter-search i{position:absolute;top:50%;left:.85rem;transform:translateY(-50%);z-index:1;color:#b1d0e5}
+body.client-body .aries-client-round3-toolbar .am-filter-search input{width:100%;min-height:42px;padding-left:2.3rem;border:1px solid #4a7190;border-radius:11px;background:#123750;color:#f4f9fd;box-shadow:none}
+body.client-body .aries-client-round3-toolbar .am-filter-search input::placeholder{color:#b5c9d9;opacity:1}
+body.client-body .aries-client-round3-toolbar .btn{min-height:42px;border-radius:11px}
+body.client-body .aries-client-round3-toolbar .dropdown-menu{background:#12344f;color:#f7fbff;border:1px solid #3c6684;border-radius:12px;min-width:230px;max-width:calc(100vw - 36px)}
+body.client-body .aries-client-round3-toolbar .dropdown-menu label{display:block;margin-bottom:.4rem;color:#e8f5ff}
+body.client-body .aries-client-round3-toolbar .dropdown-menu select{background:#09283e;color:#f7fbff;border:1px solid #4b7391;border-radius:9px;width:100%;padding:.55rem}
+body.client-body .aries-client-five-pager{margin:1.2rem 0;padding:1rem;background:#09273e;border:1px solid #31516d;border-radius:13px}
+body.client-body .aries-client-five-pager .aries-five-page{color:#ecf8ff}
+@media(max-width:1110px){
+ .owner-dashboard .owner-round3-grid{grid-template-columns:minmax(0,1fr)}
+ .owner-dashboard .owner-round3-upcoming{width:100%}
+ .owner-dashboard .owner-round3-grid .owner-round1-request-row{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .owner-dashboard .owner-round3-grid .owner-round1-request-row .btn{justify-self:start}
+}
+@media(max-width:740px){
+ .owner-dashboard .owner-round3-metrics{grid-template-columns:1fr}
+ .owner-dashboard .owner-round3-metric{min-height:94px}
+ .owner-dashboard .owner-round3-grid .owner-round1-request-row{grid-template-columns:1fr}
+ body.internal-ui .aries-round3-toolbar .am-filter-search{flex-basis:100%}
+ body.client-body .aries-client-round3-toolbar .am-filter-search{flex-basis:100%}
+ .aries-five-pager{justify-content:center;gap:.7rem}
+ .aries-five-total{text-align:center;flex-basis:100%}
+}
+@media print{.aries-five-pager,.aries-client-round3-toolbar,.aries-round3-toolbar{display:none!important}}
+body.internal-ui.staff-dashboard .staff-day-more{color:#eef8ff!important;font-weight:800}
+
+/* Round 3 Client search / filter / refresh remain one coherent toolbar. */
+body.client-body .aries-client-round3-toolbar{
+ display:grid!important;
+ grid-template-columns:minmax(0,1fr) max-content max-content!important;
+ align-items:center!important;gap:.65rem!important
+}
+body.client-body .aries-client-round3-toolbar>.am-filter-search{grid-column:1;flex:auto!important;width:auto!important}
+body.client-body .aries-client-round3-toolbar>.dropdown{grid-column:2;min-width:0;width:auto}
+body.client-body .aries-client-round3-toolbar>#clientBookingRefresh{grid-column:3;min-width:0;width:auto!important;max-width:max-content!important;justify-self:end}
+@media(max-width:620px){
+ body.client-body .aries-client-round3-toolbar{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important}
+ body.client-body .aries-client-round3-toolbar>.am-filter-search{grid-column:1/-1}
+ body.client-body .aries-client-round3-toolbar>.dropdown{grid-column:1;width:100%;min-width:0}
+ body.client-body .aries-client-round3-toolbar>.dropdown>.btn{width:100%}
+ body.client-body .aries-client-round3-toolbar>#clientBookingRefresh{grid-column:2;width:100%!important;max-width:none!important}
+}
+
+/* Mobile Staff header: show one identity only, avoid logo/label collision. */
+@media(max-width:767px){
+ body.internal-ui.staff-dashboard .dashboard-topbar .workspace-brand{display:none!important}
+ body.internal-ui.staff-dashboard .dashboard-topbar .topbar-left{min-width:0;flex:1 1 auto;gap:.6rem}
+ body.internal-ui.staff-dashboard .dashboard-topbar .staff-round2-header-identity{min-width:0;max-width:min(100%,175px)}
+ body.internal-ui.staff-dashboard .dashboard-topbar .staff-round2-header-identity :is(small,strong){overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
+ body.internal-ui.staff-dashboard .dashboard-topbar .topbar-right{flex:0 0 auto}
+}
+
+/* Owner Packages reuses the Staff package-card presentation and 3-column grid. */
+body.internal-ui.owner-dashboard .staff-package-page .staff-package-grid{
+ display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;
+ gap:13px!important;align-items:stretch!important
+}
+body.internal-ui.owner-dashboard .staff-package-grid .staff-package-card{min-width:0}
+@media(max-width:1140px){
+ body.internal-ui.owner-dashboard .staff-package-page .staff-package-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+}
+@media(max-width:750px){
+ body.internal-ui.owner-dashboard .staff-package-page .staff-package-grid{grid-template-columns:minmax(0,1fr)!important}
+}

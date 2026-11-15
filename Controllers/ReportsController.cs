@@ -27,7 +27,10 @@ namespace AriesMagicAppointmentSystem.Controllers
             int? month,
             int? year,
             string? package,
-            string? bookingStatus)
+            string? bookingStatus,
+            int page = 1,
+            string? recordSearch = null,
+            string? recordStatus = null)
         {
             if (startDate.HasValue && endDate.HasValue &&
                 startDate.Value.Date > endDate.Value.Date)
@@ -110,7 +113,7 @@ namespace AriesMagicAppointmentSystem.Controllers
 
             var bookings = await bookingQuery
                 .OrderByDescending(b => b.EventDate)
-                .ThenByDescending(b => b.StartTime)
+                .ThenByDescending(b => b.StartTime).ThenByDescending(b => b.Id)
                 .ToListAsync();
 
             var selectedBookingIds = bookings.Select(b => b.Id).ToList();
@@ -125,6 +128,23 @@ namespace AriesMagicAppointmentSystem.Controllers
             var completedBookings = reportBookings.Where(b => b.Status == BookingStatus.Completed).ToList();
             var completedFinancials = completedBookings.Where(b => financials.ContainsKey(b.Id)).Select(b => financials[b.Id]).ToList();
 
+            recordSearch = recordSearch?.Trim();
+            if (recordSearch?.Length > 100) recordSearch = recordSearch[..100];
+            recordStatus = recordStatus?.Trim();
+            var recordRows = bookings.AsEnumerable();
+            if (!string.IsNullOrWhiteSpace(recordSearch))
+            {
+                var term = recordSearch;
+                recordRows = recordRows.Where(b =>
+                    $"BK-{b.CreatedAt.Year}-{b.Id:D3}".Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                    (b.Client?.FullName?.Contains(term, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                    b.PackageName.Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                    b.PartyVenue.Contains(term, StringComparison.OrdinalIgnoreCase));
+            }
+            if (!string.IsNullOrWhiteSpace(recordStatus))
+                recordRows = recordRows.Where(b => b.Status.Equals(recordStatus, StringComparison.OrdinalIgnoreCase));
+            var matchedRecords = recordRows.ToList();
+            var recordPage = Math.Clamp(page, 1, Math.Max(1, (int)Math.Ceiling(matchedRecords.Count / 5.0)));
             var model = new ReportDashboardViewModel
             {
                 StartDate = startDate,
@@ -161,7 +181,11 @@ namespace AriesMagicAppointmentSystem.Controllers
                 EvidenceRequiredCount = payments.Count(p => p.Status == PaymentStatus.AdditionalEvidenceRequired),
                 VerifiedCount = verifiedPayments.Count,
                 RejectedCount = payments.Count(p => p.Status == PaymentStatus.Rejected),
-                BookingRecords = bookings.Take(50).ToList()
+                BookingRecords = matchedRecords.Skip((recordPage - 1) * 5).Take(5).ToList(),
+                RecordPage = recordPage,
+                RecordsTotalCount = matchedRecords.Count,
+                RecordSearch = recordSearch ?? string.Empty,
+                RecordStatus = recordStatus ?? string.Empty
             };
 
             var successfulBookingCount =

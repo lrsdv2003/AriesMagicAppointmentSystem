@@ -18,17 +18,26 @@ namespace AriesMagicAppointmentSystem.Controllers
 
         public async Task<IActionResult> Index(
             int page = 1,
-            int pageSize = 20,
+            int pageSize = 5,
             SystemActivityType? type = null,
             DateTime? fromDate = null,
             DateTime? toDate = null,
-            string? search = null)
+            string? search = null, string sortBy = "newest")
         {
             page = Math.Max(page, 1);
-            pageSize = Math.Clamp(pageSize, 1, 100);
+            pageSize = 5;
+            sortBy = string.Equals(sortBy, "oldest", StringComparison.OrdinalIgnoreCase) ? "oldest" : "newest";
 
             var (items, totalCount) = await _activityService.GetPagedAsync(
-                page, pageSize, type, fromDate, toDate, search, businessOnly:true);
+                page, pageSize, type, fromDate, toDate, search, businessOnly:true, sortBy: sortBy);
+
+            var totalPages = Math.Max(1, (int)Math.Ceiling(totalCount / (double)pageSize));
+            if (page > totalPages)
+            {
+                page = totalPages;
+                (items, totalCount) = await _activityService.GetPagedAsync(
+                    page, pageSize, type, fromDate, toDate, search, businessOnly: true, sortBy: sortBy);
+            }
 
             var viewModel = new SystemActivityIndexViewModel
             {
@@ -36,7 +45,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                 TotalCount = totalCount,
                 Page = page,
                 PageSize = pageSize,
-                TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize),
+                TotalPages = Math.Max(1, (int)Math.Ceiling(totalCount / (double)pageSize)),
                 TypeFilter = type,
                 FromDateFilter = fromDate,
                 ToDateFilter = toDate,
@@ -44,6 +53,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                 ActivityTypes = BusinessActivityTypes.All.ToList()
             };
 
+            ViewBag.ActivitySort = sortBy;
             return View(viewModel);
         }
     }

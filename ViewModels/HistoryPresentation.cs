@@ -8,7 +8,7 @@ public static class HistoryPresentation
         ["Year"]=f.Year?.ToString()??"", ["CompletedDateFrom"]=f.CompletedDateFrom?.ToString("yyyy-MM-dd")??"",
         ["CompletedDateTo"]=f.CompletedDateTo?.ToString("yyyy-MM-dd")??"", ["ServiceId"]=f.ServiceId?.ToString()??"",
         ["EventType"]=f.EventType??"", ["PaymentStatus"]=f.PaymentStatus??"", ["RefundStatus"]=f.RefundStatus??"",
-        ["SortBy"]=f.SortBy??"", ["Page"]=(page??f.Page).ToString(), ["PageSize"]=f.PageSize.ToString()
+        ["SortBy"]=f.SortBy??"", ["Page"]=(page??f.Page).ToString(), ["PageSize"]="5"
     };
     public static bool Filtered(HistoryFilterViewModel f) => !string.IsNullOrWhiteSpace(f.Search) ||
         !string.IsNullOrWhiteSpace(f.BookingStatus) || !string.IsNullOrWhiteSpace(f.DateRange) || f.ServiceId.HasValue ||

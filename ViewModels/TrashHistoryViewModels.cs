@@ -5,13 +5,14 @@ namespace AriesMagicAppointmentSystem.ViewModels
     public class TrashHistoryFilterViewModel
     {
         public string? Search { get; set; }
+        public string? SortBy { get; set; } = "newest";
         public TrashReason? Reason { get; set; }
         public string PaymentStatus { get; set; } = "All";
         public string? AssignedStaffId { get; set; }
         public DateTime? DateFrom { get; set; }
         public DateTime? DateTo { get; set; }
         public int Page { get; set; } = 1;
-        public int PageSize { get; set; } = 20;
+        public int PageSize { get; set; } = 5;
     }
 
     public class TrashHistoryRowViewModel

@@ -131,7 +131,7 @@ namespace AriesMagicAppointmentSystem.Services
 
             var totalCount = await query.CountAsync();
 
-            var pageSize = Math.Clamp(filters.PageSize, 1, 100);
+            var pageSize = 5;
             var page = Math.Clamp(filters.Page, 1, Math.Max(1, (int)Math.Ceiling(totalCount / (double)pageSize)));
             filters.Page = page;
             filters.PageSize = pageSize;
@@ -388,12 +388,12 @@ namespace AriesMagicAppointmentSystem.Services
         {
             return sortBy switch
             {
-                "Oldest" => query.OrderBy(b => b.EventDate).ThenBy(b => b.Id),
+                "Oldest" => query.OrderBy(b => b.ArchivedAt ?? b.EndTime).ThenBy(b => b.Id),
                 "HighestRevenue" => query.OrderByDescending(b => b.FinalPrice).ThenBy(b => b.Id),
                 "LowestRevenue" => query.OrderBy(b => b.FinalPrice).ThenBy(b => b.Id),
                 "ClientName" => query.OrderBy(b => b.Client != null ? b.Client.FullName : string.Empty).ThenBy(b => b.Id),
                 "EventDate" => query.OrderBy(b => b.EventDate).ThenBy(b => b.Id),
-                _ => query.OrderByDescending(b => b.EventDate).ThenByDescending(b => b.Id) // "Newest" default
+                _ => query.OrderByDescending(b => b.ArchivedAt ?? b.EndTime).ThenByDescending(b => b.Id) // "Newest" default
             };
         }
 

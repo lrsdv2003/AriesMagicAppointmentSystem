@@ -46,7 +46,7 @@ static class HistoryRegression
         var archivedCode=$"BK-{cancel.CreatedAt.Year}-{cancel.Id:D3}";
         check((await archives.GetTrashHistoryAsync(new(){Search=archivedCode})).Bookings.Single().Id==cancel.Id,"Archives can find the displayed full booking identifier");
         var archivePage=await archives.GetTrashHistoryAsync(new(){Search="History Fixture",Page=999,PageSize=2});
-        check(archivePage.Filters.Page==2 && archivePage.Bookings.Count==1,"Archive pagination clamps after record classification");
+        check(archivePage.Filters.Page==1 && archivePage.Filters.PageSize==5 && archivePage.Bookings.Count==3,"Archive pagination clamps after record classification");
         check((await archives.GetDetailsAsync(cancel.Id))?.Trash.ReasonRecorded==false,"Archive missing reason is not presented as a fabricated invalid-booking reason");
         check(future.Status==BookingStatus.Confirmed && !listing.Bookings.Any(b=>b.Id==future.Id),"Verified future event is not completed by payment verification");
         check(rejectedProof.Status==BookingStatus.AwaitingDownpayment && await archives.GetDetailsAsync(rejectedProof.Id)==null,"Rejected proof does not archive an active booking");
@@ -65,7 +65,7 @@ static class HistoryRegression
         var pages=await history.GetHistoryAsync(new(){ServiceId=package.Id,Page=999,PageSize=2});
         check(pages.Filters.Page==1 && pages.Bookings.Count==1 && pages.TotalPages==1,"History clamps pagination after excluding unsuccessful records");
         var route=HistoryPresentation.Routes(new(){Search="Fixture",BookingStatus="Completed",DateRange="Year",Year=2026,ServiceId=package.Id,PaymentStatus="Verified",CompletedDateFrom=new(2026,1,1),PageSize=2},2);
-        check(route["Search"]=="Fixture" && route["Page"]=="2" && route["BookingStatus"]=="Completed" && route["Year"]=="2026" && route["PaymentStatus"]=="Verified" && route["CompletedDateFrom"]=="2026-01-01","History links preserve all filters");
+        check(route["Search"]=="Fixture" && route["Page"]=="2" && route["BookingStatus"]=="Completed" && route["Year"]=="2026" && route["PaymentStatus"]=="Verified" && route["CompletedDateFrom"]=="2026-01-01" && route["PageSize"]=="5","History links preserve all filters");
         check(!HistoryPresentation.ShowEvent(TimelineEventType.PaymentVerified,false) && !HistoryPresentation.ShowEvent(TimelineEventType.RefundRequested,false) && HistoryPresentation.ShowEvent(TimelineEventType.RescheduleApproved,false),"Staff timeline excludes financial events");
         check(HistoryPresentation.ShowEvent(TimelineEventType.PaymentVerified,true),"Owner timeline includes important financial events");
         ClaimsPrincipal Principal(string role)=>new(new ClaimsIdentity([new Claim(ClaimTypes.Role,role)],"Fixture"));

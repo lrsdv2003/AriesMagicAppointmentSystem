@@ -10,7 +10,16 @@
         <h1>Owner Dashboard</h1>
         <p>Monitor finances and review pending requests.</p>
     </header>
-    <div class="owner-round1-grid">
+    <section class="owner-round3-metrics" aria-label="Authoritative financial summary">
+        @if(Model.UnavailableSections.Contains("financial overview")) {
+            <div class="dash-panel"><p class="dash-empty">Financial metrics unavailable. No estimated totals are shown.</p></div>
+        } else {
+            <article class="dash-panel owner-round3-metric owner-round3-net"><span class="owner-round3-metric-icon"><i class="bi bi-wallet2" aria-hidden="true"></i></span><div><span>Net Collected</span><strong>&#8369;@Model.NetCollectedRevenue.ToString("N2")</strong><small>Verified collections less completed refunds</small></div></article>
+            <article class="dash-panel owner-round3-metric owner-round3-outstanding"><span class="owner-round3-metric-icon"><i class="bi bi-cash-stack" aria-hidden="true"></i></span><div><span>Outstanding Balance</span><strong>&#8369;@Model.OutstandingReceivables.ToString("N2")</strong><small>Eligible outstanding collections</small></div></article>
+            <article class="dash-panel owner-round3-metric owner-round3-value"><span class="owner-round3-metric-icon"><i class="bi bi-calendar3" aria-hidden="true"></i></span><div><span>Total Booking Value</span><strong>&#8369;@Model.BookingValue.ToString("N2")</strong><small>Total eligible booking value</small></div></article>
+        }
+    </section>
+    <div class="owner-round1-grid owner-round3-grid">
         <section class="dash-panel owner-round1-requests" aria-labelledby="ownerFinancialRequestsTitle">
             <div class="dash-section-heading">
                 <div><h2 id="ownerFinancialRequestsTitle"><i class="bi bi-credit-card" aria-hidden="true"></i> Financial Requests</h2><p>Review pending payment proofs and refund requests.</p></div>
@@ -58,14 +67,32 @@
                 <a class="owner-round1-view-all" asp-controller="Payments" asp-action="RefundRequests">View all refund requests <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
             </div>
         </section>
-        <aside class="owner-round1-metrics" aria-label="Financial overview">
-            @if(Model.UnavailableSections.Contains("financial overview")){<div class="dash-panel"><p class="dash-empty">Financial metrics unavailable. No estimated totals are shown.</p></div>}
-            else {
-                <article class="dash-panel owner-round1-metric"><span class="owner-round1-metric-icon"><i class="bi bi-wallet2" aria-hidden="true"></i></span><div><span>Net Collected</span><strong>&#8369;@Model.NetCollectedRevenue.ToString("N2")</strong><small>Verified collections less completed refunds</small></div></article>
-                <article class="dash-panel owner-round1-metric"><span class="owner-round1-metric-icon"><i class="bi bi-layers" aria-hidden="true"></i></span><div><span>Outstanding Balance</span><strong>&#8369;@Model.OutstandingReceivables.ToString("N2")</strong><small>Eligible outstanding collections</small></div></article>
-                <article class="dash-panel owner-round1-metric"><span class="owner-round1-metric-icon"><i class="bi bi-calendar3" aria-hidden="true"></i></span><div><span>Booking Value</span><strong>&#8369;@Model.BookingValue.ToString("N2")</strong><small>Total eligible booking value</small></div></article>
+        <aside class="dash-panel owner-round3-upcoming" aria-labelledby="ownerUpcomingTitle">
+            <div class="dash-section-heading"><div><span class="dash-eyebrow">Your next scheduled events</span><h2 id="ownerUpcomingTitle"><i class="bi bi-calendar-event" aria-hidden="true"></i> Upcoming Events</h2><p>Next confirmed bookings with venue information.</p></div></div>
+            @if(Model.UnavailableSections.Contains("schedule")) {
+                <p class="dash-empty">Unable to load upcoming events.</p>
+            } else {
+                var nextEvents = Model.TodayEvents.Concat(Model.UpcomingEvents)
+                    .Where(b => b.Status == BookingStatus.Confirmed && b.EndTime >= Model.AsOf)
+                    .OrderBy(b => b.EventDate).ThenBy(b => b.StartTime).ThenBy(b => b.Id)
+                    .Take(4).ToList();
+                if(nextEvents.Count == 0) {
+                    <p class="dash-empty">No upcoming confirmed events.</p>
+                } else {
+                    <ol class="owner-round3-event-list">
+                    @foreach(var booking in nextEvents) {
+                        <li class="owner-round3-event">
+                            <span class="owner-round3-event-icon"><i class="bi bi-calendar2-check" aria-hidden="true"></i></span>
+                            <div>
+                                <a asp-controller="Bookings" asp-action="Details" asp-route-id="@booking.Id" class="owner-booking-code">BK-@booking.CreatedAt.Year-@booking.Id.ToString("D3")</a>
+                                <time datetime="@booking.StartTime.ToString("O")">@booking.EventDate.ToString("MMM d, yyyy") · @booking.StartTime.ToString("h:mm tt") – @booking.EndTime.ToString("h:mm tt")</time>
+                                <span>@(string.IsNullOrWhiteSpace(booking.PartyVenue) ? "Venue not recorded" : booking.PartyVenue)</span>
+                            </div>
+                        </li>
+                    }
+                    </ol>
+                }
             }
-            <p class="owner-round1-helper"><i class="bi bi-info-circle" aria-hidden="true"></i> Financial decisions are reviewed on dedicated pages. <a asp-controller="Reports" asp-action="Index">Financial summary</a></p>
         </aside>
     </div>
 </div>
