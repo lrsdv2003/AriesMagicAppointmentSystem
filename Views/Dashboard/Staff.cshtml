@@ -1,15 +1,14 @@
 @model AriesMagicAppointmentSystem.ViewModels.RoleDashboardViewModel
 @using AriesMagicAppointmentSystem.Models
 @{ Layout = "_DashboardLayout"; ViewData["Title"] = "Staff Dashboard";
-   var upcoming = Model.TodayEvents.Concat(Model.UpcomingEvents).OrderBy(b=>b.EventDate).ThenBy(b=>b.StartTime).Take(5).ToList();
+   var upcoming = Model.TodayEvents.Concat(Model.UpcomingEvents).OrderBy(b=>b.EventDate).ThenBy(b=>b.StartTime).Take(3).ToList();
 }
 <div class="staff-round1-dashboard" data-staff-priority>
-<header class="staff-round1-intro"><div><span class="dash-eyebrow">Staff workspace</span><h1>Staff Dashboard</h1><p>Operations command center · Focus on the requests and conversations that need attention.</p></div></header>
 @if(Model.UnavailableSections.Any()){<div class="dash-load-errors" role="status">@foreach(var section in Model.UnavailableSections){<p>Unable to load @(section). <a asp-controller="Dashboard" asp-action="Staff">Retry</a></p>}</div>}
 <section class="staff-round1-metrics" aria-label="Current Staff priorities">
- <a class="staff-round1-metric" asp-controller="Communications" asp-action="Index" asp-route-filter="unread"><span class="staff-round1-metric-icon tone-message"><i class="bi bi-chat-dots" aria-hidden="true"></i></span><div><h2>Unread Client Messages</h2><strong>@(Model.UnavailableSections.Contains("messages")?"—":Model.UnreadClientConversations.ToString("N0"))</strong><small>Requires your response</small></div><i class="bi bi-arrow-up-right" aria-hidden="true"></i></a>
- <a class="staff-round1-metric" asp-controller="Bookings" asp-action="Index" asp-route-bookingStatus="Pending"><span class="staff-round1-metric-icon tone-booking"><i class="bi bi-journal-check" aria-hidden="true"></i></span><div><h2>Pending Booking Requests</h2><strong>@(Model.UnavailableSections.Contains("requests")?"—":Model.PendingBookings.ToString("N0"))</strong><small>Awaiting Staff review</small></div><i class="bi bi-arrow-up-right" aria-hidden="true"></i></a>
- <a class="staff-round1-metric" asp-controller="RescheduleRequests" asp-action="Index" asp-route-status="Pending"><span class="staff-round1-metric-icon tone-reschedule"><i class="bi bi-arrow-left-right" aria-hidden="true"></i></span><div><h2>Pending Reschedule Requests</h2><strong>@(Model.UnavailableSections.Contains("requests")?"—":Model.PendingReschedules.ToString("N0"))</strong><small>Awaiting Staff approval</small></div><i class="bi bi-arrow-up-right" aria-hidden="true"></i></a>
+ <a class="staff-round1-metric" asp-controller="Communications" asp-action="Index" asp-route-filter="unread"><span class="staff-round1-metric-icon tone-message"><i class="bi bi-chat-dots" aria-hidden="true"></i></span><div><h2>Unread Client Messages</h2><strong>@(Model.UnavailableSections.Contains("messages")?"—":Model.UnreadClientConversations.ToString("N0"))</strong></div><i class="bi bi-arrow-up-right" aria-hidden="true"></i></a>
+ <a class="staff-round1-metric" asp-controller="Bookings" asp-action="Index" asp-route-bookingStatus="Pending"><span class="staff-round1-metric-icon tone-booking"><i class="bi bi-journal-check" aria-hidden="true"></i></span><div><h2>Pending Booking Requests</h2><strong>@(Model.UnavailableSections.Contains("requests")?"—":Model.PendingBookings.ToString("N0"))</strong></div><i class="bi bi-arrow-up-right" aria-hidden="true"></i></a>
+ <a class="staff-round1-metric" asp-controller="RescheduleRequests" asp-action="Index" asp-route-status="Pending"><span class="staff-round1-metric-icon tone-reschedule"><i class="bi bi-arrow-left-right" aria-hidden="true"></i></span><div><h2>Pending Reschedule Requests</h2><strong>@(Model.UnavailableSections.Contains("requests")?"—":Model.PendingReschedules.ToString("N0"))</strong></div><i class="bi bi-arrow-up-right" aria-hidden="true"></i></a>
 </section>
 <div class="staff-round1-columns">
 <section class="staff-round1-panel staff-round1-priority" aria-labelledby="staffPriorityTitle">
@@ -36,7 +35,7 @@
  </div>
 </section>
 <aside class="staff-round1-panel staff-round1-upcoming" aria-labelledby="staffUpcomingTitle">
- <div class="staff-round1-section-head"><div><span class="dash-eyebrow">Your next scheduled events</span><h2 id="staffUpcomingTitle"><i class="bi bi-calendar3" aria-hidden="true"></i> Upcoming Events</h2><p>Next confirmed events with venue information.</p></div></div>
+ <div class="staff-round1-section-head"><div><h2 id="staffUpcomingTitle"><i class="bi bi-calendar3" aria-hidden="true"></i> Upcoming Events</h2></div></div>
  @if(Model.UnavailableSections.Contains("schedule")){<p class="staff-round1-empty">Unable to load the calendar.</p>}
  else if(!upcoming.Any()){<p class="staff-round1-empty">No upcoming confirmed events.</p>}
  else{<div class="staff-round1-event-list">@foreach(var b in upcoming){<article class="staff-round1-event"><span class="staff-round2-event-icon" aria-hidden="true"><i class="bi bi-journal-bookmark"></i></span><div><a class="staff-round1-booking-code" asp-controller="Bookings" asp-action="Details" asp-route-id="@b.Id">BK-@b.CreatedAt.Year-@b.Id.ToString("D3")</a><strong><time datetime="@b.EventDate.ToString("yyyy-MM-dd")">@b.EventDate.ToString("MMM d, yyyy")</time> <span aria-hidden="true">·</span> @b.StartTime.ToString("h:mm tt") – @b.EndTime.ToString("h:mm tt")</strong><p title="@b.PartyVenue">@(string.IsNullOrWhiteSpace(b.PartyVenue)?"Venue not recorded":b.PartyVenue)</p></div></article>}</div>}

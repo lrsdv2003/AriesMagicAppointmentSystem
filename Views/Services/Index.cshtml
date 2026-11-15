@@ -4,12 +4,11 @@
     ViewData["Title"] = "Packages";
 }
 <div class="staff-package-page">
-    <header class="ui-toolbar staff-package-hero">
-
-        @if (User.CanEditPackages()) {
+    @if (User.CanEditPackages()) {
+        <header class="ui-toolbar staff-package-hero">
             <div class="d-flex gap-2 flex-wrap"><a asp-action="Archived" class="btn btn-outline-secondary">Archived Packages</a><a asp-action="Create" class="btn btn-primary">Add Package</a></div>
-        }
-    </header>
+        </header>
+    }
     @if (!Model.Any()) {
         <div class="staff-package-empty"><h2>No active packages yet</h2></div>
     } else {

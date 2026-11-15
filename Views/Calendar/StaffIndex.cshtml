@@ -38,7 +38,7 @@
 
 @* FullCalendar 6 injects its CSS from the existing pinned JavaScript bundle. *@
 
-<div class="staff-calendar-page">
+<div class="staff-calendar-page staff-final-round-calendar">
     <div class="staff-round1-calendar-layout">
 
     <section class="staff-calendar-panel" aria-labelledby="calendarHeading">
@@ -57,7 +57,7 @@
         <div class="staff-calendar-month-row">
             <strong id="calendarTitle" aria-live="polite"></strong>
             <div class="staff-package-legend am-filter-bar am-filter-chips" id="calendarPackageChips" aria-label="Package legend and filter">
-                <span class="staff-package-legend-label">Package Legend</span>
+
                 <button type="button" class="package-legend-filter active" data-package-filter="" aria-pressed="true">All</button>
                 @foreach (var item in packageColors.OrderBy(x => x.Key))
                 {
@@ -516,7 +516,7 @@
             initialView: 'dayGridMonth',
             headerToolbar: false,
             height: 'auto',
-            fixedWeekCount: false,
+            fixedWeekCount: staffCalendar,
             showNonCurrentDates: true,
             dayCellDidMount: mountDaySummary,
             dateClick: info => {

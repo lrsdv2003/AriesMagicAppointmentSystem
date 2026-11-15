@@ -20,8 +20,7 @@
         _ => "status-read"
     };
 }
-<div class="staff-booking-page">
-    <p class="staff-round2-intro">Staff action queue · Pending approvals and venue reviews only. Owner payment verification is managed separately.</p>
+<div class="staff-booking-page staff-final-round-list">
 
     @if (TempData["Success"] != null)
     {
@@ -31,13 +30,6 @@
     {
         <div class="alert alert-danger" role="alert">@TempData["Error"]</div>
     }
-
-    <div class="staff-booking-stats" aria-label="Booking request summary">
-        <div class="staff-booking-stat"><span class="staff-stat-label"><i class="bi bi-card-checklist" aria-hidden="true"></i> Staff Queue Total</span><strong>@Model.TotalCount</strong></div>
-        <div class="staff-booking-stat"><span class="staff-stat-label"><i class="bi bi-hourglass-split" aria-hidden="true"></i> Requests on Page</span><strong>@requests.Count</strong></div>
-        <div class="staff-booking-stat"><span class="staff-stat-label"><i class="bi bi-hourglass" aria-hidden="true"></i> Awaiting Client Venue Confirmation (page)</span><strong>@waitingClientCount</strong></div>
-        <div class="staff-booking-stat"><span class="staff-stat-label"><i class="bi bi-geo-alt" aria-hidden="true"></i> Manual Venue Review (page)</span><strong>@reviewCount</strong></div>
-    </div>
     <div class="am-filter-container">
         <form method="get" asp-action="Index" class="am-filter-bar am-filter-row staff-final-filter-toolbar aries-round3-toolbar" data-staff-autosearch="bookings" role="search">
             <div class="am-filter-search">

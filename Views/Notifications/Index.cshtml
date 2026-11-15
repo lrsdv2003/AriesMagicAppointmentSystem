@@ -5,7 +5,31 @@
     var notifications = Model.OrderByDescending(x => x.CreatedAt).ToList();
     var unread = notifications.Count(x => !x.IsRead);
 }
-@if(User.IsInRole("Client") || User.IsInRole("Staff") || User.IsInRole("Owner")){<partial name="_ClientNotifications" model="Model"/>}
+@if(User.IsInRole("Staff")) {
+<section class="staff-final-notifications" aria-label="Staff notifications">
+    <div class="staff-final-notifications-toolbar">
+        <p><strong>@unread unread</strong> · @notifications.Count total updates, newest first</p>
+        @if(unread > 0) {
+            <form asp-controller="Notifications" asp-action="MarkAllRead" method="post">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-primary">Mark all as read</button>
+            </form>
+        }
+    </div>
+    @if(notifications.Count == 0) {
+        <div class="staff-final-notice-empty" role="status">No notifications to display.</div>
+    } else {
+        @foreach(var group in notifications.GroupBy(n=>n.CreatedAt.Date==DateTime.Today ? "Today" : "Earlier")) {
+            <section class="staff-final-notice-group" aria-label="@group.Key notifications">
+                <h2>@group.Key</h2>
+                <div class="staff-final-notice-list">
+                    @foreach(var item in group) { <partial name="_NotificationRow" model="item" /> }
+                </div>
+            </section>
+        }
+    }
+</section>
+} else if(User.IsInRole("Client") || User.IsInRole("Owner")){<partial name="_ClientNotifications" model="Model"/>}
 else
 {
 <section class="notice-page" aria-labelledby="noticeTitle">

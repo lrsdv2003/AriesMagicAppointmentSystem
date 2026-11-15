@@ -17,11 +17,11 @@
     var statusClass = request.Status == RescheduleRequestStatus.Approved ? "status-approved" : request.Status == RescheduleRequestStatus.Rejected ? "status-rejected" : "status-pending";
 }
 
-<div class="staff-reschedule-page reschedule-details-page">
+<div class="staff-reschedule-page reschedule-details-page staff-final-reschedule-details">
     <div class="ui-toolbar page-header staff-reschedule-header">
         <div>
 
-            <h2>@bookingCode</h2>
+            <span class="staff-final-kicker">Staff workspace</span><h1>Reschedule Request</h1><p class="staff-final-reschedule-code">@bookingCode</p>
 
         </div>
         <div class="d-flex align-items-center gap-2 flex-wrap">
@@ -35,55 +35,61 @@
         <div class="alert alert-danger" role="alert">@TempData["Error"]</div>
     }
 
-    <div class="reschedule-details-grid">
-        <section class="dashboard-panel reschedule-detail-section">
-            <div class="reschedule-detail-heading"><i class="bi bi-journal-text" aria-hidden="true"></i><div><h2>Booking Information</h2></div></div>
-            <dl class="reschedule-detail-list">
+    <div class="staff-final-reschedule-grid">
+        <section class="dashboard-panel staff-final-reschedule-booking" aria-labelledby="staffFinalBookingInfo">
+            <h2 id="staffFinalBookingInfo"><i class="bi bi-person-badge" aria-hidden="true"></i> Booking Information</h2>
+            <dl class="staff-final-reschedule-facts">
                 <div><dt>Booking ID</dt><dd>@bookingCode</dd></div>
                 <div><dt>Client</dt><dd>@(booking.Client?.FullName ?? "Unknown client")</dd></div>
-                <div><dt>Package</dt><dd>@(booking.PackageName ?? booking.Service?.Name)</dd></div>
-                <div><dt>Event Type</dt><dd>@booking.EventType</dd></div>
+                <div><dt>Package</dt><dd>@(booking.PackageName ?? booking.Service?.Name ?? "Not recorded")</dd></div>
+                <div><dt>Event Type</dt><dd>@(booking.EventType ?? "Not recorded")</dd></div>
             </dl>
         </section>
 
-        <section class="dashboard-panel reschedule-detail-section">
-            <div class="reschedule-detail-heading"><i class="bi bi-clock-history" aria-hidden="true"></i><div><h2>Original Schedule</h2><p>Schedule captured when this request was submitted.</p></div></div>
-            @if (originalDate.HasValue && originalStart.HasValue && originalEnd.HasValue)
-            {
-                <div class="reschedule-detail-schedule neutral"><strong>@originalDate.Value.ToString("MMMM dd, yyyy")</strong><span>@originalStart.Value.ToString("hh:mm tt") – @originalEnd.Value.ToString("hh:mm tt")</span></div>
-            }
-            else
-            {
-                <div class="reschedule-history-unavailable"><i class="bi bi-info-circle" aria-hidden="true"></i> Historical original schedule was not stored for this legacy processed request.</div>
-            }
+        <section class="dashboard-panel staff-final-reschedule-comparison" aria-labelledby="staffFinalSchedule">
+            <h2 id="staffFinalSchedule"><i class="bi bi-calendar2-week" aria-hidden="true"></i> Schedule Comparison</h2>
+            <p class="staff-final-reschedule-note">Original and requested event schedules</p>
+            <div class="staff-final-reschedule-dates">
+                <div class="staff-final-schedule-card">
+                    <span>Original Schedule</span>
+                    @if(originalDate.HasValue && originalStart.HasValue && originalEnd.HasValue){
+                        <strong>@originalDate.Value.ToString("MMMM dd, yyyy")</strong>
+                        <small>@originalStart.Value.ToString("hh:mm tt") – @originalEnd.Value.ToString("hh:mm tt")</small>
+                    } else {
+                        <strong>Historical original schedule unavailable</strong>
+                        <small>Not stored for this legacy processed request</small>
+                    }
+                </div>
+                <i class="bi bi-arrow-right staff-final-schedule-arrow" aria-hidden="true"></i>
+                <div class="staff-final-schedule-card requested">
+                    <span>Requested Schedule</span>
+                    <strong>@request.RequestedDate.ToString("MMMM dd, yyyy")</strong>
+                    <small>@request.RequestedStartTime.ToString("hh:mm tt") – @request.RequestedEndTime.ToString("hh:mm tt")</small>
+                </div>
+            </div>
         </section>
 
-        <section class="dashboard-panel reschedule-detail-section">
-            <div class="reschedule-detail-heading"><i class="bi bi-calendar2-event" aria-hidden="true"></i><div><h2>Requested Schedule</h2><p>Client’s requested date and time.</p></div></div>
-            <div class="reschedule-detail-schedule requested"><strong>@request.RequestedDate.ToString("MMMM dd, yyyy")</strong><span>@request.RequestedStartTime.ToString("hh:mm tt") – @request.RequestedEndTime.ToString("hh:mm tt")</span></div>
+        <section class="dashboard-panel staff-final-reschedule-availability @(Model.Availability.IsAvailable ? "available" : request.Status == RescheduleRequestStatus.Pending ? "conflict" : "processed")" aria-labelledby="staffFinalAvailability">
+            <h2 id="staffFinalAvailability"><i class="bi bi-clock-history" aria-hidden="true"></i> Availability Check</h2>
+            <p class="staff-final-reschedule-note">Live validation against confirmed events, blocked dates, daily limits, and required buffers.</p>
+            @if(request.Status == RescheduleRequestStatus.Pending && !Model.Availability.IsAvailable){
+                <strong class="reschedule-conflict-title">Schedule Conflict Detected</strong>
+            }
+            <div class="reschedule-availability-message"><span>@Model.Availability.State</span><p>@Model.Availability.Message</p></div>
         </section>
 
-        <section class="dashboard-panel reschedule-detail-section">
-            <div class="reschedule-detail-heading"><i class="bi bi-geo-alt" aria-hidden="true"></i><div><h2>Venue</h2></div></div>
-            <dl class="reschedule-detail-list">
-                <div><dt>Address</dt><dd>@booking.PartyVenue</dd></div>
+        <section class="dashboard-panel staff-final-reschedule-venue" aria-labelledby="staffFinalVenue">
+            <h2 id="staffFinalVenue"><i class="bi bi-geo-alt" aria-hidden="true"></i> Venue</h2>
+            <dl class="staff-final-reschedule-facts">
+                <div class="staff-final-span-2"><dt>Address</dt><dd>@(string.IsNullOrWhiteSpace(booking.PartyVenue) ? "Not provided" : booking.PartyVenue)</dd></div>
                 <div><dt>Distance</dt><dd>@(booking.DistanceKm.HasValue ? $"{booking.DistanceKm.Value:N1} KM" : "Unavailable")</dd></div>
                 <div><dt>Service Zone</dt><dd>@(string.IsNullOrWhiteSpace(booking.ServiceZone) ? "Unavailable" : booking.ServiceZone)</dd></div>
             </dl>
         </section>
 
-        <section class="dashboard-panel reschedule-detail-section">
-            <div class="reschedule-detail-heading"><i class="bi bi-chat-left-text" aria-hidden="true"></i><div><h2>Client Request</h2></div></div>
-            <div class="reschedule-client-reason">@request.Reason</div>
-        </section>
-
-        <section class="dashboard-panel reschedule-detail-section reschedule-availability-section @(Model.Availability.IsAvailable ? "available" : request.Status == RescheduleRequestStatus.Pending ? "conflict" : "processed")">
-            <div class="reschedule-detail-heading"><i class="bi @(Model.Availability.IsAvailable ? "bi-check-circle" : "bi-exclamation-triangle")" aria-hidden="true"></i><div><h2>Availability Check</h2><p>Live validation against confirmed events, blocked dates, daily limits, and the required buffer.</p></div></div>
-            @if (request.Status == RescheduleRequestStatus.Pending && !Model.Availability.IsAvailable)
-            {
-                <strong class="reschedule-conflict-title">Schedule Conflict Detected</strong>
-            }
-            <div class="reschedule-availability-message"><span>@Model.Availability.State</span><p>@Model.Availability.Message</p></div>
+        <section class="dashboard-panel staff-final-reschedule-reason" aria-labelledby="staffFinalReason">
+            <h2 id="staffFinalReason"><i class="bi bi-chat-left-text" aria-hidden="true"></i> Client Request</h2>
+            <p class="reschedule-client-reason">@(string.IsNullOrWhiteSpace(request.Reason) ? "No reason provided" : request.Reason)</p>
         </section>
     </div>
 

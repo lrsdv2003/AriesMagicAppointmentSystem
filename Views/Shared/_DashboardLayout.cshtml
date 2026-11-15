@@ -68,6 +68,7 @@
     @if(currentController=="Personnel"){<link rel="stylesheet" href="~/css/personnel.css" asp-append-version="true" />}
     @if(currentController=="Communications"){<link rel="stylesheet" href="~/css/unified-support-20261108.css" asp-append-version="true" />}
 <link rel="stylesheet" href="~/css/aries-round3-ui.css" asp-append-version="true" />
+@if(role=="Staff"){<link rel="stylesheet" href="~/css/staff-final-round-20261116.css" asp-append-version="true" />}
 </head>
 <body class="internal-ui dashboard-body midnight-workspace @(role.ToLowerInvariant())-dashboard">
 <a class="ui-skip-link" href="#mainContent">Skip to content</a>
@@ -108,7 +109,7 @@
     </aside>
     <main class="dashboard-main">
         <section class="dashboard-content" id="mainContent" tabindex="-1" aria-label="@ViewData["Title"]">
-            @if(currentController != "Dashboard"){
+            @if(currentController != "Dashboard" && !(role == "Staff" && new[]{"Bookings","Calendar","RescheduleRequests","Services","History","Notifications"}.Contains(currentController))){
                 <header class="workspace-page-heading"><span class="dash-eyebrow">@role workspace</span><h1>@ViewData["Title"]</h1></header>
             }
             @RenderBody()

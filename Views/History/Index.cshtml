@@ -5,8 +5,8 @@
     ViewData["Title"] = "History";
     var financial = User.IsInRole("Owner");
 }
-<div class="ui-page history-page">
-<p>Completed events appear here. @if(financial){<a asp-controller="TrashHistory" asp-action="Index">View cancelled, declined and expired bookings in Archives.</a>}</p>
+<div class="ui-page history-page staff-final-round-history">
+@if(financial){<p>Completed events appear here. <a asp-controller="TrashHistory" asp-action="Index">View cancelled, declined and expired bookings in Archives.</a></p>}
 <partial name="_HistoryFilters" model="Model" />
 <div data-staff-search-results="history">
 <div class="ui-toolbar">
@@ -27,12 +27,12 @@
 } else {
 <div class="ui-table-wrap">
 <table class="ui-table ui-table-responsive"><caption class="visually-hidden">Historical booking records</caption>
-<thead><tr><th scope="col">Booking / Client</th><th scope="col">Event date &amp; time</th><th scope="col">Package</th><th scope="col">Payment status</th><th scope="col">Final status</th><th scope="col">Details</th></tr></thead>
+<thead><tr>@if(financial){<th scope="col">Booking / Client</th>}else{<th scope="col">Booking ID</th>}<th scope="col">Event date &amp; time</th><th scope="col">Package</th>@if(financial){<th scope="col">Payment status</th>}else{<th scope="col">Client Name</th>}<th scope="col">Final status</th><th scope="col">Details</th></tr></thead>
 <tbody>@foreach(var row in Model.Bookings) {
-<tr><td data-label="Booking / Client"><strong>@row.BookingCode</strong><span class="ui-cell-secondary">@row.ClientName</span></td>
+<tr><td data-label="@(financial ? "Booking / Client" : "Booking ID")"><strong>@row.BookingCode</strong>@if(financial){<span class="ui-cell-secondary">@row.ClientName</span>}</td>
 <td data-label="Event"><span>@row.EventDate.ToString("MMM d, yyyy")</span><span class="ui-cell-secondary">@row.StartTime.ToString("h:mm tt") &ndash; @row.EndTime.ToString("h:mm tt")</span></td>
 <td data-label="Package">@row.PackageName</td>
-<td data-label="Payment status"><partial name="_StatusBadge" model="row.PaymentStatus" /></td>
+@if(financial){<td data-label="Payment status"><partial name="_StatusBadge" model="row.PaymentStatus" /></td>}else{<td data-label="Client Name">@row.ClientName</td>}
 <td data-label="Final status"><partial name="_StatusBadge" model="row.BookingStatus" /></td>
 <td data-label="Details"><a asp-action="Details" asp-route-id="@row.Id" class="btn btn-outline-primary" aria-label="View Details for @row.BookingCode">View Details</a></td></tr>
 }</tbody></table></div>

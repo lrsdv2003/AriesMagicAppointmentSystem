@@ -1,0 +1,505 @@
+/* Staff Final Round — seven-page review. Staff only; preserve Owner/Client presentation.
+   Controls, authorization, business states and the established Midnight palette remain intact. */
+body.internal-ui.staff-dashboard .staff-final-round-list,
+body.internal-ui.staff-dashboard .staff-final-round-history,
+body.internal-ui.staff-dashboard .staff-final-round-calendar {min-width:0;width:100%;max-width:none}
+body.internal-ui.staff-dashboard .staff-final-round-list > .am-filter-container,
+body.internal-ui.staff-dashboard .staff-final-round-history > form.am-filter-bar,
+body.internal-ui.staff-dashboard .staff-final-round-history > .am-filter-container{
+ margin:0 0 12px!important;
+}
+
+/* 1. Dashboard: maximized but fixed-height priority workspace, no stretching as tab data changes. */
+body.internal-ui.staff-dashboard .staff-round1-dashboard{gap:14px}
+body.internal-ui.staff-dashboard .staff-round1-columns{align-items:stretch!important}
+body.internal-ui.staff-dashboard .staff-round1-priority{
+ height:560px!important;min-height:560px!important;max-height:560px!important;
+ display:flex!important;flex-direction:column!important;overflow:hidden!important;
+}
+body.internal-ui.staff-dashboard .staff-round1-priority .staff-round1-tabs{flex:0 0 auto}
+body.internal-ui.staff-dashboard .staff-round1-priority .staff-round1-section-head{flex:0 0 auto}
+body.internal-ui.staff-dashboard .staff-round1-priority .staff-round1-tab-panel{
+ flex:1 1 auto;min-height:0!important;overflow:auto;overscroll-behavior:contain;
+ scrollbar-width:thin;
+}
+body.internal-ui.staff-dashboard .staff-round1-priority .staff-round1-task-list{align-content:start}
+body.internal-ui.staff-dashboard .staff-round1-upcoming{
+ height:560px!important;min-height:560px!important;max-height:560px!important;
+ display:flex!important;flex-direction:column;overflow:hidden!important;
+}
+body.internal-ui.staff-dashboard .staff-round1-upcoming .staff-round1-event-list{
+ flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;
+}
+body.internal-ui.staff-dashboard .staff-round1-upcoming .staff-round1-calendar-link{flex:0 0 auto;margin-top:auto}
+
+/* 2/4/5. Search: exactly one border on each input, one compact toolbar, generous control gaps. */
+body.internal-ui.staff-dashboard :is(.staff-booking-page,.staff-reschedule-page,.history-page) .am-filter-container{
+ background:transparent!important;border:0!important;box-shadow:none!important;
+ padding:0!important;margin:0 0 13px!important;
+}
+body.internal-ui.staff-dashboard :is(.staff-booking-page,.staff-reschedule-page,.history-page) .staff-final-filter-toolbar{
+ display:flex!important;align-items:center!important;gap:18px!important;
+ padding:0!important;margin:0!important;border:0!important;box-shadow:none!important;
+ background:transparent!important;min-height:44px;
+}
+body.internal-ui.staff-dashboard .history-page .staff-final-filter-toolbar>.am-filter-row{
+ display:flex!important;align-items:center;gap:18px!important;
+ min-width:0;width:100%;flex-wrap:wrap;
+}
+body.internal-ui.staff-dashboard .staff-final-filter-toolbar .am-filter-search{
+ flex:1 1 390px!important;min-width:200px!important;
+ border:none!important;outline:none!important;box-shadow:none!important;
+ background:transparent!important;padding:0!important;margin:0!important;
+}
+body.internal-ui.staff-dashboard .staff-final-filter-toolbar .am-filter-search input{
+ border:1px solid #416c88!important;box-shadow:none!important;
+ border-radius:8px!important;min-height:44px!important;background:#09253c!important;
+}
+body.internal-ui.staff-dashboard .staff-final-filter-toolbar .dropdown{margin:0!important;flex:0 0 auto}
+body.internal-ui.staff-dashboard .staff-final-filter-toolbar .aries-refresh-now,
+body.internal-ui.staff-dashboard .staff-final-filter-toolbar .aries-round3-refresh{
+ height:44px!important;min-height:44px!important;min-width:44px!important;
+ display:inline-flex;align-items:center;justify-content:center;
+ flex:0 0 auto!important;margin:0!important;padding:7px 13px!important;
+ border:1px solid #416e8a!important;box-shadow:none!important;border-radius:8px!important;
+}
+body.internal-ui.staff-dashboard .staff-final-filter-toolbar .dropdown-toggle{
+ min-height:44px!important;min-width:95px;padding:7px 13px!important;
+ border-radius:8px!important;
+}
+
+/* Tables must fit their panels without cutting off actions; horizontal scroll at narrow widths. */
+body.internal-ui.staff-dashboard :is(.staff-booking-table-panel,.staff-reschedule-table-panel){
+ width:100%;max-width:100%;min-width:0;overflow:hidden;
+ margin-top:0!important;padding:16px!important;
+}
+body.internal-ui.staff-dashboard :is(.staff-booking-table-wrap,.staff-reschedule-table-wrap,.staff-upcoming-table-wrap,.history-page .ui-table-wrap){
+ min-width:0;max-width:100%;width:100%;overflow-x:auto!important;
+ -webkit-overflow-scrolling:touch;
+}
+body.internal-ui.staff-dashboard .staff-booking-table{width:100%;min-width:850px!important;table-layout:auto!important}
+body.internal-ui.staff-dashboard .staff-reschedule-table{
+ width:100%;min-width:890px!important;table-layout:auto!important;
+}
+body.internal-ui.staff-dashboard :is(.staff-booking-table,.staff-reschedule-table) :is(th,td){
+ padding:11px 10px!important;vertical-align:middle;
+}
+body.internal-ui.staff-dashboard .staff-reschedule-table th{font-size:11px!important;white-space:normal}
+body.internal-ui.staff-dashboard .staff-reschedule-table td{
+ font-size:12px!important;line-height:1.5;overflow-wrap:anywhere;
+}
+body.internal-ui.staff-dashboard .staff-reschedule-table td:first-child{min-width:118px;white-space:nowrap}
+body.internal-ui.staff-dashboard .staff-reschedule-table .reschedule-schedule{
+ padding:8px!important;min-width:0!important;overflow-wrap:anywhere;
+}
+body.internal-ui.staff-dashboard .staff-reschedule-table td:last-child{min-width:122px;white-space:nowrap}
+body.internal-ui.staff-dashboard .staff-reschedule-table .staff-final-details-action{white-space:nowrap}
+body.internal-ui.staff-dashboard .staff-reschedule-table .reschedule-availability{
+ font-size:10px;white-space:normal;
+}
+
+/* 3. Fixed calendar cells across short/long months; legend keeps filter behavior but no active glow. */
+body.internal-ui.staff-dashboard .staff-final-round-calendar #calendar .fc-daygrid-body,
+body.internal-ui.staff-dashboard .staff-final-round-calendar #calendar .fc-daygrid-body-unbalanced{
+ width:100%!important;
+}
+body.internal-ui.staff-dashboard .staff-final-round-calendar #calendar .fc-scrollgrid-sync-table > tbody > tr{
+ height:102px!important;min-height:102px!important;max-height:102px!important;
+}
+body.internal-ui.staff-dashboard .staff-final-round-calendar #calendar .fc-daygrid-day,
+body.internal-ui.staff-dashboard .staff-final-round-calendar #calendar .fc-daygrid-day-frame{
+ box-sizing:border-box;height:102px!important;min-height:102px!important;
+ max-height:102px!important;overflow:hidden!important;
+}
+body.internal-ui.staff-dashboard .staff-final-round-calendar #calendar .staff-final-day-bookings{gap:2px;margin:2px 3px}
+body.internal-ui.staff-dashboard .staff-final-round-calendar #calendar .staff-final-day-booking{
+ font-size:10px;padding:2px 4px;min-height:17px;
+}
+body.internal-ui.staff-dashboard #calendarPackageChips .package-legend-filter.active,
+body.internal-ui.staff-dashboard #calendarPackageChips .package-legend-filter[aria-pressed="true"]{
+ background:#0a2d44!important;color:#d4e4f0!important;
+ border:1px solid #355b73!important;box-shadow:none!important;
+ font-weight:650!important;
+}
+body.internal-ui.staff-dashboard #calendarPackageChips .package-legend-filter:hover{
+ box-shadow:none!important;
+}
+body.internal-ui.staff-dashboard .staff-final-round-calendar .staff-upcoming-table{
+ width:100%;min-width:835px!important;
+}
+body.internal-ui.staff-dashboard .staff-final-round-calendar .staff-upcoming-panel{min-width:0}
+
+/* 5. History: close search-to-table gap; Staff has dedicated Client Name column. */
+body.internal-ui.staff-dashboard .history-page{display:block!important}
+body.internal-ui.staff-dashboard .history-page > .ui-toolbar{margin:0 0 8px!important}
+body.internal-ui.staff-dashboard .history-page [data-staff-search-results="history"] > .ui-toolbar{
+ margin:4px 0 7px!important;padding:0!important;
+}
+body.internal-ui.staff-dashboard .history-page .ui-result-count{margin:0!important}
+body.internal-ui.staff-dashboard .history-page .ui-table{
+ width:100%;min-width:760px!important;table-layout:auto!important;
+}
+body.internal-ui.staff-dashboard .history-page .ui-table :is(th,td){
+ padding:11px 13px!important;vertical-align:middle;
+}
+body.internal-ui.staff-dashboard .history-page .ui-table th:first-child,
+body.internal-ui.staff-dashboard .history-page .ui-table td:first-child{min-width:132px;white-space:nowrap}
+body.internal-ui.staff-dashboard .history-page .ui-table td:nth-child(4){min-width:145px}
+body.internal-ui.staff-dashboard .history-page .ui-table .btn{white-space:nowrap}
+
+/* 6. Booking history details: summary left, activity timeline right. */
+body.internal-ui.staff-dashboard .staff-final-kicker{
+ display:block;color:#e1bc6d;font-size:10px;font-weight:750;
+ letter-spacing:.075em;text-transform:uppercase;margin-bottom:3px;
+}
+body.internal-ui.staff-dashboard .staff-final-details-header{
+ display:flex;align-items:flex-start;justify-content:space-between;
+ gap:15px;flex-wrap:wrap;margin:0 0 12px!important;
+}
+body.internal-ui.staff-dashboard .staff-final-details-header h1{
+ font-size:clamp(20px,2vw,28px);color:#f4f9ff;margin:0 0 7px!important;
+ font-weight:760;
+}
+body.internal-ui.staff-dashboard .staff-final-header-meta{
+ display:flex;align-items:center;gap:10px;color:#aac7da;font-size:12px;
+}
+body.internal-ui.staff-dashboard .staff-final-history-grid{
+ display:grid;grid-template-columns:minmax(0,1.55fr) minmax(275px,.9fr);
+ align-items:start;gap:13px;
+}
+body.internal-ui.staff-dashboard .staff-final-history-grid .ui-panel{
+ min-width:0;padding:19px!important;background:#0b2c46;
+ border:1px solid #345b75;border-radius:10px;color:#eaf7ff;
+}
+body.internal-ui.staff-dashboard .staff-final-history-grid h2{
+ font-size:16px!important;font-weight:760;margin:0 0 15px!important;
+ color:#f3f9ff;display:flex;align-items:center;gap:9px;
+}
+body.internal-ui.staff-dashboard .staff-final-history-grid h2 i{color:#a9d5ee}
+body.internal-ui.staff-dashboard .staff-final-history-facts{
+ margin:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 14px;
+}
+body.internal-ui.staff-dashboard .staff-final-history-facts>div{
+ display:grid;grid-template-columns:90px minmax(0,1fr);
+ align-items:start;gap:8px;padding:12px 2px;
+ border-top:1px solid #315772;min-width:0;
+}
+body.internal-ui.staff-dashboard .staff-final-history-facts dt{
+ color:#afcadc;font-weight:600;font-size:11px;
+}
+body.internal-ui.staff-dashboard .staff-final-history-facts dd{
+ color:#f0f8ff;font-size:12px;font-weight:700;line-height:1.5;
+ margin:0;overflow-wrap:anywhere;
+}
+body.internal-ui.staff-dashboard .staff-final-history-facts .staff-final-span-2{
+ grid-column:1/-1;
+}
+body.internal-ui.staff-dashboard .staff-final-history-timeline .ui-timeline{
+ margin:0;padding-left:19px;
+}
+body.internal-ui.staff-dashboard .staff-final-history-timeline .ui-timeline li{
+ padding:0 0 13px 8px;
+}
+body.internal-ui.staff-dashboard .staff-final-history-timeline .ui-timeline li strong{
+ display:block;color:#f3f9ff;font-size:12px;
+}
+body.internal-ui.staff-dashboard .staff-final-history-timeline .ui-timeline li time{
+ display:block;color:#a9c5d7;font-size:11px;margin-top:2px;
+}
+
+/* 6. Reschedule details: full booking ID, comparison + availability, venue + reason. */
+body.internal-ui.staff-dashboard .staff-final-reschedule-details{max-width:none!important}
+body.internal-ui.staff-dashboard .staff-final-reschedule-details .staff-reschedule-header{
+ display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:11px!important;
+}
+body.internal-ui.staff-dashboard .staff-final-reschedule-details .staff-reschedule-header h1{
+ font-size:clamp(21px,2vw,26px);font-weight:780;color:#f4faff;margin:0;
+}
+body.internal-ui.staff-dashboard .staff-final-reschedule-code{
+ color:#f4c06b;font-size:12px;font-weight:760;margin:4px 0 0!important;
+}
+body.internal-ui.staff-dashboard .staff-final-reschedule-grid{
+ display:grid;grid-template-columns:minmax(0,1.6fr) minmax(260px,.85fr);
+ gap:13px;align-items:stretch;
+}
+body.internal-ui.staff-dashboard .staff-final-reschedule-grid .dashboard-panel{
+ min-width:0;margin:0!important;padding:17px!important;
+ background:#0b2c46;border:1px solid #315e7a;
+}
+body.internal-ui.staff-dashboard .staff-final-reschedule-grid h2{
+ font-size:15px!important;font-weight:760;color:#f2f9ff;
+ display:flex;align-items:center;gap:9px;margin:0 0 12px!important;
+}
+body.internal-ui.staff-dashboard .staff-final-reschedule-grid h2 i{color:#a4d2ec}
+body.internal-ui.staff-dashboard .staff-final-reschedule-booking{grid-column:1/-1}
+body.internal-ui.staff-dashboard .staff-final-reschedule-facts{
+ display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+ margin:0;gap:9px 14px;
+}
+body.internal-ui.staff-dashboard .staff-final-reschedule-booking .staff-final-reschedule-facts{
+ grid-template-columns:repeat(4,minmax(0,1fr));
+}
+body.internal-ui.staff-dashboard .staff-final-reschedule-facts > div{
+ border-top:1px solid #315873;padding-top:10px;min-width:0;
+}
+body.internal-ui.staff-dashboard .staff-final-reschedule-facts dt{
+ color:#a8c3d6;font-size:10px;text-transform:uppercase;font-weight:750;margin-bottom:5px;
+}
+body.internal-ui.staff-dashboard .staff-final-reschedule-facts dd{
+ color:#f2f9ff;font-weight:700;font-size:12px;line-height:1.5;
+ margin:0;overflow-wrap:anywhere;
+}
+body.internal-ui.staff-dashboard .staff-final-reschedule-facts .staff-final-span-2{grid-column:1/-1}
+body.internal-ui.staff-dashboard .staff-final-reschedule-note{
+ font-size:11px;color:#aac8da;margin:-5px 0 10px!important;
+}
+body.internal-ui.staff-dashboard .staff-final-reschedule-dates{
+ display:grid;grid-template-columns:minmax(0,1fr) 24px minmax(0,1fr);
+ align-items:center;gap:8px;
+}
+body.internal-ui.staff-dashboard .staff-final-schedule-card{
+ border:1px solid #365e79;background:#0c304b;border-radius:8px;
+ padding:13px;min-width:0;min-height:95px;
+}
+body.internal-ui.staff-dashboard .staff-final-schedule-card span{
+ display:block;color:#afc9dc;font-size:10px;font-weight:710;
+ text-transform:uppercase;margin-bottom:6px;
+}
+body.internal-ui.staff-dashboard .staff-final-schedule-card strong{
+ display:block;color:#f3f9ff;font-size:13px;overflow-wrap:anywhere;
+}
+body.internal-ui.staff-dashboard .staff-final-schedule-card small{
+ display:block;color:#d4e8f4;font-size:11px;margin-top:5px;
+}
+body.internal-ui.staff-dashboard .staff-final-schedule-arrow{
+ font-size:20px;color:#86b9db;text-align:center;
+}
+body.internal-ui.staff-dashboard .staff-final-reschedule-availability .reschedule-conflict-title{
+ display:block;color:#ff9db0;font-size:12px;margin:8px 0;
+}
+body.internal-ui.staff-dashboard .staff-final-reschedule-availability .reschedule-availability-message{
+ padding:10px!important;border:1px solid #426b86;border-radius:8px;overflow-wrap:anywhere;
+}
+body.internal-ui.staff-dashboard .staff-final-reschedule-reason .reschedule-client-reason{
+ color:#e9f6ff;margin:0;min-height:60px;overflow-wrap:anywhere;
+}
+body.internal-ui.staff-dashboard .staff-final-reschedule-details .reschedule-details-actions{
+ margin-top:13px;display:flex;justify-content:flex-end;flex-wrap:wrap;gap:9px;
+}
+
+/* 7. Booking Details: 2/3 information area + 1/3 persistent timeline, actions remain intact. */
+body.internal-ui.staff-dashboard .staff-final-booking-shell{
+ display:grid;grid-template-columns:minmax(0,1.75fr) minmax(260px,.75fr);
+ align-items:start;gap:13px;min-width:0;
+}
+body.internal-ui.staff-dashboard .staff-final-booking-primary,
+body.internal-ui.staff-dashboard .staff-final-booking-timeline{min-width:0}
+body.internal-ui.staff-dashboard .staff-final-booking-primary .staff-detail-grid{
+ display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+ gap:12px!important;align-items:start;
+}
+body.internal-ui.staff-dashboard .staff-final-booking-primary .staff-detail-section{
+ min-width:0;max-width:100%;padding:15px!important;
+}
+body.internal-ui.staff-dashboard .staff-final-booking-primary .staff-detail-wide{grid-column:1/-1}
+body.internal-ui.staff-dashboard .staff-final-booking-primary .staff-detail-list>div{min-width:0;overflow-wrap:anywhere}
+body.internal-ui.staff-dashboard .staff-final-booking-timeline .aries-timeline{
+ margin:0!important;padding:15px!important;max-width:100%;
+ background:#0b2c46;border:1px solid #355c76;border-radius:10px;
+}
+body.internal-ui.staff-dashboard .staff-final-booking-timeline .aries-timeline-head{
+ display:block!important;margin-bottom:12px!important;
+}
+body.internal-ui.staff-dashboard .staff-final-booking-timeline .aries-timeline-head h2{
+ font-size:15px!important;color:#f4faff;
+}
+body.internal-ui.staff-dashboard .staff-final-booking-timeline .aries-timeline-head p{font-size:11px}
+body.internal-ui.staff-dashboard .staff-final-booking-timeline .aries-timeline-status{
+ display:inline-block;font-size:10px;margin-top:8px;
+}
+
+/* 8. Staff notifications: compact grouped list, unread indicator + safe action. */
+body.internal-ui.staff-dashboard .staff-final-notifications{
+ min-width:0;width:100%;background:#061e31;border:1px solid #294c65;
+ border-radius:11px;padding:17px!important;
+}
+body.internal-ui.staff-dashboard .staff-final-notifications-toolbar{
+ display:flex;align-items:center;justify-content:space-between;
+ gap:12px;flex-wrap:wrap;margin:0 0 13px!important;
+}
+body.internal-ui.staff-dashboard .staff-final-notifications-toolbar p{
+ color:#b8d2e5;font-size:12px;margin:0!important;
+}
+body.internal-ui.staff-dashboard .staff-final-notifications-toolbar strong{color:#f2f9ff}
+body.internal-ui.staff-dashboard .staff-final-notifications-toolbar .btn{
+ background:#146f9f!important;border-color:#4699c1!important;color:#fff!important;
+ font-size:11px!important;min-height:34px!important;padding:7px 13px!important;
+}
+body.internal-ui.staff-dashboard .staff-final-notice-group{margin:0 0 12px!important}
+body.internal-ui.staff-dashboard .staff-final-notice-group h2{
+ color:#b7ccdd;font-size:12px!important;font-weight:710;margin:0 0 7px!important;
+}
+body.internal-ui.staff-dashboard .staff-final-notice-list{display:grid;gap:5px}
+body.internal-ui.staff-dashboard .staff-final-notice-list .notice-row{
+ display:flex;align-items:center;gap:11px;min-width:0;margin:0;
+ padding:12px 14px!important;border-radius:8px!important;
+ border:1px solid #2d5671!important;border-left:3px solid #328bc0!important;
+ background:#0a2940!important;color:#eaf6fe;
+}
+body.internal-ui.staff-dashboard .staff-final-notice-list .notice-row.notice-unread{
+ background:#103650!important;border-left-color:#72c9fc!important;
+}
+body.internal-ui.staff-dashboard .staff-final-notice-list .notice-icon{
+ flex:0 0 34px;width:34px;height:34px;display:grid;place-items:center;
+ color:#b3ddf4;background:#164361;border-radius:7px;
+}
+body.internal-ui.staff-dashboard .staff-final-notice-list .notice-copy{flex:1 1 auto;min-width:0}
+body.internal-ui.staff-dashboard .staff-final-notice-list .notice-meta{
+ display:flex;align-items:center;gap:7px;flex-wrap:wrap;
+ color:#adc9db;font-size:10px;line-height:1.4;
+}
+body.internal-ui.staff-dashboard .staff-final-notice-list .notice-copy h2{
+ color:#f4faff;font-size:13px!important;font-weight:770;margin:4px 0 2px!important;
+}
+body.internal-ui.staff-dashboard .staff-final-notice-list .notice-copy p{
+ color:#d1e5f2;font-size:11px;margin:0!important;overflow-wrap:anywhere;
+}
+body.internal-ui.staff-dashboard .staff-final-notice-list .notice-open-form{flex:0 0 auto;margin:0}
+body.internal-ui.staff-dashboard .staff-final-notice-list .notice-action{
+ display:inline-flex;align-items:center;gap:7px;padding:8px 11px!important;
+ min-height:33px;border:1px solid #479bc9;background:#147db8;color:#fff;
+ border-radius:7px;font-size:11px;font-weight:720;white-space:nowrap;
+}
+body.internal-ui.staff-dashboard .staff-final-notice-list .notice-action:focus-visible{
+ outline:3px solid #82d0f8;outline-offset:2px;
+}
+body.internal-ui.staff-dashboard .staff-final-notice-empty{
+ padding:24px;color:#c3d9e7;text-align:center;font-size:13px;
+}
+
+@media(max-width:1100px){
+ body.internal-ui.staff-dashboard .staff-final-history-grid,
+ body.internal-ui.staff-dashboard .staff-final-booking-shell{grid-template-columns:1fr}
+ body.internal-ui.staff-dashboard .staff-final-reschedule-booking .staff-final-reschedule-facts{
+  grid-template-columns:repeat(2,minmax(0,1fr));
+ }
+}
+@media(max-width:767px){
+ body.internal-ui.staff-dashboard .staff-round1-columns{grid-template-columns:1fr!important}
+ body.internal-ui.staff-dashboard .staff-round1-priority{
+  height:500px!important;min-height:500px!important;max-height:500px!important;
+ }
+ body.internal-ui.staff-dashboard .staff-round1-upcoming{
+  height:410px!important;min-height:410px!important;max-height:410px!important;
+ }
+ body.internal-ui.staff-dashboard .staff-final-filter-toolbar,
+ body.internal-ui.staff-dashboard .history-page .staff-final-filter-toolbar>.am-filter-row{
+  gap:10px!important;
+ }
+ body.internal-ui.staff-dashboard .staff-final-filter-toolbar .am-filter-search{
+  min-width:0!important;flex:1 1 100%!important;
+ }
+ body.internal-ui.staff-dashboard .staff-final-round-calendar #calendar .fc-scrollgrid-sync-table>tbody>tr{
+  height:76px!important;min-height:76px!important;max-height:76px!important;
+ }
+ body.internal-ui.staff-dashboard .staff-final-round-calendar #calendar .fc-daygrid-day,
+ body.internal-ui.staff-dashboard .staff-final-round-calendar #calendar .fc-daygrid-day-frame{
+  height:76px!important;min-height:76px!important;max-height:76px!important;
+ }
+ body.internal-ui.staff-dashboard .staff-final-round-calendar .staff-final-day-booking{
+  font-size:8px!important;
+ }
+ body.internal-ui.staff-dashboard .staff-final-reschedule-grid{grid-template-columns:1fr}
+ body.internal-ui.staff-dashboard .staff-final-reschedule-booking{grid-column:auto}
+ body.internal-ui.staff-dashboard .staff-final-booking-primary .staff-detail-grid{grid-template-columns:1fr}
+ body.internal-ui.staff-dashboard .staff-final-booking-primary .staff-detail-wide{grid-column:auto}
+ body.internal-ui.staff-dashboard .staff-final-notice-list .notice-row{align-items:flex-start;flex-wrap:wrap}
+ body.internal-ui.staff-dashboard .staff-final-notice-list .notice-open-form{width:100%}
+ body.internal-ui.staff-dashboard .staff-final-notice-list .notice-action{width:100%;justify-content:center}
+}
+@media(max-width:480px){
+ body.internal-ui.staff-dashboard .staff-final-reschedule-dates{
+  grid-template-columns:1fr;gap:5px;
+ }
+ body.internal-ui.staff-dashboard .staff-final-schedule-arrow{transform:rotate(90deg)}
+ body.internal-ui.staff-dashboard .staff-final-history-facts{
+  grid-template-columns:1fr;
+ }
+ body.internal-ui.staff-dashboard .staff-final-history-facts .staff-final-span-2{grid-column:auto}
+}
+
+/* Booking details title and actions match the compact reference composition. */
+body.internal-ui.staff-dashboard .staff-final-booking-hero{
+ display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;
+ gap:15px;margin:0 0 14px!important;padding:0!important;
+}
+body.internal-ui.staff-dashboard .staff-final-booking-hero h1{
+ margin:0!important;color:#f4faff;font-weight:790;font-size:clamp(20px,2vw,27px);
+}
+body.internal-ui.staff-dashboard .staff-final-booking-hero p{
+ margin:3px 0 0!important;color:#aecbdd;font-size:12px;
+}
+body.internal-ui.staff-dashboard .staff-final-booking-hero-actions{
+ display:flex;align-items:center;justify-content:flex-end;gap:10px;flex-wrap:wrap;
+}
+body.internal-ui.staff-dashboard .staff-final-booking-hero-actions .staff-booking-code{
+ color:#f2c772;font-size:12px;white-space:nowrap;
+}
+body.internal-ui.staff-dashboard .staff-final-booking-hero-actions .btn{
+ min-height:36px;font-size:11px;
+}
+@media(max-width:767px){
+ body.internal-ui.staff-dashboard .staff-final-booking-hero-actions{
+  justify-content:flex-start;width:100%;
+ }
+}
+
+/* Final narrow-screen overflow guard: prioritize readable, non-clipped cards. */
+@media(max-width:767px){
+ body.internal-ui.staff-dashboard .staff-round1-priority .staff-round1-tabs{
+  display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  width:100%;gap:6px;flex-wrap:initial!important;
+ }
+ body.internal-ui.staff-dashboard .staff-round1-priority .staff-round1-tabs button{
+  display:flex!important;min-width:0!important;width:100%!important;max-width:100%!important;
+  flex:initial!important;justify-content:center!important;
+  text-align:center;white-space:normal!important;overflow-wrap:anywhere;
+  padding:8px 6px!important;font-size:11px!important;
+ }
+ body.internal-ui.staff-dashboard .staff-round1-priority .staff-round1-tabs button:last-child{
+  grid-column:1/-1;
+ }
+ body.internal-ui.staff-dashboard .staff-reschedule-table-panel,
+ body.internal-ui.staff-dashboard .staff-reschedule-cards,
+ body.internal-ui.staff-dashboard .staff-reschedule-card,
+ body.internal-ui.staff-dashboard .staff-reschedule-card-head,
+ body.internal-ui.staff-dashboard .staff-reschedule-card-schedules,
+ body.internal-ui.staff-dashboard .staff-reschedule-panel-heading{
+  box-sizing:border-box!important;min-width:0!important;max-width:100%!important;
+ }
+ body.internal-ui.staff-dashboard .staff-reschedule-cards{
+  grid-template-columns:minmax(0,1fr)!important;width:100%!important;
+  padding:12px!important;
+ }
+ body.internal-ui.staff-dashboard .staff-reschedule-card{
+  width:100%!important;padding:12px!important;overflow:hidden;
+ }
+ body.internal-ui.staff-dashboard .staff-reschedule-panel-heading{
+  padding:12px!important;gap:8px;flex-wrap:wrap;
+ }
+ body.internal-ui.staff-dashboard .staff-reschedule-panel-heading>div{
+  min-width:0;flex:1 1 180px;overflow-wrap:anywhere;
+ }
+ body.internal-ui.staff-dashboard .staff-reschedule-card-head{
+  flex-wrap:wrap!important;align-items:center;gap:7px;
+ }
+ body.internal-ui.staff-dashboard .staff-reschedule-card-head>div{
+  min-width:0;max-width:100%;
+ }
+ body.internal-ui.staff-dashboard .staff-reschedule-card-schedules{
+  width:100%;grid-template-columns:minmax(0,1fr)!important;
+ }
+ body.internal-ui.staff-dashboard .staff-reschedule-card .reschedule-schedule{
+  min-width:0!important;width:100%!important;overflow-wrap:anywhere;
+ }
+}

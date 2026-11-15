@@ -8,6 +8,43 @@
     var events = Model.Timeline.Where(t=>HistoryPresentation.ShowEvent(t.EventType,financial)).OrderBy(t=>t.CreatedAt).ToList();
     string Text(string? value) => string.IsNullOrWhiteSpace(value) ? "Not recorded" : value;
 }
+@if(!financial) {
+<div class="ui-page staff-final-history-details">
+    <header class="staff-final-details-header">
+        <div>
+            <span class="staff-final-kicker">Staff workspace</span>
+            <h1>@Model.BookingCode</h1>
+            <div class="staff-final-header-meta"><partial name="_StatusBadge" model="booking.Status" /><span>Read-only historical record</span></div>
+        </div>
+        <a asp-action="Index" class="btn btn-outline-secondary"><i class="bi bi-arrow-left" aria-hidden="true"></i> Back to History</a>
+    </header>
+    <div class="staff-final-history-grid">
+        <section class="ui-panel staff-final-summary-panel" aria-labelledby="staffFinalHistorySummary">
+            <h2 id="staffFinalHistorySummary"><i class="bi bi-calendar-event" aria-hidden="true"></i> Booking Summary</h2>
+            <dl class="staff-final-history-facts">
+                <div><dt>Client</dt><dd>@(booking.Client?.FullName ?? "Not recorded")</dd></div>
+                <div><dt>Event</dt><dd>@Text(booking.EventType)</dd></div>
+                <div><dt>Package</dt><dd>@Text(booking.PackageName)</dd></div>
+                <div><dt>Event Date</dt><dd>@booking.EventDate.ToString("MMM d, yyyy")</dd></div>
+                <div class="staff-final-span-2"><dt>Schedule</dt><dd>@booking.StartTime.ToString("hh:mm tt") &ndash; @booking.EndTime.ToString("hh:mm tt")</dd></div>
+                <div class="staff-final-span-2"><dt>Venue</dt><dd>@Text(booking.PartyVenue)</dd></div>
+            </dl>
+        </section>
+        <aside class="ui-panel staff-final-history-timeline" aria-labelledby="staffFinalHistoryTimeline">
+            <h2 id="staffFinalHistoryTimeline"><i class="bi bi-clock-history" aria-hidden="true"></i> Activity Timeline</h2>
+            @if(events.Count == 0) {
+                <p class="ui-muted">No timeline events recorded.</p>
+            } else {
+                <ol class="ui-timeline">
+                    @foreach(var item in events) {
+                        <li><strong>@BusinessActivityPresentation.Label(item.EventType)</strong><time datetime="@item.CreatedAt.ToString("O")">@item.CreatedAt.ToString("MMM d, yyyy h:mm tt")</time></li>
+                    }
+                </ol>
+            }
+        </aside>
+    </div>
+</div>
+} else {
 <div class="ui-page">
 <div class="ui-toolbar"><div class="ui-inline"><partial name="_StatusBadge" model="booking.Status" /><span class="ui-muted">Read-only record</span></div><a asp-action="Index" class="btn btn-outline-secondary">Back to History</a></div>
 <div class="ui-detail-grid">
@@ -49,3 +86,4 @@
 </section>
 </div>
 </div>
+}
