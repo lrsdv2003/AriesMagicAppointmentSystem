@@ -14,6 +14,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -108,7 +109,7 @@ internal static class ReleaseIntegrationRunner
             await RecoveryRegressionTests.SchemaAsync(connection,smtp.Port,mapUrl,root,Check);
             await db.Database.MigrateAsync();
             Check(!(await db.Database.GetPendingMigrationsAsync()).Any(), "Entire EF migration chain applies to an empty isolated SQL database");
-            var script=await File.ReadAllTextAsync(".tmp-owner-build/release-migrations.sql");
+            var script = db.GetService<IMigrator>().GenerateScript(options: MigrationsSqlGenerationOptions.Idempotent);
             await db.Database.OpenConnectionAsync();
             try {
                 for(var pass=0;pass<2;pass++) foreach(var batch in Regex.Split(script,@"^\s*GO\s*$",RegexOptions.Multiline|RegexOptions.IgnoreCase))

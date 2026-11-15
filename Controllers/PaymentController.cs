@@ -368,6 +368,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             var appUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
             var payments = await _context.Payments
+                .AsNoTracking()
                 .Include(p => p.Booking)
                     .ThenInclude(b => b!.Client)
                 .Include(p => p.Booking)
@@ -957,6 +958,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             var appUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
             var requests = await _context.RefundRequests
+                .AsNoTracking()
                 .Include(r => r.Booking)
                     .ThenInclude(b => b!.Service)
                 .Where(r => r.Booking != null && r.Booking.ApplicationUserId == appUserId)

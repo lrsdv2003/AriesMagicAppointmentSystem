@@ -25,6 +25,7 @@ public sealed class FeedbackMediaWorker(IServiceScopeFactory scopes, ILogger<Fee
                 // the bounded quarantine retry path. No such row is served to a viewer.
                 var stale = await db.FeedbackMedia
                     .Where(m => m.ProcessingStatus == "Processing" && m.ProcessingStartedAtUtc < now - ProcessingTimeout)
+                    .OrderBy(m => m.ProcessingStartedAtUtc).ThenBy(m => m.Id)
                     .Take(50).ToListAsync(ct);
                 foreach (var media in stale)
                 {
