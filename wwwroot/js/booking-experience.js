@@ -56,6 +56,18 @@
  const money=value=>new Intl.NumberFormat('en-PH',{style:'currency',currency:'PHP'}).format(value);
  const payment=document.getElementById('clientPaymentForm');
  if(payment){
+  // jQuery's numeric range rule cannot validate a bool checkbox, even when it is checked.
+  // Preserve the server's [Range(true,true)] guard and enforce the same required consent
+  // in the client instead of silently blocking every valid receipt submission.
+  const acknowledgement=document.getElementById('paymentAcknowledgement');
+  const validator=window.jQuery?.validator;
+  if(acknowledgement&&validator?.methods?.range){
+   const numericRange=validator.methods.range;
+   validator.methods.range=function(value,element,params){
+    if(element===acknowledgement)return acknowledgement.checked;
+    return numericRange.call(this,value,element,params);
+   };
+  }
   const intro=document.getElementById('paymentInstructions'),proof=document.getElementById('paymentProof'),booking=document.getElementById('BookingId'),steps=[...document.querySelectorAll('.cr-payment-steps li')];
   function show(value,focus=true){intro.hidden=value;proof.hidden=!value;steps.forEach((s,i)=>{s.classList.toggle('is-active',i===(value?1:0));s.classList.toggle('is-done',value&&i===0);if(i===(value?1:0))s.setAttribute('aria-current','step');else s.removeAttribute('aria-current');});if(value){document.getElementById('paymentSelection').textContent=booking.selectedOptions[0]?.textContent||'';}const caption=document.getElementById('paymentStepCaption');if(caption)caption.textContent=value?'Step 2 of 2 · Upload proof':'Step 1 of 2 · Payment instructions';if(focus)(value?proof:intro).querySelector('h2').focus();}
   const updateBalance=()=>{const data=selectedContext(booking.value),dl=document.getElementById('paymentFinancials'),version=document.getElementById('ExpectedLatestPaymentId');if(version)version.value=data?.LatestPaymentId??'';if(dl){dl.replaceChildren();if(data&&data.Balance!==null)for(const [label,amount] of [['Booking total',data.Total],['Verified payments',data.Verified],['Remaining balance',data.Balance]]){const row=document.createElement('div'),dt=document.createElement('dt'),dd=document.createElement('dd');dt.textContent=label;dd.textContent=money(amount);row.append(dt,dd);dl.append(row);}}

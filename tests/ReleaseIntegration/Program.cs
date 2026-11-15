@@ -72,6 +72,8 @@ internal static class ReleaseIntegrationRunner
         if(args.SequenceEqual(new[]{"--midnight-ui-fixture"})) { await BookingBrowserFixture.RunAsync(midnightPreview:true); return; }
         if(args.SequenceEqual(new[]{"--release-review-ui-fixture"})) { await BookingBrowserFixture.RunAsync(releaseReview:true); return; }
         if(args.SequenceEqual(new[]{"--manual-ui-preview"})) { await BookingBrowserFixture.RunAsync(manualPreview:true); return; }
+        if(args.SequenceEqual(new[]{"--browser-acceptance-host"})) { await BrowserAcceptanceHost.ExecuteAsync(); return; }
+        if(args.SequenceEqual(new[]{"--business-browser-host"})) { await BusinessAcceptanceHost.RunAsync(); return; }
         if(args.SequenceEqual(new[]{"--independent-findings"})) { await IndependentFindingsReview.RunAsync(); return; }
         if(args.SequenceEqual(new[]{"--reproduce-findings"})) { await IndependentFindingsReview.RunAsync(reproduce:true); return; }
         if(args.SequenceEqual(new[]{"--location-only"})) { await LocationUpgradeTests.RunAsync(); return; }
