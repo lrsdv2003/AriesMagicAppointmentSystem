@@ -17,6 +17,7 @@ namespace AriesMagicAppointmentSystem.ViewModels
     public class TrashHistoryRowViewModel
     {
         public int Id { get; set; }
+        public string BookingStatus { get; set; } = string.Empty;
         public string BookingCode { get; set; } = string.Empty;
         public string ClientName { get; set; } = string.Empty;
         public string ClientPhone { get; set; } = string.Empty;
@@ -53,6 +54,8 @@ namespace AriesMagicAppointmentSystem.ViewModels
     public class TrashHistoryDetailViewModel
     {
         public int Id { get; set; }
+        public string BookingStatus { get; set; } = string.Empty;
+        public bool ReasonRecorded { get; set; }
         public string BookingCode { get; set; } = string.Empty;
         public string ClientName { get; set; } = string.Empty;
         public string ClientEmail { get; set; } = string.Empty;

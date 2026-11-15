@@ -6,6 +6,7 @@
     var financial = User.IsInRole("Owner");
 }
 <div class="ui-page history-page">
+<p>Completed events appear here. @if(financial){<a asp-controller="TrashHistory" asp-action="Index">View cancelled, declined and expired bookings in Archives.</a>}</p>
 <partial name="_HistoryFilters" model="Model" />
 <div data-staff-search-results="history">
 <div class="ui-toolbar">

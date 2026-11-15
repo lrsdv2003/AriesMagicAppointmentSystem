@@ -4,6 +4,12 @@ Current active roles: **Owner, Staff, Client**. Admin remains only in explicit n
 
 ## Required local checks
 
+Owner Round 2 (15 November 2026): `OwnerRound2Regression` runs in the ordinary SQL harness. It covers queue paging beyond 250 records, stable ordering, booking-code/reference search, retained filters, archived refunds and verified-payment/refund arithmetic. Updated History checks cover completed-only listings/exports, unsuccessful Archives, unchanged statuses and legacy detail redirects. Invitation dates must come from issuance audit records and survive token removal. Current result: 572 checks and 111 rendered fixtures; the DOM runner passes 934 checks.
+
+After rendering, run `node tests/OwnerRegression/owner-round2.browser.mjs`: 21 Owner states at 1440/1024/768/390/320px (105 cases), including whole-document WCAG A/AA scans, chart geometry, keyboard tabs, mobile Messages access, Staff-only invitation options and paging/filter/refresh URL contracts. Every request is intercepted; receipt images are synthetic. `--baseline` captures the original 17 states and must be used before application edits. Screenshots/results are under `.tmp-owner-build/owner-round2/before` and `after`.
+
+Use the existing `.tmp-owner-build/puppeteer-with-runtime.mjs` wrapper, or set `PUPPETEER_MODULE` to an installed module URL. Set `PUPPETEER_EXECUTABLE_PATH` / `AXE_CORE_PATH` for another browser/axe installation. Cache the pinned FullCalendar bundle at `%TEMP%/aries-fullcalendar.js` and Chart.js 4.4.1 at `.tmp-owner-build/owner-round2/chart.umd.min.js`. Real Identity/HTTP/SQL assertions are in `OwnerUiRound2HttpChecks`, included in the ordinary integration suite. See `OWNER_UI_ROUND2_RELEASE_REPORT.md` for results, package identity and limitations; automated fixtures do not certify production UAT or full manual assistive-technology behavior.
+
 Use .NET 10 and a disposable SQL Server database. The default is a dedicated SQL LocalDB instance supplied by `ARIES_TEST_LOCALDB_INSTANCE`. On this workstation, the already running local SQL Server 2022 instance is supported explicitly through `OwnerRegression --local-sql` and `ARIES_TEST_USE_DEFAULT_SQL=true` for the other test runners. This option selects only the fixed local server `.` and GUID-owned test databases; it never accepts an arbitrary hosted SQL target. No permissions or service settings are changed. SQL restore tests use that instance's existing backup/data/log directories.
 
 - Build and run `tests/OwnerRegression` with `--render` (and `--local-sql` when selected).

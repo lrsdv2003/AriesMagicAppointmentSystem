@@ -4,11 +4,8 @@
     ViewData["Title"] = "Financial Summary";
 }
 <div class="owner-reports-page">
-    <div class="ui-toolbar page-header owner-page-header">
-
-        <div class="d-flex gap-2 flex-wrap"><a asp-action="ExportCsv" asp-route-startDate="@Model.StartDate?.ToString("yyyy-MM-dd")" asp-route-endDate="@Model.EndDate?.ToString("yyyy-MM-dd")" asp-route-month="@Model.Month" asp-route-year="@Model.Year" asp-route-package="@Model.PackageFilter" asp-route-bookingStatus="@Model.BookingStatusFilter" class="btn btn-outline-primary"><i class="bi bi-file-earmark-spreadsheet" aria-hidden="true"></i> Export CSV</a><button type="button" class="btn btn-outline-secondary" onclick="window.print()"><i class="bi bi-printer" aria-hidden="true"></i> Print</button></div>
-    </div>
     @if(!ViewData.ModelState.IsValid){<div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>}
+    <div class="owner-report-toolbar">
     <form asp-action="Index" method="get" class="am-filter-bar am-filter-row" aria-label="Report filters">
     <div class="owner-filter-summary"><i class="bi bi-calendar-range" aria-hidden="true"></i><span>@(Model.StartDate.HasValue || Model.EndDate.HasValue ? $"{Model.StartDate?.ToString("MMM dd, yyyy") ?? "Any start"} - {Model.EndDate?.ToString("MMM dd, yyyy") ?? "Any end"}" : "All event dates")</span></div>
     <div class="dropdown">
@@ -26,28 +23,37 @@
         </div>
     </div>
 </form>
+        <div class="owner-report-actions"><a asp-action="ExportCsv" asp-route-startDate="@Model.StartDate?.ToString("yyyy-MM-dd")" asp-route-endDate="@Model.EndDate?.ToString("yyyy-MM-dd")" asp-route-month="@Model.Month" asp-route-year="@Model.Year" asp-route-package="@Model.PackageFilter" asp-route-bookingStatus="@Model.BookingStatusFilter" class="btn btn-outline-primary"><i class="bi bi-file-earmark-spreadsheet" aria-hidden="true"></i> Export CSV</a><button type="button" class="btn btn-outline-secondary" onclick="window.print()"><i class="bi bi-printer" aria-hidden="true"></i> Print</button></div>
+    </div>
     <section class="owner-report-section" aria-labelledby="financialOverviewTitle">
-        <div class="owner-report-heading"><div><h2 id="financialOverviewTitle">Financial Overview</h2></div><span class="owner-report-note">All verified payments and completed refunds for selected bookings</span></div>
+        <div class="owner-report-heading"><div><h2 id="financialOverviewTitle">Financial Overview</h2></div><span class="owner-report-note">Net Collected: ₱@Model.NetCollectedRevenue.ToString("N2")</span></div>
         <div class="owner-report-metrics">
             <article><span>Total Booking Value</span><strong>₱@Model.TotalBookingValue.ToString("N2")</strong><small>Excludes cancelled, declined and expired bookings</small></article>
             <article class="positive"><span>Collected Revenue</span><strong>₱@Model.TotalCollectedRevenue.ToString("N2")</strong><small>Verified payments received</small></article>
             <article class="warning"><span>Outstanding Balance</span><strong>₱@Model.OutstandingReceivables.ToString("N2")</strong><small>Still owed by clients</small></article>
             <article class="negative"><span>Total Refunds</span><strong>₱@Model.RefundsIssued.ToString("N2")</strong><small>Completed refunds only</small></article>
-            <article class="positive"><span>Net Revenue</span><strong>₱@Model.NetCollectedRevenue.ToString("N2")</strong><small>Collected minus refunds</small></article>
-            <article><span>Confirmed Bookings</span><strong>@Model.ConfirmedBookings</strong><small>Confirmed events in selection</small></article>
-            <article><span>Completed Events</span><strong>@Model.CompletedBookings</strong><small>Finished events</small></article>
         </div>
     </section>
     <section class="owner-report-section" aria-labelledby="trendTitle">
-        <div class="owner-report-heading"><div><h2 id="trendTitle">Revenue & Booking Activity</h2></div></div>
+        <div class="owner-report-heading"><div><h2 id="trendTitle">Financial Visualizations</h2></div></div>
         <div class="owner-chart-grid">
             <article class="owner-chart-card"><div><h3>Revenue Over Time</h3><p>Collection dates for the selected bookings.</p></div><div class="owner-chart-frame"><canvas id="revenueTrendChart" role="img" aria-describedby="reportChartData" aria-label="Verified revenue over time"></canvas></div></article>
-            <article class="owner-chart-card"><div><h3>Bookings Over Time</h3><p>Booking activity by month.</p></div><div class="owner-chart-frame"><canvas id="monthlyBookingsChart" role="img" aria-describedby="reportChartData" aria-label="Bookings over time"></canvas></div></article>
-            <article class="owner-chart-card"><div><h3>Package Bookings</h3><p>Booking volume by package.</p></div>@if(Model.PackageLabels.Any()){<div class="owner-chart-frame"><canvas id="packageTrendChart" role="img" aria-describedby="reportChartData" aria-label="Bookings by package"></canvas></div>}else{<div class="owner-chart-empty">No package data found for the selected filters.</div>}</article>
-            <article class="owner-chart-card"><div><h3>Package Net Revenue</h3><p>Verified collections minus completed refunds by package.</p></div>@if(Model.PackageLabels.Any()){<div class="owner-chart-frame"><canvas id="packageRevenueChart" role="img" aria-describedby="reportChartData" aria-label="Net revenue by package"></canvas></div>}else{<div class="owner-chart-empty">No package revenue found for the selected filters.</div>}</article>
+            <article class="owner-chart-card"><div><h3>Revenue by Package</h3><p>Verified collections minus completed refunds by package.</p></div>@if(Model.PackageLabels.Any()){<div class="owner-chart-frame"><canvas id="packageRevenueChart" role="img" aria-describedby="reportChartData" aria-label="Net revenue by package"></canvas></div>}else{<div class="owner-chart-empty">No package revenue found for the selected filters.</div>}</article>
             <article class="owner-chart-card"><div><h3>Payment Verification Status</h3><p>Current verification outcomes.</p></div><div class="owner-chart-frame owner-chart-frame-donut"><canvas id="paymentStatusChart" role="img" aria-describedby="reportChartData" aria-label="Payment verification status distribution"></canvas></div></article>
         </div>
     </section>
+    <details class="owner-report-section owner-operational-details">
+        <summary>Booking activity and operational totals</summary>
+        <p>Confirmed bookings: @Model.ConfirmedBookings · Completed events: @Model.CompletedBookings</p>
+    <section class="owner-report-section" aria-labelledby="bookingPerformanceTitle">
+        <div class="owner-report-heading"><div><h2 id="bookingPerformanceTitle">Operational Summary</h2></div></div>
+        <div class="owner-performance-row"><div><span>Confirmation Rate</span><strong>@Model.ConfirmationRate.ToString("N1")%</strong></div><div><span>Average Active Booking Value</span><strong>₱@Model.AverageBookingValue.ToString("N2")</strong></div><div><span>Cancelled / Declined</span><strong>@Model.CancelledBookings</strong></div><div><span>Fully Paid</span><strong>@Model.FullyPaidBookings</strong></div><div><span>Partial / Unpaid</span><strong>@Model.PartiallyPaidBookings / @Model.UnpaidBookings</strong></div></div>
+    </section>
+        <div class="owner-operational-charts">
+            <article class="owner-chart-card"><div><h3>Bookings Over Time</h3><p>Booking activity by month.</p></div><div class="owner-chart-frame"><canvas id="monthlyBookingsChart" role="img" aria-describedby="reportChartData" aria-label="Bookings over time"></canvas></div></article>
+            <article class="owner-chart-card"><div><h3>Package Bookings</h3><p>Booking volume by package.</p></div>@if(Model.PackageLabels.Any()){<div class="owner-chart-frame"><canvas id="packageTrendChart" role="img" aria-describedby="reportChartData" aria-label="Bookings by package"></canvas></div>}else{<div class="owner-chart-empty">No package data found for the selected filters.</div>}</article>
+        </div>
+    </details>
     <details class="owner-report-section" id="reportChartData">
         <summary>View chart data</summary>
         <div class="table-responsive mt-3"><table class="table"><caption>Monthly activity for selected bookings</caption><thead><tr><th scope="col">Month</th><th scope="col">Bookings</th><th scope="col">Collected Revenue</th></tr></thead><tbody>
@@ -58,10 +64,7 @@
         </tbody></table></div>
         <p>Awaiting review: @Model.PendingCount; Verified: @Model.VerifiedCount; Rejected: @Model.RejectedCount; Additional evidence required: @Model.EvidenceRequiredCount.</p>
     </details>
-    <section class="owner-report-section" aria-labelledby="bookingPerformanceTitle">
-        <div class="owner-report-heading"><div><h2 id="bookingPerformanceTitle">Operational Summary</h2></div></div>
-        <div class="owner-performance-row"><div><span>Confirmation Rate</span><strong>@Model.ConfirmationRate.ToString("N1")%</strong></div><div><span>Average Active Booking Value</span><strong>₱@Model.AverageBookingValue.ToString("N2")</strong></div><div><span>Cancelled / Declined</span><strong>@Model.CancelledBookings</strong></div><div><span>Fully Paid</span><strong>@Model.FullyPaidBookings</strong></div><div><span>Partial / Unpaid</span><strong>@Model.PartiallyPaidBookings / @Model.UnpaidBookings</strong></div></div>
-    </section>
+
     <section class="owner-report-section" aria-labelledby="recordsTitle">
         <div class="owner-report-heading"><div><h2 id="recordsTitle">Booking Financial Records</h2></div><span class="owner-report-note">Showing @Model.BookingRecords.Count of @Model.TotalBookings records</span></div>
         @if(!Model.BookingRecords.Any()){<div class="owner-empty-state"><i class="bi bi-bar-chart" aria-hidden="true"></i><h2>No report data found for the selected filters.</h2></div>}

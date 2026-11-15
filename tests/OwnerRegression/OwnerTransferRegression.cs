@@ -47,9 +47,14 @@ static class OwnerTransferRegression
   try{await provisioning.UpdateStaffProfileAsync(owner,owner.Id,"Tampered",null);throw new Exception("Owner edit accepted");}catch(UnauthorizedAccessException){check(owner.FullName=="Test Owner","Staff profile endpoint cannot overwrite final Owner");}
   var enrollment=await provisioning.InviteAsync(owner,"owner-transfer-staff@example.test","Transfer Staff","Staff");
   var invited=await users.FindByIdAsync(enrollment.UserId)??throw new Exception();check(!invited.IsActive&&(await users.GetRolesAsync(invited)).Count==0,"Owner Staff invitation remains inactive and unassigned before enrollment");
+  var issuance=await db.SystemActivities.Where(x=>x.AffectedRecordId==invited.Id&&x.Type==SystemActivityType.UserCreated).Select(x=>(DateTime?)x.CreatedAt).SingleAsync();
+  var invitedListing=(PersonnelPage)((ViewResult)await personnel.Index(search:"owner-transfer-staff@example.test")).Model!;
+  check(invitedListing.Accounts.Single().InvitedAtUtc==issuance && issuance.HasValue,"Personnel invitation date comes from recorded issuance audit");
+  check(filtered.Accounts.First(x=>x.Id==staff.Id).InvitedAtUtc==null,"Legacy account without issuance evidence has no invented invitation date");
   var password="Isolated!"+Guid.NewGuid().ToString("N")+"A7";
   check((await provisioning.EnrollAsync(enrollment.UserId,enrollment.Secret,password)).Succeeded&&invited.IsActive&&await users.IsInRoleAsync(invited,"Staff"),"Owner-issued Staff invitation completes verified single-use enrollment");
   check(!(await provisioning.EnrollAsync(enrollment.UserId,enrollment.Secret,password)).Succeeded,"Transferred Staff invitation cannot replay enrollment");
+  check(((PersonnelPage)((ViewResult)await personnel.Index(search:"owner-transfer-staff@example.test")).Model!).Accounts.Single().InvitedAtUtc==issuance,"Invitation date survives enrollment token removal");
   var packageController=new ServicesController(db,audit){ControllerContext=new(){HttpContext=http}};
   var model=new ServiceManageViewModel{Name="Owner migration catalog fixture",Price=12000,DurationInHours=3,Description="Original",Inclusions=[new(){Name="Verified fixture inclusion",DeductionAmount=100,IsRemovable=true}]};
   check(await packageController.Create(model) is RedirectToActionResult,"Owner creates package through existing flow");

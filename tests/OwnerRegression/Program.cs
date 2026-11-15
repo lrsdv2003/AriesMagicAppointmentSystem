@@ -113,6 +113,7 @@ try
         Check(true, "Owner pages render with isolated fixture data");
     }
     await PaymentProofStorageRegression.RunAsync(db, Check);
+    await OwnerRound2Regression.RunAsync(db, Check);
     Console.WriteLine("SUCCESS: " + checks + " Owner regression checks passed.");
 }
 finally

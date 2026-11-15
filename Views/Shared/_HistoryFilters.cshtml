@@ -8,7 +8,7 @@
 <button type="button" class="btn btn-outline-secondary dropdown-toggle" id="historyFilterToggle" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false"><i class="bi bi-funnel" aria-hidden="true"></i> Filters</button>
 <div class="dropdown-menu dropdown-menu-end" aria-labelledby="historyFilterToggle">
 <div><label for="historyPackage">Package</label><select class="form-select" id="historyPackage" name="ServiceId"><option value="">All packages</option>@foreach(var service in Model.AvailableServices) { <option value="@service.Id" selected="@(f.ServiceId==service.Id)">@service.Name</option> }</select></div>
-<div><label for="historyStatus">Final status</label><select class="form-select" id="historyStatus" name="BookingStatus"><option value="">All statuses</option>@foreach(var status in new[]{"Completed","Cancelled","Declined","Expired"}) { <option selected="@(f.BookingStatus==status)">@status</option> }</select></div>
+<input type="hidden" name="BookingStatus" value="Completed" />
 <div><label for="historyDate">Event date</label><select class="form-select" id="historyDate" name="DateRange"><option value="">Any time</option><option value="Today" selected="@(f.DateRange=="Today")">Today</option><option value="ThisWeek" selected="@(f.DateRange=="ThisWeek")">This week</option><option value="ThisMonth" selected="@(f.DateRange=="ThisMonth")">This month</option><option value="Year" selected="@(f.DateRange=="Year")">Selected year</option></select></div>
 <div><label for="historyYear">Year (with selected year)</label><input class="form-control" id="historyYear" name="Year" type="number" min="1900" max="9999" value="@(f.Year??DateTime.Today.Year)" /></div>
 @if(User.IsInRole("Owner")) {

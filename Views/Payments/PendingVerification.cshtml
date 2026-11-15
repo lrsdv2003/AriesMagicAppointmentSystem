@@ -5,6 +5,9 @@
     ViewData["Title"] = "Payment Verification";
     var payments = Model.ToList();
     var isOwner = User.IsInRole("Owner");
+    var pagination = ViewData["QueuePage"] as AriesMagicAppointmentSystem.ViewModels.QueuePaginationViewModel
+        ?? new(payments.Count, 1, 10, "PendingVerification", new() { ["filter"] = "awaiting" }) {
+            AwaitingReviewCount = payments.Count(x => x.Status == PaymentStatus.Pending) };
     string OcrClass(string? result) => result switch {
         OcrVerificationResults.LikelyMatch => "ocr-likely", OcrVerificationResults.PartialMatch => "ocr-partial",
         OcrVerificationResults.MismatchDetected => "ocr-mismatch", OcrVerificationResults.OcrFailed => "ocr-failed", _ => "ocr-manual" };
@@ -20,11 +23,12 @@
     @if(TempData["Success"]!=null){<div class="alert alert-success" role="status">@TempData["Success"]</div>}
     @if(TempData["Error"]!=null){<div class="alert alert-danger" role="alert">@TempData["Error"]</div>}
     <div class="owner-summary-row" aria-label="Payment verification summary">
-        <div><span>Shown</span><strong>@payments.Count</strong></div>
-        <div><span>Awaiting Review</span><strong>@payments.Count(x => x.Status == PaymentStatus.Pending)</strong></div>
-        <div><span>OCR Attention</span><strong>@payments.Count(x => x.OcrVerifications.Where(o => o.VerificationPurpose == OcrVerificationPurposes.PaymentProof).OrderByDescending(o => o.ProcessedAt).FirstOrDefault()?.VerificationResult is OcrVerificationResults.MismatchDetected or OcrVerificationResults.OcrFailed)</strong></div>
+        <div><span>Matching Records</span><strong>@pagination.TotalCount</strong></div>
+        <div><span>Awaiting Review</span><strong>@pagination.AwaitingReviewCount</strong></div>
+        <div><span>OCR Attention</span><strong>@pagination.OcrAttentionCount</strong></div>
     </div>
     <form method="get" class="am-filter-bar am-filter-row" aria-label="Payment verification filters">
+        <input type="hidden" name="pageSize" value="@pagination.PageSize" />
         <div class="am-filter-search"><i class="bi bi-search" aria-hidden="true"></i><input type="search" name="q" value="@ViewBag.Search" placeholder="Search booking or client" aria-label="Search payment verification queue" /></div>
         <div class="dropdown">
             <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false"><i class="bi bi-funnel" aria-hidden="true"></i> Filters</button>
@@ -36,6 +40,7 @@
             </div>
         </div>
         <button class="btn btn-primary" type="submit">Search</button>
+        <a class="btn btn-outline-secondary" asp-action="PendingVerification" asp-all-route-data="pagination.Routes()" data-queue-refresh><i class="bi bi-arrow-clockwise" aria-hidden="true"></i> Refresh</a>
     </form>
     <div class="dashboard-panel owner-table-panel">
         @if (!payments.Any())
@@ -44,12 +49,12 @@
         }
         else
         {
-            <div class="table-responsive"><table class="table owner-audit-table align-middle">
-                <thead><tr><th scope="col">Booking</th><th scope="col">Client</th><th scope="col">Submitted Amount</th><th scope="col">Submitted</th><th scope="col">Payment Proof</th><th scope="col">Review Indicator</th><th scope="col">Status</th><th scope="col" class="text-end">Actions</th></tr></thead>
+            <div class="table-responsive" tabindex="0" role="region" aria-label="Payment records; scroll horizontally for all columns"><table class="table owner-audit-table align-middle">
+                <thead><tr><th scope="col">Booking ID</th><th scope="col">Client</th><th scope="col">Claimed Amount</th><th scope="col">Submission Date</th><th scope="col">Payment Proof</th><th scope="col">Review Indicator</th><th scope="col">Status</th><th scope="col" class="text-end">Action</th></tr></thead>
                 <tbody>
                 @foreach (var item in payments)
                 {
-                    var ocr = item.OcrVerifications.Where(o => o.VerificationPurpose == OcrVerificationPurposes.PaymentProof).OrderByDescending(o => o.ProcessedAt).FirstOrDefault();
+                    var ocr = item.OcrVerifications.Where(o => o.VerificationPurpose == OcrVerificationPurposes.PaymentProof).OrderByDescending(o => o.ProcessedAt).ThenByDescending(o => o.Id).FirstOrDefault();
                     var packageName = item.Booking?.PackageName ?? item.Booking?.Service?.Name ?? "Package";
                     <tr>
                         <td><strong class="owner-booking-code">BK-@item.Booking?.CreatedAt.Year-@item.BookingId.ToString("D3")</strong><span class="owner-cell-subtext">@packageName</span></td>
@@ -64,6 +69,7 @@
                 </tbody>
             </table></div>
         }
+        <partial name="_QueuePagination" model="pagination" />
     </div>
 </div>
 <partial name="_FinancialProofViewer" />

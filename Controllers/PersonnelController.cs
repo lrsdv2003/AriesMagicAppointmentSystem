@@ -18,7 +18,7 @@ public sealed class PersonnelInviteInput
     [Required,StringLength(100)] public string FullName {get;set;}="";
     [Required] public string Role {get;set;}="Staff";
 }
-public sealed record PersonnelRow(string Id,string FullName,string Email,string Role,string Status);
+public sealed record PersonnelRow(string Id,string FullName,string Email,string Role,string Status,DateTime? InvitedAtUtc=null);
 public sealed record PersonnelPage(List<PersonnelRow> Accounts,List<SystemActivity> Audit,bool Owner,bool CanInvite,string? Search=null,string? RoleFilter=null,string? StatusFilter=null);
 public sealed class StaffProfileInput { [Required] public string Id {get;set;}=""; [Required,StringLength(100)] public string FullName {get;set;}=""; [Phone,StringLength(30)] public string? PhoneNumber {get;set;} }
 [Authorize(Roles="Owner"),ResponseCache(NoStore=true,Location=ResponseCacheLocation.None)]
@@ -32,6 +32,13 @@ public sealed class PersonnelController(UserManager<ApplicationUser> users,Perso
         if(!owner&&!await provisioning.CanManageAsync(actor,"Staff"))return Forbid();
         search=search?.Trim();if(search?.Length>100)search=search[..100];
         var rows=new List<PersonnelRow>();
+        // Creation dates and token expiry are not invitation dates. Only recorded initial
+        // issuance supports this field, including after enrollment removes the token.
+        var invitedDates=await db.SystemActivities.AsNoTracking()
+            .Where(x=>x.Type==SystemActivityType.UserCreated && x.AffectedRecordType=="ApplicationUser" && x.AffectedRecordId!=null
+                && x.Description=="Personnel enrollment issued; account inactive and role unassigned.")
+            .GroupBy(x=>x.AffectedRecordId!).Select(g=>new{Id=g.Key,IssuedAt=g.Min(x=>x.CreatedAt)})
+            .ToDictionaryAsync(x=>x.Id,x=>(DateTime?)x.IssuedAt);
         foreach(var user in await users.Users.OrderBy(x=>x.FullName).ToListAsync()) {
             var roles=await users.GetRolesAsync(user);var invite=await provisioning.PendingAsync(user);
             var role=roles.Contains("Owner")?"Owner":roles.Count==1?roles[0]:roles.Count==0?invite?.Role??"Unassigned":"Multiple (read-only)";
@@ -42,7 +49,7 @@ public sealed class PersonnelController(UserManager<ApplicationUser> users,Perso
             if(!string.IsNullOrWhiteSpace(search)&&!user.FullName.Contains(search,StringComparison.OrdinalIgnoreCase)&&!(user.Email?.Contains(search,StringComparison.OrdinalIgnoreCase)??false))continue;
             if(!string.IsNullOrEmpty(roleFilter)&&role!=roleFilter)continue;
             if(!string.IsNullOrEmpty(statusFilter)&&!status.StartsWith(statusFilter,StringComparison.Ordinal))continue;
-            rows.Add(new(user.Id,user.FullName,user.Email??"",role,status));
+            rows.Add(new(user.Id,user.FullName,user.Email??"",role,status,invitedDates.GetValueOrDefault(user.Id)));
         }
         var audit=owner?await db.SystemActivities.AsNoTracking().Where(x=>x.AffectedRecordType=="ApplicationUser"&&x.Description.StartsWith("Personnel")).OrderByDescending(x=>x.CreatedAt).Take(50).ToListAsync():[];
         return View(new PersonnelPage(rows,audit,owner,true,search,roleFilter,statusFilter));

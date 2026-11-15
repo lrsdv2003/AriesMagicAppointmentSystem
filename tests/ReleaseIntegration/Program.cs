@@ -277,6 +277,7 @@ internal static class ReleaseIntegrationRunner
             using(var response=await Post(owner,$"/Payments/MarkAsRefunded/{refund.Id}",ownerToken)) Check(response.StatusCode==HttpStatusCode.Redirect,"Owner completes reviewed refund over HTTP");
             var completed=await db.RefundRequests.AsNoTracking().SingleAsync(x=>x.Id==refund.Id);
             Check(completed.Status==RefundStatus.Refunded&&completed.ApprovedAmount==2000&&completed.RefundCompletedAt!=null,"Refund amount, final status and audit timestamps persist");
+            await OwnerUiRound2HttpChecks.RunAsync(owner,staff,client,db,booking.Id,payment.Id,refund.Id,Check);
             using(var response=await Post(owner,$"/Payments/MarkAsRefunded/{refund.Id}",ownerToken)) Check(response.StatusCode==HttpStatusCode.Redirect,"Duplicate refund completion safely redirects");
             Check((await db.RefundRequests.AsNoTracking().SingleAsync(x=>x.Id==refund.Id)).RefundCompletedAt==completed.RefundCompletedAt,"Duplicate refund does not change original completion");
             var requestDate=DateTime.Today.AddDays(90);

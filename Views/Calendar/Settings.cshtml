@@ -2,7 +2,7 @@
 @using AriesMagicAppointmentSystem.Models
 @{ Layout = "_DashboardLayout"; ViewData["Title"] = "Calendar Settings"; var creators = ViewBag.BlockCreators as Dictionary<string,string> ?? new(); }
 <div class="admin-console">
-<header class="admin-heading"><div><h2>Calendar availability</h2></div></header>
+<header class="admin-heading"><div><h2>Calendar availability</h2></div><a asp-action="Index" class="btn btn-outline-secondary">Back to Calendar</a></header>
 <section class="admin-panel"><h3>Calendar rules</h3><dl class="admin-facts"><div><dt>Maximum daily bookings</dt><dd><strong>@BookingRules.MaximumDailyBookings</strong> <span class="admin-note">Fixed system rule</span></dd></div></dl></section>
 <section class="admin-panel"><h3>Add blocked date</h3>
 <form asp-action="BlockDateAjax" method="post" data-admin-ajax data-admin-confirm="Block this date for new bookings? Dates with confirmed bookings cannot be blocked.">

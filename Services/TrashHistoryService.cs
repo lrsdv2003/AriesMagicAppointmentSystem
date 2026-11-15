@@ -35,7 +35,11 @@ namespace AriesMagicAppointmentSystem.Services
             if (!string.IsNullOrWhiteSpace(filters.Search))
             {
                 var term = filters.Search.Trim().ToLower();
+                var parts = term.Split('-');
+                var codeId = parts.Length == 3 && parts[0] == "bk" && int.TryParse(parts[2], out var parsedId) ? parsedId : -1;
+                var codeYear = parts.Length == 3 && int.TryParse(parts[1], out var parsedYear) ? parsedYear : -1;
                 query = query.Where(b =>
+                    (b.Id == codeId && b.CreatedAt.Year == codeYear) ||
                     b.Id.ToString().Contains(term) ||
                     (b.Client != null && b.Client.FullName != null && b.Client.FullName.ToLower().Contains(term)) ||
                     (b.Client != null && b.Client.Email != null && b.Client.Email.ToLower().Contains(term)) ||
@@ -77,8 +81,8 @@ namespace AriesMagicAppointmentSystem.Services
             }
 
             var totalCount = await query.CountAsync();
-            var page = filters.Page < 1 ? 1 : filters.Page;
             var pageSize = Math.Clamp(filters.PageSize, 1, 100);
+            var page = Math.Clamp(filters.Page, 1, Math.Max(1, (int)Math.Ceiling(totalCount / (double)pageSize)));
             filters.Page = page;
             filters.PageSize = pageSize;
 
@@ -91,6 +95,7 @@ namespace AriesMagicAppointmentSystem.Services
             var rows = bookings.Select(b => new TrashHistoryRowViewModel
             {
                 Id = b.Id,
+                BookingStatus = b.Status,
                 BookingCode = $"BK-{b.CreatedAt.Year}-{b.Id:D3}",
                 ClientName = b.Client?.FullName ?? "N/A",
                 ClientPhone = b.ContactNumber,
@@ -148,6 +153,8 @@ namespace AriesMagicAppointmentSystem.Services
             var trash = new TrashHistoryDetailViewModel
             {
                 Id = booking.Id,
+                BookingStatus = booking.Status,
+                ReasonRecorded = booking.TrashReason.HasValue,
                 BookingCode = $"BK-{booking.CreatedAt.Year}-{booking.Id:D3}",
                 ClientName = booking.Client?.FullName ?? "N/A",
                 ClientEmail = booking.Client?.Email ?? string.Empty,

@@ -1,0 +1,29 @@
+@model AriesMagicAppointmentSystem.ViewModels.QueuePaginationViewModel
+<div class="owner-queue-pagination">
+    <form method="get" asp-action="@Model.Action" class="owner-queue-size">
+        @foreach(var filter in Model.Filters){<input type="hidden" name="@filter.Key" value="@filter.Value" />}
+        <label for="queuePageSize">Rows per page</label>
+        <select id="queuePageSize" name="pageSize" class="form-select">
+            @foreach(var size in new[]{10,25,50}){<option value="@size" selected="@(size==Model.PageSize)">@size</option>}
+        </select>
+        <button class="btn btn-outline-secondary" type="submit">Apply</button>
+    </form>
+    <p class="owner-queue-range" role="status">@Model.First&ndash;@Model.Last of @Model.TotalCount</p>
+    <nav aria-label="Financial queue pages">
+        @if(Model.Page>1){
+            <a class="btn btn-outline-secondary" asp-action="@Model.Action" asp-all-route-data="Model.Routes(1)" aria-label="First page"><i class="bi bi-chevron-double-left" aria-hidden="true"></i></a>
+            <a class="btn btn-outline-secondary" asp-action="@Model.Action" asp-all-route-data="Model.Routes(Model.Page-1)" aria-label="Previous page"><i class="bi bi-chevron-left" aria-hidden="true"></i></a>
+        }else{
+            <button type="button" class="btn btn-outline-secondary disabled" disabled aria-label="First page"><i class="bi bi-chevron-double-left" aria-hidden="true"></i></button>
+            <button type="button" class="btn btn-outline-secondary disabled" disabled aria-label="Previous page"><i class="bi bi-chevron-left" aria-hidden="true"></i></button>
+        }
+        <span class="owner-queue-current" aria-current="page">Page @Model.Page of @Model.TotalPages</span>
+        @if(Model.Page<Model.TotalPages){
+            <a class="btn btn-outline-secondary" asp-action="@Model.Action" asp-all-route-data="Model.Routes(Model.Page+1)" aria-label="Next page"><i class="bi bi-chevron-right" aria-hidden="true"></i></a>
+            <a class="btn btn-outline-secondary" asp-action="@Model.Action" asp-all-route-data="Model.Routes(Model.TotalPages)" aria-label="Last page"><i class="bi bi-chevron-double-right" aria-hidden="true"></i></a>
+        }else{
+            <button type="button" class="btn btn-outline-secondary disabled" disabled aria-label="Next page"><i class="bi bi-chevron-right" aria-hidden="true"></i></button>
+            <button type="button" class="btn btn-outline-secondary disabled" disabled aria-label="Last page"><i class="bi bi-chevron-double-right" aria-hidden="true"></i></button>
+        }
+    </nav>
+</div>

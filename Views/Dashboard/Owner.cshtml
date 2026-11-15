@@ -48,7 +48,7 @@
                         <article class="owner-round1-request-row">
                             <div><strong class="owner-booking-code">BK-@(refund.Booking?.CreatedAt.Year)-@refund.BookingId.ToString("D3")</strong><span>@(refund.Booking?.Client?.FullName ?? "Client not recorded")</span></div>
                             <div><small>Requested Refund</small><strong>&#8369;@refund.Amount.ToString("N2")</strong></div>
-                            <div><small>Status</small><span>@refund.Status</span></div>
+                            <div><small>Submitted</small><span>@refund.RequestedAt.ToString("MMM d, yyyy")</span><small>@refund.Status</small></div>
                             <div><span class="owner-round1-indicator">Manual review required</span></div>
                             <a class="btn btn-primary btn-sm" asp-controller="Payments" asp-action="RefundReview" asp-route-id="@refund.Id">Review<span class="visually-hidden"> refund @refund.Id</span></a>
                         </article>

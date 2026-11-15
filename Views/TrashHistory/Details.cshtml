@@ -2,13 +2,16 @@
 @using AriesMagicAppointmentSystem.ViewModels
 @{ Layout = "_DashboardLayout"; ViewData["Title"] = "Archive Record"; var item = Model.Trash; }
 <div class="admin-console">
-<header class="admin-heading"><div><h2>@item.BookingCode</h2><p>Read-only booking archive</p></div><a asp-action="Index" class="btn btn-outline-secondary">Back to Trash</a></header>
+<header class="admin-heading"><div><h2>@item.BookingCode</h2><p>Read-only booking archive</p></div><a asp-action="Index" class="btn btn-outline-secondary">Back to Archives</a></header>
 <section class="admin-panel"><h3>Record information</h3><dl class="admin-facts">
 <div><dt>Type</dt><dd><span class="admin-badge">Booking</span></dd></div><div><dt>Client</dt><dd>@item.ClientName</dd></div>
 <div><dt>Package</dt><dd>@item.PackageName</dd></div><div><dt>Created</dt><dd>@item.CreatedAt.ToString("MMM d, yyyy h:mm tt")</dd></div>
 <div><dt>Archived date</dt><dd>@(item.ArchiveDateRecorded ? item.ArchivedAt.ToString("MMM d, yyyy h:mm tt") : "Not recorded")</dd></div>
-<div><dt>Reason</dt><dd>@BusinessActivityPresentation.Label(item.Reason)</dd></div>
+<div><dt>Final status</dt><dd>@(string.IsNullOrEmpty(item.BookingStatus) ? "Not recorded" : item.BookingStatus)</dd></div>
+<div><dt>Reason</dt><dd>@(item.ReasonRecorded ? BusinessActivityPresentation.Label(item.Reason) : "Not recorded")</dd></div>
 </dl>
 @if(!string.IsNullOrWhiteSpace(item.ReasonNotes)) { <details><summary>View archive notes</summary><p>@item.ReasonNotes</p></details> }
-</section><p class="admin-note">Archived bookings cannot be restored or permanently deleted through this module.</p>
+</section>
+<div class="admin-actions"><a asp-controller="Bookings" asp-action="Details" asp-route-id="@item.Id" class="btn btn-primary">Booking details and transactions</a><a asp-controller="Payments" asp-action="RefundRequests" asp-route-q="@item.BookingCode" class="btn btn-outline-secondary">Related refund requests</a></div>
+<p class="admin-note">Archived bookings cannot be restored or permanently deleted through this module.</p>
 </div>

@@ -48,6 +48,7 @@
                 <p>Select a date with events to open the booking preview.</p>
             </div>
             <div class="staff-calendar-nav" aria-label="Calendar navigation">
+                @if(User.IsInRole("Owner")){<a asp-action="Settings" class="btn btn-primary"><i class="bi bi-gear" aria-hidden="true"></i> Calendar Settings</a>}
                 <button type="button" class="btn btn-outline-secondary" id="calPrev" aria-label="Previous month"><i class="bi bi-chevron-left" aria-hidden="true"></i></button>
                 <button type="button" class="btn btn-outline-secondary" id="calToday">Today</button>
                 <button type="button" class="btn btn-outline-secondary" id="calNext" aria-label="Next month"><i class="bi bi-chevron-right" aria-hidden="true"></i></button>

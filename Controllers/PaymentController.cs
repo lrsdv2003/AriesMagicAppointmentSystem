@@ -439,8 +439,10 @@ namespace AriesMagicAppointmentSystem.Controllers
         }
 
         [Authorize(Roles = "Owner")]
-        public async Task<IActionResult> PendingVerification(string filter = "awaiting", string? q = null, string? paymentMethod = null, DateTime? date = null)
+        public async Task<IActionResult> PendingVerification(string filter = "awaiting", string? q = null, string? paymentMethod = null, DateTime? date = null, int page = 1, int pageSize = 10)
         {
+            filter = filter?.ToLowerInvariant() is "verified" or "rejected" or "evidence" or "mismatch" or "ocrfailed" ? filter.ToLowerInvariant() : "awaiting";
+            q = q?.Trim();
             var query = _context.Payments
                 .AsNoTracking()
                 .Include(p => p.Booking).ThenInclude(b => b!.Client)
@@ -454,15 +456,19 @@ namespace AriesMagicAppointmentSystem.Controllers
                 "verified" => query.Where(p => p.Status == PaymentStatus.Verified),
                 "rejected" => query.Where(p => p.Status == PaymentStatus.Rejected),
                 "evidence" => query.Where(p => p.Status == PaymentStatus.AdditionalEvidenceRequired),
-                "mismatch" => query.Where(p => p.OcrVerifications.Where(o => o.VerificationPurpose == OcrVerificationPurposes.PaymentProof).OrderByDescending(o => o.ProcessedAt).Select(o => o.VerificationResult).FirstOrDefault() == OcrVerificationResults.MismatchDetected),
-                "ocrfailed" => query.Where(p => p.OcrVerifications.Where(o => o.VerificationPurpose == OcrVerificationPurposes.PaymentProof).OrderByDescending(o => o.ProcessedAt).Select(o => o.VerificationResult).FirstOrDefault() == OcrVerificationResults.OcrFailed),
+                "mismatch" => query.Where(p => p.OcrVerifications.Where(o => o.VerificationPurpose == OcrVerificationPurposes.PaymentProof).OrderByDescending(o => o.ProcessedAt).ThenByDescending(o => o.Id).Select(o => o.VerificationResult).FirstOrDefault() == OcrVerificationResults.MismatchDetected),
+                "ocrfailed" => query.Where(p => p.OcrVerifications.Where(o => o.VerificationPurpose == OcrVerificationPurposes.PaymentProof).OrderByDescending(o => o.ProcessedAt).ThenByDescending(o => o.Id).Select(o => o.VerificationResult).FirstOrDefault() == OcrVerificationResults.OcrFailed),
                 _ => query.Where(p => p.Status == PaymentStatus.Pending)
             };
 
             if (!string.IsNullOrWhiteSpace(q))
             {
                 var term = q.Trim();
+                var parts = term.Split('-');
+                var codeId = parts.Length == 3 && parts[0].Equals("BK", StringComparison.OrdinalIgnoreCase) && int.TryParse(parts[2], out var parsedId) ? parsedId : -1;
+                var codeYear = parts.Length == 3 && int.TryParse(parts[1], out var parsedYear) ? parsedYear : -1;
                 query = query.Where(p => p.Id.ToString().Contains(term) || p.BookingId.ToString().Contains(term) ||
+                    (p.BookingId == codeId && p.Booking!.CreatedAt.Year == codeYear) ||
                     (p.Booking!.Client!.FullName.Contains(term)) ||
                     (p.TransactionReference != null && p.TransactionReference.Contains(term)));
             }
@@ -470,7 +476,18 @@ namespace AriesMagicAppointmentSystem.Controllers
             if (date.HasValue) query = query.Where(p => p.UploadedAt.Date == date.Value.Date);
 
             ViewBag.Filter = filter; ViewBag.Search = q; ViewBag.PaymentMethod = paymentMethod; ViewBag.Date = date?.ToString("yyyy-MM-dd");
-            var payments = await query.OrderByDescending(p => p.UploadedAt).Take(250).ToListAsync();
+            var pagination = new QueuePaginationViewModel(await query.CountAsync(), page, pageSize, nameof(PendingVerification),
+                new() { ["filter"] = filter, ["q"] = q ?? "", ["paymentMethod"] = paymentMethod ?? "", ["date"] = date?.ToString("yyyy-MM-dd") ?? "" })
+            {
+                AwaitingReviewCount = await query.CountAsync(p => p.Status == PaymentStatus.Pending),
+                OcrAttentionCount = await query.CountAsync(p => p.OcrVerifications.Where(o => o.VerificationPurpose == OcrVerificationPurposes.PaymentProof)
+                    .OrderByDescending(o => o.ProcessedAt).ThenByDescending(o => o.Id).Select(o => o.VerificationResult).FirstOrDefault() == OcrVerificationResults.MismatchDetected ||
+                    p.OcrVerifications.Where(o => o.VerificationPurpose == OcrVerificationPurposes.PaymentProof)
+                    .OrderByDescending(o => o.ProcessedAt).ThenByDescending(o => o.Id).Select(o => o.VerificationResult).FirstOrDefault() == OcrVerificationResults.OcrFailed)
+            };
+            ViewData["QueuePage"] = pagination;
+            var payments = await query.OrderByDescending(p => p.UploadedAt).ThenByDescending(p => p.Id)
+                .Skip(pagination.Skip).Take(pagination.PageSize).ToListAsync();
             return View(payments);
         }
 
@@ -895,8 +912,10 @@ namespace AriesMagicAppointmentSystem.Controllers
         }
 
         [Authorize(Roles = "Owner")]
-        public async Task<IActionResult> RefundRequests(string filter = "all", string? q = null)
+        public async Task<IActionResult> RefundRequests(string filter = "all", string? q = null, int page = 1, int pageSize = 10)
         {
+            filter = filter is RefundStatus.Pending or RefundStatus.UnderReview or RefundStatus.Approved or RefundStatus.RefundProcessing or RefundStatus.Refunded or RefundStatus.Rejected ? filter : "all";
+            q = q?.Trim();
             var query = _context.RefundRequests.AsNoTracking()
                 .Include(r => r.Booking).ThenInclude(b => b!.Client)
                 .Include(r => r.Booking).ThenInclude(b => b!.Service)
@@ -908,10 +927,23 @@ namespace AriesMagicAppointmentSystem.Controllers
             if (!string.IsNullOrWhiteSpace(q))
             {
                 var term = q.Trim();
-                query = query.Where(r => r.Id.ToString().Contains(term) || r.BookingId.ToString().Contains(term) || r.Booking!.Client!.FullName.Contains(term) || (r.OriginalPayment != null && r.OriginalPayment.TransactionReference != null && r.OriginalPayment.TransactionReference.Contains(term)));
+                var parts = term.Split('-');
+                var codeId = parts.Length == 3 && parts[0].Equals("BK", StringComparison.OrdinalIgnoreCase) && int.TryParse(parts[2], out var parsedId) ? parsedId : -1;
+                var codeYear = parts.Length == 3 && int.TryParse(parts[1], out var parsedYear) ? parsedYear : -1;
+                query = query.Where(r => r.Id.ToString().Contains(term) || r.BookingId.ToString().Contains(term) ||
+                    (r.BookingId == codeId && r.Booking!.CreatedAt.Year == codeYear) || r.Booking!.Client!.FullName.Contains(term) ||
+                    (r.RefundReferenceNumber != null && r.RefundReferenceNumber.Contains(term)) ||
+                    (r.OriginalPayment != null && r.OriginalPayment.TransactionReference != null && r.OriginalPayment.TransactionReference.Contains(term)));
             }
             ViewBag.Filter = filter; ViewBag.Search = q;
-            return View(await query.OrderByDescending(r => r.RequestedAt).Take(250).ToListAsync());
+            var pagination = new QueuePaginationViewModel(await query.CountAsync(), page, pageSize, nameof(RefundRequests), new() { ["filter"] = filter, ["q"] = q ?? "" })
+            {
+                AwaitingReviewCount = await query.CountAsync(r => r.Status == RefundStatus.Pending || r.Status == RefundStatus.UnderReview),
+                AwaitingFinalVerificationCount = await query.CountAsync(r => r.Status == RefundStatus.RefundProcessing)
+            };
+            ViewData["QueuePage"] = pagination;
+            return View(await query.OrderByDescending(r => r.RequestedAt).ThenByDescending(r => r.Id)
+                .Skip(pagination.Skip).Take(pagination.PageSize).ToListAsync());
         }
 
         [Authorize(Roles = "Owner")]

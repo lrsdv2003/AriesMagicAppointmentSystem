@@ -12,7 +12,7 @@ namespace AriesMagicAppointmentSystem.Services
     /// they are exercised the same way regardless of which page or export triggered them.
     ///
     /// No new tables are introduced. History is simply the existing Booking table filtered
-    /// to final booking statuses, with BookingTimeline supplying the read-only audit trail.
+    /// to Completed bookings, with BookingTimeline supplying the read-only audit trail.
     /// </summary>
     public class HistoryService : IHistoryService
     {
@@ -183,7 +183,7 @@ namespace AriesMagicAppointmentSystem.Services
                 .Include(b => b.Payments)
                 .Include(b => b.RescheduleRequests)
                 .Include(b => b.TimelineEvents)
-                .FirstOrDefaultAsync(b => b.Id == bookingId && (b.Status == BookingStatus.Completed || b.Status == BookingStatus.Cancelled || b.Status == BookingStatus.Declined || b.Status == BookingStatus.Expired));
+                .FirstOrDefaultAsync(b => b.Id == bookingId && b.Status == BookingStatus.Completed);
 
             if (booking == null)
             {
@@ -246,7 +246,7 @@ namespace AriesMagicAppointmentSystem.Services
                 .CountAsync(b => b.Status == BookingStatus.Confirmed && b.EventDate.Date == today);
 
             var historyCount = await _context.Bookings
-                .CountAsync(b => b.Status == BookingStatus.Completed || b.Status == BookingStatus.Cancelled || b.Status == BookingStatus.Declined || b.Status == BookingStatus.Expired);
+                .CountAsync(b => b.Status == BookingStatus.Completed);
 
             // "Completed this month/year" is measured against the event date, i.e. events that
             // actually happened in that period (not when the archive flag was flipped).
@@ -282,7 +282,7 @@ namespace AriesMagicAppointmentSystem.Services
                 .Include(b => b.Client)
                 .Include(b => b.Service)
                 .Include(b => b.Payments)
-                .Where(b => b.Status == BookingStatus.Completed || b.Status == BookingStatus.Cancelled || b.Status == BookingStatus.Declined || b.Status == BookingStatus.Expired)
+                .Where(b => b.Status == BookingStatus.Completed)
                 .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(filters.BookingStatus)) query = query.Where(b => b.Status == filters.BookingStatus);
