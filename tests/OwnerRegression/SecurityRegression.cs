@@ -70,7 +70,7 @@ static class SecurityRegression
         var po = new Payment { Booking = overlap, Amount = 2000, Status = PaymentStatus.Pending };
         db.Payments.AddRange(pc,pd,po);
         await db.SaveChangesAsync();
-        await controller.VerifyConfirmed(po.Id);
+        await controller.VerifyConfirmed(po.Id, 2000m, null, null);
         check(po.Status == PaymentStatus.Pending && overlap.Status == BookingStatus.AwaitingVerification, "Verification rejects overlapping confirmed schedules below daily capacity");
 
         var options = new DbContextOptionsBuilder<ApplicationDbContext>().UseSqlServer(db.Database.GetConnectionString()).Options;
@@ -80,7 +80,7 @@ static class SecurityRegression
             var request = new DefaultHttpContext { User = http.User };
             var competing = new PaymentsController(connection, null!, null!, null!, null!, null!, new SystemActivityService(connection), new ConfigurationBuilder().Build(), new PaymentFinancialService(connection))
             { ControllerContext = new ControllerContext { HttpContext = request }, TempData = new TempDataDictionary(request, new EmptyTempData()) };
-            try { await competing.VerifyConfirmed(id); }
+            try { await competing.VerifyConfirmed(id, 2000m, null, null); }
             catch (Microsoft.Data.SqlClient.SqlException ex) when (ex.Number == 1205) { /* SQL Server rolls back one contending transaction. */ }
             catch (DbUpdateException ex) when (ex.InnerException is Microsoft.Data.SqlClient.SqlException sql && sql.Number == 1205) { }
             catch (InvalidOperationException ex) when (ex.InnerException is DbUpdateException update

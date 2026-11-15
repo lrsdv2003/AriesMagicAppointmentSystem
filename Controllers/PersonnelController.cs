@@ -18,30 +18,63 @@ public sealed class PersonnelInviteInput
     [Required,StringLength(100)] public string FullName {get;set;}="";
     [Required] public string Role {get;set;}="Staff";
 }
-public sealed record PersonnelRow(string Id,string FullName,string Email,string Role,string Status);
-public sealed record PersonnelPage(List<PersonnelRow> Accounts,List<SystemActivity> Audit,bool Owner,bool CanInvite);
-[Authorize(Roles="Owner,Admin"),ResponseCache(NoStore=true,Location=ResponseCacheLocation.None)]
+public sealed record PersonnelRow(string Id,string FullName,string Email,string Role,string Status,DateTime? InvitedAtUtc=null);
+public sealed record PersonnelPage(List<PersonnelRow> Accounts,List<SystemActivity> Audit,bool Owner,bool CanInvite,string? Search=null,string? RoleFilter=null,string? StatusFilter=null);
+public sealed class StaffProfileInput { [Required] public string Id {get;set;}=""; [Required,StringLength(100)] public string FullName {get;set;}=""; [Phone,StringLength(30)] public string? PhoneNumber {get;set;} }
+[Authorize(Roles="Owner"),ResponseCache(NoStore=true,Location=ResponseCacheLocation.None)]
 public sealed class PersonnelController(UserManager<ApplicationUser> users,PersonnelProvisioning provisioning,
     ApplicationDbContext db,IEmailService email,IOptions<PersonnelOptions> settings) : Controller
 {
     private async Task<ApplicationUser> Actor()=>await users.FindByIdAsync(User.FindFirstValue(ClaimTypes.NameIdentifier)!)??throw new UnauthorizedAccessException();
-    public async Task<IActionResult> Index()
+    public async Task<IActionResult> Index(string? search=null,string? roleFilter=null,string? statusFilter=null)
     {
         var actor=await Actor();var owner=await users.IsInRoleAsync(actor,"Owner");
         if(!owner&&!await provisioning.CanManageAsync(actor,"Staff"))return Forbid();
+        search=search?.Trim();if(search?.Length>100)search=search[..100];
         var rows=new List<PersonnelRow>();
+        // Creation dates and token expiry are not invitation dates. Only recorded initial
+        // issuance supports this field, including after enrollment removes the token.
+        var invitedDates=await db.SystemActivities.AsNoTracking()
+            .Where(x=>x.Type==SystemActivityType.UserCreated && x.AffectedRecordType=="ApplicationUser" && x.AffectedRecordId!=null
+                && x.Description=="Personnel enrollment issued; account inactive and role unassigned.")
+            .GroupBy(x=>x.AffectedRecordId!).Select(g=>new{Id=g.Key,IssuedAt=g.Min(x=>x.CreatedAt)})
+            .ToDictionaryAsync(x=>x.Id,x=>(DateTime?)x.IssuedAt);
         foreach(var user in await users.Users.OrderBy(x=>x.FullName).ToListAsync()) {
             var roles=await users.GetRolesAsync(user);var invite=await provisioning.PendingAsync(user);
-            var role=roles.Count==1?roles[0]:invite?.Role;
-            if(role is not ("Staff" or "Admin")||!owner&&role!="Staff")continue;
-            rows.Add(new(user.Id,user.FullName,user.Email??"",role,invite!=null?invite.State+ (invite.ExpiresUtc<=DateTime.UtcNow?" (expired)":""):user.IsActive?"Active":"Disabled"));
+            var role=roles.Contains("Owner")?"Owner":roles.Count==1?roles[0]:roles.Count==0?invite?.Role??"Unassigned":"Multiple (read-only)";
+            if(!ApplicationRoles.IsActive(role))role="Legacy internal";
+            if(!owner&&role!="Staff")continue;
+            var status=invite!=null?invite.State+(invite.ExpiresUtc<=DateTime.UtcNow?" (expired)":""):!user.IsActive?"Disabled":user.LockoutEnd>DateTimeOffset.UtcNow?"Locked":!user.EmailConfirmed?"Unverified":"Active";
+            if(role=="Legacy internal")status="Retired access";
+            if(!string.IsNullOrWhiteSpace(search)&&!user.FullName.Contains(search,StringComparison.OrdinalIgnoreCase)&&!(user.Email?.Contains(search,StringComparison.OrdinalIgnoreCase)??false))continue;
+            if(!string.IsNullOrEmpty(roleFilter)&&role!=roleFilter)continue;
+            if(!string.IsNullOrEmpty(statusFilter)&&!status.StartsWith(statusFilter,StringComparison.Ordinal))continue;
+            rows.Add(new(user.Id,user.FullName,user.Email??"",role,status,invitedDates.GetValueOrDefault(user.Id)));
         }
         var audit=owner?await db.SystemActivities.AsNoTracking().Where(x=>x.AffectedRecordType=="ApplicationUser"&&x.Description.StartsWith("Personnel")).OrderByDescending(x=>x.CreatedAt).Take(50).ToListAsync():[];
-        return View(new PersonnelPage(rows,audit,owner,true));
+        return View(new PersonnelPage(rows,audit,owner,true,search,roleFilter,statusFilter));
+    }
+    [HttpGet,Authorize(Roles="Owner")]
+    public async Task<IActionResult> EditStaff(string id)
+    {
+        var user=await users.FindByIdAsync(id);if(user==null)return NotFound();
+        if(!await provisioning.CanEditStaffProfileAsync(await Actor(),user))return Forbid();
+        return View(new StaffProfileInput {Id=user.Id,FullName=user.FullName,PhoneNumber=user.PhoneNumber});
+    }
+    [HttpPost,ValidateAntiForgeryToken,Authorize(Roles="Owner")]
+    public async Task<IActionResult> EditStaff(StaffProfileInput input)
+    {
+        if(!ModelState.IsValid)return View(input);
+        try {await provisioning.UpdateStaffProfileAsync(await Actor(),input.Id,input.FullName,input.PhoneNumber);}
+        catch(UnauthorizedAccessException){return Forbid();}
+        catch(InvalidOperationException){ModelState.AddModelError("","Staff profile could not be updated. Refresh and try again.");return View(input);}
+        TempData["SuccessMessage"]="Staff profile updated. Login email and password were preserved.";
+        return RedirectToAction(nameof(Index));
     }
     [HttpPost,ValidateAntiForgeryToken,EnableRateLimiting("account")]
     public async Task<IActionResult> Invite(PersonnelInviteInput input)
     {
+        if(input.Role!="Staff")return Forbid();
         if(!ModelState.IsValid){TempData["ErrorMessage"]="Enter a valid name, email and permitted role.";return RedirectToAction(nameof(Index));}
         try {
             // Validate trusted destination before issuing; never derive enrollment links from Host headers.

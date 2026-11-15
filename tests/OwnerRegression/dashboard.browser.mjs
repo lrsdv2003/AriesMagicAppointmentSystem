@@ -16,7 +16,7 @@ page.on('request',async req=>{
 });
 const go=async name=>{current=name;await page.goto('http://owner.test/fixture/'+name,{waitUntil:'networkidle0'});};
 try {
- const names=['Staff','Owner','Admin'].flatMap(role=>['','-empty','-error'].map(state=>'Dashboard-'+role+state));
+ const names=['Staff','Owner'].flatMap(role=>['','-empty','-error'].map(state=>'Dashboard-'+role+state));
  for(const width of [1440,1024,768,390]) {
   await page.setViewport({width,height:900});
   for(const name of names) {
@@ -33,7 +33,6 @@ try {
    assert.deepEqual(issues,[],name+' '+width);
    const links=await page.$$eval('.role-workspace a',els=>els.map(el=>el.getAttribute('href')));
    if(name.includes('Staff'))assert(!links.some(h=>/^\/(Payments|Reports|UserManagement|SystemActivity)/.test(h)));
-   if(name.includes('Admin'))assert(!links.some(h=>/^\/(Payments|Reports|Bookings|RescheduleRequests)/.test(h)));
    if(name.endsWith('-empty'))assert(await page.$('.dash-empty'));
    if(name.endsWith('-error')){assert(await page.$('.dash-load-errors a'));assert(await page.$('.workspace-quick-links nav a'));}
    if(width===390)assert.equal(await page.$eval('.dash-metric-grid',el=>getComputedStyle(el).gridTemplateColumns.split(' ').length),2);
@@ -42,7 +41,7 @@ try {
   }
  }
  await page.setViewport({width:1440,height:900});
- for(const role of ['Staff','Owner','Admin']){
+ for(const role of ['Staff','Owner']){
   await go('Dashboard-'+role);
   await page.focus('.workspace-quick-links summary');
   assert.equal(await page.$eval('.workspace-quick-links summary',el=>getComputedStyle(el).outlineStyle),'solid','Keyboard focus is visible');

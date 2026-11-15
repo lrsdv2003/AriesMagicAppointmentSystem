@@ -233,7 +233,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                 PendingCount = await baseQuery.CountAsync(r => r.Status == RescheduleRequestStatus.Pending),
                 ApprovedCount = await baseQuery.CountAsync(r => r.Status == RescheduleRequestStatus.Approved),
                 RejectedCount = await baseQuery.CountAsync(r => r.Status == RescheduleRequestStatus.Rejected),
-                PageSize = User.IsInRole("Staff") ? 10 : (pageSize is 10 or 20 or 50 ? pageSize : 10)
+                PageSize = 5
             };
 
             var query = baseQuery;
@@ -261,8 +261,8 @@ namespace AriesMagicAppointmentSystem.Controllers
             }
 
             query = model.SortBy == "oldest"
-                ? query.OrderBy(r => r.CreatedAt)
-                : query.OrderByDescending(r => r.CreatedAt);
+                ? query.OrderBy(r => r.CreatedAt).ThenBy(r => r.Id)
+                : query.OrderByDescending(r => r.CreatedAt).ThenByDescending(r => r.Id);
 
             model.TotalCount = await query.CountAsync();
             model.Page = Math.Min(Math.Max(1, page), Math.Max(1,

@@ -34,7 +34,7 @@
 </div>
 
 <div class="am-filter-container">
-    <form method="get" asp-action="Index" class="am-filter-bar am-filter-row">
+    <form method="get" asp-action="Index" class="am-filter-bar am-filter-row" data-aries-filter-auto="@(isStaff ? "true" : "false")">
 
         <!-- SEARCH INPUT -->
         <div class="am-filter-search">
@@ -88,6 +88,7 @@
 <input id="BookingsIndexeventDate" type="date" name="eventDate" value="@(Model.EventDate?.ToString("yyyy-MM-dd"))" class="form-control rounded-3" />
                     </div>
 
+                    @if (!isStaff) {
                     <!-- PACKAGE -->
                     <div class="mb-3">
                         <label class="form-label" for="BookingsIndexserviceId">Package</label>
@@ -99,6 +100,8 @@
                             }
                         </select>
                     </div>
+
+                    }
 
                     <!-- PAYMENT STATUS -->
                     @if (!isStaff)
@@ -122,7 +125,7 @@
                 <!-- FIXED ACTIONS AT BOTTOM -->
                 <div class="d-flex justify-content-end gap-2 pt-2 border-top">
                     <a asp-action="Index" class="btn btn-light rounded-pill px-3">Reset</a>
-                    <button type="submit" class="btn btn-primary rounded-pill px-3">Apply Filters</button>
+                    @if (!isStaff) {<button type="submit" class="btn btn-primary rounded-pill px-3">Apply Filters</button>}
                 </div>
             </div>
         </div>

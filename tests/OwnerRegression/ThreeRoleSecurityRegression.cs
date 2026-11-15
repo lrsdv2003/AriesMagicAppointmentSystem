@@ -16,7 +16,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
-static class AdminRegression
+static class ThreeRoleSecurityRegression
 {
     static ClaimsPrincipal Principal(string role, string id = "fixture-admin") =>
         new(new ClaimsIdentity([new Claim(ClaimTypes.Role, role), new Claim(ClaimTypes.NameIdentifier, id)], "Fixture"));
@@ -24,9 +24,8 @@ static class AdminRegression
     public static async Task RunAsync(ApplicationDbContext db, Action<bool,string> check)
     {
         check(!Principal("Admin").CanFollowModuleLink("/Payments/Verify/1"), "Historical Admin notifications cannot link to financial actions");
-        check(Principal("Admin").CanFollowModuleLink("/Calendar/Index"), "System coordination links remain available");
+        check(!Principal("Admin").CanFollowModuleLink("/Calendar/Index"), "Legacy-only role cannot follow active module links");
         var services = new ServiceCollection().AddLogging().AddAuthorization().AddSingleton(db);
-        services.Configure<PersonnelOptions>(o=>o.AdminMayManageStaff=true);
         services.AddSingleton<Microsoft.AspNetCore.Mvc.Routing.IUrlHelperFactory,SnapshotUrls>();
         services.AddIdentityCore<ApplicationUser>().AddRoles<IdentityRole>().AddEntityFrameworkStores<ApplicationDbContext>();
         await using var provider = services.BuildServiceProvider();
@@ -63,9 +62,9 @@ static class AdminRegression
         var payments=new PaymentsController(db,null!,null!,null!,null!,null!,new SystemActivityService(db),new ConfigurationBuilder().Build(),new PaymentFinancialService(db)) {
             ControllerContext=new ControllerContext {HttpContext=http},TempData=new TempDataDictionary(http,new EmptyTempData())
         };
-        await payments.VerifyConfirmed(thirdPayment.Id);
+        await payments.VerifyConfirmed(thirdPayment.Id, 2000m, null, null);
         check(third.Status==BookingStatus.Confirmed && thirdPayment.Status==PaymentStatus.Verified,"Third confirmed booking is accepted");
-        await payments.VerifyConfirmed(fourthPayment.Id);
+        await payments.VerifyConfirmed(fourthPayment.Id, 2000m, null, null);
         check(fourth.Status==BookingStatus.AwaitingVerification && fourthPayment.Status==PaymentStatus.Pending,"Fourth confirmation rejected despite legacy limits of 99");
         var bookings=new BookingsController(db,null!,null!,null!,null!,null!,null!);
         var availability=(JsonResult)await bookings.CheckDateAvailability(date);
@@ -86,24 +85,19 @@ static class AdminRegression
 
         var manager=provider.GetRequiredService<UserManager<ApplicationUser>>();
         var roleManager=provider.GetRequiredService<RoleManager<IdentityRole>>();
-        foreach(var role in new[]{"Staff","Owner","Admin","Client"})
+        foreach(var role in ApplicationRoles.All)
             if(!await roleManager.RoleExistsAsync(role)) await roleManager.CreateAsync(new IdentityRole(role));
+        check(!await roleManager.RoleExistsAsync("Admin"),"Role initialization does not create obsolete Admin role");
+        await roleManager.CreateAsync(new IdentityRole("Admin")); // Legacy-only negative fixture; never application initialization.
         var staff=new ApplicationUser {UserName="admin-test-staff",Email="staff@example.test",FullName="Test Staff",PhoneNumber="123"};
         var owner=new ApplicationUser {UserName="admin-test-owner",Email="owner@example.test",FullName="Test Owner",PhoneNumber="123"};
         await manager.CreateAsync(staff);await manager.AddToRoleAsync(staff,"Staff");
         await manager.CreateAsync(owner);await manager.AddToRoleAsync(owner,"Owner");
-        var users=new UserManagementController(manager,new SystemActivityService(db)) {ControllerContext=new ControllerContext {HttpContext=http},TempData=new TempDataDictionary(http,new EmptyTempData())};
-        check(await users.DisableStaff(owner.Id) is ForbidResult && owner.IsActive,"Staff endpoint cannot disable Owner");
-        check(await users.EditStaff(new StaffUserViewModel {Id=owner.Id,FullName="Tampered",Email=owner.Email!,PhoneNumber="123"}) is ForbidResult && owner.FullName=="Test Owner","Staff endpoint cannot edit Owner");
-        await users.DisableStaff(staff.Id);
-        check(!staff.IsActive,"Admin can deactivate permitted Staff account");
-        await users.ActivateStaff(staff.Id);
-        check(staff.IsActive,"Admin can reactivate permitted Staff account");
-        var listing=(ViewResult)await users.Index(null, role:"Owner");
-        check(((IEnumerable<ApplicationUser>)listing.Model!).Any(u=>u.Id==owner.Id),"Role filter includes Owner accounts");
+        check(typeof(DashboardController).GetMethod("Admin")==null,"Retired Admin dashboard action does not exist");
+        check(typeof(DashboardController).Assembly.GetType("AriesMagicAppointmentSystem.Controllers.UserManagementController")==null,"Duplicate Admin user-management controller is removed");
         await new SystemActivityService(db).LogAsync(SystemActivityType.UserUpdated,"Fixture audit",owner.Id,owner.FullName);
         var log=await db.SystemActivities.OrderByDescending(a=>a.Id).FirstAsync();
-        check(AdminActivityPresentation.ActorRole(log)=="Owner","Audit records capture role at time of action");
-        check(AdminActivityPresentation.ActorRole(new SystemActivity())=="Not recorded","Historical roles are not fabricated");
+        check(BusinessActivityPresentation.ActorRole(log)=="Owner","Audit records capture role at time of action");
+        check(BusinessActivityPresentation.ActorRole(new SystemActivity())=="Not recorded","Historical roles are not fabricated");
     }
 }

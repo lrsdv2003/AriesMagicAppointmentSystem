@@ -11,7 +11,7 @@ using Microsoft.AspNetCore.DataProtection;
 
 sealed class ReleaseFactory(string connection, int smtpPort, Uri mapServer, string privateRoot, bool failVerificationAudit = false, bool shortTicket = false, bool cleanFeedbackMedia = false, bool authUi = false,
     Microsoft.EntityFrameworkCore.Diagnostics.SaveChangesInterceptor? saveFault = null, IEmailService? emailOverride = null,
-    AriesMagicAppointmentSystem.Models.SystemActivityType? failAuditType = null) : WebApplicationFactory<Program>
+    AriesMagicAppointmentSystem.Models.SystemActivityType? failAuditType = null, IOcrVerificationService? ocrOverride = null) : WebApplicationFactory<Program>
 {
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -34,6 +34,7 @@ sealed class ReleaseFactory(string connection, int smtpPort, Uri mapServer, stri
                 services.RemoveAll<IFeedbackMalwareScanner>();
                 services.AddSingleton<IFeedbackMalwareScanner,FixtureCleanFeedbackScanner>();
             }
+            if(ocrOverride != null){ services.RemoveAll<IOcrVerificationService>(); services.AddSingleton<IOcrVerificationService>(ocrOverride); }
             services.RemoveAll<DbContextOptions<ApplicationDbContext>>();
             services.AddDbContext<ApplicationDbContext>(o => { o.UseSqlServer(connection); if(saveFault != null)o.AddInterceptors(saveFault); });
             if(emailOverride != null){services.RemoveAll<IEmailService>();services.AddSingleton(emailOverride);}
@@ -64,6 +65,6 @@ sealed class FailingAudit(ApplicationDbContext db, AriesMagicAppointmentSystem.M
     public Task LogAsync(AriesMagicAppointmentSystem.Models.SystemActivityType type,string description,string performedByUserId,string? performedByUserName=null,string? affectedRecordId=null,string? affectedRecordType=null,object? metadata=null)
         => type==failOn ? throw new InvalidOperationException("Synthetic audit outage") : inner.LogAsync(type,description,performedByUserId,performedByUserName,affectedRecordId,affectedRecordType,metadata);
     public Task<List<AriesMagicAppointmentSystem.Models.SystemActivity>> GetRecentAsync(int count=50)=>inner.GetRecentAsync(count);
-    public Task<(List<AriesMagicAppointmentSystem.Models.SystemActivity> Items,int TotalCount)> GetPagedAsync(int page=1,int pageSize=20,AriesMagicAppointmentSystem.Models.SystemActivityType? type=null,DateTime? fromDate=null,DateTime? toDate=null,string? search=null)
-        =>inner.GetPagedAsync(page,pageSize,type,fromDate,toDate,search);
+    public Task<(List<AriesMagicAppointmentSystem.Models.SystemActivity> Items,int TotalCount)> GetPagedAsync(int page=1,int pageSize=20,AriesMagicAppointmentSystem.Models.SystemActivityType? type=null,DateTime? fromDate=null,DateTime? toDate=null,string? search=null,bool businessOnly=false,string sortBy="newest")
+        =>inner.GetPagedAsync(page,pageSize,type,fromDate,toDate,search,businessOnly,sortBy);
 }

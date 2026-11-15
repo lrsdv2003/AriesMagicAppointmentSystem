@@ -5,7 +5,7 @@
     var isClient = User.IsInRole("Client");
     var isStaff = User.IsInRole("Staff");
     var isOwner = User.IsInRole("Owner");
-    var useCompactInternal = isStaff || isOwner || User.IsInRole("Admin");
+    var useCompactInternal = isStaff || isOwner;
     var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
     Layout = isClient ? "_ClientHubLayout" : "_DashboardLayout";
     ViewData["Title"] = "Messages";
@@ -178,7 +178,7 @@ else
                             <p>@(useCompactInternal ? (selected.BookingId.HasValue ? $"{otherParticipant?.Role ?? "Conversation"} · Regarding Booking #{selected.BookingId}" : otherParticipant?.Role ?? "Aries Magic conversation") : string.IsNullOrWhiteSpace(selected.ParticipantSummary) ? "Aries Magic conversation" : selected.ParticipantSummary)</p>
                         </div>
                     </div>
-                    @if (selected.BookingId.HasValue && !User.IsInRole("Admin"))
+                    @if (selected.BookingId.HasValue)
                     {
                         <a class="btn comm-secondary-btn" asp-controller="Bookings" asp-action="Details" asp-route-id="@selected.BookingId">
                             <i class="bi bi-box-arrow-up-right" aria-hidden="true"></i> View Booking
@@ -219,7 +219,7 @@ else
                             @if (message.RelatedBookingId.HasValue)
                             {
                                 <div class="comm-booking-context-chip"><i class="bi bi-calendar-event" aria-hidden="true"></i><span>Regarding booking #@message.RelatedBookingId</span>
-                                @if(!User.IsInRole("Admin")){<a asp-controller="Bookings" asp-action="Details" asp-route-id="@message.RelatedBookingId">View booking</a>}</div>
+                                @{<a asp-controller="Bookings" asp-action="Details" asp-route-id="@message.RelatedBookingId">View booking</a>}</div>
                             }
                             @if (message.MessageType == MessageTypes.ActionRequest)
                             {

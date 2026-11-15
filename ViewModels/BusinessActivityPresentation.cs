@@ -3,7 +3,7 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 
 namespace AriesMagicAppointmentSystem.ViewModels;
-public static class AdminActivityPresentation
+public static class BusinessActivityPresentation
 {
     public static string Label(object value) => Regex.Replace(value.ToString() == "RejectedByAdmin" ? "Declined during review" : value.ToString() ?? "", "([a-z])([A-Z])", "$1 $2").Replace("Service", "Package");
     public static string Category(SystemActivityType type) => type.ToString() switch

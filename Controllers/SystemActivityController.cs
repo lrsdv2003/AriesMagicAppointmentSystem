@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace AriesMagicAppointmentSystem.Controllers
 {
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Owner")]
     public class SystemActivityController : Controller
     {
         private readonly ISystemActivityService _activityService;
@@ -18,17 +18,26 @@ namespace AriesMagicAppointmentSystem.Controllers
 
         public async Task<IActionResult> Index(
             int page = 1,
-            int pageSize = 20,
+            int pageSize = 5,
             SystemActivityType? type = null,
             DateTime? fromDate = null,
             DateTime? toDate = null,
-            string? search = null)
+            string? search = null, string sortBy = "newest")
         {
             page = Math.Max(page, 1);
-            pageSize = Math.Clamp(pageSize, 1, 100);
+            pageSize = 5;
+            sortBy = string.Equals(sortBy, "oldest", StringComparison.OrdinalIgnoreCase) ? "oldest" : "newest";
 
             var (items, totalCount) = await _activityService.GetPagedAsync(
-                page, pageSize, type, fromDate, toDate, search);
+                page, pageSize, type, fromDate, toDate, search, businessOnly:true, sortBy: sortBy);
+
+            var totalPages = Math.Max(1, (int)Math.Ceiling(totalCount / (double)pageSize));
+            if (page > totalPages)
+            {
+                page = totalPages;
+                (items, totalCount) = await _activityService.GetPagedAsync(
+                    page, pageSize, type, fromDate, toDate, search, businessOnly: true, sortBy: sortBy);
+            }
 
             var viewModel = new SystemActivityIndexViewModel
             {
@@ -36,14 +45,15 @@ namespace AriesMagicAppointmentSystem.Controllers
                 TotalCount = totalCount,
                 Page = page,
                 PageSize = pageSize,
-                TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize),
+                TotalPages = Math.Max(1, (int)Math.Ceiling(totalCount / (double)pageSize)),
                 TypeFilter = type,
                 FromDateFilter = fromDate,
                 ToDateFilter = toDate,
                 SearchFilter = search,
-                ActivityTypes = Enum.GetValues(typeof(SystemActivityType)).Cast<SystemActivityType>().ToList()
+                ActivityTypes = BusinessActivityTypes.All.ToList()
             };
 
+            ViewBag.ActivitySort = sortBy;
             return View(viewModel);
         }
     }

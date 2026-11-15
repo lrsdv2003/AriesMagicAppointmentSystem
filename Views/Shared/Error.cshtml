@@ -1,9 +1,9 @@
 @model ErrorViewModel
 @{
     ViewData["Title"] = "Unable to complete request";
-    var internalUser = User.IsInRole("Staff") || User.IsInRole("Admin") || User.IsInRole("Owner");
+    var internalUser = User.IsInRole("Staff") || User.IsInRole("Owner");
     Layout = internalUser ? "_DashboardLayout" : "_Layout";
-    var destination = User.IsInRole("Owner") ? "Owner" : User.IsInRole("Admin") ? "Admin" : "Staff";
+    var destination = User.IsInRole("Owner") ? "Owner" : "Staff";
 }
 <section class="ui-panel cr-card" role="alert">
     @if (!internalUser) { <h1>Unable to complete request</h1> }

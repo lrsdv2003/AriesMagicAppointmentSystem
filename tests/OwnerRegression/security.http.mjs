@@ -4,10 +4,11 @@ const base = 'http://127.0.0.1:5189';
 let checks = 0;
 function check(value, message) { assert(value, message); checks++; console.log('PASS: ' + message); }
 async function get(path, options = {}) { return fetch(base + path, { redirect: 'manual', ...options }); }
-for (const path of ['/Bookings/MyBookings', '/Dashboard/Staff', '/Dashboard/Admin', '/Dashboard/Owner', '/Payments/PendingVerification', '/Payments/PaymentProof/1', '/Payments/RefundProof/1', '/UserManagement', '/Profile', '/InternalProfile', '/Communications', '/Notifications']) {
+for (const path of ['/Bookings/MyBookings', '/Dashboard/Staff',  '/Dashboard/Owner', '/Payments/PendingVerification', '/Payments/PaymentProof/1', '/Payments/RefundProof/1',  '/Profile', '/InternalProfile', '/Communications', '/Notifications']) {
   const response = await get(path);
   check(response.status === 302 && response.headers.get('location')?.includes('/Account/Login'), 'Anonymous direct access denied: ' + path);
 }
+for(const path of ['/Dashboard/Admin','/UserManagement'])check((await get(path)).status===404,'Retired route is absent: '+path);
 const login = await get('/Account/Login');
 check(login.status === 200, 'Login renders without database startup access');
 check(login.headers.get('x-content-type-options') === 'nosniff', 'Content sniffing disabled');

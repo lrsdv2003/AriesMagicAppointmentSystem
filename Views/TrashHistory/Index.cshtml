@@ -1,10 +1,10 @@
 @model AriesMagicAppointmentSystem.ViewModels.TrashHistoryIndexViewModel
 @using AriesMagicAppointmentSystem.Models
-@{ Layout = "_DashboardLayout"; ViewData["Title"] = "Trash History"; var f = Model.Filters; var hasActiveFilters = f.Reason.HasValue || f.DateFrom.HasValue || f.DateTo.HasValue; }
+@{ Layout = "_DashboardLayout"; ViewData["Title"] = "Archives"; var f = Model.Filters; var hasActiveFilters = f.Reason.HasValue || f.DateFrom.HasValue || f.DateTo.HasValue; }
 <div class="admin-console">
 <header class="admin-heading"><div><h2>Archived booking records</h2><p>Read-only records of cancelled, declined and expired requests.</p></div></header>
 <div class="am-filter-container">
-    <form method="get" asp-action="Index" class="am-filter-bar">
+    <form method="get" asp-action="Index" class="am-filter-bar aries-round3-toolbar" data-aries-round3-filter="true">
         <div class="am-filter-row">
 
             <!-- Direct Search Input -->
@@ -45,7 +45,7 @@
                             <option value="">All Reasons</option>
                             @foreach (TrashReason reason in Enum.GetValues(typeof(TrashReason)))
                             {
-                                <option value="@((int)reason)" selected="@(f?.Reason == reason)">@AriesMagicAppointmentSystem.ViewModels.AdminActivityPresentation.Label(reason)</option>
+                                <option value="@((int)reason)" selected="@(f?.Reason == reason)">@AriesMagicAppointmentSystem.ViewModels.BusinessActivityPresentation.Label(reason)</option>
                             }
                         </select>
                     </div>
@@ -64,52 +64,51 @@
 
                     <hr class="my-3" />
 
-                    <div class="d-flex justify-content-end gap-2">
-                        <a asp-action="Index" class="btn btn-light btn-sm">Clear Filters</a>
-                        <button type="submit" class="btn btn-primary btn-sm">Apply Filters</button>
-                    </div>
+                    <label class="form-label" for="archiveSort">Sort by</label>
+                    <select id="archiveSort" class="form-select form-select-sm mb-2" name="SortBy">
+                      <option value="newest" selected="@(f?.SortBy != "oldest")">Newest to Oldest</option>
+                      <option value="oldest" selected="@(f?.SortBy == "oldest")">Oldest to Newest</option>
+                    </select>
+                    <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Reset filters</a>
                 </div>
             </div>
 
             <!-- Action Buttons -->
-            <button type="submit" class="btn btn-primary">Search</button>
+            <button type="submit" class="visually-hidden">Search</button>
 
-            @if (f != null && (!string.IsNullOrEmpty(f.Search) || hasActiveFilters))
-            {
-                <a asp-action="Index" class="btn btn-link text-decoration-none text-muted">Clear Filters</a>
-            }
+            <a class="btn btn-outline-secondary aries-round3-refresh" asp-action="Index"
+               asp-route-Search="@f?.Search" asp-route-Reason="@(f?.Reason?.ToString("d"))"
+               asp-route-PaymentStatus="@f?.PaymentStatus" asp-route-AssignedStaffId="@f?.AssignedStaffId"
+               asp-route-DateFrom="@(f?.DateFrom?.ToString("yyyy-MM-dd"))"
+               asp-route-DateTo="@(f?.DateTo?.ToString("yyyy-MM-dd"))"
+               asp-route-SortBy="@f?.SortBy" asp-route-Page="@f?.Page"
+               aria-label="Refresh archives"><i class="bi bi-arrow-clockwise" aria-hidden="true"></i><span>Refresh</span></a>
         </div>
     </form>
 </div>
 
 
-<div class="admin-table-wrap"><table class="admin-table"><thead><tr><th scope="col">Record</th><th scope="col">Type</th><th scope="col">Archived by</th><th scope="col">Archived date</th><th scope="col">Recovery</th><th scope="col">Actions</th></tr></thead><tbody>
+<div class="admin-table-wrap" role="region" aria-label="Archived booking records" tabindex="0"><table class="admin-table"><thead><tr><th scope="col">Record</th><th scope="col">Type</th><th scope="col">Archived by</th><th scope="col">Archived date</th><th scope="col">Final status</th><th scope="col">Actions</th></tr></thead><tbody>
 @foreach(var item in Model.Bookings) {
-<tr><td data-label="Record"><div><strong>@item.BookingCode</strong><small>@item.ClientName</small></div></td><td data-label="Type"><span class="admin-badge">Booking</span></td><td data-label="Archived by">@item.ArchivedBy</td><td data-label="Archived date">@(item.ArchiveDateRecorded ? item.ArchivedAt.ToString("MMM d, yyyy") : "Not recorded")</td><td data-label="Recovery"><span class="admin-badge">Read-only archive</span></td><td data-label="Actions"><a asp-action="Details" asp-route-id="@item.Id" class="btn btn-outline-secondary">View</a></td></tr>
+<tr><td data-label="Record"><div><strong>@item.BookingCode</strong><small>@item.ClientName</small></div></td><td data-label="Type"><span class="admin-badge">Booking</span></td><td data-label="Archived by">@item.ArchivedBy</td><td data-label="Archived date">@(item.ArchiveDateRecorded ? item.ArchivedAt.ToString("MMM d, yyyy") : "Not recorded")</td><td data-label="Final status"><span class="admin-badge">@(string.IsNullOrEmpty(item.BookingStatus) ? "Not recorded" : item.BookingStatus)</span></td><td data-label="Actions"><a asp-action="Details" asp-route-id="@item.Id" class="btn btn-outline-secondary">View</a></td></tr>
 }
-</tbody></table>@if(!Model.Bookings.Any()) { <p class="admin-empty">Trash is empty.</p> }</div>
-        @if (Model.TotalPages > 1)
-        {
-            <nav class="mt-3">
-                <ul class="pagination justify-content-center">
-                    @for (var p = Math.Max(1, Model.Filters.Page - 2); p <= Math.Min(Model.TotalPages, Model.Filters.Page + 2); p++)
-                    {
-                        <li class="page-item @(p == f?.Page ? "active" : "")">
-                            <a class="page-link" asp-action="Index" asp-route-page="@p"
-                               asp-route-Search="@f?.Search"
-                               asp-route-Reason="@(f?.Reason?.ToString("d"))"
-                               asp-route-PaymentStatus="@f?.PaymentStatus"
-                               asp-route-AssignedStaffId="@f?.AssignedStaffId"
-                               asp-route-DateFrom="@(f?.DateFrom?.ToString("yyyy-MM-dd"))"
-                               asp-route-DateTo="@(f?.DateTo?.ToString("yyyy-MM-dd"))">@p</a>
-                        </li>
-                    }
-                </ul>
-            </nav>
+</tbody></table>@if(!Model.Bookings.Any()) { <p class="admin-empty">No archived requests match the filters.</p> }</div>
+        @{
+            var archivePager = new AriesMagicAppointmentSystem.ViewModels.QueuePaginationViewModel(
+                Model.TotalCount, Model.Filters.Page, 5, "Index", new Dictionary<string,string> {
+                    ["Search"] = f.Search ?? "",
+                    ["Reason"] = f.Reason?.ToString("d") ?? "",
+                    ["PaymentStatus"] = f.PaymentStatus,
+                    ["AssignedStaffId"] = f.AssignedStaffId ?? "",
+                    ["DateFrom"] = f.DateFrom?.ToString("yyyy-MM-dd") ?? "",
+                    ["DateTo"] = f.DateTo?.ToString("yyyy-MM-dd") ?? "",
+                    ["SortBy"] = f.SortBy ?? "newest"
+                });
         }
+        <partial name="_QueuePagination" model="archivePager" />
 
 <section class="admin-panel"><h3>Archived packages</h3><p class="admin-note">Package records can be restored through Package Management.</p>
-<div class="admin-table-wrap"><table class="admin-table"><thead><tr><th scope="col">Record</th><th scope="col">Type</th><th scope="col">Archived by</th><th scope="col">Archived date (UTC)</th><th scope="col">Status</th><th scope="col">Actions</th></tr></thead><tbody>
+<div class="admin-table-wrap" role="region" aria-label="Archived package records" tabindex="0"><table class="admin-table"><thead><tr><th scope="col">Record</th><th scope="col">Type</th><th scope="col">Archived by</th><th scope="col">Archived date (UTC)</th><th scope="col">Status</th><th scope="col">Actions</th></tr></thead><tbody>
 @foreach(var package in Model.ArchivedPackages) {
 var archive = Model.PackageArchives.GetValueOrDefault(package.Id.ToString());
 <tr><td data-label="Record">@package.Name</td><td data-label="Type"><span class="admin-badge">Package</span></td><td data-label="Archived by">@(archive?.PerformedByUserName ?? "Not recorded")</td><td data-label="Archived date (UTC)">@(archive?.CreatedAt.ToString("MMM d, yyyy h:mm tt") ?? "Not recorded")</td><td data-label="Status">Restorable</td><td data-label="Actions"><a asp-controller="Services" asp-action="Restore" asp-route-id="@package.Id" class="btn btn-outline-secondary">Restore</a></td></tr>

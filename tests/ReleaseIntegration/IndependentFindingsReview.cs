@@ -26,7 +26,8 @@ static class IndependentFindingsReview
         var instance=Environment.GetEnvironmentVariable("ARIES_TEST_LOCALDB_INSTANCE")??"MSSQLLocalDB";
         if(!Regex.IsMatch(instance,"^[A-Za-z][A-Za-z0-9_-]{0,63}$"))throw new Exception("Invalid isolated instance name.");
         var name="AriesFindings_"+Guid.NewGuid().ToString("N");
-        var connection=@"Server=(localdb)\"+instance+";Database="+name+";Integrated Security=True;TrustServerCertificate=True";
+        var server=Environment.GetEnvironmentVariable("ARIES_TEST_USE_DEFAULT_SQL")=="true"?".":@"(localdb)\"+instance;
+        var connection="Server="+server+";Database="+name+";Integrated Security=True;TrustServerCertificate=True";
         var root=Path.GetFullPath(Path.Combine(".tmp-owner-build",name));Directory.CreateDirectory(root);
         var options=new DbContextOptionsBuilder<ApplicationDbContext>().UseSqlServer(connection).Options;
         await using var db=new ApplicationDbContext(options);
@@ -54,9 +55,72 @@ static class IndependentFindingsReview
             using var client=await Login(factory,"client");using var other=await Login(factory,"other");using var staff=await Login(factory,"staff");using var owner=await Login(factory,"owner");
             var token=await Token(client,"/Communications");var otherToken=await Token(other,"/Communications");var staffToken=await Token(staff,"/Communications");var ownerToken=await Token(owner,"/Communications");
             var png=await File.ReadAllBytesAsync("tests/ReleaseIntegration/Fixtures/payment.png");
-            async Task<HttpResponseMessage> Upload(HttpClient c,Booking b,string csrf,int version=0,decimal amount=2000,byte[]? bytes=null,string filename="proof.png"){
-                using var f=new MultipartFormDataContent();f.Add(new StringContent(csrf),"__RequestVerificationToken");f.Add(new StringContent(b.Id.ToString()),"BookingId");f.Add(new StringContent(version.ToString()),"ExpectedLatestPaymentId");f.Add(new StringContent(amount.ToString(CultureInfo.InvariantCulture)),"Amount");f.Add(new StringContent("GCash"),"PaymentMethod");var file=new ByteArrayContent(bytes??png);file.Headers.ContentType=new("image/png");f.Add(file,"ProofImage",filename);return await c.PostAsync("/Payments/Upload",f);
+            async Task<HttpResponseMessage> Upload(HttpClient c,Booking b,string csrf,int version=0,decimal amount=2000,byte[]? bytes=null,string filename="proof.png",string mime="image/png"){
+                using var f=new MultipartFormDataContent();f.Add(new StringContent(csrf),"__RequestVerificationToken");f.Add(new StringContent(b.Id.ToString()),"BookingId");f.Add(new StringContent(version.ToString()),"ExpectedLatestPaymentId");f.Add(new StringContent(amount.ToString(CultureInfo.InvariantCulture)),"Amount");f.Add(new StringContent("true"),"AcknowledgesPaymentTerms");f.Add(new StringContent("GCash"),"PaymentMethod");var file=new ByteArrayContent(bytes??png);file.Headers.ContentType=new(mime);f.Add(file,"ProofImage",filename);return await c.PostAsync("/Payments/Upload",f);
             }
+            // OCR is advisory: exercise an exception at the service boundary using real MVC, Identity and SQL.
+            var ocrFailureBooking=await AddBooking(79,BookingStatus.AwaitingDownpayment);
+            var proofsRoot=Path.Combine(root,"financial-proofs","payments");
+            var proofsBefore=Directory.Exists(proofsRoot)?Directory.EnumerateFiles(proofsRoot).Count():0;
+            await using(var ocrBroken=new ReleaseFactory(connection,smtp.Port,mapUrl,root,ocrOverride:new ThrowingOcrBoundary())){
+                using var ocrClient=await Login(ocrBroken,"client");
+                var ocrToken=await Token(ocrClient,"/Communications");
+                var accepted=false;
+                try {using var response=await Upload(ocrClient,ocrFailureBooking,ocrToken);accepted=response.StatusCode==HttpStatusCode.Redirect;}
+                catch(Exception ex) {Console.WriteLine("OCR_FALLBACK_REPRO_EXCEPTION: "+ex.GetType().Name);}
+                Check(accepted,"PAY-OCR-01 valid proof persists when OCR service unexpectedly throws");
+                using(var retry=await Upload(ocrClient,ocrFailureBooking,ocrToken))
+                    Check(await db.Payments.AsNoTracking().CountAsync(p=>p.BookingId==ocrFailureBooking.Id)==1,
+                        "PAY-OCR-07 re-submitting an OCR-failed pending proof cannot create a duplicate payment");
+            }
+            var ocrFallbackPayment=await db.Payments.AsNoTracking().SingleOrDefaultAsync(p=>p.BookingId==ocrFailureBooking.Id);
+            Check(ocrFallbackPayment!=null&&ocrFallbackPayment.Status==PaymentStatus.Pending,
+                "PAY-OCR-02 OCR failure cannot verify, reject or discard accepted evidence");
+            Check(ocrFallbackPayment!=null&&await db.OcrVerifications.AsNoTracking().AnyAsync(o=>o.PaymentId==ocrFallbackPayment.Id&&
+                o.VerificationResult==OcrVerificationResults.OcrFailed&&o.ExtractedAmount==null),
+                "PAY-OCR-03 OCR failure stores honest inconclusive evidence without fabricating an amount");
+            Check(Directory.Exists(proofsRoot)&&Directory.EnumerateFiles(proofsRoot).Count()==proofsBefore+1,
+                "PAY-OCR-04 accepted proof bytes remain in private storage");
+            using(var fallbackOwnerReview=await owner.GetAsync("/Payments/Verify/"+ocrFallbackPayment!.Id))
+                Check(fallbackOwnerReview.StatusCode==HttpStatusCode.OK,
+                    "PAY-OCR-05 Owner can open an OCR-failed proof in the actual review endpoint");
+            using(var fallbackOwnerProof=await owner.GetAsync("/Payments/PaymentProof/"+ocrFallbackPayment!.Id))
+                Check(fallbackOwnerProof.StatusCode==HttpStatusCode.OK&&
+                    (await fallbackOwnerProof.Content.ReadAsByteArrayAsync()).SequenceEqual(png),
+                    "PAY-OCR-06 Owner can inspect the exact original receipt bytes despite OCR failure");
+            // An injected post-save audit failure must roll SQL back and delete only the new private file.
+            var auditFailBooking=await AddBooking(78,BookingStatus.AwaitingDownpayment);
+            var fileCountBeforeAudit=Directory.Exists(proofsRoot)?Directory.EnumerateFiles(proofsRoot).Count():0;
+            await using(var brokenAudit=new ReleaseFactory(connection,smtp.Port,mapUrl,root,
+                failAuditType:SystemActivityType.PaymentProofSubmitted)){
+                using var auditClient=await Login(brokenAudit,"client");
+                var auditToken=await Token(auditClient,"/Communications");
+                var auditFailed=false;
+                try {
+                    using var response=await Upload(auditClient,auditFailBooking,auditToken);
+                    auditFailed=(int)response.StatusCode>=400;
+                } catch(Exception) { auditFailed=true; }
+                Check(auditFailed,"PAY-DB-01 injected payment-audit failure interrupts the transaction");
+            }
+            Check(!await db.Payments.AsNoTracking().AnyAsync(p=>p.BookingId==auditFailBooking.Id)
+                && await db.Bookings.AsNoTracking().AnyAsync(b=>b.Id==auditFailBooking.Id&&b.Status==BookingStatus.AwaitingDownpayment),
+                "PAY-DB-02 failed payment submission rolls back SQL and booking state");
+            Check(Directory.EnumerateFiles(proofsRoot).Count()==fileCountBeforeAudit,
+                "PAY-DB-03 uncommitted payment proof is cleaned from private storage");
+            // A configured storage root that is a file must fail safely with actionable feedback.
+            var unavailableRoot=Path.Combine(root,"storage-root-is-a-file");
+            await File.WriteAllTextAsync(unavailableRoot,"synthetic write-failure fixture");
+            var storageFailBooking=await AddBooking(77,BookingStatus.AwaitingDownpayment);
+            await using(var brokenStorage=new ReleaseFactory(connection,smtp.Port,mapUrl,unavailableRoot)){
+                using var storageClient=await Login(brokenStorage,"client");
+                var storageToken=await Token(storageClient,"/Communications");
+                using var response=await Upload(storageClient,storageFailBooking,storageToken);
+                var html=await response.Content.ReadAsStringAsync();
+                Check(response.StatusCode==HttpStatusCode.OK&&html.Contains("could not be securely saved"),
+                    "PAY-STORAGE-01 inaccessible private storage produces a safe Client message");
+            }
+            Check(!await db.Payments.AsNoTracking().AnyAsync(p=>p.BookingId==storageFailBooking.Id),
+                "PAY-STORAGE-02 failed private storage write creates no payment record");
             var installment=await AddBooking(80,BookingStatus.AwaitingDownpayment);
             using(var r=await Upload(client,installment,token))Check(r.StatusCode==HttpStatusCode.Redirect,"PAY-03 submitted proof remains pending");
             var first=await db.Payments.AsNoTracking().SingleAsync(p=>p.BookingId==installment.Id);
@@ -84,6 +148,30 @@ static class IndependentFindingsReview
             using(var r=await Upload(client,badUpload,token,bytes:new byte[5*1024*1024+1]))Check(!await db.Payments.AnyAsync(p=>p.BookingId==badUpload.Id),"PAY-02 server rejects oversized images");
             using(var r=await Upload(client,badUpload,token,filename:"proof.pdf"))Check(!await db.Payments.AnyAsync(p=>p.BookingId==badUpload.Id),"PAY-02 server rejects unsupported extensions");
             using(var r=await Upload(client,badUpload,token,bytes:png[..24]))Check(!await db.Payments.AnyAsync(p=>p.BookingId==badUpload.Id),"PAY-01 signature-only truncated image is rejected");
+            // Real JPEG/WEBP image encodings exercise multipart validation and OCR inconclusive handling.
+            await using(var formatHost=new ReleaseFactory(connection,smtp.Port,mapUrl,root)){
+                using var formatClient=await Login(formatHost,"client");
+                var formatToken=await Token(formatClient,"/Communications");
+                foreach(var format in new[]{
+                    (Offset:75,Extension:"jpg",Mime:"image/jpeg",Encoding:SkiaSharp.SKEncodedImageFormat.Jpeg),
+                    (Offset:76,Extension:"webp",Mime:"image/webp",Encoding:SkiaSharp.SKEncodedImageFormat.Webp)})
+                {
+                    var formatBooking=await AddBooking(format.Offset,BookingStatus.AwaitingDownpayment);
+                    using var bitmap=new SkiaSharp.SKBitmap(96,64);
+                    bitmap.Erase(SkiaSharp.SKColors.LightGray);
+                    using var encoded=bitmap.Encode(format.Encoding,90);
+                    if(encoded==null)throw new InvalidOperationException("Synthetic image encoder unsupported: "+format.Extension);
+                    var original=encoded.ToArray();
+                    using var response=await Upload(formatClient,formatBooking,formatToken,
+                        bytes:original,filename:"synthetic-receipt."+format.Extension,mime:format.Mime);
+                    var proof=await db.Payments.AsNoTracking().SingleOrDefaultAsync(p=>p.BookingId==formatBooking.Id);
+                    Check(response.StatusCode==HttpStatusCode.Redirect&&proof?.Status==PaymentStatus.Pending,
+                        "PAY-FORMAT-"+format.Extension+" valid supported image uploads for manual review");
+                    Check(proof!=null&&File.Exists(Path.Combine(root,"financial-proofs",
+                        proof.ProofImagePath.Replace('/',Path.DirectorySeparatorChar))),
+                        "PAY-FORMAT-"+format.Extension+" original image stored privately");
+                }
+            }
             using(var image=new SkiaSharp.SKBitmap(32,32)){
                 image.Erase(SkiaSharp.SKColors.Navy);using var data=image.Encode(SkiaSharp.SKEncodedImageFormat.Png,100);
                 using var r=await Upload(client,badUpload,token,bytes:data.ToArray());
@@ -110,7 +198,7 @@ static class IndependentFindingsReview
             var previous=await AddBooking(90,BookingStatus.Confirmed,"other",8);previous.PartyVenue="PRIVATE_OTHER_CLIENT_VENUE_SENTINEL";previous.VenueLatitude=14.5;previous.VenueLongitude=121.1;await db.SaveChangesAsync();
             using(var r=await Post(client,"/Bookings/CheckVenueServiceability",token,("partyVenue","Synthetic findings venue, Philippines"),("venueSelectionMethod","Search"),("venueLatitude","14.58125"),("venueLongitude","121.1258"),("eventDate",previous.EventDate.ToString("yyyy-MM-dd")),("startTime","16:00"))){var text=await r.Content.ReadAsStringAsync();Check(r.IsSuccessStatusCode&&!text.Contains(previous.PartyVenue)&&!text.Contains("\"originLatitude\":14.5")&&!text.Contains("\"originLongitude\":121.1"),"SEC-02 venue response does not disclose another Client's previous event location");using var data=JsonDocument.Parse(text);Check(data.RootElement.GetProperty("usesPreviousEventLocation").GetBoolean()&&data.RootElement.GetProperty("distanceKm").GetDouble()>0,"VEN-03 previous-event routing and computed distance remain active");}
 
-            (string,string)[] bookingFields=[("EventType","Company Events"),("Motif","Navy"),("PartyTheme","Synthetic"),("EventDate",DateTime.Today.AddDays(100).ToString("yyyy-MM-dd")),("StartTime","10:00"),("PartyVenue","Synthetic venue"),("PaxCount","20"),("ContactPerson","Synthetic fresh Client"),("ContactNumber","09123456789"),("ServiceId",package.Id.ToString()),("AcceptTerms","true"),("AcceptedTermsVersion","2026-11-03-v2"),("CustomerConfirmedLocation","true"),("VenueSelectionMethod","Search"),("VenueLatitude","14.58125"),("VenueLongitude","121.1258")];
+            (string,string)[] bookingFields=[("EventType","Company Events"),("Motif","Navy"),("PartyTheme","Synthetic"),("EventDate",DateTime.Today.AddDays(100).ToString("yyyy-MM-dd")),("StartTime","10:00"),("PartyVenue","Synthetic venue"),("PaxCount","20"),("ContactPerson","Synthetic fresh Client"),("ContactNumber","09123456789"),("ServiceId",package.Id.ToString()),("AcceptTerms","true"),("AcceptedTermsVersion","2026-11-08-v3"),("CustomerConfirmedLocation","true"),("VenueSelectionMethod","Search"),("VenueLatitude","14.58125"),("VenueLongitude","121.1258")];
             await using(var broken=new ReleaseFactory(connection,smtp.Port,mapUrl,root,saveFault:new FailBookingNotificationSave())){
                 using var fresh=await Login(broken,"fresh");var freshToken=await Token(fresh,"/Communications");var count=await db.Bookings.CountAsync();var clients=await db.LegacyUsers.CountAsync();
                 using(var r=await Post(fresh,"/Bookings/SubmitBooking",freshToken,bookingFields))Check((int)r.StatusCode>=400,"DB-02 injected server notification-save failure is observed");
@@ -241,4 +329,10 @@ sealed class FindingsEmailFailure : IEmailService
     public Exception? Failure {get;set;}=new TimeoutException("PRIVATE_SMTP_SENTINEL");
     public Task SendEmailAsync(string to,string subject,string html){Calls++;if(Failure!=null)throw Failure;return Task.CompletedTask;}
     public Task SendEmailWithAttachmentAsync(string to,string subject,string html,byte[] attachment,string attachmentName){Calls++;if(Failure!=null)throw Failure;return Task.CompletedTask;}
+}
+
+sealed class ThrowingOcrBoundary : IOcrVerificationService
+{
+    public Task<OcrVerification> AnalyzeAsync(OcrAnalysisRequest request, CancellationToken cancellationToken=default)
+        => throw new InvalidOperationException("Synthetic OCR integration interruption");
 }

@@ -20,8 +20,8 @@ namespace AriesMagicAppointmentSystem.Controllers
             _activityService = activityService;
         }
 
-        // STAFF + ADMIN: view active packages
-        [Authorize(Roles = "Staff,Admin,Owner")]
+        // STAFF + OWNER: view active packages
+        [Authorize(Roles = "Staff,Owner")]
         public async Task<IActionResult> Index()
         {
             var packages = await _context.Services
@@ -33,8 +33,8 @@ namespace AriesMagicAppointmentSystem.Controllers
             return View(packages);
         }
 
-        // STAFF + ADMIN: view package details
-        [Authorize(Roles = "Staff,Admin,Owner")]
+        // STAFF + OWNER: view package details
+        [Authorize(Roles = "Staff,Owner")]
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null) return NotFound();
@@ -48,8 +48,8 @@ namespace AriesMagicAppointmentSystem.Controllers
             return View(package);
         }
 
-        // STAFF + ADMIN: view archived packages
-        [Authorize(Roles = "Admin,Owner")]
+        // STAFF + OWNER: view archived packages
+        [Authorize(Roles = "Owner")]
         public async Task<IActionResult> Archived()
         {
             var archivedPackages = await _context.Services
@@ -59,8 +59,8 @@ namespace AriesMagicAppointmentSystem.Controllers
 
             return View(archivedPackages);
         }
-        // ADMIN: show create package form
-        [Authorize(Roles = "Admin,Owner")]
+        // OWNER: show create package form
+        [Authorize(Roles = "Owner")]
         [HttpGet]
         public IActionResult Create()
         {
@@ -78,10 +78,11 @@ namespace AriesMagicAppointmentSystem.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "Admin,Owner")]
+        [Authorize(Roles = "Owner")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(ServiceManageViewModel model)
         {
+            await using var transaction = await _context.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
             if (model.Inclusions.Count == 0)
                 ModelState.AddModelError("Inclusions", "Add at least one inclusion.");
 
@@ -123,10 +124,11 @@ namespace AriesMagicAppointmentSystem.Controllers
                 new { service.Name, service.Price, service.DurationInHours }
             );
 
+            await transaction.CommitAsync();
             return RedirectToAction(nameof(Index));
         }
-        // ADMIN + OWNER: edit package
-        [Authorize(Roles = "Admin,Owner")]
+        // OWNER: edit package
+        [Authorize(Roles = "Owner")]
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null) return NotFound();
@@ -163,10 +165,11 @@ namespace AriesMagicAppointmentSystem.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "Admin,Owner")]
+        [Authorize(Roles = "Owner")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, ServiceManageViewModel model)
         {
+            await using var transaction = await _context.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
             if (id != model.Id) return NotFound();
             var existing = await _context.Services.AsNoTracking().FirstOrDefaultAsync(s => s.Id == id);
             if (existing == null) return NotFound();
@@ -220,10 +223,11 @@ namespace AriesMagicAppointmentSystem.Controllers
                 new { oldName, oldPrice, newName = service.Name, newPrice = service.Price }
             );
 
+            await transaction.CommitAsync();
             return RedirectToAction(nameof(Index));
         }
 
-        [Authorize(Roles = "Admin,Owner")]
+        [Authorize(Roles = "Owner")]
         public async Task<IActionResult> Archive(int? id)
         {
             if (id == null) return NotFound();
@@ -237,10 +241,11 @@ namespace AriesMagicAppointmentSystem.Controllers
         }
 
         [HttpPost, ActionName("Archive")]
-        [Authorize(Roles = "Admin,Owner")]
+        [Authorize(Roles = "Owner")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ArchiveConfirmed(int id)
         {
+            await using var transaction = await _context.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
             var package = await _context.Services.FindAsync(id);
             if (package == null) return NotFound();
 
@@ -248,7 +253,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             package.IsArchived = true;
             await _context.SaveChangesAsync();
 
-            if (User.IsInRole("Admin"))
+            if (User.IsInRole("Owner"))
             {
                 await _activityService.LogAsync(
                     SystemActivityType.ServiceArchived,
@@ -260,11 +265,12 @@ namespace AriesMagicAppointmentSystem.Controllers
                 );
             }
 
+            await transaction.CommitAsync();
             return RedirectToAction(nameof(Index));
         }
 
-        // ADMIN: restore package
-        [Authorize(Roles = "Admin,Owner")]
+        // OWNER: restore package
+        [Authorize(Roles = "Owner")]
         public async Task<IActionResult> Restore(int? id)
         {
             if (id == null) return NotFound();
@@ -278,10 +284,11 @@ namespace AriesMagicAppointmentSystem.Controllers
         }
 
         [HttpPost, ActionName("Restore")]
-        [Authorize(Roles = "Admin,Owner")]
+        [Authorize(Roles = "Owner")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RestoreConfirmed(int id)
         {
+            await using var transaction = await _context.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
             var package = await _context.Services.FindAsync(id);
             if (package == null) return NotFound();
 
@@ -289,7 +296,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             package.IsArchived = false;
             await _context.SaveChangesAsync();
 
-            if (User.IsInRole("Admin"))
+            if (User.IsInRole("Owner"))
             {
                 await _activityService.LogAsync(
                     SystemActivityType.ServiceRestored,
@@ -301,6 +308,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                 );
             }
 
+            await transaction.CommitAsync();
             return RedirectToAction(nameof(Archived));
         }
 

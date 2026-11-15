@@ -43,7 +43,7 @@ static class InternalWorkspaceFixture
             var roles = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
             var accounts = new Dictionary<string,ApplicationUser>();
             var password = Convert.ToHexString(RandomNumberGenerator.GetBytes(24));
-            foreach(var role in new[]{"Staff","Admin","Owner","Client"})
+            foreach(var role in new[]{"Staff","Owner","Client"})
             {
                 if(!(await roles.RoleExistsAsync(role)) && !(await roles.CreateAsync(new IdentityRole(role))).Succeeded) throw new Exception("Fixture role creation failed.");
                 var account = new ApplicationUser {UserName=role.ToLowerInvariant()+"@example.test",Email=role.ToLowerInvariant()+"@example.test",EmailConfirmed=true,FullName="Synthetic "+role,PhoneNumber="09123456789"};
@@ -54,7 +54,7 @@ static class InternalWorkspaceFixture
             var effective = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>().Database.GetDbConnection();
             if(effective.DataSource!=@"(localdb)\MSSQLLocalDB" || effective.Database!=name) throw new Exception("Fixture isolation failed.");
             var urls = new Dictionary<string,string>();
-            foreach(var (role,index) in new[]{"Staff","Admin","Owner","Client"}.Select((r,i)=>(r,i)))
+            foreach(var (role,index) in new[]{"Staff","Owner","Client"}.Select((r,i)=>(r,i)))
             {
                 var client = factory.CreateClient(new WebApplicationFactoryClientOptions {AllowAutoRedirect=false,HandleCookies=true}); clients.Add(client);
                 var login = await client.GetStringAsync("/Account/Login");
@@ -115,7 +115,7 @@ static class InternalWorkspaceFixture
         foreach(var p in await db.Payments.Where(p=>p.Status==PaymentStatus.Verified).OrderBy(p=>p.Id).Take(2).ToListAsync()) db.RefundRequests.Add(new(){BookingId=p.BookingId,OriginalPaymentId=p.Id,Amount=2000,ClientReason="Synthetic refund review request",GCashAccountName="Synthetic Client",GCashNumber="09123456789",PaymentProofImagePath="synthetic-workspace.png",Status=RefundStatus.Pending});
         db.Conversations.Add(new(){ConversationType=ConversationTypes.ClientSupport,Title="Synthetic event planning",CreatedByUserId=users["Client"].Id,Participants=[new(){UserId=users["Client"].Id},new(){UserId=users["Staff"].Id}],Messages=[new(){SenderId=users["Client"].Id,MessageContent="Can we review the event schedule? Synthetic message for local testing."}]});
         db.Conversations.Add(new(){ConversationType=ConversationTypes.ClientSupport,Title="Synthetic venue details",CreatedByUserId=users["Client"].Id,Participants=[new(){UserId=users["Client"].Id},new(){UserId=users["Staff"].Id}],Messages=[new(){SenderId=users["Client"].Id,MessageContent="Please confirm the synthetic venue details."},new(){SenderId=users["Client"].Id,MessageContent="This is a second unread test message."}]});
-        foreach(var role in new[]{"Staff","Admin","Owner"})
+        foreach(var role in new[]{"Staff","Owner"})
         {
             db.Notifications.Add(new(){UserId=users[role].Id,Title="Synthetic workspace update",Message="An isolated test item is ready for review.",Link="/Dashboard/"+role});
             db.SystemActivities.Add(new(){Type=role=="Staff"?SystemActivityType.BookingApproved:role=="Owner"?SystemActivityType.PaymentVerified:SystemActivityType.ServiceUpdated,Description="Synthetic local fixture activity",PerformedByUserId=users[role].Id,PerformedByUserName="Synthetic "+role});

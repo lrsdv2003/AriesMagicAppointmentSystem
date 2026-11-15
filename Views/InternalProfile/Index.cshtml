@@ -43,7 +43,7 @@
 <button class="btn btn-outline-secondary" type="submit" data-saving="Removing...">Remove Photo</button>
 </form>
 }
-@if (User.IsInRole("Staff") && !User.IsInRole("Owner") && !User.IsInRole("Admin")) {
+@if (User.IsInRole("Staff") && !User.IsInRole("Owner")) {
 <div class="staff-profile-sidebar-meta" aria-label="Account dates">
 <div><span>Member since</span><strong>@Model.CreatedAt.ToString("MMM d, yyyy")</strong></div>
 <div><span>Last sign-in (UTC)</span><strong>@(Model.LastLoginAt?.ToString("MMM d, yyyy · h:mm tt") ?? "Not recorded")</strong></div>

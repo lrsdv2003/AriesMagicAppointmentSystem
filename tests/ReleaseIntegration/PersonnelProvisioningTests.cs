@@ -18,7 +18,7 @@ static class PersonnelProvisioningTests
         async Task Denied(Func<Task> action,string message){try{await action();Check(false,message);}catch(Exception e)when(e is UnauthorizedAccessException or InvalidOperationException){Check(true,message);}}
         var instance=Environment.GetEnvironmentVariable("ARIES_TEST_LOCALDB_INSTANCE")??"MSSQLLocalDB";
         if(!Regex.IsMatch(instance,"^[A-Za-z][A-Za-z0-9_-]{0,63}$"))throw new Exception("Invalid local test instance.");
-        var name="AriesPersonnel_"+Guid.NewGuid().ToString("N");var connection=$"Server=(localdb)\\{instance};Database={name};Integrated Security=True;TrustServerCertificate=True";
+        var name="AriesPersonnel_"+Guid.NewGuid().ToString("N");var connection=Environment.GetEnvironmentVariable("ARIES_TEST_USE_DEFAULT_SQL")=="true"?$"Server=.;Database={name};Integrated Security=True;TrustServerCertificate=True":$"Server=(localdb)\\{instance};Database={name};Integrated Security=True;TrustServerCertificate=True";
         var dbOptions=new DbContextOptionsBuilder<ApplicationDbContext>().UseSqlServer(connection).Options;
         await using var schema=new ApplicationDbContext(dbOptions);var root=Path.Combine(Path.GetTempPath(),name);
         await using var smtp=new SmtpFixture();smtp.Start();
@@ -30,7 +30,7 @@ static class PersonnelProvisioningTests
             Check(new PersonnelOptions().PublicOrigin=="https://ariesmagicartist-001-site1.htempurl.com","Known production HTTPS enrollment origin is the safe default when pool config is absent");
             var options=services.GetRequiredService<IOptions<PersonnelOptions>>().Value;options.PublicOrigin="https://personnel.example.test";
             await IdentitySeeder.SeedAsync(services);await IdentitySeeder.SeedAsync(services);
-            Check(await db.Roles.CountAsync()==4&&!await db.Users.AnyAsync(),"Idempotent role-only initialization creates no privileged users");
+            Check(await db.Roles.CountAsync()==3&&!await db.Users.AnyAsync(),"Idempotent role-only initialization creates no privileged users");
             async Task<EnrollmentDelivery?> AttemptBootstrap(){using var s=factory.Services.CreateScope();try{return await s.ServiceProvider.GetRequiredService<PersonnelProvisioning>().InviteAsync(null,"owner@example.test","Test Owner","Owner",true);}catch(InvalidOperationException){return null;}}
             var attempts=await Task.WhenAll(AttemptBootstrap(),AttemptBootstrap());Check(attempts.Count(x=>x!=null)==1,"Concurrent initial bootstrap permits exactly one pending Owner");
             var first=attempts.Single(x=>x!=null)!;var owner=await users.FindByIdAsync(first.UserId)??throw new Exception();
@@ -49,22 +49,21 @@ static class PersonnelProvisioningTests
             Check(owner.EmailConfirmed&&owner.IsActive&&await users.IsInRoleAsync(owner,"Owner"),"Verified active Owner assigned using Identity");
             Check(!(await service.EnrollAsync(first.UserId,first.Secret,password)).Succeeded,"Enrollment token cannot be reused");
             await Denied(()=>service.InviteAsync(owner,"bad@example.test","Bad","Owner"),"Owner web invitation cannot create another Owner");
-            var adminLink=await service.InviteAsync(owner,"admin@example.test","Test Admin","Admin");
-            Check((await service.EnrollAsync(adminLink.UserId,adminLink.Secret,password)).Succeeded,"Owner Admin invitation activates");
-            var admin=await users.FindByIdAsync(adminLink.UserId)??throw new Exception();
-            await Denied(()=>service.InviteAsync(admin,"staff-denied@example.test","Denied","Staff"),"Admin delegation denied by default");
-            options.AdminMayManageStaff=true;
-            var staffLink=await service.InviteAsync(admin,"staff@example.test","Test Staff","Staff");
+            await Denied(()=>service.InviteAsync(owner,"new-admin@example.test","Forbidden Admin","Admin"),"Owner cannot issue obsolete Admin invitation");
+            var roleManager=services.GetRequiredService<RoleManager<IdentityRole>>();await roleManager.CreateAsync(new IdentityRole("Admin"));
+            var admin=new ApplicationUser{UserName="legacy-admin@example.test",Email="legacy-admin@example.test",FullName="Legacy fixture",EmailConfirmed=true};await users.CreateAsync(admin,password);await users.AddToRoleAsync(admin,"Admin");
+            await Denied(()=>service.InviteAsync(admin,"staff-denied@example.test","Denied","Staff"),"Legacy Admin cannot delegate Staff invitations");
+            var staffLink=await service.InviteAsync(owner,"staff@example.test","Test Staff","Staff");
             using(var adminBrowser=factory.CreateClient(new(){AllowAutoRedirect=false,HandleCookies=true})) {
                 var loginPage=await adminBrowser.GetStringAsync("/Account/Login");var csrf=WebUtility.HtmlDecode(Regex.Match(loginPage,"name=\"__RequestVerificationToken\"[^>]*value=\"([^\"]+)\"").Groups[1].Value);
                 using var loginResult=await adminBrowser.PostAsync("/Account/Login",new FormUrlEncodedContent(new Dictionary<string,string>{{"__RequestVerificationToken",csrf},{"Email",admin.Email!},{"Password",password}}));
-                var adminPage=await adminBrowser.GetStringAsync("/Personnel");await File.WriteAllTextAsync(".tmp-owner-build/personnel-admin.synthetic.html",adminPage);
-                Check(!adminPage.Contains("value=\"Admin\"")&&!adminPage.Contains("owner@example.test"),"Authorized Admin personnel UI exposes only Staff invitations and records");
+                Check(loginResult.StatusCode==HttpStatusCode.OK&&!(loginResult.Headers.TryGetValues("Set-Cookie",out var cookies)&&cookies.Any(x=>x.StartsWith(".AspNetCore.Identity.Application="))),"Legacy-only credentials do not sign in");
+                using var unavailable=await adminBrowser.GetAsync("/Personnel");Check(unavailable.StatusCode==HttpStatusCode.Redirect,"Legacy Admin cannot open consolidated personnel management");
             }
             var expiredUser=await users.FindByIdAsync(staffLink.UserId)??throw new Exception();var pending=(await service.PendingAsync(expiredUser))!;
             await users.SetAuthenticationTokenAsync(expiredUser,PersonnelProvisioning.Provider,PersonnelProvisioning.TokenName,JsonSerializer.Serialize(pending with {ExpiresUtc=DateTime.UtcNow.AddSeconds(-1)}));
             Check(!(await service.EnrollAsync(staffLink.UserId,staffLink.Secret,password)).Succeeded,"Expired invitation rejected");
-            var rotated=await service.ReissueAsync(admin,staffLink.UserId);
+            var rotated=await service.ReissueAsync(owner,staffLink.UserId);
             Check(!(await service.EnrollAsync(staffLink.UserId,staffLink.Secret,password)).Succeeded,"Resend invalidates previous invitation token");
             async Task<bool> Redeem(){using var s=factory.Services.CreateScope();return (await s.ServiceProvider.GetRequiredService<PersonnelProvisioning>().EnrollAsync(rotated.UserId,rotated.Secret,password)).Succeeded;}
             var redeemed=await Task.WhenAll(Redeem(),Redeem());Check(redeemed.Count(x=>x)==1,"Concurrent single-use redemption activates once");
@@ -77,8 +76,9 @@ static class PersonnelProvisioningTests
             Check(!staff.IsActive&&await users.GetSecurityStampAsync(staff)!=stamp,"Deactivation rotates session stamp and disables account");
             await service.ManageAsync(owner,staff.Id,"Reactivate");Check(staff.IsActive,"Verified enrolled personnel may reactivate");
             stamp=await users.GetSecurityStampAsync(staff);await service.ManageAsync(owner,staff.Id,"RevokeSessions");Check(await users.GetSecurityStampAsync(staff)!=stamp,"Explicit session revocation rotates stamp");
-            await service.ManageAsync(owner,staff.Id,"Role","Admin");Check(await users.IsInRoleAsync(staff,"Admin")&&!await users.IsInRoleAsync(staff,"Staff"),"Owner may change enrolled Staff to Admin atomically");
-            await service.ManageAsync(owner,staff.Id,"Role","Staff");Check(await users.IsInRoleAsync(staff,"Staff")&&!await users.IsInRoleAsync(staff,"Admin"),"Owner may return Admin to Staff");
+            await Denied(()=>service.ManageAsync(owner,staff.Id,"Role","Admin"),"Direct role API cannot grant obsolete Admin role");
+            await Denied(()=>service.ManageAsync(owner,staff.Id,"Role","Staff"),"Direct role API cannot rewrite fixed Staff role");
+            Check(await users.IsInRoleAsync(staff,"Staff")&&!await users.IsInRoleAsync(staff,"Admin"),"Denied role changes preserve Staff membership");
             var reset=await users.GeneratePasswordResetTokenAsync(staff);Check((await users.ResetPasswordAsync(staff,reset,password+"R")).Succeeded,"Identity password reset works after enrollment");
             var revoked=await service.InviteAsync(owner,"revoke@example.test","Revoked","Staff");await service.ManageAsync(owner,revoked.UserId,"Revoke");Check(!(await service.EnrollAsync(revoked.UserId,revoked.Secret,password)).Succeeded,"Revoked invitation cannot enroll");
             try {await service.ManageAsync(owner,revoked.UserId,"RevokeSessions");throw new Exception("Revoked target incorrectly manageable");}
@@ -111,7 +111,7 @@ static class PersonnelProvisioningTests
             Check(await users.FindByEmailAsync("owner-forged@example.test")==null,"Forged Owner invitation persisted no account");
             using(var invited=await Post(client,"/Personnel/Invite",Token(personnel),("Email","http-staff@example.test"),("FullName","HTTP Staff"),("Role","Staff")))Check(invited.StatusCode==HttpStatusCode.Redirect,"Owner invitation uses configured email delivery");
             var message=smtp.Messages.Last(x=>x.To.Mailboxes.Any(m=>m.Address=="http-staff@example.test"));
-            var href=WebUtility.HtmlDecode(Regex.Match(message.HtmlBody,"href=\"([^\"]+)\"").Groups[1].Value);var fragment=new Uri(href).Fragment.TrimStart('#').Split(':');
+            var href=WebUtility.HtmlDecode(Regex.Match(message.HtmlBody??"","href=\"([^\"]+)\"").Groups[1].Value);var fragment=new Uri(href).Fragment.TrimStart('#').Split(':');
             Check(fragment.Length==2&&href.StartsWith("https://personnel.example.test/"),"Enrollment uses trusted origin and fragment-only secret");
             using var enrolling=factory.CreateClient(new(){AllowAutoRedirect=false,HandleCookies=true});var enrollmentHtml=await enrolling.GetStringAsync("/PersonnelEnrollment/Accept");
             using(var accepted=await Post(enrolling,"/PersonnelEnrollment/Accept",Token(enrollmentHtml),("UserId",fragment[0]),("Token",fragment[1]),("Password",password),("ConfirmPassword",password),("Role","Owner")))Check(accepted.StatusCode==HttpStatusCode.Redirect,"HTTP email-link enrollment accepts valid password");
@@ -124,7 +124,7 @@ static class PersonnelProvisioningTests
             using(var oldCookie=await enrolling.GetAsync("/Dashboard/Staff"))Check(oldCookie.StatusCode==HttpStatusCode.Redirect,"Deactivation immediately rejects existing Staff cookie");
             await service.ManageAsync(owner,httpStaff.Id,"Reactivate");
             using(var reused=await Post(enrolling,"/PersonnelEnrollment/Accept",Token(enrollmentHtml),("UserId",fragment[0]),("Token",fragment[1]),("Password",password),("ConfirmPassword",password)))Check(reused.StatusCode==HttpStatusCode.OK&&!(await reused.Content.ReadAsStringAsync()).Contains(fragment[1]),"Used enrollment rejected without echoing secret");
-            using(var removed=await Post(client,"/UserManagement/CreateStaff",Token(personnel),("Email","legacy-bypass@example.test"),("Password",password)))Check(removed.StatusCode==HttpStatusCode.Redirect||removed.StatusCode==HttpStatusCode.Forbidden,"Legacy direct-password onboarding cannot create users");
+            using(var removed=await Post(client,"/UserManagement/CreateStaff",Token(personnel),("Email","legacy-bypass@example.test"),("Password",password)))Check(removed.StatusCode==HttpStatusCode.NotFound,"Legacy direct-password onboarding cannot create users");
             Check(await users.FindByEmailAsync("legacy-bypass@example.test")==null,"Legacy direct-password request created no account");
             await using(var broken=new ReleaseFactory(connection,smtp.Port,new Uri("http://127.0.0.1:1"),root,failAuditType:SystemActivityType.UserCreated)) {
                 using var bs=broken.Services.CreateScope();var bu=bs.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();var actor=await bu.FindByIdAsync(owner.Id)??throw new Exception();
@@ -148,11 +148,14 @@ static class PersonnelProvisioningTests
                 Check(inactive!=null&&!inactive.IsActive&&!inactive.EmailConfirmed&&!await users.HasPasswordAsync(inactive)&&(await users.GetRolesAsync(inactive)).Count==0,"SMTP failure leaves invitation inactive, roleless and unverified");
                 Check(outcome.Contains("operator must rotate")&&!outcome.Contains("/PersonnelEnrollment/Accept#"),"SMTP outage provides private-operator guidance without disclosing link");
             }
-            var awaiting=await service.InviteAsync(admin,"issuer-disabled@example.test","Issuer check","Staff");await service.ManageAsync(owner,admin.Id,"Deactivate");
-            Check(!(await service.EnrollAsync(awaiting.UserId,awaiting.Secret,password)).Succeeded,"Disabled invitation issuer cannot activate new personnel");
-            await service.ManageAsync(owner,admin.Id,"Reactivate");
+            var awaiting=await service.InviteAsync(owner,"issuer-disabled@example.test","Issuer check","Staff");owner.IsActive=false;await users.UpdateAsync(owner);
+            Check(!(await service.EnrollAsync(awaiting.UserId,awaiting.Secret,password)).Succeeded,"Independently disabled invitation issuer cannot activate personnel");
+            owner.IsActive=true;await users.UpdateAsync(owner);
             var pendingDisabled=await service.InviteAsync(owner,"pending-disabled@example.test","Pending disabled","Staff");await service.ManageAsync(owner,pendingDisabled.UserId,"Deactivate");
             Check(!(await service.EnrollAsync(pendingDisabled.UserId,pendingDisabled.Secret,password)).Succeeded,"Deactivating pending personnel revokes their invitation");
+            await using(var migrationFactory=new ReleaseFactory(connection,smtp.Port,new Uri("http://127.0.0.1:1"),root))
+                await ThreeRoleRetirementTests.RunAsync(migrationFactory,services,owner,admin,password,Check);
+            owner=await users.FindByIdAsync(owner.Id)??throw new Exception("Owner identity unavailable after isolated retirement test.");
             var recovered=await services.GetRequiredService<AccountCredentialRecovery>().InvalidateAsync(owner,true);
             Check(recovered.Succeeded&&!await users.HasPasswordAsync(owner)&&await users.IsInRoleAsync(owner,"Owner"),"Operator recovery invalidates credentials without promoting or replacing Owner");
             var recovery=await users.GeneratePasswordResetTokenAsync(owner);Check((await users.ResetPasswordAsync(owner,recovery,password+"Recovered")).Succeeded,"Existing Owner can recover through Identity password reset");

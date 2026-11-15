@@ -5,18 +5,20 @@ namespace AriesMagicAppointmentSystem.ViewModels
     public class TrashHistoryFilterViewModel
     {
         public string? Search { get; set; }
+        public string? SortBy { get; set; } = "newest";
         public TrashReason? Reason { get; set; }
         public string PaymentStatus { get; set; } = "All";
         public string? AssignedStaffId { get; set; }
         public DateTime? DateFrom { get; set; }
         public DateTime? DateTo { get; set; }
         public int Page { get; set; } = 1;
-        public int PageSize { get; set; } = 20;
+        public int PageSize { get; set; } = 5;
     }
 
     public class TrashHistoryRowViewModel
     {
         public int Id { get; set; }
+        public string BookingStatus { get; set; } = string.Empty;
         public string BookingCode { get; set; } = string.Empty;
         public string ClientName { get; set; } = string.Empty;
         public string ClientPhone { get; set; } = string.Empty;
@@ -53,6 +55,8 @@ namespace AriesMagicAppointmentSystem.ViewModels
     public class TrashHistoryDetailViewModel
     {
         public int Id { get; set; }
+        public string BookingStatus { get; set; } = string.Empty;
+        public bool ReasonRecorded { get; set; }
         public string BookingCode { get; set; } = string.Empty;
         public string ClientName { get; set; } = string.Empty;
         public string ClientEmail { get; set; } = string.Empty;

@@ -17,6 +17,8 @@ static class ClientRegression
     public static async Task RunAsync(ApplicationDbContext db, Action<bool,string> check)
     {
         var services = new ServiceCollection().AddLogging().AddAuthorization().AddSingleton(db);
+        services.AddSingleton<IBookingExpirationService, NoOpBookingExpiration>();
+        services.AddControllersWithViews();
         services.AddIdentityCore<ApplicationUser>().AddRoles<IdentityRole>().AddEntityFrameworkStores<ApplicationDbContext>();
         await using var provider = services.BuildServiceProvider();
         var users = provider.GetRequiredService<UserManager<ApplicationUser>>();
@@ -30,13 +32,13 @@ static class ClientRegression
         var mine=new Booking {Client=client,Service=shortPackage,ApplicationUserId="client-ui-mine",PackageName=shortPackage.Name,Status=BookingStatus.AwaitingDownpayment,EventDate=date,StartTime=date.AddHours(9),EndTime=date.AddHours(10),FinalPrice=6000};
         var other=new Booking {Client=client,Service=shortPackage,ApplicationUserId="client-ui-other",PackageName=shortPackage.Name,Status=BookingStatus.Confirmed,EventDate=date,StartTime=date.AddHours(12),EndTime=date.AddHours(13),FinalPrice=6000};
         db.Services.AddRange(shortPackage,longPackage,archived);db.Bookings.AddRange(mine,other);await db.SaveChangesAsync();
-        var http=new DefaultHttpContext {User=new ClaimsPrincipal(new ClaimsIdentity(new[]{new Claim(ClaimTypes.NameIdentifier,"client-ui-mine"),new Claim(ClaimTypes.Role,"Client")},"Fixture"))};
-        var controller=new BookingsController(db,users,history,null!,null!,finance,null!) {ControllerContext=new ControllerContext{HttpContext=http},TempData=new TempDataDictionary(http,new EmptyTempData())};
+        var http=new DefaultHttpContext {RequestServices=provider,User=new ClaimsPrincipal(new ClaimsIdentity(new[]{new Claim(ClaimTypes.NameIdentifier,"client-ui-mine"),new Claim(ClaimTypes.Role,"Client")},"Fixture"))};
+        var controller=new BookingsController(db,users,history,null!,null!,finance,null!) {ControllerContext=new ControllerContext{HttpContext=http,RouteData=new Microsoft.AspNetCore.Routing.RouteData(),ActionDescriptor=new Microsoft.AspNetCore.Mvc.Controllers.ControllerActionDescriptor()},TempData=new TempDataDictionary(http,new EmptyTempData())};
         check(await controller.Details(other.Id) is NotFoundResult,"Client cannot open another client's booking details");
         check(await controller.Details(mine.Id) is ViewResult {ViewName:"ClientDetails"},"Client opens their own dedicated booking details");
         var listing=(ViewResult)await controller.MyBookings();
         check(((IEnumerable<Booking>)listing.Model!).All(b=>b.ApplicationUserId=="client-ui-mine"),"Client list excludes other accounts");
-        check(await controller.Dashboard() is ViewResult {ViewName:"ClientDashboard"},"Client dashboard uses the scoped booking list");
+        check(controller.Dashboard() is RedirectToActionResult {ActionName:"MyBookings"},"Client dashboard redirects to scoped booking list");
         var home=new HomeController(db);
         var catalog=(ViewResult)await home.Packages();
         check(!((IEnumerable<Service>)catalog.Model!).Any(s=>s.IsArchived),"Public catalog excludes archived packages");
@@ -51,7 +53,7 @@ static class ClientRegression
         check(!Json(await controller.CheckScheduleAvailability(date.AddDays(1),new TimeSpan(10,0,0),shortPackage.Id)).GetProperty("available").GetBoolean(),"Blocked dates reject availability requests");
         var errors=new List<ValidationResult>();
         var invalidBooking = new BookingStepTwoViewModel();
-        check(!Validator.TryValidateObject(invalidBooking,new ValidationContext(invalidBooking),errors,true)&&errors.Count>=6,"Single-page booking still requires event, venue, contact, and guest data");
+        check(!Validator.TryValidateObject(invalidBooking,new ValidationContext(invalidBooking),errors,true)&&new[]{"EventType","PartyVenue","ContactPerson","ContactNumber","PaxCount"}.All(field=>errors.Any(error=>error.MemberNames.Contains(field))),"Single-page booking still requires event, venue, contact, and guest data");
         check(ClientBookingPresentation.NextAction(mine,new(){HasAdditionalEvidenceRequired=true}).Contains("clearer"),"Additional payment evidence takes precedence in next steps");
         other.StartTime=mine.StartTime;other.EndTime=mine.EndTime;
         var lockPayment=new Payment {Booking=other,Amount=2000,Status=PaymentStatus.Pending};
@@ -68,3 +70,5 @@ static class ClientRegression
         check(await controller.Details(other.Id) is ViewResult {ViewName:"StaffDetails"},"Staff details retain their internal view");
     }
 }
+
+internal sealed class NoOpBookingExpiration : IBookingExpirationService { public Task<int> ExpireOverdueBookingsAsync() => Task.FromResult(0); }

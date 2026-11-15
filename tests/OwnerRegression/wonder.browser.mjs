@@ -39,7 +39,7 @@ try{
  assert(!requests.some(url=>url.includes('fonts.googleapis.com')||url.includes('fonts.gstatic.com')),'Fonts must be local');checks++;
  assert.equal(await page.$$eval('.cx-media img[fetchpriority="high"]',els=>els.length),1);checks++;
  const before=await page.$eval('.ws-hero h1',el=>getComputedStyle(el).fontFamily);assert(before.includes('Libre Caslon Display'));checks++;
- for(const name of ['Dashboard-Staff','Dashboard-Admin','Dashboard-Owner']){await go(name);assert(await page.evaluate(()=>document.body.classList.contains('midnight-workspace')&&!document.body.classList.contains('client-body')&&getComputedStyle(document.body).fontFamily.includes('DM Sans')&&!document.querySelector('link[href*="client-experience.css"]')));checks++;}
+ for(const name of ['Dashboard-Staff','Dashboard-Owner']){await go(name);assert(await page.evaluate(()=>document.body.classList.contains('midnight-workspace')&&!document.body.classList.contains('client-body')&&getComputedStyle(document.body).fontFamily.includes('DM Sans')&&!document.querySelector('link[href*="client-experience.css"]')));checks++;}
  await fs.writeFile(path.join(snapshots,'wonder-accessibility.json'),JSON.stringify(findings,null,2));
  await fs.writeFile(path.join(snapshots,'wonder-js-errors.json'),JSON.stringify(errors,null,2));
  assert.deepEqual(findings,[],'Wonder Studio accessibility violations; see wonder-accessibility.json');assert.deepEqual(errors,[],'Client JavaScript errors');

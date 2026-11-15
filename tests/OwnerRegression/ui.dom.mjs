@@ -14,7 +14,7 @@ function fixture(name){
  return dom;
 }
 function run(dom,script){dom.window.eval(fs.readFileSync(path.join(root,'wwwroot/js',script),'utf8'));}
-for(const name of fs.readdirSync(snapshots).filter(f=>f.endsWith('.html'))){
+for(const name of JSON.parse(fs.readFileSync(path.join(snapshots,'current-fixtures.json'),'utf8'))){
  const dom=fixture(name.slice(0,-5)),d=dom.window.document;
  const ids=[...d.querySelectorAll('[id]')].map(e=>e.id);
  check(new Set(ids).size===ids.length,name+': duplicate IDs');
@@ -23,7 +23,6 @@ for(const name of fs.readdirSync(snapshots).filter(f=>f.endsWith('.html'))){
  check([...d.querySelectorAll('.modal')].every(e=>e.getAttribute('aria-label')||d.getElementById(e.getAttribute('aria-labelledby'))),name+': dialog lacks a title');
  check(!/â‚|â€|Â·|â†/.test(d.body.textContent),name+': corrupted display characters');
  check([...d.querySelectorAll('form[method=post]')].every(f=>f.querySelector('[name=__RequestVerificationToken]')),name+': missing antiforgery token');
- if(name==='Communications-Index-Admin.html') check(![...d.querySelectorAll('.comm-chat-header a')].some(a=>a.textContent.includes('View Booking')),'Admin sees a booking action outside its role');
  run(dom,'app-ui.js');
  check([...d.querySelectorAll('.modal')].every(m=>m.parentElement===d.body),name+': clipped dialog');
  dom.window.close();
@@ -75,15 +74,19 @@ console.log('PASS chat duplicate-send prevention, draft preservation and failure
  const pack=JSON.parse(d.getElementById('wizardPackages').textContent)[0];
  const catalog=JSON.parse(d.getElementById('wizardPackages').textContent);catalog[0].Price=12345.67;catalog[0].DurationInHours=3;d.getElementById('wizardPackages').textContent=JSON.stringify(catalog);d.getElementById('StartTime').value='23:30';
  w.fetch=async url=>({ok:true,headers:{get:()=> 'application/json'},json:async()=>String(url).includes('SearchVenue')?[{displayName:'Fixture venue'}]:String(url).includes('CheckVenueServiceability')?{success:true,isServiceable:true,distanceKm:12,travelFee:500}:{available:true,availableIds:[pack.Id],message:'Available'}});
- run(dom,'booking-experience.js');run(dom,'client-booking-wizard.js');
- d.getElementById('PartyVenue').value='Fixture';d.getElementById('findVenue').click();await tick();
- d.querySelector('#venueResults button').click();
+ w.requestAnimationFrame=callback=>callback();
+ const dialog=d.getElementById('fullBookingTerms');dialog.showModal=()=>dialog.open=true;dialog.close=()=>{dialog.open=false;dialog.dispatchEvent(new w.Event('close'));};
+ d.getElementById('clientBookingWizard').requestSubmit=()=>d.getElementById('clientBookingWizard').dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));
+ run(dom,'booking-experience.js');run(dom,'booking-location.js');run(dom,'client-booking-wizard.js');
+ d.querySelector('[data-location-method=Manual]').click();
+ for(const [id,value] of Object.entries({ManualStreet:'Fixture street',ManualCity:'Pasig',ManualProvince:'Metro Manila'})){d.getElementById(id).value=value;d.getElementById(id).dispatchEvent(new w.Event('input'));}
+ d.getElementById('CustomerConfirmedLocation').checked=true;d.getElementById('CustomerConfirmedLocation').dispatchEvent(new w.Event('change'));
  d.querySelector('[data-step="0"] [data-next]').click();await tick();await tick();
  check(!d.querySelector('[data-step="1"]').hidden,'Wizard did not advance after valid location');
  const radio=d.querySelector('[name=ServiceId]');radio.checked=true;radio.dispatchEvent(new w.Event('change'));
- const removals=[...d.querySelectorAll('[name=RemovedInclusionIds]:not(:disabled)')];
- removals.slice(0,3).forEach(input=>{input.checked=true;input.dispatchEvent(new w.Event('change'));});
- check(d.querySelectorAll('[name=RemovedInclusionIds]:checked').length===2,'Wizard accepted more than two removals');
+ const removals=[...d.querySelectorAll('.ultra-inclusion-toggle')];
+ removals.slice(0,3).forEach(input=>{input.checked=false;input.dispatchEvent(new w.Event('change'));});
+ check(d.querySelectorAll('[name=RemovedInclusionIds]:not(:disabled)').length===2,'Wizard accepted more than two removals');
  check(d.getElementById('summaryBase').textContent.includes('12,345.67')&&d.getElementById('summaryTotal').textContent.includes('10,845.67'),'Estimate changed fractional model price or applied discount more than once');
  d.querySelector('[data-step="1"] [data-next]').click();await tick();await tick();
  d.getElementById('EventType').value='Company Events';d.getElementById('EventType').dispatchEvent(new w.Event('change'));
@@ -95,13 +98,14 @@ console.log('PASS chat duplicate-send prevention, draft preservation and failure
  const ids=[...d.querySelectorAll('[id]')].map(e=>e.id);check(new Set(ids).size===ids.length,'Review duplicated IDs');
  const event=new w.Event('submit',{bubbles:true,cancelable:true});d.getElementById('clientBookingWizard').dispatchEvent(event);
  check(event.defaultPrevented,'Wizard accepted unchecked terms');
- d.getElementById('AcceptTerms').checked=true;
+ check(dialog.open&&d.getElementById('AcceptTerms').value==='false','Terms modal did not require explicit agreement');
+ const consent=d.getElementById('termsModalConsent');consent.checked=true;consent.dispatchEvent(new w.Event('change'));d.getElementById('confirmBookingTerms').click();
  const send=new w.Event('submit',{bubbles:true,cancelable:true});d.getElementById('clientBookingWizard').dispatchEvent(send);const immediate=new w.Event('submit',{bubbles:true,cancelable:true});d.getElementById('clientBookingWizard').dispatchEvent(immediate);check(immediate.defaultPrevented,'Same-tick duplicate booking submit accepted');await tick();
  check(d.getElementById('clientBookingWizard').getAttribute('aria-busy')==='true','Booking submit has no real busy state');
  const again=new w.Event('submit',{bubbles:true,cancelable:true});d.getElementById('clientBookingWizard').dispatchEvent(again);check(again.defaultPrevented,'Booking allows duplicate UI submission');
  w.dispatchEvent(new w.Event('pageshow'));check(!d.getElementById('submitBooking').disabled,'Browser restoration prevents retry');
  d.getElementById('clientBookingWizard').addEventListener('submit',e=>e.preventDefault(),{once:true});d.getElementById('clientBookingWizard').dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));await tick();check(!d.getElementById('clientBookingWizard').hasAttribute('aria-busy'),'Cancelled booking submit leaves stuck controls');
- d.getElementById('PartyVenue').value='Changed venue';d.getElementById('PartyVenue').dispatchEvent(new w.Event('input'));
+ d.getElementById('ManualStreet').value='Changed venue';d.getElementById('ManualStreet').dispatchEvent(new w.Event('input'));
  const invalid=new w.Event('submit',{bubbles:true,cancelable:true});d.getElementById('clientBookingWizard').dispatchEvent(invalid);
  check(invalid.defaultPrevented&&!d.querySelector('[data-step="0"]').hidden,'Wizard accepted changed location without rechecking');
  dom.window.close();
@@ -123,27 +127,20 @@ console.log('PASS booking busy/cancel/restoration and private upload preview typ
 
 {
  const dom=fixture('RescheduleRequests-Create'),w=dom.window,d=w.document;
- const input=d.getElementById('RequestedDate'),host=d.getElementById('rescheduleCalendar');
- input.min='2030-06-10';input.value='2030-06-15';d.getElementById('rescheduleBlockedDates').textContent='["2030-06-16"]';
- run(dom,'concierge-calendar.js');
- const key=name=>d.activeElement.dispatchEvent(new w.KeyboardEvent('keydown',{key:name,bubbles:true,cancelable:true}));
- const selected=()=>d.activeElement.dataset.date;
- check(!host.hidden&&!d.getElementById('manualDate').open,'Calendar progressive enhancement or native fallback failed');
- check(host.querySelector('[data-date="2030-06-09"]').disabled&&host.querySelector('[data-date="2030-06-16"]').disabled,'Calendar permits date before lead time or known blocked date');
- check(host.querySelectorAll('button[tabindex="0"]').length===1,'Calendar has multiple roving tab stops');
- host.querySelector('[data-date="2030-06-15"]').focus();key('ArrowRight');check(selected()==='2030-06-17','Calendar arrow fails to skip blocked date');
- d.activeElement.click();check(input.value==='2030-06-17','Calendar does not update bound native date');
- host.dispatchEvent(new w.CustomEvent('concierge-capacity',{detail:{date:input.value,isBlocked:false,isFull:false}}));check(selected()==='2030-06-17','Async response loses selected calendar focus');
- host.dispatchEvent(new w.CustomEvent('concierge-capacity',{detail:{date:input.value,isBlocked:false,isFull:true}}));check(host.querySelector('[data-date="2030-06-17"]').disabled&&host.contains(d.activeElement)&&!d.activeElement.disabled,'New full date leaves focus stranded');
- host.dispatchEvent(new w.CustomEvent('concierge-capacity',{detail:{date:'2030-06-17',isBlocked:false,isFull:false}}));check(!host.querySelector('[data-date="2030-06-17"]').disabled,'Refreshed capacity retains stale full-date block');
- input.value='2030-06-16';input.dispatchEvent(new w.Event('change'));host.dispatchEvent(new w.CustomEvent('concierge-capacity',{detail:{date:input.value,isBlocked:false,isFull:false}}));check(!host.querySelector('[data-date="2030-06-16"]').disabled,'Authoritative refresh retains stale blocked-date cache');
- host.querySelector('[data-date="2030-06-17"]').focus();key('PageDown');check(selected()==='2030-07-17','Calendar PageDown changes wrong date');key('PageUp');check(selected()==='2030-06-17','Calendar PageUp loses day');
- key('Home');check(selected()==='2030-06-16','Calendar Home fails');key('End');check(selected()==='2030-06-22','Calendar End fails');
- input.value='2030-06-10';input.dispatchEvent(new w.Event('change'));host.querySelector('[data-date="2030-06-10"]').focus();key('ArrowLeft');check(selected()==='2030-06-10','Calendar keyboard bypasses minimum date');
- host.dispatchEvent(new w.CustomEvent('concierge-capacity',{detail:{date:'2030-06-17',isBlocked:false,isFull:true}}));d.getElementById('BookingId').dispatchEvent(new w.Event('change'));check(!host.querySelector('[data-date="2030-06-17"]').disabled,'Booking change retains other booking capacity cache');
+ w.HTMLElement.prototype.scrollIntoView=function(){};
+ const booking=d.getElementById('BookingId'),date=d.getElementById('RequestedDate'),time=d.getElementById('RequestedStartTime');
+ w.fetch=async url=>({ok:true,headers:{get:()=> 'application/json'},json:async()=>String(url).includes('GetUnavailableTimeRanges')?[]:{isBlocked:false,isFull:false,remainingSlots:2,maxPerDay:3}});
+ run(dom,'booking-experience.js');run(dom,'client-round2-20261108.js');
+ d.getElementById('r2ReviewReschedule').click();check(d.getElementById('r2RescheduleReview').hidden,'Incomplete reschedule cannot reach review');
+ booking.value='1';booking.dispatchEvent(new w.Event('change'));date.value='2030-06-15';date.dispatchEvent(new w.Event('change'));time.value='15:00';d.getElementById('Reason').value='Synthetic venue conflict';await tick();await tick();
+ d.getElementById('r2ReviewReschedule').click();check(!d.getElementById('r2RescheduleReview').hidden&&d.getElementById('r2ResReason').textContent==='Synthetic venue conflict','Reschedule review preserves chosen reason');
+ check(d.querySelector('#r2RescheduleSteps [aria-current=step]').textContent.includes('Review'),'Current reschedule step announced');
+ d.getElementById('r2BackToSchedule').click();check(!d.getElementById('r2RescheduleEdit').hidden&&date.value==='2030-06-15','Back preserves requested date');
+ date.setCustomValidity('Blocked date');d.getElementById('r2ReviewReschedule').click();check(d.getElementById('r2RescheduleReview').hidden,'Blocked date cannot reach review');
+ check(date.min&&d.getElementById('clientRescheduleForm').querySelector('[name=__RequestVerificationToken]'),'Native minimum date and antiforgery preserved');
  dom.window.close();
 }
-console.log('PASS calendar bound date, lead time, blocked/full refresh, keyboard navigation and async focus');
+console.log('PASS current reschedule edit/review, validation, deliberate request and retained values');
 
 {
  const empty=fixture('Home-Index-Guest'),published=fixture('Home-Index-Guest-published');
@@ -237,9 +234,9 @@ for(const name of ['Bookings-ClientDashboard','Bookings-MyBookings','Bookings-Cl
  const dom=fixture(name),d=dom.window.document;
  check(d.body.classList.contains('client-hub'),name+' lacks Client-only hub shell');
  check(!d.querySelector('.client-navbar-wrap,.cx-account-nav,.client-footer'),name+' duplicates marketing/account navigation');
- const nav=d.querySelector('.hub-sidebar .hub-navigation');check(nav?.querySelectorAll('a').length===9&&nav.querySelectorAll('.hub-nav-group').length===3,name+' lost grouped Client destinations');
+ const nav=d.querySelector('.hub-sidebar .hub-navigation');check(nav?.querySelectorAll('a').length===4&&nav.querySelectorAll('.hub-nav-group').length===2,name+' lost grouped Client destinations');
  check(d.querySelector('#hubFallback summary')&&d.querySelector('#hubDrawer[data-diagnostics]')===null,name+' loses no-script navigation or exposes diagnostics');
- check(d.querySelector('.hub-rail-footer form[action="/Account/Logout"][method=post] input[name=__RequestVerificationToken]'),name+' loses protected logout');
+ check(d.querySelector('.hub-account-dropdown form[action="/Account/Logout"][method=post] input[name=__RequestVerificationToken]'),name+' loses protected logout');
  dom.window.close();
 }
 {
@@ -265,26 +262,25 @@ console.log('PASS Client hub navigation, original form contracts, role fields, p
 
 {
  const dom=fixture('Bookings-Create'),d=dom.window.document;
- check(d.querySelector('.cn-terms')?.tagName==='SECTION'&&!d.querySelector('.cn-terms details,.cn-terms summary'),'Primary agreement must stay permanently visible');
- check(d.querySelectorAll('.cn-terms-clauses h3').length===7,'All current terms clauses remain visible');
- check(d.querySelector('#openBookingTerms')?.getAttribute('href')==='#fullBookingTerms'&&d.querySelector('#fullBookingTerms')?.tagName==='DIALOG','Full terms remain available before agreement');
- check(d.querySelector('#AcceptTerms')?.required&&!d.querySelector('#AcceptTerms').checked,'Consent remains an explicit required unchecked choice');
- check(d.querySelector('.cn-terms-clauses').textContent.replace(/\s+/g,' ').trim()===d.querySelector('.cn-terms-full-text').textContent.replace(/\s+/g,' ').trim(),'Inline and full terms use identical source text');
+ check(d.querySelector('#fullBookingTerms')?.tagName==='DIALOG'&&d.querySelector('#termsModalConsent')?.type==='checkbox','Complete terms require deliberate modal consent');
+ check(d.querySelector('#bookingTermsText').textContent.length>500,'Full booking terms are present');
+ check(d.querySelector('#AcceptTerms')?.type==='hidden'&&d.querySelector('#AcceptTerms').value==='false'&&!d.querySelector('#termsModalConsent').checked,'Consent is false until the customer explicitly agrees');
+ check(d.querySelector('[name=AcceptedTermsVersion]').value==='2026-11-08-v3','Current approved terms version preserved');
  check(!d.querySelector('.cn-package img'),'No photograph assigned to unverified package inclusions');
  dom.window.close();
 }
 console.log('PASS Midnight Concierge agreement and grouped navigation contracts');
 
-for(const role of ['Staff','Admin','Owner']){
+for(const role of ['Staff','Owner']){
  const dom=fixture('Dashboard-'+role),d=dom.window.document,w=dom.window;
  check(d.body.classList.contains('midnight-workspace'),role+': scoped workspace shell');
  check(d.querySelector('link[href*="internal-workspaces.css"]'),role+': shared workspace stylesheet');
  check(d.querySelector('h1')?.textContent===role+' Dashboard',role+': clear page heading');
  check(!d.querySelector('.dashboard-topbar input[type=search]'),role+': no unsupported global search');
  const nav=[...d.querySelectorAll('.sidebar-nav a')].map(a=>a.getAttribute('href'));
- for(const controller of role==='Staff'?['Bookings','Calendar','Services','RescheduleRequests','History','Testimonials']:role==='Admin'?['UserManagement','Calendar','Services','TrashHistory','SystemActivity']:['Payments','Bookings','Calendar','Reports','Services','History'])
+ for(const controller of role==='Staff'?['Bookings','Calendar','Services','RescheduleRequests','History']:['Payments','Calendar','Reports','Services','History','Personnel','SystemActivity','TrashHistory'])
   check(nav.some(h=>h.startsWith('/'+controller)),role+': preserves '+controller+' navigation');
- for(const controller of role==='Admin'?['Payments','Reports','Bookings','History']:role==='Staff'?['Payments','Reports','UserManagement','SystemActivity']:['UserManagement','SystemActivity'])
+ for(const controller of role==='Staff'?['Payments','Reports','UserManagement','SystemActivity','Personnel','TrashHistory']:['UserManagement'])
   check(!nav.some(h=>h.startsWith('/'+controller)),role+': excludes unauthorized '+controller+' navigation');
  check(!d.querySelector('.role-workspace form[method=post]'),role+': dashboard review links do not make instant decisions');
  check(d.querySelector('.sidebar-link.active')?.getAttribute('aria-current')==='page',role+': active destination announced');
@@ -294,15 +290,6 @@ for(const role of ['Staff','Admin','Owner']){
  check(d.querySelector('.ui-menu-toggle').getAttribute('aria-expanded')==='true',role+': drawer expanded state');
  d.getElementById('internalSidebar').dispatchEvent(new w.Event('hidden.bs.offcanvas'));
  check(d.querySelector('.ui-menu-toggle').getAttribute('aria-expanded')==='false',role+': drawer collapsed state');
- if(role==='Staff'){
-  const buttons=[...d.querySelectorAll('[data-workspace-date]')];
-  check(buttons.filter(b=>b.tabIndex===0).length===1,'Calendar has one tab entry');
-  const first=buttons[0];first.click();
-  check(first.getAttribute('aria-pressed')==='true'&&d.querySelectorAll('[data-workspace-date][aria-pressed=true]').length===1,'Calendar date selection is exclusive');
-  first.dispatchEvent(new w.KeyboardEvent('keydown',{key:'ArrowRight',bubbles:true,cancelable:true}));
-  check(d.activeElement===buttons[1]&&buttons[1].getAttribute('aria-pressed')==='true','Calendar supports keyboard date selection');
-  check(d.querySelector('[data-workspace-calendar-status]').textContent===buttons[1].getAttribute('aria-label'),'Calendar announces the selected date and count');
- }
  dom.window.close();
 }
 for(const name of ['Home-Index-Guest','Account-Login','Bookings-ClientDashboard','Bookings-Create']){
@@ -310,5 +297,19 @@ for(const name of ['Home-Index-Guest','Account-Login','Bookings-ClientDashboard'
  check(!d.body.classList.contains('midnight-workspace')&&!d.querySelector('link[href*="internal-workspaces.css"]'),name+': internal theme does not leak into approved Client UI');
  dom.window.close();
 }
-console.log('PASS internal workspaces role navigation, review-only dashboards, calendar keyboard behavior and Client isolation');
+console.log('PASS internal workspaces role navigation, review-only dashboards, drawer semantics and Client isolation');
+
+{const dom=fixture('Personnel-Index'),d=dom.window.document;check(d.querySelectorAll('#ownerPersonnelSearch').length===1&&d.querySelector('#ownerPersonnelSearch').name==='search','Personnel uses one search field for server filters and existing instant search');dom.window.close();}
+for(const name of ['Calendar-Settings','Personnel-EditStaff']){
+ const dom=fixture(name),d=dom.window.document;
+ check(!d.querySelector('a[href="/Dashboard/Admin"],a[href^="/UserManagement"]'),'Retired navigation must not return');
+ if(name==='Calendar-Settings'){
+  check(d.querySelectorAll('form[data-admin-confirm]').length>=1,'Availability changes retain explicit confirmation');
+  check(!d.querySelector('[name=MaxBookingsPerDay],[name=Capacity]'),'Fixed daily capacity has no edit field');
+ }else{
+  check(d.querySelector('[name=FullName]')&&d.querySelector('[name=PhoneNumber]'),'Staff contact editing retains approved fields');
+  check(!d.querySelector('[name=Role],[name=Email],[name=Password]'),'Contact editing cannot promote or replace login');
+ }
+ dom.window.close();
+}
 console.log(`SUCCESS: ${checks} UI DOM checks passed.`);

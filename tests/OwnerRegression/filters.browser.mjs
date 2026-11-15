@@ -22,7 +22,7 @@ page.on('request', async req => {
         return req.respond({status:200,contentType:route.endsWith('.css')?'text/css':route.endsWith('.js')?'application/javascript':'application/octet-stream',body:await fs.readFile(file)});
     } catch { return req.respond({status:404,body:''}); }
 });
-const names = ['Bookings-Index','Bookings-StaffIndex','Bookings-MyBookings','RescheduleRequests-Index','History-Index','SystemActivity-Index','TrashHistory-Index','Calendar-StaffIndex','UserManagement-Index','Communications-Index','Payments-PendingVerification','Payments-RefundRequests','Reports-Index'];
+const names = ['Bookings-Index','Bookings-StaffIndex','Bookings-MyBookings','RescheduleRequests-Index','History-Index','SystemActivity-Index','TrashHistory-Index','Calendar-StaffIndex','Communications-Index','Payments-PendingVerification','Payments-RefundRequests','Reports-Index'];
 try {
     for (const width of [1440, 390]) {
         await page.setViewport({width, height: 900});

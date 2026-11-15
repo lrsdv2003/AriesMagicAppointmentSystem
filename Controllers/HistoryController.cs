@@ -11,7 +11,7 @@ using QuestPDF.Infrastructure;
 namespace AriesMagicAppointmentSystem.Controllers
 {
     /// <summary>
-    /// Read-only history of completed, cancelled, declined and expired bookings. Owner and Staff can browse and search
+    /// Read-only history of completed bookings. Owner and Staff can browse and search
     /// the same records; only Owner can export or print reports. Nobody can edit a
     /// historical record through this controller - there is intentionally no Edit/Delete action.
     /// </summary>
@@ -19,10 +19,12 @@ namespace AriesMagicAppointmentSystem.Controllers
     public class HistoryController : Controller
     {
         private readonly IHistoryService _historyService;
+        private readonly ITrashHistoryService? _archives;
 
-        public HistoryController(IHistoryService historyService)
+        public HistoryController(IHistoryService historyService, ITrashHistoryService? archives = null)
         {
             _historyService = historyService;
+            _archives = archives;
         }
 
         public async Task<IActionResult> Index(HistoryFilterViewModel filters)
@@ -43,6 +45,12 @@ namespace AriesMagicAppointmentSystem.Controllers
 
             if (model == null)
             {
+                // Preserve existing authorized deep links without listing unsuccessful
+                // bookings as completed History or granting Staff archive administration.
+                if (_archives != null && await _archives.GetDetailsAsync(id) != null)
+                    return User.IsInRole("Owner")
+                        ? RedirectToAction("Details", "TrashHistory", new { id })
+                        : RedirectToAction("Details", "Bookings", new { id });
                 return NotFound();
             }
 

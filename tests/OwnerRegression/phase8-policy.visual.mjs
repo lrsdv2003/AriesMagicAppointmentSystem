@@ -12,8 +12,7 @@ const page=await browser.newPage();let current;
 const errors=[],results=[];
 page.on('pageerror',error=>errors.push({page:current,message:error.message}));
 const routes={Staff:[['Dashboard','/Dashboard/Staff'],['Bookings','/Bookings/Index'],['Calendar','/Calendar/Index'],['Rescheduling','/RescheduleRequests'],['Messages','/Communications'],['Details','/Bookings/Details/'+state.BookingIds[0]],['Profile','/InternalProfile']],
- Admin:[['Dashboard','/Dashboard/Admin'],['Users','/UserManagement'],['Packages','/Services'],['Calendar','/Calendar'],['Settings','/Calendar'],['Profile','/InternalProfile']],
- Owner:[['Dashboard','/Dashboard/Owner'],['Payments','/Payments/PendingVerification'],['Refunds','/Payments/RefundRequests'],['FinancialSummary','/Reports'],['Notifications','/Notifications'],['PaymentReview','/Payments/Verify/'+state.PaymentIds[0]],['Profile','/InternalProfile']],
+ Owner:[['Personnel','/Personnel'],['Packages','/Services'],['Settings','/Calendar/Settings'],['Archives','/TrashHistory'],['Activity','/SystemActivity'],['Dashboard','/Dashboard/Owner'],['Payments','/Payments/PendingVerification'],['Refunds','/Payments/RefundRequests'],['FinancialSummary','/Reports'],['Notifications','/Notifications'],['PaymentReview','/Payments/Verify/'+state.PaymentIds[0]],['Profile','/InternalProfile']],
  Client:[['Homepage','/'],['Experiences','/Home/Packages'],['About','/Home/About'],['Gallery','/Home/Gallery'],['Dashboard','/Bookings/Dashboard']]};
 try{
  for(const width of [1440,1024,768,430,390,375,320])for(const [role,views] of Object.entries(routes))for(const [label,route] of views){

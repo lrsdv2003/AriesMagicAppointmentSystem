@@ -77,6 +77,19 @@ static class DashboardRegression
         var ownerModel=(RoleDashboardViewModel)((ViewResult)await Controller("Owner",owner.Id).Owner()).Model!;
         check(ownerModel.UnavailableSections.Count==0,"Owner dashboard sections load successfully");
         var report=(ReportDashboardViewModel)((ViewResult)await new ReportsController(db,finance).Index(null,null,null,null,null,null)).Model!;
+        var filteredRecordReport=(ReportDashboardViewModel)((ViewResult)await
+            new ReportsController(db,finance).Index(null,null,null,null,null,null,recordSearch:"ARIES-ROUND3-NO-MATCH")).Model!;
+        check(filteredRecordReport.BookingRecords.Count==0 && filteredRecordReport.RecordsTotalCount==0 &&
+            filteredRecordReport.RecordPage==1,"Financial record search yields an empty five-record page safely");
+        check(filteredRecordReport.TotalBookings==report.TotalBookings &&
+            filteredRecordReport.NetCollectedRevenue==report.NetCollectedRevenue &&
+            filteredRecordReport.OutstandingReceivables==report.OutstandingReceivables,
+            "Financial record search never changes authoritative reporting metrics");
+        var finalRecordReport=(ReportDashboardViewModel)((ViewResult)await
+            new ReportsController(db,finance).Index(null,null,null,null,null,null,page:int.MaxValue)).Model!;
+        check(finalRecordReport.RecordPage==finalRecordReport.RecordPageCount &&
+            finalRecordReport.BookingRecords.Count<=5 && finalRecordReport.RecordsTotalCount==report.TotalBookings,
+            "Financial records clamp high page numbers without losing matching records");
         check(ownerModel.VerifiedRevenue==report.TotalCollectedRevenue && ownerModel.CompletedRefunds==report.RefundsIssued && ownerModel.NetCollectedRevenue==report.NetCollectedRevenue,"Owner collected/refund/net totals match unfiltered Reports including cancelled bookings");
         check(ownerModel.OutstandingReceivables==report.OutstandingReceivables && ownerModel.BookingValue==report.TotalBookingValue,"Owner receivables and booking value match Reports");
         check(ownerModel.PendingPayments==await db.Payments.CountAsync(p=>p.Status==PaymentStatus.Pending),"Payment priority matches verification queue");
@@ -87,22 +100,10 @@ static class DashboardRegression
         var failed=(RoleDashboardViewModel)((ViewResult)await Controller("Owner",owner.Id,new FailingDashboardFinance(finance)).Owner()).Model!;
         check(failed.UnavailableSections.SetEquals(new[]{"financial overview"}) && failed.QuickActions.Count>0 && failed.PendingPayments==ownerModel.PendingPayments,"Financial widget failure preserves queues and navigation without fake zero totals");
 
-        var adminModel=(RoleDashboardViewModel)((ViewResult)await Controller("Admin","fixture-admin").Admin()).Model!;
-        check(adminModel.UnavailableSections.Count==0,"Admin dashboard sections load successfully");
-        var userController=new UserManagementController(manager,new SystemActivityService(db));
-        var activeUsers=(IEnumerable<ApplicationUser>)((ViewResult)await userController.Index(null,"Active")).Model!;
-        check(adminModel.TotalUsers==await db.Users.CountAsync() && adminModel.ActiveUsers==activeUsers.Count(),"Admin account totals match User Management");
-        check(adminModel.RecentUsers.Count<=5 && adminModel.RecentUsers.All(u=>db.Users.Any(a=>a.Id==u.Id && (a.Email ?? "Not recorded")==u.Email)),"Admin workspace uses bounded authoritative identity previews");
-        check(adminModel.TotalBookings==await db.Bookings.CountAsync() && adminModel.RecentBookings.Count==0,"Admin booking metric is aggregate-only and adds no operational record access");
-        check(adminModel.PackagePreviews.All(p=>!p.IsArchived) && adminModel.PackagePreviews.Count<=3,"Admin package preview retains real active catalog records");
-        check(adminModel.TrashedBookingsCount==await db.Bookings.CountAsync(b=>b.Status==BookingStatus.Declined||b.Status==BookingStatus.Cancelled||b.Status==BookingStatus.Expired),"Admin archive count matches Trash History");
-        check(adminModel.RecentPaymentsToVerify.Count==0 && adminModel.UpcomingEvents.Count==0 && adminModel.VerifiedRevenue==0,"Admin model excludes operational and financial data");
-        check(adminModel.RecentActivity.All(a=>a.Type!=SystemActivityType.PaymentVerified && a.Type!=SystemActivityType.BookingApproved),"Admin activity preview stays system-focused");
-        check(adminModel.QuickActions.All(a=>!a.Href.StartsWith("/Payments")&&!a.Href.StartsWith("/Reports")&&!a.Href.StartsWith("/Bookings")),"Admin shortcuts respect role boundaries");
-
+        check(typeof(DashboardController).GetMethod("Admin")==null,"Only Owner and Staff dashboards remain active");
         var authorization=provider.GetRequiredService<IAuthorizationService>();
         var policies=provider.GetRequiredService<IAuthorizationPolicyProvider>();
-        foreach(var action in new[]{"Staff","Owner","Admin"})
+        foreach(var action in new[]{"Staff","Owner"})
         {
             var policy=await AuthorizationPolicy.CombineAsync(policies,typeof(DashboardController).GetMethod(action)!.GetCustomAttributes<AuthorizeAttribute>());
             foreach(var role in new[]{"Staff","Owner","Admin","Client"})
@@ -111,7 +112,7 @@ static class DashboardRegression
                 check((await authorization.AuthorizeAsync(user,null,policy!)).Succeeded==(role==action),role+" dashboard authorization for "+action);
             }
         }
-        return new() {["Staff"]=staffModel,["Owner"]=ownerModel,["Admin"]=adminModel,["OwnerFailure"]=failed};
+        return new() {["Staff"]=staffModel,["Owner"]=ownerModel,["OwnerFailure"]=failed};
     }
 }
 sealed class FailingDashboardFinance(IPaymentFinancialService inner) : IPaymentFinancialService

@@ -13,7 +13,7 @@ using Microsoft.AspNetCore.DataProtection;
 try {
     string Input(string name)=>Environment.GetEnvironmentVariable(name)??throw new InvalidOperationException("Required private operator input absent.");
     var mode=args.Length==1?args[0]:"";
-    if(mode is not ("roles" or "bootstrap" or "deliver" or "recover-owner"))throw new InvalidOperationException("Select roles, bootstrap, deliver or recover-owner.");
+    if(mode is not ("roles" or "bootstrap" or "deliver" or "recover-owner" or "retire-legacy-admin"))throw new InvalidOperationException("Select roles, bootstrap, deliver, recover-owner or retire-legacy-admin.");
     if(Input("ARIES_OPERATOR_APPROVAL")!="APPROVED")throw new InvalidOperationException("Explicit operator approval required.");
     var services=new ServiceCollection();services.AddLogging();services.AddDataProtection().UseEphemeralDataProtectionProvider();
     services.AddDbContext<ApplicationDbContext>(o=>o.UseSqlServer(Input("ARIES_OPERATOR_SQL")));
@@ -24,6 +24,12 @@ try {
     if(db.Database.GetDbConnection().Database!=Input("ARIES_OPERATOR_DATABASE"))throw new InvalidOperationException("Approved database target mismatch.");
     if((await db.Database.GetPendingMigrationsAsync()).Any())throw new InvalidOperationException("Apply supported migrations separately before provisioning.");
     if(mode=="roles"){await IdentitySeeder.SeedAsync(scope.ServiceProvider);Console.WriteLine("Role definitions initialized; no users created.");return;}
+    if(mode=="retire-legacy-admin") {
+        if(Input("ARIES_OPERATOR_RETIREMENT_APPROVAL")!="RETIRE_EXACT_LEGACY_ID")throw new InvalidOperationException("Separate exact-identity retirement approval required.");
+        var id=Input("ARIES_OPERATOR_USER_ID");
+        await new LegacyRoleRetirement(db,scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>(),scope.ServiceProvider.GetRequiredService<ISystemActivityService>()).RetireAsync(id,Input("ARIES_OPERATOR_REFERENCE"));
+        Console.WriteLine("Approved legacy permissions retired; identity and historical records preserved. No Owner promotion.");return;
+    }
     var email=Input("ARIES_OPERATOR_EMAIL").Trim();if(!new EmailAddressAttribute().IsValid(email))throw new InvalidOperationException("Approved email required.");
     var users=scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();var service=scope.ServiceProvider.GetRequiredService<PersonnelProvisioning>();
     if(mode=="recover-owner") {
