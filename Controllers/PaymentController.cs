@@ -239,8 +239,26 @@ namespace AriesMagicAppointmentSystem.Controllers
                 model.Bookings = await GetPayableBookingsAsync(appUserId);
                 return View(model);
             }
-            var savedProof = await SavePrivateProofAsync(model.ProofImage, "payments");
+            (string StoredPath, string PhysicalPath) savedProof;
+            try
+            {
+                savedProof = await SavePrivateProofAsync(model.ProofImage, "payments");
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                HttpContext.RequestServices.GetRequiredService<ILogger<PaymentsController>>()
+                    .LogError("Private payment proof storage failed. FailureClass={FailureClass}", ex.GetType().Name);
+                ModelState.AddModelError("", "Your receipt could not be securely saved. No payment was submitted. Please retry or contact Staff.");
+                model.Bookings = await GetPayableBookingsAsync(appUserId);
+                return View(model);
+            }
 
+            // If a later SQL/audit step fails, remove this newly uploaded file. On an
+            // ambiguous commit result, retain evidence for private-file reconciliation.
+            var receiptCommitted = false;
+            var commitAttempted = false;
+            try
+            {
             var payment = new Payment
             {
                 BookingId = model.BookingId,
@@ -293,7 +311,25 @@ namespace AriesMagicAppointmentSystem.Controllers
                         ConflictingBookingId=earlierSecuredBooking.Id,RefundEligible=true,RefundEligibilityReason=booking.RefundEligibilityReason});
             }
 
-            var ocr = await AnalyzePaymentProofAsync(payment, savedProof.PhysicalPath, OcrVerificationPurposes.PaymentProof);
+            OcrVerification ocr;
+            try
+            {
+                ocr = await AnalyzePaymentProofAsync(payment, savedProof.PhysicalPath, OcrVerificationPurposes.PaymentProof);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                HttpContext.RequestServices.GetRequiredService<ILogger<PaymentsController>>()
+                    .LogWarning("Payment proof OCR boundary failed; requiring manual review. FailureClass={FailureClass}", ex.GetType().Name);
+                ocr = new OcrVerification
+                {
+                    PaymentId = payment.Id,
+                    VerificationPurpose = OcrVerificationPurposes.PaymentProof,
+                    ProcessedAt = DateTime.UtcNow,
+                    VerificationResult = OcrVerificationResults.OcrFailed,
+                    ProcessingError = "OCR could not analyze this receipt. Owner manual review is required.",
+                    WarningSummary = "OCR analysis was inconclusive. Verify the original private proof manually."
+                };
+            }
             _context.OcrVerifications.Add(ocr);
             payment.TransactionReference = ocr.ExtractedReferenceNumber;
             await _context.SaveChangesAsync();
@@ -303,7 +339,22 @@ namespace AriesMagicAppointmentSystem.Controllers
             if (financialBefore.TotalVerifiedPayments <= 0)
                 await NotifyAffectedClientsAboutLockedScheduleAsync(booking);
             await NotifyInternalReviewersAsync("New Payment Verification Required", $"A payment proof was submitted for Booking #BK-{booking.Id}. OCR result: {ocr.VerificationResult}.", $"/Payments/Verify/{payment.Id}");
+            commitAttempted = true;
             await transaction.CommitAsync();
+            receiptCommitted = true;
+            }
+            finally
+            {
+                if (!receiptCommitted && !commitAttempted)
+                {
+                    try { System.IO.File.Delete(savedProof.PhysicalPath); }
+                    catch (Exception ex)
+                    {
+                        HttpContext.RequestServices.GetRequiredService<ILogger<PaymentsController>>()
+                            .LogWarning("Failed to clean up uncommitted proof. FailureClass={FailureClass}", ex.GetType().Name);
+                    }
+                }
+            }
 
             TempData["Success"] = model.Amount > financialBefore.RemainingBalance
                 ? $"Payment amount exceeds the remaining balance of ₱{financialBefore.RemainingBalance:N2}. Manual review required; the balance will not change unless an authorized reviewer resolves the discrepancy."
@@ -1292,9 +1343,19 @@ namespace AriesMagicAppointmentSystem.Controllers
             Directory.CreateDirectory(root);
             var name = $"{Guid.NewGuid():N}{extension}";
             var fullPath = Path.Combine(root, name);
-            await using var stream = new FileStream(fullPath, FileMode.CreateNew, FileAccess.Write, FileShare.None);
-            await file.CopyToAsync(stream);
-            return ($"{category}/{name}", fullPath);
+            try
+            {
+                await using var stream = new FileStream(fullPath, FileMode.CreateNew, FileAccess.Write, FileShare.None);
+                await file.CopyToAsync(stream);
+                return ($"{category}/{name}", fullPath);
+            }
+            catch
+            {
+                // Never retain partial or invalid receipt bytes after a failed write.
+                try { if (System.IO.File.Exists(fullPath)) System.IO.File.Delete(fullPath); }
+                catch { /* Original failure remains authoritative; reconciliation can clean up stranded files. */ }
+                throw;
+            }
         }
 
         private Task<OcrVerification> AnalyzePaymentProofAsync(Payment payment, string fullPath, string purpose = OcrVerificationPurposes.PaymentProof)

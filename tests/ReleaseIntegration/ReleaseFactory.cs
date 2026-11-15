@@ -11,7 +11,7 @@ using Microsoft.AspNetCore.DataProtection;
 
 sealed class ReleaseFactory(string connection, int smtpPort, Uri mapServer, string privateRoot, bool failVerificationAudit = false, bool shortTicket = false, bool cleanFeedbackMedia = false, bool authUi = false,
     Microsoft.EntityFrameworkCore.Diagnostics.SaveChangesInterceptor? saveFault = null, IEmailService? emailOverride = null,
-    AriesMagicAppointmentSystem.Models.SystemActivityType? failAuditType = null) : WebApplicationFactory<Program>
+    AriesMagicAppointmentSystem.Models.SystemActivityType? failAuditType = null, IOcrVerificationService? ocrOverride = null) : WebApplicationFactory<Program>
 {
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -34,6 +34,7 @@ sealed class ReleaseFactory(string connection, int smtpPort, Uri mapServer, stri
                 services.RemoveAll<IFeedbackMalwareScanner>();
                 services.AddSingleton<IFeedbackMalwareScanner,FixtureCleanFeedbackScanner>();
             }
+            if(ocrOverride != null){ services.RemoveAll<IOcrVerificationService>(); services.AddSingleton<IOcrVerificationService>(ocrOverride); }
             services.RemoveAll<DbContextOptions<ApplicationDbContext>>();
             services.AddDbContext<ApplicationDbContext>(o => { o.UseSqlServer(connection); if(saveFault != null)o.AddInterceptors(saveFault); });
             if(emailOverride != null){services.RemoveAll<IEmailService>();services.AddSingleton(emailOverride);}
