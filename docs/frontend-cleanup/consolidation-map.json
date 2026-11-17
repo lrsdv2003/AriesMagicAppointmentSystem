@@ -1,0 +1,21 @@
+{
+  "client-foundations.css": [
+    "magic-client-v2.css",
+    "magic-client-consistency.css"
+  ],
+  "internal-operations.css": [
+    "staff-bookings.css",
+    "staff-reschedules.css",
+    "staff-interface.css"
+  ],
+  "staff.css": [
+    "staff-reference-20261106.css",
+    "staff-round1-20261108.css",
+    "staff-round2-20261108.css",
+    "staff-final-20261109.css"
+  ],
+  "owner.css": [
+    "owner-round1-20261109.css",
+    "owner-round2.css"
+  ]
+}

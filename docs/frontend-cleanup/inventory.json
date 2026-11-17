@@ -1,0 +1,696 @@
+{
+  "SourceHead": "41fe69e24e0a9925d04eaf9bf665eb8a44345dc9",
+  "Css": [
+    {
+      "File": "admin-console.css",
+      "Bytes": 3781,
+      "DirectReferences": [],
+      "LayoutArrayReferences": [
+        "_DashboardLayout.cshtml"
+      ],
+      "Imports": [],
+      "RelativeUrls": 0,
+      "RulesApprox": 48
+    },
+    {
+      "File": "app-ui.css",
+      "Bytes": 15114,
+      "DirectReferences": [
+        "Views/Shared/_Layout.cshtml"
+      ],
+      "LayoutArrayReferences": [
+        "_ClientHubLayout.cshtml",
+        "_DashboardLayout.cshtml"
+      ],
+      "Imports": [],
+      "RelativeUrls": 0,
+      "RulesApprox": 110
+    },
+    {
+      "File": "aries-client-theme.css",
+      "Bytes": 74626,
+      "DirectReferences": [
+        "Views/Shared/_Layout.cshtml"
+      ],
+      "LayoutArrayReferences": [
+        "_ClientHubLayout.cshtml"
+      ],
+      "Imports": [
+        "to avoid double fetch */\n\n/* -------------------------------------------------------------------------\n   1. TOKENS\n   ------------------------------------------------------------------------- */\n.client-body {\n  --am-ink: #150910"
+      ],
+      "RelativeUrls": 6,
+      "RulesApprox": 488
+    },
+    {
+      "File": "aries-final-ui.css",
+      "Bytes": 6807,
+      "DirectReferences": [
+        "Views/Shared/_ClientHubLayout.cshtml",
+        "Views/Shared/_DashboardLayout.cshtml"
+      ],
+      "LayoutArrayReferences": [],
+      "Imports": [],
+      "RelativeUrls": 0,
+      "RulesApprox": 73
+    },
+    {
+      "File": "aries-round3-ui.css",
+      "Bytes": 12146,
+      "DirectReferences": [
+        "Views/Shared/_ClientHubLayout.cshtml",
+        "Views/Shared/_DashboardLayout.cshtml"
+      ],
+      "LayoutArrayReferences": [],
+      "Imports": [],
+      "RelativeUrls": 0,
+      "RulesApprox": 105
+    },
+    {
+      "File": "booking-concierge.css",
+      "Bytes": 44410,
+      "DirectReferences": [
+        "Views/Shared/_Layout.cshtml",
+        "wwwroot/css/client-pro-max-20261108.css"
+      ],
+      "LayoutArrayReferences": [
+        "_ClientHubLayout.cshtml"
+      ],
+      "Imports": [],
+      "RelativeUrls": 0,
+      "RulesApprox": 416
+    },
+    {
+      "File": "booking-location.css",
+      "Bytes": 1096,
+      "DirectReferences": [
+        "Views/Bookings/Create.cshtml"
+      ],
+      "LayoutArrayReferences": [],
+      "Imports": [],
+      "RelativeUrls": 0,
+      "RulesApprox": 16
+    },
+    {
+      "File": "client-experience.css",
+      "Bytes": 147762,
+      "DirectReferences": [
+        "Views/Shared/_Layout.cshtml"
+      ],
+      "LayoutArrayReferences": [
+        "_ClientHubLayout.cshtml"
+      ],
+      "Imports": [],
+      "RelativeUrls": 4,
+      "RulesApprox": 1372
+    },
+    {
+      "File": "client-final-20261108.css",
+      "Bytes": 5689,
+      "DirectReferences": [
+        "Views/Shared/_ClientHubLayout.cshtml"
+      ],
+      "LayoutArrayReferences": [],
+      "Imports": [],
+      "RelativeUrls": 0,
+      "RulesApprox": 50
+    },
+    {
+      "File": "client-hub.css",
+      "Bytes": 48833,
+      "DirectReferences": [
+        "tests/ReleasePackaging/Program.cs"
+      ],
+      "LayoutArrayReferences": [
+        "_ClientHubLayout.cshtml"
+      ],
+      "Imports": [],
+      "RelativeUrls": 0,
+      "RulesApprox": 474
+    },
+    {
+      "File": "client-improvements-20261107.css",
+      "Bytes": 17832,
+      "DirectReferences": [
+        "Views/Shared/_ClientHubLayout.cshtml",
+        "Views/Shared/_Layout.cshtml"
+      ],
+      "LayoutArrayReferences": [],
+      "Imports": [],
+      "RelativeUrls": 1,
+      "RulesApprox": 153
+    },
+    {
+      "File": "client-messaging-final-20261108.css",
+      "Bytes": 12719,
+      "DirectReferences": [
+        "Views/Bookings/Create.cshtml",
+        "Views/Shared/_ClientHubLayout.cshtml"
+      ],
+      "LayoutArrayReferences": [],
+      "Imports": [],
+      "RelativeUrls": 0,
+      "RulesApprox": 92
+    },
+    {
+      "File": "client-pro-max-20261108.css",
+      "Bytes": 6448,
+      "DirectReferences": [
+        "Views/Bookings/Create.cshtml",
+        "Views/Shared/_ClientHubLayout.cshtml"
+      ],
+      "LayoutArrayReferences": [],
+      "Imports": [],
+      "RelativeUrls": 0,
+      "RulesApprox": 42
+    },
+    {
+      "File": "client-redesign-final.css",
+      "Bytes": 21984,
+      "DirectReferences": [
+        "Views/Shared/_ClientHubLayout.cshtml"
+      ],
+      "LayoutArrayReferences": [],
+      "Imports": [],
+      "RelativeUrls": 0,
+      "RulesApprox": 200
+    },
+    {
+      "File": "client-refresh.css",
+      "Bytes": 28308,
+      "DirectReferences": [
+        "Views/Shared/_Layout.cshtml"
+      ],
+      "LayoutArrayReferences": [
+        "_ClientHubLayout.cshtml"
+      ],
+      "Imports": [],
+      "RelativeUrls": 1,
+      "RulesApprox": 245
+    },
+    {
+      "File": "client-round2-20261108.css",
+      "Bytes": 34078,
+      "DirectReferences": [
+        "Views/Bookings/Create.cshtml",
+        "Views/Payments/Upload.cshtml",
+        "Views/RescheduleRequests/Create.cshtml",
+        "Views/RescheduleRequests/Submitted.cshtml",
+        "Views/Shared/_ClientHubLayout.cshtml"
+      ],
+      "LayoutArrayReferences": [],
+      "Imports": [],
+      "RelativeUrls": 0,
+      "RulesApprox": 284
+    },
+    {
+      "File": "client-ultra-20261108.css",
+      "Bytes": 9095,
+      "DirectReferences": [
+        "Views/Bookings/Create.cshtml",
+        "Views/Payments/Upload.cshtml",
+        "Views/RescheduleRequests/Create.cshtml",
+        "Views/Shared/_ClientHubLayout.cshtml"
+      ],
+      "LayoutArrayReferences": [],
+      "Imports": [],
+      "RelativeUrls": 0,
+      "RulesApprox": 67
+    },
+    {
+      "File": "communication-center.css",
+      "Bytes": 24827,
+      "DirectReferences": [
+        "Views/Shared/_Layout.cshtml"
+      ],
+      "LayoutArrayReferences": [
+        "_ClientHubLayout.cshtml",
+        "_DashboardLayout.cshtml"
+      ],
+      "Imports": [],
+      "RelativeUrls": 0,
+      "RulesApprox": 244
+    },
+    {
+      "File": "confirmed-booking-edit-20261109.css",
+      "Bytes": 4512,
+      "DirectReferences": [
+        "Views/Shared/_ClientHubLayout.cshtml",
+        "Views/Shared/_DashboardLayout.cshtml"
+      ],
+      "LayoutArrayReferences": [],
+      "Imports": [],
+      "RelativeUrls": 0,
+      "RulesApprox": 45
+    },
+    {
+      "File": "feedback.css",
+      "Bytes": 3410,
+      "DirectReferences": [
+        "Views/Shared/_Layout.cshtml"
+      ],
+      "LayoutArrayReferences": [
+        "_ClientHubLayout.cshtml",
+        "_DashboardLayout.cshtml"
+      ],
+      "Imports": [],
+      "RelativeUrls": 0,
+      "RulesApprox": 40
+    },
+    {
+      "File": "filters.css",
+      "Bytes": 5984,
+      "DirectReferences": [
+        "Views/Shared/_Layout.cshtml"
+      ],
+      "LayoutArrayReferences": [
+        "_ClientHubLayout.cshtml",
+        "_DashboardLayout.cshtml"
+      ],
+      "Imports": [],
+      "RelativeUrls": 0,
+      "RulesApprox": 51
+    },
+    {
+      "File": "internal-profile.css",
+      "Bytes": 3167,
+      "DirectReferences": [],
+      "LayoutArrayReferences": [
+        "_DashboardLayout.cshtml"
+      ],
+      "Imports": [],
+      "RelativeUrls": 0,
+      "RulesApprox": 45
+    },
+    {
+      "File": "internal-ui.css",
+      "Bytes": 16618,
+      "DirectReferences": [],
+      "LayoutArrayReferences": [
+        "_DashboardLayout.cshtml"
+      ],
+      "Imports": [],
+      "RelativeUrls": 0,
+      "RulesApprox": 142
+    },
+    {
+      "File": "internal-workspaces.css",
+      "Bytes": 54287,
+      "DirectReferences": [],
+      "LayoutArrayReferences": [
+        "_DashboardLayout.cshtml"
+      ],
+      "Imports": [],
+      "RelativeUrls": 1,
+      "RulesApprox": 376
+    },
+    {
+      "File": "magic-client-consistency.css",
+      "Bytes": 51024,
+      "DirectReferences": [
+        "Views/Shared/_Layout.cshtml"
+      ],
+      "LayoutArrayReferences": [
+        "_ClientHubLayout.cshtml"
+      ],
+      "Imports": [],
+      "RelativeUrls": 1,
+      "RulesApprox": 295
+    },
+    {
+      "File": "magic-client-v2.css",
+      "Bytes": 88268,
+      "DirectReferences": [
+        "Views/Shared/_Layout.cshtml"
+      ],
+      "LayoutArrayReferences": [
+        "_ClientHubLayout.cshtml"
+      ],
+      "Imports": [],
+      "RelativeUrls": 3,
+      "RulesApprox": 682
+    },
+    {
+      "File": "notifications.css",
+      "Bytes": 3105,
+      "DirectReferences": [
+        "Views/Shared/_Layout.cshtml"
+      ],
+      "LayoutArrayReferences": [
+        "_ClientHubLayout.cshtml",
+        "_DashboardLayout.cshtml"
+      ],
+      "Imports": [],
+      "RelativeUrls": 0,
+      "RulesApprox": 40
+    },
+    {
+      "File": "ocr-verification.css",
+      "Bytes": 7574,
+      "DirectReferences": [
+        "Views/Shared/_Layout.cshtml"
+      ],
+      "LayoutArrayReferences": [
+        "_ClientHubLayout.cshtml",
+        "_DashboardLayout.cshtml"
+      ],
+      "Imports": [],
+      "RelativeUrls": 0,
+      "RulesApprox": 75
+    },
+    {
+      "File": "owner-interface.css",
+      "Bytes": 15708,
+      "DirectReferences": [],
+      "LayoutArrayReferences": [
+        "_DashboardLayout.cshtml"
+      ],
+      "Imports": [],
+      "RelativeUrls": 0,
+      "RulesApprox": 181
+    },
+    {
+      "File": "owner-round1-20261109.css",
+      "Bytes": 10394,
+      "DirectReferences": [
+        "Views/Shared/_DashboardLayout.cshtml"
+      ],
+      "LayoutArrayReferences": [],
+      "Imports": [],
+      "RelativeUrls": 0,
+      "RulesApprox": 124
+    },
+    {
+      "File": "owner-round2.css",
+      "Bytes": 34921,
+      "DirectReferences": [
+        "Views/Shared/_DashboardLayout.cshtml"
+      ],
+      "LayoutArrayReferences": [],
+      "Imports": [],
+      "RelativeUrls": 0,
+      "RulesApprox": 239
+    },
+    {
+      "File": "package-cards.css",
+      "Bytes": 3711,
+      "DirectReferences": [
+        "Views/Shared/_Layout.cshtml"
+      ],
+      "LayoutArrayReferences": [
+        "_ClientHubLayout.cshtml",
+        "_DashboardLayout.cshtml"
+      ],
+      "Imports": [],
+      "RelativeUrls": 0,
+      "RulesApprox": 32
+    },
+    {
+      "File": "package-editor.css",
+      "Bytes": 2536,
+      "DirectReferences": [],
+      "LayoutArrayReferences": [
+        "_DashboardLayout.cshtml"
+      ],
+      "Imports": [],
+      "RelativeUrls": 0,
+      "RulesApprox": 34
+    },
+    {
+      "File": "personnel.css",
+      "Bytes": 615,
+      "DirectReferences": [
+        "Views/Shared/_DashboardLayout.cshtml"
+      ],
+      "LayoutArrayReferences": [],
+      "Imports": [],
+      "RelativeUrls": 0,
+      "RulesApprox": 8
+    },
+    {
+      "File": "role-dashboards.css",
+      "Bytes": 7624,
+      "DirectReferences": [],
+      "LayoutArrayReferences": [
+        "_DashboardLayout.cshtml"
+      ],
+      "Imports": [],
+      "RelativeUrls": 0,
+      "RulesApprox": 97
+    },
+    {
+      "File": "site.css",
+      "Bytes": 114979,
+      "DirectReferences": [
+        "Views/Shared/_Layout.cshtml",
+        "tests/OwnerRegression/StaticFileSecurityRegression.cs",
+        "wwwroot/css/aries-client-theme.css"
+      ],
+      "LayoutArrayReferences": [
+        "_ClientHubLayout.cshtml",
+        "_DashboardLayout.cshtml"
+      ],
+      "Imports": [],
+      "RelativeUrls": 0,
+      "RulesApprox": 906
+    },
+    {
+      "File": "soft-ui.css",
+      "Bytes": 833,
+      "DirectReferences": [],
+      "LayoutArrayReferences": [
+        "_DashboardLayout.cshtml"
+      ],
+      "Imports": [],
+      "RelativeUrls": 0,
+      "RulesApprox": 6
+    },
+    {
+      "File": "staff-bookings.css",
+      "Bytes": 7111,
+      "DirectReferences": [],
+      "LayoutArrayReferences": [
+        "_DashboardLayout.cshtml"
+      ],
+      "Imports": [],
+      "RelativeUrls": 0,
+      "RulesApprox": 95
+    },
+    {
+      "File": "staff-calendar.css",
+      "Bytes": 14456,
+      "DirectReferences": [],
+      "LayoutArrayReferences": [
+        "_DashboardLayout.cshtml"
+      ],
+      "Imports": [],
+      "RelativeUrls": 0,
+      "RulesApprox": 171
+    },
+    {
+      "File": "staff-final-20261109.css",
+      "Bytes": 31250,
+      "DirectReferences": [
+        "Views/Shared/_DashboardLayout.cshtml"
+      ],
+      "LayoutArrayReferences": [],
+      "Imports": [],
+      "RelativeUrls": 0,
+      "RulesApprox": 181
+    },
+    {
+      "File": "staff-final-round-20261116.css",
+      "Bytes": 53922,
+      "DirectReferences": [
+        "Views/Shared/_DashboardLayout.cshtml"
+      ],
+      "LayoutArrayReferences": [],
+      "Imports": [],
+      "RelativeUrls": 0,
+      "RulesApprox": 341
+    },
+    {
+      "File": "staff-interface.css",
+      "Bytes": 8927,
+      "DirectReferences": [],
+      "LayoutArrayReferences": [
+        "_DashboardLayout.cshtml"
+      ],
+      "Imports": [],
+      "RelativeUrls": 0,
+      "RulesApprox": 92
+    },
+    {
+      "File": "staff-reference-20261106.css",
+      "Bytes": 25028,
+      "DirectReferences": [
+        "Views/Shared/_DashboardLayout.cshtml"
+      ],
+      "LayoutArrayReferences": [],
+      "Imports": [],
+      "RelativeUrls": 0,
+      "RulesApprox": 194
+    },
+    {
+      "File": "staff-reschedules.css",
+      "Bytes": 9428,
+      "DirectReferences": [],
+      "LayoutArrayReferences": [
+        "_DashboardLayout.cshtml"
+      ],
+      "Imports": [],
+      "RelativeUrls": 0,
+      "RulesApprox": 112
+    },
+    {
+      "File": "staff-round1-20261108.css",
+      "Bytes": 28055,
+      "DirectReferences": [
+        "Views/Shared/_DashboardLayout.cshtml"
+      ],
+      "LayoutArrayReferences": [],
+      "Imports": [],
+      "RelativeUrls": 0,
+      "RulesApprox": 213
+    },
+    {
+      "File": "staff-round2-20261108.css",
+      "Bytes": 18307,
+      "DirectReferences": [
+        "Views/Shared/_DashboardLayout.cshtml"
+      ],
+      "LayoutArrayReferences": [],
+      "Imports": [],
+      "RelativeUrls": 0,
+      "RulesApprox": 138
+    },
+    {
+      "File": "tokens.css",
+      "Bytes": 870,
+      "DirectReferences": [
+        "Views/Shared/_Layout.cshtml",
+        "wwwroot/css/soft-ui.css"
+      ],
+      "LayoutArrayReferences": [
+        "_ClientHubLayout.cshtml",
+        "_DashboardLayout.cshtml"
+      ],
+      "Imports": [],
+      "RelativeUrls": 0,
+      "RulesApprox": 2
+    },
+    {
+      "File": "unified-support-20261108.css",
+      "Bytes": 1190,
+      "DirectReferences": [
+        "Views/Shared/_ClientHubLayout.cshtml",
+        "Views/Shared/_DashboardLayout.cshtml"
+      ],
+      "LayoutArrayReferences": [],
+      "Imports": [],
+      "RelativeUrls": 0,
+      "RulesApprox": 10
+    }
+  ],
+  "Layouts": {
+    "_Layout.cshtml": {
+      "literal": [
+        "site",
+        "tokens",
+        "aries-client-theme",
+        "magic-client-v2",
+        "magic-client-consistency",
+        "communication-center",
+        "ocr-verification",
+        "package-cards",
+        "filters",
+        "notifications",
+        "client-refresh",
+        "app-ui",
+        "client-experience",
+        "feedback",
+        "booking-concierge",
+        "client-improvements-20261107"
+      ],
+      "foreach_array": []
+    },
+    "_ClientHubLayout.cshtml": {
+      "literal": [
+        "aries-final-ui",
+        "client-redesign-final",
+        "client-improvements-20261107",
+        "unified-support-20261108",
+        "client-round2-20261108",
+        "client-final-20261108",
+        "client-ultra-20261108",
+        "client-pro-max-20261108",
+        "client-messaging-final-20261108",
+        "confirmed-booking-edit-20261109",
+        "aries-round3-ui"
+      ],
+      "foreach_array": [
+        "site",
+        "tokens",
+        "aries-client-theme",
+        "magic-client-v2",
+        "magic-client-consistency",
+        "communication-center",
+        "ocr-verification",
+        "package-cards",
+        "filters",
+        "notifications",
+        "client-refresh",
+        "app-ui",
+        "client-experience",
+        "feedback",
+        "booking-concierge",
+        "client-hub"
+      ]
+    },
+    "_DashboardLayout.cshtml": {
+      "literal": [
+        "aries-final-ui",
+        "confirmed-booking-edit-20261109",
+        "staff-reference-20261106",
+        "staff-round1-20261108",
+        "staff-round2-20261108",
+        "staff-final-20261109",
+        "owner-round1-20261109",
+        "owner-round2",
+        "personnel",
+        "unified-support-20261108",
+        "aries-round3-ui",
+        "staff-final-round-20261116"
+      ],
+      "foreach_array": [
+        "tokens",
+        "site",
+        "soft-ui",
+        "communication-center",
+        "ocr-verification",
+        "staff-bookings",
+        "staff-reschedules",
+        "staff-interface",
+        "package-cards",
+        "owner-interface",
+        "filters",
+        "package-editor",
+        "notifications",
+        "admin-console",
+        "role-dashboards",
+        "internal-profile",
+        "staff-calendar",
+        "internal-ui",
+        "app-ui",
+        "feedback",
+        "internal-workspaces"
+      ]
+    }
+  },
+  "Counts": {
+    "CSS": 48,
+    "CSSBytes": 1143369,
+    "Razor": 128,
+    "JavaScript": 55,
+    "HTML": 0
+  }
+}
