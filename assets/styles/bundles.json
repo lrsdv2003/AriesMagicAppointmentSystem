@@ -1,0 +1,527 @@
+{
+  "formatVersion": 1,
+  "generatedDirectory": "wwwroot/css",
+  "modules": {
+    "foundations.css": [
+      "site.css",
+      "tokens.css",
+      "soft-ui.css",
+      "aries-client-theme.css",
+      "aries-final-ui.css",
+      "aries-round3-ui.css",
+      "app-ui.css"
+    ],
+    "client.css": [
+      "client-foundations.css",
+      "client-experience.css",
+      "client-refresh.css",
+      "client-hub.css",
+      "client-redesign-final.css",
+      "client-improvements-20261107.css",
+      "client-round2-20261108.css",
+      "client-final-20261108.css",
+      "client-ultra-20261108.css",
+      "client-pro-max-20261108.css",
+      "client-messaging-final-20261108.css"
+    ],
+    "booking.css": [
+      "booking-concierge.css",
+      "booking-location.css",
+      "confirmed-booking-edit-20261109.css"
+    ],
+    "packages.css": [
+      "package-cards.css",
+      "package-editor.css"
+    ],
+    "messaging.css": [
+      "communication-center.css",
+      "unified-support-20261108.css"
+    ],
+    "staff.css": [
+      "staff.css",
+      "staff-final-round-20261116.css",
+      "staff-calendar.css",
+      "internal-operations.css"
+    ],
+    "owner.css": [
+      "owner.css",
+      "owner-interface.css",
+      "personnel.css"
+    ],
+    "internal.css": [
+      "internal-ui.css",
+      "internal-profile.css",
+      "internal-workspaces.css",
+      "role-dashboards.css",
+      "admin-console.css"
+    ],
+    "shared-features.css": [
+      "filters.css",
+      "feedback.css",
+      "notifications.css",
+      "ocr-verification.css"
+    ]
+  },
+  "bundles": {
+    "site.css": {
+      "preamble": "/* ARIES CSS PHASE 2 BUNDLE: site.css — exact-order source sections.\n   Source snapshots preserved in git history; do not reorder declarations.\n   Some legacy sections are repeated in role-specific bundles to preserve cascade. */\n\n",
+      "sections": [
+        {
+          "source": "site.css",
+          "before": "\n",
+          "after": "\n\n\n"
+        },
+        {
+          "source": "tokens.css",
+          "before": "\n",
+          "after": "\n\n\n"
+        },
+        {
+          "source": "aries-client-theme.css",
+          "before": "\n",
+          "after": "\n"
+        }
+      ]
+    },
+    "client-core.css": {
+      "preamble": "/* ARIES CSS PHASE 2 BUNDLE: client-core.css — exact-order source sections.\n   Source snapshots preserved in git history; do not reorder declarations.\n   Some legacy sections are repeated in role-specific bundles to preserve cascade. */\n\n",
+      "sections": [
+        {
+          "source": "client-foundations.css",
+          "before": "\n",
+          "after": "\n\n\n"
+        },
+        {
+          "source": "communication-center.css",
+          "before": "\n",
+          "after": "\n\n\n"
+        },
+        {
+          "source": "ocr-verification.css",
+          "before": "\n",
+          "after": "\n\n\n"
+        },
+        {
+          "source": "package-cards.css",
+          "before": "\n",
+          "after": "\n\n\n"
+        },
+        {
+          "source": "filters.css",
+          "before": "\n",
+          "after": "\n\n\n"
+        },
+        {
+          "source": "notifications.css",
+          "before": "\n",
+          "after": "\n\n\n"
+        },
+        {
+          "source": "client-refresh.css",
+          "before": "\n",
+          "after": "\n\n\n"
+        },
+        {
+          "source": "app-ui.css",
+          "before": "\n",
+          "after": "\n\n\n"
+        },
+        {
+          "source": "client-experience.css",
+          "before": "\n",
+          "after": "\n\n\n"
+        },
+        {
+          "source": "feedback.css",
+          "before": "\n",
+          "after": "\n"
+        }
+      ]
+    },
+    "booking-concierge.css": {
+      "preamble": "/* ARIES CSS PHASE 2 BUNDLE: booking-concierge.css — exact-order source sections.\n   Source snapshots preserved in git history; do not reorder declarations.\n   Some legacy sections are repeated in role-specific bundles to preserve cascade. */\n\n",
+      "sections": [
+        {
+          "source": "booking-concierge.css",
+          "before": "\n",
+          "after": "\n\n\n"
+        },
+        {
+          "source": "client-improvements-20261107.css",
+          "before": "\n",
+          "after": "\n"
+        }
+      ]
+    },
+    "client-hub.css": {
+      "preamble": "/* ARIES CSS PHASE 2 BUNDLE: client-hub.css — exact-order source sections.\n   Source snapshots preserved in git history; do not reorder declarations.\n   Some legacy sections are repeated in role-specific bundles to preserve cascade. */\n\n",
+      "sections": [
+        {
+          "source": "site.css",
+          "before": "\n",
+          "after": "\n\n\n"
+        },
+        {
+          "source": "tokens.css",
+          "before": "\n",
+          "after": "\n\n\n"
+        },
+        {
+          "source": "aries-client-theme.css",
+          "before": "\n",
+          "after": "\n\n\n"
+        },
+        {
+          "source": "client-foundations.css",
+          "before": "\n",
+          "after": "\n\n\n"
+        },
+        {
+          "source": "communication-center.css",
+          "before": "\n",
+          "after": "\n\n\n"
+        },
+        {
+          "source": "ocr-verification.css",
+          "before": "\n",
+          "after": "\n\n\n"
+        },
+        {
+          "source": "package-cards.css",
+          "before": "\n",
+          "after": "\n\n\n"
+        },
+        {
+          "source": "filters.css",
+          "before": "\n",
+          "after": "\n\n\n"
+        },
+        {
+          "source": "notifications.css",
+          "before": "\n",
+          "after": "\n\n\n"
+        },
+        {
+          "source": "client-refresh.css",
+          "before": "\n",
+          "after": "\n\n\n"
+        },
+        {
+          "source": "app-ui.css",
+          "before": "\n",
+          "after": "\n\n\n"
+        },
+        {
+          "source": "client-experience.css",
+          "before": "\n",
+          "after": "\n\n\n"
+        },
+        {
+          "source": "feedback.css",
+          "before": "\n",
+          "after": "\n\n\n"
+        },
+        {
+          "source": "booking-concierge.css",
+          "before": "\n",
+          "after": "\n\n\n"
+        },
+        {
+          "source": "client-hub.css",
+          "before": "\n",
+          "after": "\n"
+        }
+      ]
+    },
+    "aries-final-ui.css": {
+      "preamble": "/* ARIES CSS PHASE 2 BUNDLE: aries-final-ui.css — exact-order source sections.\n   Source snapshots preserved in git history; do not reorder declarations.\n   Some legacy sections are repeated in role-specific bundles to preserve cascade. */\n\n",
+      "sections": [
+        {
+          "source": "aries-final-ui.css",
+          "before": "\n",
+          "after": "\n"
+        }
+      ]
+    },
+    "client-hub-overrides.css": {
+      "preamble": "/* ARIES CSS PHASE 2 BUNDLE: client-hub-overrides.css — exact-order source sections.\n   Source snapshots preserved in git history; do not reorder declarations.\n   Some legacy sections are repeated in role-specific bundles to preserve cascade. */\n\n",
+      "sections": [
+        {
+          "source": "client-redesign-final.css",
+          "before": "\n",
+          "after": "\n\n\n"
+        },
+        {
+          "source": "client-improvements-20261107.css",
+          "before": "\n",
+          "after": "\n\n\n"
+        },
+        {
+          "source": "unified-support-20261108.css",
+          "before": "\n",
+          "after": "\n\n\n"
+        },
+        {
+          "source": "client-round2-20261108.css",
+          "before": "\n",
+          "after": "\n\n\n"
+        },
+        {
+          "source": "client-final-20261108.css",
+          "before": "\n",
+          "after": "\n\n\n"
+        },
+        {
+          "source": "client-ultra-20261108.css",
+          "before": "\n",
+          "after": "\n\n\n"
+        },
+        {
+          "source": "client-pro-max-20261108.css",
+          "before": "\n",
+          "after": "\n\n\n"
+        },
+        {
+          "source": "client-messaging-final-20261108.css",
+          "before": "\n",
+          "after": "\n\n\n"
+        },
+        {
+          "source": "confirmed-booking-edit-20261109.css",
+          "before": "\n",
+          "after": "\n\n\n"
+        },
+        {
+          "source": "aries-round3-ui.css",
+          "before": "\n",
+          "after": "\n"
+        }
+      ]
+    },
+    "internal-core.css": {
+      "preamble": "/* ARIES CSS PHASE 2 BUNDLE: internal-core.css — exact-order source sections.\n   Source snapshots preserved in git history; do not reorder declarations.\n   Some legacy sections are repeated in role-specific bundles to preserve cascade. */\n\n",
+      "sections": [
+        {
+          "source": "tokens.css",
+          "before": "\n",
+          "after": "\n\n\n"
+        },
+        {
+          "source": "site.css",
+          "before": "\n",
+          "after": "\n\n\n"
+        },
+        {
+          "source": "soft-ui.css",
+          "before": "\n",
+          "after": "\n\n\n"
+        },
+        {
+          "source": "communication-center.css",
+          "before": "\n",
+          "after": "\n\n\n"
+        },
+        {
+          "source": "ocr-verification.css",
+          "before": "\n",
+          "after": "\n\n\n"
+        },
+        {
+          "source": "internal-operations.css",
+          "before": "\n",
+          "after": "\n\n\n"
+        },
+        {
+          "source": "package-cards.css",
+          "before": "\n",
+          "after": "\n\n\n"
+        },
+        {
+          "source": "owner-interface.css",
+          "before": "\n",
+          "after": "\n\n\n"
+        },
+        {
+          "source": "filters.css",
+          "before": "\n",
+          "after": "\n\n\n"
+        },
+        {
+          "source": "package-editor.css",
+          "before": "\n",
+          "after": "\n\n\n"
+        },
+        {
+          "source": "notifications.css",
+          "before": "\n",
+          "after": "\n\n\n"
+        },
+        {
+          "source": "admin-console.css",
+          "before": "\n",
+          "after": "\n\n\n"
+        },
+        {
+          "source": "role-dashboards.css",
+          "before": "\n",
+          "after": "\n\n\n"
+        },
+        {
+          "source": "internal-profile.css",
+          "before": "\n",
+          "after": "\n\n\n"
+        },
+        {
+          "source": "staff-calendar.css",
+          "before": "\n",
+          "after": "\n\n\n"
+        },
+        {
+          "source": "internal-ui.css",
+          "before": "\n",
+          "after": "\n\n\n"
+        },
+        {
+          "source": "app-ui.css",
+          "before": "\n",
+          "after": "\n\n\n"
+        },
+        {
+          "source": "feedback.css",
+          "before": "\n",
+          "after": "\n\n\n"
+        },
+        {
+          "source": "internal-workspaces.css",
+          "before": "\n",
+          "after": "\n"
+        }
+      ]
+    },
+    "staff.css": {
+      "preamble": "/* ARIES CSS PHASE 2 POST-ISOLATION BUNDLE: staff.css\n   Legacy declarations remain in original cascade order for this role.\n   Communication rules are .comm-page-scoped and harmless outside messaging. */\n\n",
+      "sections": [
+        {
+          "source": "confirmed-booking-edit-20261109.css",
+          "before": "\n",
+          "after": "\n\n"
+        },
+        {
+          "source": "staff.css",
+          "before": "\n",
+          "after": "\n\n"
+        },
+        {
+          "source": "unified-support-20261108.css",
+          "before": "\n",
+          "after": "\n\n"
+        },
+        {
+          "source": "aries-round3-ui.css",
+          "before": "\n",
+          "after": "\n\n"
+        },
+        {
+          "source": "staff-final-round-20261116.css",
+          "before": "\n",
+          "after": "\n"
+        }
+      ]
+    },
+    "owner.css": {
+      "preamble": "/* ARIES CSS PHASE 2 POST-ISOLATION BUNDLE: owner.css\n   Legacy declarations remain in original cascade order for this role.\n   Communication rules are .comm-page-scoped and harmless outside messaging. */\n\n",
+      "sections": [
+        {
+          "source": "owner.css",
+          "before": "\n",
+          "after": "\n\n"
+        },
+        {
+          "source": "personnel.css",
+          "before": "\n",
+          "after": "\n\n"
+        },
+        {
+          "source": "unified-support-20261108.css",
+          "before": "\n",
+          "after": "\n\n"
+        },
+        {
+          "source": "aries-round3-ui.css",
+          "before": "\n",
+          "after": "\n"
+        }
+      ]
+    },
+    "aries-round3-ui.css": {
+      "preamble": "/* ARIES CSS PHASE 2 POST-ISOLATION BUNDLE: aries-round3-ui.css\n   Legacy declarations remain in original cascade order for this role.\n   Communication rules are .comm-page-scoped and harmless outside messaging. */\n\n",
+      "sections": [
+        {
+          "source": "unified-support-20261108.css",
+          "before": "\n",
+          "after": "\n\n"
+        },
+        {
+          "source": "aries-round3-ui.css",
+          "before": "\n",
+          "after": "\n"
+        }
+      ]
+    },
+    "booking-create.css": {
+      "preamble": "/* ARIES CSS PHASE 2 BUNDLE: booking-create.css — exact-order source sections.\n   Source snapshots preserved in git history; do not reorder declarations.\n   Some legacy sections are repeated in role-specific bundles to preserve cascade. */\n\n",
+      "sections": [
+        {
+          "source": "booking-location.css",
+          "before": "\n",
+          "after": "\n\n\n"
+        },
+        {
+          "source": "client-round2-20261108.css",
+          "before": "\n",
+          "after": "\n\n\n"
+        },
+        {
+          "source": "client-ultra-20261108.css",
+          "before": "\n",
+          "after": "\n\n\n"
+        },
+        {
+          "source": "client-pro-max-20261108.css",
+          "before": "\n",
+          "after": "\n\n\n"
+        },
+        {
+          "source": "client-messaging-final-20261108.css",
+          "before": "\n",
+          "after": "\n"
+        }
+      ]
+    },
+    "client-form-overrides.css": {
+      "preamble": "/* ARIES CSS PHASE 2 BUNDLE: client-form-overrides.css — exact-order source sections.\n   Source snapshots preserved in git history; do not reorder declarations.\n   Some legacy sections are repeated in role-specific bundles to preserve cascade. */\n\n",
+      "sections": [
+        {
+          "source": "client-round2-20261108.css",
+          "before": "\n",
+          "after": "\n\n\n"
+        },
+        {
+          "source": "client-ultra-20261108.css",
+          "before": "\n",
+          "after": "\n"
+        }
+      ]
+    },
+    "client-submission.css": {
+      "preamble": "/* ARIES CSS PHASE 2 BUNDLE: client-submission.css — exact-order source sections.\n   Source snapshots preserved in git history; do not reorder declarations.\n   Some legacy sections are repeated in role-specific bundles to preserve cascade. */\n\n",
+      "sections": [
+        {
+          "source": "client-round2-20261108.css",
+          "before": "\n",
+          "after": "\n"
+        }
+      ]
+    }
+  }
+}

@@ -1,5 +1,7 @@
 # Frontend cleanup — implementation, structure and validation
 
+> **Phase 3 update (November 18, 2026):** Browser output remains 13 CSS files, but nine canonical source modules now generate these automatically without manually duplicated rules. See [Phase 3 results](phase3/README.md). The Phase 2 inventory below is preserved for historical comparison.
+
 > **Phase 2 update (November 18, 2026):** The current CSS count is now **13** in the dedicated `refactor/frontend-css-phase2-20261118` branch, with 6 CSS requests on the tested Staff, Owner and Client role pages. The 41-file figures below document the historical first pass. See [Phase 2 results](phase2/README.md) for the current implementation, trade-offs and test evidence.
 
 ## Guardrails and source

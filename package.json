@@ -3,8 +3,9 @@
   "private": true,
   "scripts": {
     "test:dom": "node tests/OwnerRegression/ui.dom.mjs",
-    "test:css": "node scripts/verify-css-bundles.mjs",
-    "css:sync": "node scripts/sync-css-bundles.mjs"
+    "test:css": "node scripts/build-css.mjs --check && node scripts/verify-css-bundles.mjs",
+    "css:check": "node scripts/build-css.mjs --check",
+    "css:build": "node scripts/build-css.mjs --write"
   },
   "engines": { "node": ">=24" },
   "devDependencies": { "jsdom": "30.1.3" }

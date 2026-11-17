@@ -1,5 +1,7 @@
 # Phase 2 — CSS bundle consolidation
 
+> This document is the Phase 2 baseline. The subsequent [Phase 3 canonical-source build](../phase3/README.md) supersedes the manual CSS synchronization workflow while retaining the same 13 generated bundle files.
+
 - **Date:** November 18, 2026
 - **Branch:** `refactor/frontend-css-phase2-20261118`
 - **Starting commit:** `384c30530a2823920a8f6c8850f94b8c78d962fd`

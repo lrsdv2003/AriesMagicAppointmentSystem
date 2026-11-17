@@ -45,6 +45,9 @@
     <!-- SDK/npm development manifests are build inputs, never runtime deployment content. -->
     <Content Remove="global.json;package.json;package-lock.json;npm-shrinkwrap.json" />
     <None Remove="global.json;package.json;package-lock.json;npm-shrinkwrap.json" />
+    <!-- Canonical CSS source and bundle recipe are dev-only; publish generated wwwroot/css files. -->
+    <Content Remove="assets\styles\**" />
+    <None Remove="assets\styles\**" />
     <!-- Private wrapping certificates and persisted key/revocation envelopes never enter build/publish content. -->
     <Content Remove="**\*.pfx;**\*.p12;**\key-*.xml;**\revocation-*.xml" />
     <None Remove="**\*.pfx;**\*.p12;**\key-*.xml;**\revocation-*.xml" />
