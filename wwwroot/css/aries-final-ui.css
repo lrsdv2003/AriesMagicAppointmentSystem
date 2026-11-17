@@ -1,3 +1,8 @@
+/* ARIES CSS PHASE 2 BUNDLE: aries-final-ui.css — exact-order source sections.
+   Source snapshots preserved in git history; do not reorder declarations.
+   Some legacy sections are repeated in role-specific bundles to preserve cascade. */
+
+/* ========== ORIGINAL: aries-final-ui.css ========== */
 .aries-timeline{margin:1.25rem 0;padding:1.4rem;background:#092239;color:#edf5fc;border:1px solid #244562;border-radius:16px;min-width:0}
 .aries-timeline-head{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;flex-wrap:wrap;border-bottom:1px solid #29475c;padding-bottom:1rem}
 .aries-timeline-head h2{font-size:1.15rem;color:#fff;margin:0 0 .3rem}.aries-timeline-head p{color:#b8c9d8;margin:0;font-size:.9rem}

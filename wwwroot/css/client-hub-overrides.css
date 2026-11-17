@@ -1,0 +1,1494 @@
+/* ARIES CSS PHASE 2 BUNDLE: client-hub-overrides.css — exact-order source sections.
+   Source snapshots preserved in git history; do not reorder declarations.
+   Some legacy sections are repeated in role-specific bundles to preserve cascade. */
+
+/* ========== ORIGINAL: client-redesign-final.css ========== */
+/* Client-only UI modernization; PDF pages 1–4; no internal-role impact. */
+body.client-body.client-hub{--mc-page:#031529;--mc-surface:#09233b;--mc-elevated:#0d304d;--mc-line:#31516c;--mc-muted:#b5c8d9;--mc-text:#f3f9fd;--mc-gold:#f0bb51;--mc-link:#78c9ff;--mc-primary:#137abb;--mc-message-mine:#104b79;--mc-success:#65e4aa;--mc-danger:#ff8295;--mc-shadow:rgba(0,0,0,.15);background:linear-gradient(120deg,#031529,#041c33)!important;color:#f3f9fd!important;font:400 15px/1.6 'DM Sans',system-ui,sans-serif!important}
+body.client-hub .hub-sidebar{width:220px!important;background:#04192f!important;border-right:1px solid #2b4b65!important;padding:22px 13px 20px!important}
+body.client-hub .hub-stage{margin-left:220px!important}
+body.client-hub .hub-brand{margin:0 0 23px!important;padding:0 7px}
+body.client-hub .hub-brand>span{padding-top:14px!important;margin-top:16px!important}
+body.client-hub .hub-navigation{gap:17px!important}
+body.client-hub .hub-nav-caption{font-size:10px!important;text-transform:uppercase!important;letter-spacing:.1em!important;font-weight:700!important;color:#a8c1d6!important;margin:0 8px 8px!important}
+body.client-hub .hub-navigation a{min-height:44px!important;padding:9px 11px!important;gap:11px!important;border-radius:8px!important;font-size:13px!important;color:#c4d6e5!important;font-weight:550!important}
+body.client-hub .hub-navigation a i{width:18px;text-align:center;font-size:16px!important}
+body.client-hub .hub-navigation a[aria-current=page]{background:#143a59!important;border:1px solid #366a8b!important;border-left:3px solid #f0bb51!important;color:#fff!important;padding-left:9px!important}
+body.client-hub .hub-navigation a:hover{background:#10334e!important;color:#fff!important}
+body.client-hub .hub-count{background:#d5274e!important;color:#fff!important}
+body.client-hub .hub-rail-footer{padding-top:14px!important;margin-top:24px;border-top:1px solid #2a4861}
+body.client-body.client-hub .hub-content.container{max-width:1380px!important;padding:30px 34px 42px!important}
+body.client-body.client-hub h1{font-size:clamp(26px,2.25vw,34px)!important;letter-spacing:-.035em!important;font-weight:750!important}
+body.client-body.client-hub h2{font-weight:700!important}
+body.client-hub .hub-heading{margin:0 0 22px!important;align-items:center;gap:16px}
+body.client-hub .hub-kicker{font-size:11px!important;font-weight:700!important;letter-spacing:.08em!important;text-transform:uppercase!important;color:#f0bb51!important}
+body.client-hub .hub-heading p{color:#bacddd!important;font-size:13px!important}
+body.client-hub .hub-card,body.client-hub .cn-record{border:1px solid #30516d!important;background:#09233b!important;color:#eef7ff!important;border-radius:12px!important;box-shadow:0 4px 18px rgba(0,0,0,.12)!important}
+body.client-hub .cn-record{padding:21px 23px!important}
+body.client-hub .cn-records{display:grid;gap:14px!important;grid-template-columns:minmax(0,1fr)}
+body.client-hub .cn-button.cn-primary{display:inline-flex;justify-content:center;align-items:center;gap:8px;background:#ce1946!important;color:#fff!important;border:1px solid #e43b60!important;border-radius:8px!important;min-height:44px;font-weight:750!important;padding:10px 16px}
+body.client-hub .cn-button.cn-primary:hover{background:#af1035!important}
+body.client-hub .cn-button.cn-secondary{background:#156caa!important;color:#fff!important;border-color:#3b92c9!important}
+body.client-hub .hub-search-row,body.client-hub .cn-list-tools{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(155px,210px)!important;gap:13px!important;align-items:end;margin-bottom:17px!important}
+body.client-hub .cn-list-tools .cn-field{min-width:0;margin:0!important}
+body.client-hub .cn-field label{color:#dceaf4!important;font-size:12px!important;font-weight:650!important}
+body.client-hub .cn-input{background:#081c32!important;border:1px solid #3d637e!important;min-height:44px!important;border-radius:7px!important;color:#f4f9ff!important;font-size:14px!important;box-shadow:none!important}
+body.client-hub .cn-input::placeholder{color:#a3b8cb!important}
+body.client-hub .hub-reference,body.client-hub .cn-reference{color:#f3bd55!important;font-weight:750!important}
+body.client-hub .hub-booking-record{grid-template-columns:minmax(0,1.45fr) minmax(205px,1fr)!important;gap:14px 25px!important;align-items:center}
+body.client-hub .hub-booking-main h2{font-size:17px!important;margin:7px 0 10px!important}
+body.client-hub .hub-booking-main p{font-size:13px!important;color:#c9dce8!important;line-height:1.65!important;overflow-wrap:anywhere}
+body.client-hub .hub-booking-main p strong{color:#f4faff!important}
+body.client-hub .hub-booking-finance{border-left:1px solid #365b76!important;padding-left:24px!important}
+body.client-hub .ref-eyebrow{display:block;color:#a6c6dc;font-size:11px;text-transform:uppercase;letter-spacing:.06em;font-weight:700;margin-bottom:3px}
+body.client-hub .ref-balance{display:flex!important;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+body.client-hub .ref-balance dt{font-size:12px!important;color:#c4d9e9!important}
+body.client-hub .ref-balance dd{font-size:18px!important;font-weight:750!important;color:#fff!important;margin:0!important}
+body.client-hub .hub-progress{height:7px!important;border-radius:30px!important}
+body.client-hub .ref-finance-meta{display:flex;gap:1px;flex-direction:column;margin-top:5px}
+body.client-hub .hub-booking-finance small{font-size:11px!important;color:#aec3d4!important}
+body.client-hub .hub-booking-record .cn-record-actions{gap:12px!important}
+body.client-hub .hub-booking-record .cn-record-actions p{font-size:12px!important;color:#b7ccdb!important}
+body.client-hub .hub-row-links{display:flex;flex-wrap:wrap;gap:10px 16px}
+body.client-hub .hub-row-links a,body.client-hub .ref-view-link{color:#f1c568!important;font-size:13px!important;font-weight:700!important;text-decoration:none!important;display:inline-flex;align-items:center;gap:7px}
+body.client-hub .hub-row-links a:hover,body.client-hub .ref-view-link:hover{text-decoration:underline!important}
+
+/* Payments and reschedule cards: accessible information hierarchy */
+body.client-hub .ref-record-head{display:flex!important;align-items:center;justify-content:space-between;gap:13px!important;margin:0 0 15px!important}
+body.client-hub .ref-head-title{display:flex;align-items:center;gap:12px;flex-wrap:wrap;min-width:0}
+body.client-hub .ref-head-title h2{font-size:16px!important;margin:0!important;overflow-wrap:anywhere}
+body.client-hub .ref-head-divider{display:inline-block;width:1px;height:20px;background:#43617c}
+body.client-hub .ref-status{display:inline-flex;justify-content:center;align-items:center;min-height:30px;flex-shrink:0;padding:5px 10px;border-radius:6px;font-size:11px;font-weight:750;color:#cde5f5;background:#143d5e;border:1px solid #537b9a;text-align:center}
+body.client-hub .ref-status-verified{color:#bdf4d7;background:#155840;border-color:#3a9269}
+body.client-hub .ref-status-pending,body.client-hub .ref-status-additional{color:#ffe5ad;background:#6b4b22;border-color:#a37c3b}
+body.client-hub .ref-status-rejected{color:#ffd5df;background:#65213b;border-color:#aa4564}
+body.client-hub .ref-finance-grid{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:0!important;margin:8px 0 15px!important;padding:14px 0!important;border-top:1px solid #2b4b68}
+body.client-hub .ref-finance-grid>div{display:flex!important;flex-direction:column;min-width:0;padding:0 15px!important;border-right:1px solid #34546b;gap:5px}
+body.client-hub .ref-finance-grid>div:first-child{padding-left:0!important}
+body.client-hub .ref-finance-grid>div:last-child{border:0}
+body.client-hub .ref-finance-grid dt{font-size:11px!important;color:#b8cfe0!important;font-weight:500!important}
+body.client-hub .ref-finance-grid dd{font-size:clamp(14px,1.55vw,18px)!important;font-weight:750!important;color:#f8fbff!important;margin:0!important;overflow-wrap:anywhere}
+body.client-hub .ref-payment-explanation{display:flex!important;align-items:flex-start!important;gap:10px!important;margin:10px 0 13px!important;padding:10px 13px!important;border:1px solid #396582!important;border-left:3px solid #f0bc52!important;border-radius:7px!important;background:#0d304d!important;color:#d7e9f7!important;font-size:12px!important;line-height:1.6!important}
+body.client-hub .ref-payment-explanation i{flex-shrink:0;margin-top:1px;color:#f3c45b;font-size:15px}
+body.client-hub .ref-record-footer{display:flex;justify-content:space-between;align-items:center;gap:12px;border-top:1px solid #30516b;padding-top:10px;margin-top:4px}
+body.client-hub .ref-record-footer .cn-disclosure{border:0!important;background:transparent!important;margin:0!important;padding:0!important;min-width:0;flex:1}
+body.client-hub .ref-record-footer .cn-disclosure summary{color:#e3f0fa!important;font-weight:600!important;font-size:13px!important;cursor:pointer;min-height:40px;display:flex;align-items:center}
+body.client-hub .ref-receipt{display:grid;grid-template-columns:140px minmax(0,1fr);gap:16px;padding:12px 0}
+body.client-hub .ref-receipt img{width:130px;height:160px;object-fit:contain;border:1px solid #456780;background:#071e33;border-radius:7px}
+body.client-hub .ref-receipt p{font-size:12px;color:#cfdfec}
+body.client-hub .cn-replacement{margin-top:14px!important;padding:16px!important;border:1px solid #39607d!important;border-radius:10px!important;background:#0d2943!important}
+body.client-hub .cn-replacement input[type=file]{color:#e2f1fb;max-width:100%}
+body.client-hub .ref-extra-action{margin-top:11px}
+body.client-hub .ref-extra-action a{font-weight:700;color:#83ceff;font-size:12px}
+body.client-hub .ref-schedule-pair{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:19px;margin:8px 0 12px}
+body.client-hub .ref-schedule-pair>div{min-width:0;padding-right:18px;border-right:1px solid #345770}
+body.client-hub .ref-schedule-pair>div:last-child{padding-left:6px;border:0}
+body.client-hub .ref-schedule-pair dt{font-size:12px;font-weight:600;color:#acc9dd;margin-bottom:8px}
+body.client-hub .ref-schedule-pair dt i{color:#7ac8ff;margin-right:7px}
+body.client-hub .ref-schedule-pair dd{display:inline-block;max-width:100%;margin:0;padding:9px 11px;border-radius:7px;background:#11344f;border:1px solid #436985;color:#f5faff;font-size:13px;font-weight:600;overflow-wrap:anywhere}
+body.client-hub .ref-disclosure-details{padding:12px 0;max-width:75ch}
+body.client-hub .ref-disclosure-details p{font-size:13px;color:#d8e8f3;overflow-wrap:anywhere}
+body.client-hub .ref-guidance{color:#b3cbdd;font-size:12px;line-height:1.7;margin:18px 0 0}
+body.client-hub .ref-guidance a{color:#8fcfff}
+
+/* Refund proof and protected payment details */
+body.client-hub .ref-request-date{font-size:12px!important;color:#b6cede!important;margin:5px 0 0}
+body.client-hub .ref-refund-card .cn-record-head h2{font-size:17px!important;margin:5px 0!important}
+body.client-hub .ref-refund-layout{display:grid;grid-template-columns:minmax(220px,.9fr) minmax(0,1.45fr);gap:18px;padding:18px 0 7px;border-top:1px solid #33536b}
+body.client-hub .ref-refund-proof{min-width:0;background:#0b2942;border:1px solid #365a76;border-radius:10px;padding:13px}
+body.client-hub .ref-refund-proof h3{font-size:13px!important;margin:0 0 10px}
+body.client-hub .ref-refund-proof h3 i{color:#83ceff;margin-right:8px}
+body.client-hub .ref-refund-proof>a{display:grid;place-items:center;background:#051b2e;border:1px solid #3e607a;border-radius:9px;min-height:175px}
+body.client-hub .ref-refund-proof img{display:block;height:195px;width:100%;max-width:320px;object-fit:contain}
+body.client-hub .ref-refund-proof .cn-help{font-size:11px;color:#acc7d9;margin:8px 0 0}
+body.client-hub .ref-refund-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:0 0 15px}
+body.client-hub .ref-refund-metrics>div{min-width:0;padding:13px;background:#0d2f4a;border-radius:9px;border:1px solid #375d79}
+body.client-hub .ref-refund-metrics dt{font-size:11px;color:#bacfe1}
+body.client-hub .ref-refund-metrics dd{font-size:16px;font-weight:750;color:#fff;margin:5px 0 0;overflow-wrap:anywhere}
+body.client-hub .ref-refund-facts{margin:0}
+body.client-hub .ref-refund-facts>div{display:grid;grid-template-columns:minmax(120px,1fr) minmax(0,1.2fr);gap:12px;padding:12px 0;border-top:1px solid #34536d}
+body.client-hub .ref-refund-facts dt{color:#b9cfdf;font-weight:500;font-size:12px}
+body.client-hub .ref-refund-facts dt i{color:#81ceff;margin-right:6px}
+body.client-hub .ref-refund-facts dd{font-size:13px;color:#f4faff;font-weight:650;text-align:right;overflow-wrap:anywhere;margin:0}
+body.client-hub .ref-refund-card .ref-record-footer{justify-content:flex-end}
+/* Notification categories/chronological groups and unread blue emphasis */
+body.client-hub .ref-notice-filters{display:flex!important;flex-wrap:wrap!important;gap:8px!important;margin-bottom:17px!important}
+body.client-hub .ref-notice-filters button{display:inline-flex!important;justify-content:center;align-items:center;gap:7px;min-height:42px!important;border:1px solid #345a78!important;border-radius:8px!important;padding:8px 13px!important;color:#d2e4f1!important;background:#08223b!important;font-size:12px!important;font-weight:650!important}
+body.client-hub .ref-notice-filters button[aria-pressed=true]{background:#1571ad!important;border-color:#54a6dc!important;color:#fff!important}
+body.client-hub .ref-notice-filters button:hover{border-color:#70baf0!important}
+body.client-hub .hub-notice-list{padding:0!important;border:none!important;background:none!important;box-shadow:none!important}
+body.client-hub .notice-row{grid-template-columns:42px minmax(0,1fr) auto!important;gap:14px!important;align-items:center!important;padding:15px!important;margin:0 0 9px!important;border:1px solid #325773!important;border-radius:10px!important;background:#09243e!important;color:#f3faff!important;box-shadow:0 3px 10px rgba(0,0,0,.08)!important}
+body.client-hub .notice-row:last-child{border:1px solid #325773!important}
+body.client-hub .notice-unread{background:#0d3050!important;box-shadow:inset 3px 0 #4daef1,0 3px 10px rgba(0,0,0,.08)!important}
+body.client-hub .notice-icon{width:42px!important;height:42px!important;border-radius:9px!important;background:#113f61!important;color:#82ceff!important}
+body.client-hub .notice-copy h2{font-size:14px!important;color:#f3f8ff!important;margin:3px 0!important}
+body.client-hub .notice-unread .notice-copy h2{color:#83d0ff!important}
+body.client-hub .notice-copy p{font-size:12px!important;color:#c2d7e7!important;line-height:1.5!important}
+body.client-hub .notice-meta{font-size:10px!important;gap:8px!important}
+body.client-hub .notice-category{color:#d0e4f2!important;font-weight:700!important}
+body.client-hub .notice-state{color:#a6c6dd!important}
+body.client-hub .notice-unread .notice-state{color:#81caff!important}
+body.client-hub .notice-open-form{justify-self:end!important;align-self:center!important}
+body.client-hub .notice-open-form>button.notice-action{background:#176fae!important;border:1px solid #408fc5!important;color:#fff!important;min-height:40px!important;padding:8px 12px!important;border-radius:8px!important;font-size:12px!important;text-decoration:none!important;white-space:nowrap}
+body.client-hub .hub-notice-group>h2{font-size:12px!important;color:#c8dce9!important;font-weight:700!important}
+
+/* Profile and two-panel messaging, without changing data or message handlers */
+body.client-hub .hub-profile-layout{grid-template-columns:minmax(0,1.5fr) minmax(270px,.95fr)!important;gap:19px!important}
+body.client-hub .hub-personal{padding:24px!important}
+body.client-hub .hub-personal .cn-field{margin-bottom:18px!important}
+body.client-hub .hub-personal .cn-actions{border-top:1px solid #32536e;padding-top:17px;margin-top:20px!important;justify-content:flex-end}
+body.client-hub .hub-section-heading{border-bottom:1px solid #2c4f6b;padding-bottom:12px}
+body.client-hub .hub-section-heading h2{font-size:16px!important}
+body.client-hub .hub-profile-side{gap:17px!important}
+body.client-hub .hub-profile-photo{text-align:center;padding:21px!important}
+body.client-hub .hub-avatar{width:94px!important;height:94px!important;margin-bottom:12px!important}
+body.client-hub .hub-profile-photo h2{font-size:18px!important}
+body.client-hub .hub-security{padding:21px!important}
+body.client-hub .hub-security h2{font-size:16px!important;border-bottom:1px solid #32516b;padding-bottom:12px}
+body.client-hub .hub-security p{margin:12px 0!important;gap:3px!important}
+body.client-hub .hub-security .cn-edit{color:#80caff!important}
+body.client-hub .hub-messages>.hub-heading{margin-bottom:16px!important}
+body.client-hub .hub-messages .comm-workspace{grid-template-columns:285px minmax(0,1fr)!important;border-radius:12px!important;min-height:480px!important}
+body.client-hub .comm-panel-top{background:#0a2944!important}
+body.client-hub .comm-conversation-item.active{background:#103b5c!important;border:1px solid #497797!important;border-left:3px solid #f0bb51!important}
+body.client-hub .comm-conversation-item.unread .comm-item-heading strong{color:#8fd3ff!important}
+body.client-hub .comm-chat-header{background:#0b2944!important}
+body.client-hub .comm-message-history{background:#0b2944!important}
+body.client-hub .comm-message{max-width:min(80%,570px)!important}
+body.client-hub .comm-message.mine .comm-bubble{background:#124a78!important;border-color:#4a83af!important}
+body.client-hub .comm-send-btn{background:#176fb7!important;border:1px solid #348fcf!important;color:#fff!important}
+body.client-hub .comm-message-meta :is(strong,span,time){color:#c1d5e6!important;font-size:11px!important}
+body.client-hub :is(.cn-button,.notice-action,.comm-send-btn,.hub-navigation a):focus-visible{outline:3px solid #f5c766!important;outline-offset:3px}
+body.client-hub :is(.cn-record,.ref-refund-proof,.comm-chat-panel,.comm-conversation-panel){min-width:0}
+
+/* Tablet, mobile, keyboard and long-content safety */
+@media(max-width:1199px){
+ body.client-hub .hub-sidebar{width:204px!important}
+ body.client-hub .hub-stage{margin-left:204px!important}
+ body.client-body.client-hub .hub-content.container{padding:26px 24px 36px!important}
+ body.client-hub .ref-finance-grid>div{padding:0 10px!important}
+ body.client-hub .hub-profile-layout{grid-template-columns:minmax(0,1.35fr) minmax(250px,1fr)!important}
+}
+@media(max-width:991px){
+ body.client-hub .hub-sidebar{display:none!important}
+ body.client-hub .hub-stage{margin-left:0!important}
+ body.client-hub .hub-mobile-header{background:#041a30!important;border-bottom:1px solid #31546e!important}
+ body.client-hub .hub-drawer{background:#04192f!important}
+ body.client-hub .hub-drawer .hub-navigation a{min-height:46px!important}
+}
+@media(max-width:767px){
+ body.client-body.client-hub .hub-content.container{padding:22px 16px 28px!important}
+ body.client-hub .hub-heading{align-items:flex-start!important;flex-wrap:wrap!important;gap:12px!important}
+ body.client-body.client-hub h1{font-size:26px!important}
+ body.client-hub .cn-record{padding:17px!important}
+ body.client-hub .hub-search-row,body.client-hub .cn-list-tools{grid-template-columns:minmax(0,1fr)!important}
+ body.client-hub .hub-booking-record{grid-template-columns:minmax(0,1fr)!important}
+ body.client-hub .hub-booking-finance{border-left:0!important;border-top:1px solid #345b76;padding:13px 0 0!important}
+ body.client-hub .hub-booking-record .cn-record-actions{flex-direction:column;align-items:flex-start!important}
+ body.client-hub .ref-finance-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:16px 0!important}
+ body.client-hub .ref-finance-grid>div:nth-child(odd){padding-left:0!important}
+ body.client-hub .ref-finance-grid>div:nth-child(even){border:0}
+ body.client-hub .ref-schedule-pair{grid-template-columns:minmax(0,1fr)}
+ body.client-hub .ref-schedule-pair>div{border:0;border-bottom:1px solid #355a75;padding:0 0 13px}
+ body.client-hub .ref-schedule-pair>div:last-child{padding-left:0;border:0}
+ body.client-hub .ref-refund-layout{grid-template-columns:minmax(0,1fr)}
+ body.client-hub .ref-refund-proof img{max-height:180px}
+ body.client-hub .notice-row{grid-template-columns:39px minmax(0,1fr)!important;gap:11px!important}
+ body.client-hub .notice-icon{width:39px!important;height:39px!important}
+ body.client-hub .notice-open-form{grid-column:2!important;justify-self:start!important}
+ body.client-hub .hub-profile-layout{grid-template-columns:minmax(0,1fr)!important}
+ body.client-hub .hub-profile-side{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}
+ body.client-hub .comm-message{max-width:90%!important}
+}
+@media(max-width:540px){
+ body.client-hub .ref-head-divider{display:none}
+ body.client-hub .ref-record-head{align-items:flex-start!important}
+ body.client-hub .ref-head-title{display:grid;gap:4px}
+ body.client-hub .ref-status{max-width:140px;font-size:10px}
+ body.client-hub .ref-record-footer{align-items:flex-start;flex-wrap:wrap}
+ body.client-hub .ref-receipt{grid-template-columns:minmax(0,1fr)}
+ body.client-hub .ref-refund-facts>div{grid-template-columns:minmax(0,1fr);gap:5px}
+ body.client-hub .ref-refund-facts dd{text-align:left}
+ body.client-hub .ref-refund-metrics{grid-template-columns:minmax(0,1fr)}
+ body.client-hub .ref-notice-filters{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))}
+ body.client-hub .ref-notice-filters button{font-size:11px!important;padding:8px 5px!important}
+ body.client-hub .hub-profile-side{grid-template-columns:minmax(0,1fr)}
+ body.client-hub .comm-message{max-width:94%!important}
+}
+@media(prefers-reduced-motion:reduce){body.client-hub *{transition:none!important;animation:none!important}}
+
+
+/* ========== ORIGINAL: client-improvements-20261107.css ========== */
+/* Client UI Improvement/Fixes — 2026-11-07. Scopes: Client Hub + booking/payment/reschedule experience. */
+body.client-hub{
+ --ci-surface:#0a2942;--ci-raised:#10354e;--ci-line:#355875;--ci-ink:#f2f9ff;
+ --ci-sub:#bbd2e4;--ci-blue:#63bdfa;--ci-gold:#f3c766;--ci-rose:#ec6c8d;
+}
+body.client-hub .client-page-wrap,
+body.client-hub .hub-content{width:100%;max-width:1420px!important;min-width:0}
+body.client-hub :is(.cn-page,.cn-records,.cn-detail-layout,.hub-booking-record,.hub-profile-layout){min-width:0}
+body.client-hub .hub-heading{gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:15px}
+body.client-hub .hub-heading h1{font-size:clamp(24px,2.2vw,34px);font-weight:750}
+body.client-hub .hub-heading p{color:#c3d6e5;line-height:1.5}
+body.client-hub :is(.cn-button,.ref-view-link,.cn-edit,.cn-text-link,.hub-row-links a){
+ min-height:39px;display:inline-flex;align-items:center;justify-content:center;gap:7px;
+ border:1px solid #417fab;border-radius:8px;padding:9px 13px;text-decoration:none!important;
+ font-weight:680;font-size:13px;line-height:1.4;max-width:100%;text-align:center;
+}
+body.client-hub :is(.cn-text-link,.cn-edit,.hub-row-links a){background:#0c446b!important;color:#f6fbff!important}
+body.client-hub :is(.cn-button.cn-secondary,.ref-view-link){background:#155c87!important;color:white!important;border-color:#4da3d6!important}
+body.client-hub :is(.cn-button.cn-primary,.cn-record-actions .hub-row-links a:first-child){background:#1477b7!important;color:#fff!important;border-color:#4fa9dd!important}
+body.client-hub :is(.cn-button,.cn-edit,.ref-view-link,.hub-row-links a):hover{background:#1b89cc!important;color:white!important}
+body.client-hub :is(.cn-button,.cn-edit,.ref-view-link,.hub-row-links a):focus-visible{outline:3px solid #f5c674!important;outline-offset:3px}
+body.client-hub :is(.cn-input,.form-select,.form-control){min-height:43px;padding-right:36px!important;font-size:14px;line-height:1.4;max-width:100%}
+body.client-hub select.cn-input,body.client-hub select.form-select{
+ appearance:none;-webkit-appearance:none;
+ background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='%23c2dcee' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m3 6 5 5 5-5'/%3E%3C/svg%3E")!important;
+ background-position:right 13px center!important;background-size:13px 13px!important;background-repeat:no-repeat!important;
+}
+body.client-hub .cn-record{padding:clamp(15px,1.7vw,23px)!important;border-radius:12px}
+body.client-hub .hub-booking-record{display:grid!important;grid-template-columns:minmax(0,1.3fr) minmax(200px,.85fr);gap:14px!important}
+body.client-hub .hub-booking-main{display:flex;flex-direction:column;align-items:flex-start;gap:6px;min-width:0}
+body.client-hub .hub-booking-main .status-badge{order:-1;margin-bottom:7px}
+body.client-hub .hub-booking-main h2{font-size:19px!important;line-height:1.4;color:var(--ci-ink)!important}
+body.client-hub .hub-booking-main>p{margin:0;color:#deedf8;overflow-wrap:anywhere;line-height:1.6}
+body.client-hub .hub-booking-finance{min-width:0;background:#10334d;border:1px solid #315a74;border-radius:10px;padding:12px}
+body.client-hub .cn-record-actions{grid-column:1/-1;border-top:1px solid #345973;padding-top:12px}
+body.client-hub .cn-record-actions>p{color:#d9eaf6!important;background:#113b57;border-left:3px solid #64b7ef;padding:10px 12px;border-radius:5px;line-height:1.55}
+body.client-hub .hub-row-links{display:flex;flex-wrap:wrap;gap:8px}
+body.client-hub .hub-row-links a:last-child{background:#176c9b!important;color:#fff!important}
+body.client-hub .cn-reference,body.client-hub .hub-reference{color:var(--ci-gold)!important;letter-spacing:.025em}
+body.client-hub .cn-detail-layout{display:grid;grid-template-columns:minmax(0,1.8fr) minmax(265px,.9fr);align-items:start;gap:15px}
+body.client-hub .cn-event,body.client-hub .cn-balance,body.client-hub .cn-details-block,body.client-hub .cn-booking-actions{
+ min-width:0;background:var(--ci-surface)!important;border:1px solid var(--ci-line)!important;border-radius:12px!important;padding:clamp(15px,2vw,23px)!important;color:var(--ci-ink);
+}
+body.client-hub .cn-event-head{align-items:flex-start;gap:10px;flex-wrap:wrap}
+body.client-hub .cn-event-head h2{font-size:clamp(21px,2vw,27px);line-height:1.3}
+body.client-hub .cn-facts{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px!important;margin:12px 0!important}
+body.client-hub .cn-facts>div{min-width:0;padding:12px 13px;background:#103850;border:1px solid #365d79;border-radius:8px}
+body.client-hub .cn-facts dt,body.client-hub .client-details-record dt{font-size:11px;font-weight:700;color:#b9d3e6}
+body.client-hub .cn-facts dd,body.client-hub .client-details-record dd{margin:5px 0 0;overflow-wrap:anywhere;font-size:13px;line-height:1.5;color:#f2f8ff}
+body.client-hub .cn-details-section{border-top:1px solid #395d77;margin-top:18px;padding-top:17px;background:transparent}
+body.client-hub .cn-details-section h3{font-size:15px;font-weight:740;color:#f7fbff}
+body.client-hub .cn-details-block{margin-top:14px}
+body.client-hub .client-details-block-header{display:flex;align-items:baseline;flex-wrap:wrap;justify-content:space-between;gap:9px;border-bottom:1px solid #345873;padding-bottom:11px;margin-bottom:12px}
+body.client-hub .client-details-block-header h2,body.client-hub .cn-booking-actions h3{font-size:17px!important;margin:0;font-weight:740;color:#f4faff}
+body.client-hub .client-details-block-header>span{font-size:12px;color:#c1d4e4}
+body.client-hub .client-details-records{display:grid;gap:9px}
+body.client-hub .client-details-record{min-width:0;padding:12px 14px;background:#10354e;border:1px solid #345c77;border-radius:9px;display:flex;flex-wrap:wrap;align-items:center;gap:12px;justify-content:space-between}
+body.client-hub .client-details-record>div,body.client-hub .client-details-record dl{min-width:0;margin:0;flex:1 1 190px}
+body.client-hub .client-details-record p{font-size:12px;color:#c7d9e8;margin:5px 0}
+body.client-hub .client-details-record dl{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:9px}
+body.client-hub .cn-booking-actions{margin-top:14px;display:flex;align-items:flex-start;flex-wrap:wrap;gap:10px}
+body.client-hub .cn-booking-actions h3{width:100%}
+body.client-hub .cn-booking-actions :is(.cn-text-link,.cn-edit,.cn-button){margin:3px 0}
+body.client-hub .cn-booking-actions>p,body.client-hub .cn-booking-actions .cn-links{width:100%;color:#cbdeec}
+body.client-hub .cn-booking-actions .cn-support{width:100%;max-width:680px;margin:4px 0}
+body.client-hub .client-card-event-context{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:12px;background:#123750;border:1px solid #335973;border-radius:9px;margin:12px 0}
+body.client-hub .client-card-event-context dt{color:#b7cfdf;font-size:11px}
+body.client-hub .client-card-event-context dd{overflow-wrap:anywhere;color:#f2f8ff;font-size:12px;margin:5px 0 0}
+body.client-hub .ref-payment-card .ref-record-footer,body.client-hub .ref-reschedule-card .ref-record-footer{justify-content:flex-end}
+body.client-hub .ref-refund-card .ref-refund-summary{background:#113750;border:1px solid #315a75;border-radius:9px;padding:12px;margin:10px 0}
+body.client-hub .ref-refund-card .ref-refund-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:0 0 10px}
+body.client-hub .ref-refund-card .ref-refund-metrics div{min-width:0}
+body.client-hub .ref-refund-card .cn-next-step{margin:0;color:#dfedf9!important;font-size:13px}
+body.client-hub .client-notice-filter{margin-bottom:14px;max-width:350px}
+body.client-hub .client-notice-filter label{display:flex;align-items:center;gap:7px;font-weight:700;color:#e1f1fc}
+body.client-hub .hub-notice-group{min-width:0}
+body.client-hub .hub-notice-group .notice-unread{border-left:3px solid #70bff7!important;background:#103653!important}
+body.client-hub .hub-notice-group .notice-read{background:#0a263e!important}
+body.client-hub .hub-profile-layout{display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:15px!important;max-width:950px;margin-inline:auto}
+body.client-hub .hub-profile-side{display:contents!important}
+body.client-hub .hub-profile-photo{order:-1;display:flex;flex-direction:column;align-items:center;text-align:center;gap:7px;padding:20px!important}
+body.client-hub .hub-personal{order:0}
+body.client-hub .hub-security{order:1}
+body.client-hub .client-photo-trigger{position:relative;display:inline-flex;align-items:center;justify-content:center;width:94px;height:94px;border:2px solid #74c2f6!important;overflow:visible;border-radius:50%;background:#123d60;color:#fff;cursor:pointer;padding:0}
+body.client-hub .client-photo-trigger img{width:100%;height:100%;border-radius:50%;object-fit:cover}
+body.client-hub .client-photo-trigger .client-photo-edit{position:absolute;right:-7px;bottom:0;width:29px;height:29px;border-radius:50%;display:grid;place-items:center;background:#177dbb;border:2px solid #0b2942;color:white;font-size:13px}
+body.client-hub .client-photo-menu{background:#102f4a;border:1px solid #477594;color:#f4faff;min-width:160px}
+body.client-hub .client-photo-menu .dropdown-item{color:#eef7ff;padding:9px 12px}
+body.client-hub .client-photo-menu .dropdown-item:hover{background:#1c4b70;color:#fff}
+body.client-hub .hub-profile-photo .hub-help{margin:0;color:#c3d6e4}
+body.client-hub .cn-payment-record .ref-record-footer{margin-top:10px}
+body.client-hub :is(.client-payment-ack,.client-refund-ack){display:flex;align-items:flex-start;gap:10px;padding:12px 14px;background:#113a55;border:1px solid #42738e;border-radius:9px;line-height:1.55;color:#f0f8fe}
+body.client-hub .client-refund-fields{display:grid;grid-template-columns:1fr;gap:13px;max-width:810px}
+body.client-hub .client-refund-fields>.col-md-6,body.client-hub .client-refund-fields>.col-12{width:100%;max-width:none;padding:0}
+body.client-hub .client-refund-ack{margin-top:16px}
+body.client-hub .upload-payment-actions{display:flex;gap:9px;flex-wrap:wrap}
+body.client-hub .upload-payment-actions .btn{min-height:43px;border-radius:8px}
+body.client-booking-page:not(.client-hub) .cn-page{max-width:min(96%,1340px)!important;margin-inline:auto}
+body.client-booking-page:not(.client-hub) .cn-workspace{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(265px,290px)!important;align-items:start;gap:17px}
+body.client-booking-page:not(.client-hub) .cn-task{grid-column:1!important;grid-row:1!important;min-width:0}
+body.client-booking-page:not(.client-hub) .cn-summary-slot{grid-column:2!important;grid-row:1!important;min-width:0;position:sticky;top:20px}
+body.client-booking-page:not(.client-hub) .cn-location-intro,body.client-booking-page:not(.client-hub) .cn-package-story{display:none!important}
+body.client-booking-page:not(.client-hub) .cn-panel{min-width:0}
+body.client-booking-page:not(.client-hub) .cn-payment-instructions{grid-template-columns:minmax(0,1fr) minmax(230px,.7fr)!important}
+body.client-booking-page:not(.client-hub) .cn-qr img{width:100%!important;max-width:340px;height:auto;aspect-ratio:1;object-fit:contain}
+body.client-booking-page:not(.client-hub) .cn-review-grid{display:flex!important;flex-direction:column;gap:14px}
+body.client-booking-page:not(.client-hub) #bookingReview,body.client-booking-page:not(.client-hub) #reviewPricing{width:100%;max-width:100%}
+body.client-booking-page:not(.client-hub) #reviewPricing{order:2;border-top:2px solid #4388b9;margin-top:15px;padding-top:15px}
+body.client-booking-page:not(.client-hub) .cn-terms-clauses{display:none!important}
+body.client-booking-page:not(.client-hub) .client-terms-summary{display:grid;gap:8px;justify-items:start;padding:15px;border:1px solid #436983;border-radius:10px;background:#10334e}
+body.client-booking-page:not(.client-hub) .client-terms-summary h3{font-size:16px;margin:0}
+body.client-booking-page:not(.client-hub) .client-terms-summary p{color:#d0e3f2}
+body.client-booking-page:not(.client-hub) .cn-terms-dialog{max-width:min(93vw,760px);max-height:86dvh;overflow:auto}
+body.client-booking-page:not(.client-hub) .client-terms-consent{margin:15px 0;padding:13px;background:#123750;border:1px solid #44718d;border-radius:9px;color:#f2faff}
+body.client-booking-page:not(.client-hub) .client-help-tip{border:1px solid #62b4e8;background:#155a83;color:#fff;font-size:12px;font-weight:750;line-height:20px;width:22px;height:22px;border-radius:50%;vertical-align:middle}
+body.client-booking-page:not(.client-hub) select.cn-input{padding-right:39px!important}
+body.client-booking-page:not(.client-hub) :is(.cn-button,.cn-edit){min-height:43px;border:1px solid #5ca4d7!important;border-radius:8px!important;padding:10px 15px;display:inline-flex;align-items:center;justify-content:center;gap:8px;font-weight:720}
+body.client-booking-page:not(.client-hub) .cn-button.cn-primary{background:#126a9d!important;color:white!important}
+body.client-booking-page:not(.client-hub) .cn-button.cn-secondary,body.client-booking-page:not(.client-hub) .cn-edit{background:#143e5d!important;color:#f2f8ff!important}
+body.client-booking-page:not(.client-hub) .cn-reschedule-layout{display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:12px}
+body.client-booking-page:not(.client-hub) .cn-calendar-panel,body.client-booking-page:not(.client-hub) .cn-time-panel{padding:15px!important}
+body.client-booking-page:not(.client-hub) .cn-reschedule-page .cn-panel{max-width:950px}
+body.client-booking-page:not(.client-hub) .cn-payment-options{margin:12px 0 15px}
+body.client-booking-page:not(.client-hub) :is(.client-payment-ack,.client-refund-ack){padding:14px;border:1px solid #4c7e9a;border-radius:9px;background:#103c59;color:white;line-height:1.6}
+body.client-booking-page:not(.client-hub) .cn-payment-option{min-width:0}
+body.client-booking-page :is(.cn-input,.form-select){min-height:43px}
+body.client-booking-page select.cn-input{padding-right:38px!important}
+body.client-booking-page .cn-reschedule-layout .cn-panel{min-width:0}
+@media(max-width:1060px){
+ body.client-hub .cn-detail-layout{grid-template-columns:1fr}
+ body.client-booking-page:not(.client-hub) .cn-workspace{grid-template-columns:minmax(0,1fr)!important}
+ body.client-booking-page:not(.client-hub) .cn-task{grid-column:1;grid-row:1}
+ body.client-booking-page:not(.client-hub) .cn-summary-slot{grid-column:1!important;grid-row:2!important;position:static}
+}
+@media(max-width:720px){
+ body.client-hub .hub-booking-record{grid-template-columns:1fr!important}
+ body.client-hub .cn-record-actions{grid-column:auto}
+ body.client-hub .cn-facts,body.client-hub .client-card-event-context{grid-template-columns:1fr!important}
+ body.client-hub .ref-refund-card .ref-refund-metrics{grid-template-columns:1fr}
+ body.client-hub .cn-booking-actions{display:block}
+ body.client-hub .cn-booking-actions :is(a,button){margin:7px 0}
+ body.client-booking-page:not(.client-hub) .cn-payment-instructions{grid-template-columns:1fr!important}
+}
+@media(max-width:420px){
+ body.client-hub .client-details-record{display:block}
+ body.client-hub .client-details-record>*,body.client-hub .client-details-record a{margin-top:9px}
+ body.client-hub .client-photo-trigger{width:80px;height:80px}
+ body.client-hub .cn-record{padding:13px!important}
+ body.client-booking-page:not(.client-hub) .cn-page{max-width:100%!important}
+}
+@media(prefers-reduced-motion:reduce){body.client-hub *,body.client-booking-page *{animation:none!important;transition:none!important}}body.client-hub .hub-messages .comm-workspace{min-height:570px;max-height:min(78dvh,870px);grid-template-columns:minmax(265px,32%) minmax(0,1fr);border:1px solid #396680;border-radius:12px;overflow:hidden}
+body.client-hub .hub-messages .comm-conversation-panel{background:#0b2942;min-width:0}
+body.client-hub .hub-messages .comm-chat-panel{background:#0c2c44;min-width:0}
+body.client-hub .hub-messages .comm-conversation-item{padding:13px 14px;gap:12px;overflow-wrap:anywhere}
+body.client-hub .hub-messages .comm-conversation-item.active{background:#164561;border:1px solid #d2a654}
+body.client-hub .hub-messages .comm-avatar{width:43px;height:43px;flex:0 0 43px;display:inline-flex;align-items:center;justify-content:center;border:1px solid #437c9b;border-radius:50%;overflow:hidden;color:#e7f5ff;background:#164a6b;font-weight:750;font-size:13px}
+body.client-hub .hub-messages .comm-avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+body.client-hub .hub-messages .comm-item-copy{min-width:0}
+body.client-hub .hub-messages .comm-item-heading strong{font-size:13px;color:#f6fbff;overflow-wrap:anywhere}
+body.client-hub .hub-messages .comm-message{max-width:min(82%,690px)}
+body.client-hub .hub-messages .comm-message .comm-bubble{font-size:14px;line-height:1.6;padding:12px 14px;overflow-wrap:anywhere;color:#eff8ff}
+body.client-hub .hub-messages .comm-message.mine .comm-bubble{background:#175781;border-color:#418fb8}
+body.client-hub .hub-messages .comm-delivery-state{display:flex;align-items:center;justify-content:flex-end;gap:4px;font-size:11px;color:#bfe1f7;margin-top:5px}
+body.client-hub .hub-messages .comm-composer textarea{font-size:14px;min-height:54px;padding:13px 14px}
+body.client-hub .hub-messages .comm-send-btn{background:#146ca5!important;color:#fff!important;border:1px solid #4aa2da!important;min-height:44px;min-width:72px}
+body.internal-ui .comm-avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+@media(max-width:700px){body.client-hub .hub-messages .comm-workspace{display:block;max-height:none;min-height:400px}body.client-hub .hub-messages .comm-message{max-width:92%}}
+
+
+/* ========== ORIGINAL: unified-support-20261108.css ========== */
+/* Unified Client support: booking reference belongs to each message, not the thread. */
+.comm-page .comm-booking-selector{display:grid;gap:5px;padding:10px 14px;background:rgba(14,45,68,.86);border-top:1px solid #345772}
+.comm-page .comm-booking-selector label{font-size:13px;font-weight:730;color:#e8f5ff}
+.comm-page .comm-booking-selector select{min-height:42px;width:100%;color:#f3f9fd;background:#0b2b45;border:1px solid #587d99;border-radius:8px;padding:8px 32px 8px 12px}
+.comm-page .comm-booking-selector span{color:#bed8e9;font-size:12px;line-height:1.45}
+.comm-page .comm-booking-context-chip{display:flex;align-items:center;flex-wrap:wrap;gap:7px;margin:0 0 6px;padding:6px 10px;border:1px solid #3b6787;background:#123c5a;border-radius:7px;color:#f1d28d;font-size:12px}
+.comm-page .comm-booking-context-chip a{color:#b9e4ff;font-weight:700;text-underline-offset:3px;margin-left:auto}
+.comm-page .comm-booking-selector select:focus-visible,.comm-page .comm-booking-context-chip a:focus-visible{outline:3px solid #f6ca75;outline-offset:2px}
+@media(max-width:650px){.comm-page .comm-booking-selector{padding:9px 11px}.comm-page .comm-booking-context-chip{font-size:11px}}
+
+
+/* ========== ORIGINAL: client-round2-20261108.css ========== */
+/* Aries d' Magic Artist — Client Round 2, additive on Round 1 */
+body.client-hub{--r2-navy:#031a2e;--r2-panel:#082b43;--r2-line:#2a536b;--r2-text:#e9f6ff;--r2-muted:#b1c9d9}
+body.client-hub .hub-topbar{
+ position:sticky;top:0;z-index:1080;min-height:76px;width:100%;
+ display:flex;align-items:center;justify-content:space-between;gap:20px;
+ background:linear-gradient(112deg,#061d31 0%,#09263d 100%);
+ border-bottom:1px solid #31506a;padding:11px clamp(15px,2.8vw,40px);
+ box-shadow:0 8px 22px #00111e3d;
+}
+body.client-hub .hub-topbar-start,body.client-hub .hub-topbar-actions{display:flex;align-items:center;gap:15px;min-width:0}
+body.client-hub .hub-topbar-heading{display:grid;gap:3px;min-width:0}
+body.client-hub .hub-topbar-heading small{color:#a8c5d9;font-size:11px;letter-spacing:.045em}
+body.client-hub .hub-topbar-heading strong{font-size:clamp(16px,1.5vw,21px);font-weight:750;line-height:1.3;color:#f5faff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-transform:capitalize}
+body.client-hub .hub-topbar-icon{position:relative;min-height:42px;min-width:42px;border:1px solid transparent;border-radius:10px;color:#d7edfa;display:inline-flex;align-items:center;justify-content:center;text-decoration:none}
+body.client-hub .hub-topbar-icon>i{font-size:20px}
+body.client-hub .hub-topbar-icon:hover,body.client-hub .hub-topbar-icon:focus-visible{background:#173950;color:white;border-color:#385d76}
+body.client-hub .hub-topbar-icon .hub-count,body.client-hub .hub-topbar-counter{position:absolute;top:-2px;right:-3px;background:#c63857;color:#fff;display:inline-grid;place-items:center;min-width:19px;height:19px;border-radius:10px;font-size:10px;font-weight:800;padding:0 4px;border:2px solid #061d31}
+body.client-hub .hub-account-toggle{display:flex;align-items:center;gap:9px;border:1px solid #375671;border-radius:30px;background:#102e47;color:#f5faff;padding:4px 11px 4px 4px;max-width:260px;min-height:45px}
+body.client-hub .hub-account-toggle:hover,body.client-hub .hub-account-toggle:focus-visible{border-color:#61b5f1;background:#173c58}
+body.client-hub .hub-account-photo{width:36px;height:36px;flex:0 0 36px;border-radius:50%;background:#15547a;color:white;display:grid;place-items:center;overflow:hidden;font-size:12px;font-weight:800}
+body.client-hub .hub-account-photo img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+body.client-hub .hub-account-name{max-width:135px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;font-weight:700}
+body.client-hub .hub-account-toggle .bi-chevron-down{font-size:12px;color:#8ac7ed}
+body.client-hub .hub-account-dropdown{min-width:225px!important;background:#0b2a40!important;border:1px solid #436782!important;border-radius:12px!important;color:#f5faff!important;box-shadow:0 18px 44px #0008;padding:6px!important;z-index:1200}
+body.client-hub .hub-account-dropdown .dropdown-header{white-space:normal;color:#b8cfe0;font-size:12px}
+body.client-hub .hub-account-dropdown .dropdown-item{color:#eaf7ff;display:flex;gap:10px;align-items:center;border-radius:6px;min-height:39px;background:transparent;white-space:normal}
+body.client-hub .hub-account-dropdown .dropdown-item:hover,body.client-hub .hub-account-dropdown .dropdown-item:focus-visible{background:#184c6f;color:white}
+body.client-hub .hub-account-dropdown .dropdown-divider{border-color:#40627a}
+body.client-hub .hub-account-dropdown form{margin:0}
+body.client-hub .hub-topbar-menu{border:1px solid #426078;border-radius:9px;background:#103651;color:white;min-width:40px;min-height:40px;display:none;align-items:center;justify-content:center}
+body.client-hub .hub-topbar-menu i{font-size:21px}
+body.client-hub .hub-rail-footer span{color:#91aec3;font-size:12px;line-height:1.6}
+body.client-hub .hub-content.container{padding-top:24px!important}
+body.client-hub .client-round2-action-page{max-width:900px;margin:0 auto}
+body.client-hub .client-round2-action-page .hub-heading{margin-bottom:20px}
+body.client-hub .r2-select-card,body.client-hub .r2-empty-action{
+ padding:clamp(24px,4vw,40px);border:1px solid #315774;background:linear-gradient(145deg,#08253d,#082d47);border-radius:15px;box-shadow:0 12px 32px #0003}
+body.client-hub .r2-card-icon{height:48px;width:48px;display:grid;place-items:center;background:#14557a;border-radius:13px;color:#9bdcff;font-size:23px;margin-bottom:17px}
+body.client-hub .r2-select-card h2,body.client-hub .r2-empty-action h2{color:#f0f9ff;font-size:clamp(21px,2vw,27px);margin:0 0 9px;font-weight:750}
+body.client-hub .r2-select-card p,body.client-hub .r2-empty-action p{color:#bdd4e4;line-height:1.65;max-width:640px}
+body.client-hub .r2-selection-form{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:13px;align-items:end;margin-top:22px}
+body.client-hub .r2-selection-form .cn-field{margin:0}
+body.client-hub .r2-selection-form select{min-height:48px;background-color:#092a42;border-color:#4a6880}
+body.client-hub .r2-selection-form button{min-height:48px}
+body.client-hub .r2-empty-action{text-align:center;display:flex;flex-direction:column;align-items:center}
+body.client-hub .r2-empty-action>i{color:#68d6a7;font-size:42px;margin-bottom:12px}
+body.client-hub .r2-empty-action .cn-button{margin-top:10px}
+body.client-hub .r2-action-footnote{display:flex;align-items:start;gap:9px;color:#a8c7d9;font-size:13px;margin-top:18px;line-height:1.6}
+body.client-hub .r2-action-footnote i{color:#6cc2f2}
+body.client-hub .client-notification-list{display:grid;gap:18px}
+body.client-hub .client-notification-list .hub-notice-group h2{font-size:15px;font-weight:700;margin-bottom:9px}
+body.client-hub :is(.hub-topbar-icon,.hub-account-toggle,.hub-topbar-menu,.r2-selection-form select):focus-visible{outline:3px solid #f2c674;outline-offset:2px}
+@media(max-width:991.98px){
+ body.client-hub .hub-topbar-menu:not([hidden]){display:inline-flex}
+ body.client-hub .hub-topbar{min-height:66px;padding:9px 18px}
+ body.client-hub .hub-topbar-heading small{font-size:10px}
+}
+@media(max-width:600px){
+ body.client-hub .hub-topbar{padding:7px 10px;gap:8px}
+ body.client-hub .hub-topbar-start,body.client-hub .hub-topbar-actions{gap:5px}
+ body.client-hub .hub-topbar-heading small{display:none}
+ body.client-hub .hub-topbar-heading strong{font-size:15px;max-width:145px}
+ body.client-hub .hub-topbar-icon{min-width:36px;min-height:39px}
+ body.client-hub .hub-topbar-icon>i{font-size:18px}
+ body.client-hub .hub-account-name,body.client-hub .hub-account-toggle .bi-chevron-down{display:none}
+ body.client-hub .hub-account-toggle{padding:3px;min-height:40px}
+ body.client-hub .hub-account-photo{width:34px;height:34px;flex-basis:34px}
+ body.client-hub .r2-selection-form{grid-template-columns:1fr}
+ body.client-hub .r2-selection-form button{width:100%;justify-content:center}
+ body.client-hub .hub-content.container{padding-top:19px!important}
+}
+
+/* Round 2 — contextual booking cards: tracking lives exclusively in My Bookings */
+body.client-hub .r2-bookings-tools{margin:0 0 17px}
+body.client-hub .r2-booking-grid{display:grid;gap:14px;min-width:0}
+body.client-hub .r2-booking-card{color:#eaf7ff;background:linear-gradient(113deg,#052138 0%,#072940 78%,#082e48 100%);border:1px solid #315873;border-radius:14px;box-shadow:0 12px 26px #00152638;overflow:hidden;min-width:0}
+body.client-hub .r2-booking-header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:18px 23px 12px}
+body.client-hub .r2-overline{display:block;color:#9dc3db;letter-spacing:.09em;text-transform:uppercase;font-size:10px;font-weight:750}
+body.client-hub .r2-booking-header h2{font-size:clamp(22px,2.2vw,27px);letter-spacing:-.025em;line-height:1.22;margin:3px 0 0;font-weight:800;color:white}
+body.client-hub .r2-status-pill{padding:6px 10px;border-radius:7px;font-size:12px;font-weight:750;text-align:center;border:1px solid #60809b;color:#c1d8e8;background:#123a54}
+body.client-hub .r2-status-warning{color:#ffe2a0;background:#6545114d;border-color:#a88648}
+body.client-hub .r2-status-success{color:#8befb2;background:#205b384d;border-color:#3c9163}
+body.client-hub .r2-status-danger{color:#ff9caa;background:#6c213b55;border-color:#a44b66}
+body.client-hub .r2-booking-body{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(260px,.95fr);gap:clamp(15px,3vw,38px);padding:0 23px 14px}
+body.client-hub .r2-booking-essentials{min-width:0;display:flex;flex-direction:column;justify-content:space-between;gap:16px;padding-top:4px}
+body.client-hub .r2-event-facts{display:grid;gap:9px}
+body.client-hub .r2-event-facts p{margin:0;display:flex;align-items:flex-start;gap:10px;color:#cee5f4;font-size:13px;line-height:1.5;overflow-wrap:anywhere}
+body.client-hub .r2-event-facts p:first-child{color:#f5faff;font-size:14px}
+body.client-hub .r2-event-facts i{color:#4bbef9;font-size:14px;flex:0 0 15px}
+body.client-hub .r2-contact-facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;border-top:1px solid #2d4f65;padding-top:12px}
+body.client-hub .r2-contact-facts>div{display:flex;align-items:center;gap:9px;min-width:0}
+body.client-hub .r2-contact-facts>div+div{padding-left:14px;border-left:1px solid #2d4f65}
+body.client-hub .r2-contact-facts i{color:#57bbea;font-size:14px}
+body.client-hub .r2-contact-facts span{font-size:12px;line-height:1.45;overflow-wrap:anywhere}
+body.client-hub .r2-contact-facts small{display:block;color:#9bbdd1;font-size:10px}
+body.client-hub .r2-event-warning{color:#ffda92;font-size:12px;display:flex;gap:8px;margin:0}
+body.client-hub .r2-booking-context{min-width:0;border:1px solid #385f7a;border-radius:10px;padding:13px 16px;background:#0a2e48}
+body.client-hub .r2-booking-context h3{font-size:14px;margin:0 0 10px;padding-bottom:10px;border-bottom:1px solid #33546d;font-weight:750;color:#f0f9ff;display:flex;gap:8px;align-items:center}
+body.client-hub .r2-booking-context h3 i{color:#5fc1f2}
+body.client-hub .r2-booking-context dl{display:grid;gap:8px;margin:0}
+body.client-hub .r2-booking-context dl>div{display:flex;justify-content:space-between;align-items:start;gap:10px;min-width:0}
+body.client-hub .r2-booking-context dt{color:#9dbdd2;font-size:11px;font-weight:500;line-height:1.5}
+body.client-hub .r2-booking-context dd{color:#f2faff;font-size:11px;line-height:1.55;text-align:right;overflow-wrap:anywhere;margin:0;max-width:60%;font-weight:700}
+body.client-hub .r2-booking-context dd.r2-reason{font-weight:500}
+body.client-hub .r2-mini-status{display:inline-flex;align-items:center;padding:3px 8px;border-radius:5px;font-size:10px;line-height:1.5;white-space:normal}
+body.client-hub .r2-mini-success{background:#15583b80;color:#a0efbf;border:1px solid #3b9162}
+body.client-hub .r2-mini-warning{background:#60491599;color:#ffdf9b;border:1px solid #9c8249}
+body.client-hub .r2-mini-danger{background:#5a274099;color:#ffabb6;border:1px solid #a65368}
+body.client-hub .r2-booking-payment-strip{display:flex;align-items:center;gap:13px;padding:9px 23px 14px;color:#b7d4e5;font-size:11px}
+body.client-hub .r2-booking-payment-strip progress{width:100%;height:6px;flex:1;min-width:40px;overflow:hidden;border-radius:9px}
+body.client-hub .r2-booking-payment-strip progress::-webkit-progress-bar{background:#183a51}
+body.client-hub .r2-booking-payment-strip progress::-webkit-progress-value{background:#56b4e9}
+body.client-hub .r2-booking-payment-strip strong{color:#e4f8ff;white-space:nowrap;font-size:11px}
+body.client-hub .r2-booking-footer{margin:0 23px;border-top:1px solid #2b4e67;padding:12px 0 17px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+body.client-hub .r2-booking-footer p{margin:0;flex:1;font-size:11.5px;color:#b8d4e5;line-height:1.6;display:flex;align-items:start;gap:8px}
+body.client-hub .r2-booking-footer p i{color:#66c7f6;font-size:13px;flex-shrink:0}
+body.client-hub .r2-booking-buttons{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+body.client-hub .r2-view-booking{background:#0875c0;color:#fff;text-decoration:none;font-size:12px;font-weight:750;min-height:38px;padding:9px 13px;display:inline-flex;align-items:center;justify-content:center;gap:7px;border-radius:6px;border:1px solid #2e91d8;white-space:nowrap}
+body.client-hub .r2-view-booking:hover,body.client-hub .r2-view-booking:focus-visible{background:#168ed8;color:#fff}
+body.client-hub .r2-secondary-action{border:1px solid #4b718b;color:#cce9fc;text-decoration:none;font-size:11px;padding:9px 10px;border-radius:6px;text-align:center}
+body.client-hub .r2-secondary-action:hover,body.client-hub .r2-secondary-action:focus-visible{border-color:#7ecbf6;color:white;background:#164464}
+body.client-hub .r2-booking-count{margin-top:12px}
+@media(max-width:990px){body.client-hub .r2-booking-body{grid-template-columns:minmax(0,1fr) minmax(235px,.8fr);gap:15px}}
+@media(max-width:720px){
+ body.client-hub .r2-booking-header{padding:17px 16px 11px;align-items:start}
+ body.client-hub .r2-booking-body{padding:0 16px 12px;grid-template-columns:1fr}
+ body.client-hub .r2-booking-essentials{gap:12px}
+ body.client-hub .r2-booking-footer{margin:0 16px;flex-direction:column;align-items:stretch}
+ body.client-hub .r2-booking-buttons{justify-content:flex-end}
+ body.client-hub .r2-booking-payment-strip{padding:8px 16px 12px;flex-wrap:wrap}
+ body.client-hub .r2-booking-payment-strip progress{flex-basis:100%;order:3}
+}
+@media(max-width:400px){
+ body.client-hub .r2-contact-facts{grid-template-columns:1fr}
+ body.client-hub .r2-contact-facts>div+div{border-left:none;padding-left:0}
+ body.client-hub .r2-booking-header{flex-wrap:wrap}
+ body.client-hub .r2-booking-context dd{max-width:65%}
+}
+
+
+/* The booking, rescheduling and payment flows use the existing concierge layout. */
+body.client-concierge .r2-booking-wizard,body.client-concierge .r2-reschedule-wizard,body.client-concierge .r2-payment-wizard{max-width:1280px;margin-inline:auto;color:#eaf7ff}
+body.client-concierge :is(.r2-booking-wizard,.r2-reschedule-wizard,.r2-payment-wizard) .cn-page-heading{display:flex;justify-content:space-between;gap:18px;align-items:start}
+body.client-concierge :is(.r2-booking-wizard,.r2-reschedule-wizard,.r2-payment-wizard) .cn-page-heading h1{font-weight:780;letter-spacing:-.025em;font-size:clamp(26px,2.7vw,36px);color:white}
+body.client-concierge :is(.r2-booking-wizard,.r2-reschedule-wizard,.r2-payment-wizard) .cn-page-heading p{color:#b8d3e4;line-height:1.6}
+body.client-concierge :is(.r2-booking-wizard,.r2-reschedule-wizard,.r2-payment-wizard) .cn-panel{border:1px solid #3b627c;border-radius:13px;background:linear-gradient(140deg,#082a43 0%,#07243b 100%);box-shadow:0 10px 25px #0002;min-width:0}
+body.client-concierge :is(.r2-booking-wizard,.r2-reschedule-wizard,.r2-payment-wizard) .cn-panel-heading h2{font-size:clamp(18px,1.8vw,22px);font-weight:760;display:flex;align-items:center;gap:8px;color:#f3fbff}
+body.client-concierge :is(.r2-booking-wizard,.r2-reschedule-wizard,.r2-payment-wizard) .cn-panel-heading h2 i{color:#65c5f3;font-size:19px}
+body.client-concierge :is(.r2-booking-wizard,.r2-reschedule-wizard,.r2-payment-wizard) .cn-input{background:#092a42;border:1px solid #496c85;color:#f4faff;border-radius:7px;min-height:44px}
+body.client-concierge :is(.r2-booking-wizard,.r2-reschedule-wizard,.r2-payment-wizard) .cn-field label{color:#dceffb;font-size:12px;font-weight:670}
+body.client-concierge :is(.r2-booking-wizard,.r2-reschedule-wizard,.r2-payment-wizard) .cn-help{color:#b0c8da}
+body.client-concierge :is(.r2-booking-wizard,.r2-reschedule-wizard,.r2-payment-wizard) .cn-actions{margin-top:19px}
+body.client-concierge :is(.r2-booking-wizard,.r2-reschedule-wizard,.r2-payment-wizard) :is(input,select,textarea,button,a):focus-visible{outline:3px solid #f1cc7a;outline-offset:2px}
+body.client-concierge .r2-booking-wizard .cn-workspace{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(250px,300px)!important;grid-template-areas:"task quote"!important;gap:16px!important;align-items:start!important;max-width:none!important}
+body.client-concierge .r2-booking-wizard .cn-task{grid-area:task!important;grid-column:1!important;grid-row:1!important;min-width:0}
+body.client-concierge .r2-booking-wizard .cn-summary-slot{grid-area:quote!important;grid-column:2!important;grid-row:1!important;position:sticky!important;top:20px!important;min-width:0}
+body.client-concierge .r2-booking-wizard .cn-progress .cr-steps{border-bottom:1px solid #3b6078;padding-bottom:13px}
+body.client-concierge .r2-booking-wizard .cn-progress .cr-steps li.is-active{color:#85d6ff}
+body.client-concierge .r2-booking-wizard #bookingEstimate{background:#082b45;border:1px solid #355c78;border-radius:11px;overflow:hidden}
+body.client-concierge .r2-booking-wizard #bookingEstimate>summary{padding:16px;font-size:15px;color:#f0faff;font-weight:760;border-bottom:1px solid #315670}
+body.client-concierge .r2-booking-wizard #bookingEstimate>summary #summaryPeek{display:block;font-weight:400;color:#aecbdc;font-size:11px;margin-top:5px}
+body.client-concierge .r2-booking-wizard .r2-event-preview{padding:14px}
+body.client-concierge .r2-booking-wizard .r2-event-preview dl{margin:0;display:grid;gap:13px}
+body.client-concierge .r2-booking-wizard .r2-event-preview dl>div{display:flex;justify-content:space-between;gap:8px;border-bottom:1px solid #254c65;padding-bottom:9px}
+body.client-concierge .r2-booking-wizard .r2-event-preview dt{font-size:12px;color:#a9cadf;display:flex;gap:7px;align-items:center;font-weight:500}
+body.client-concierge .r2-booking-wizard .r2-event-preview dt i{color:#66c7f3}
+body.client-concierge .r2-booking-wizard .r2-event-preview dd{margin:0;text-align:right;font-size:11px;color:#f0faff;max-width:60%;overflow-wrap:anywhere}
+body.client-concierge .r2-booking-wizard .r2-event-availability{padding:10px 9px;margin:14px 0 0;background:#174b3c70;color:#b7ebce;border:1px solid #3b8067;border-radius:8px;display:flex;gap:7px;font-size:11px;line-height:1.5}
+body.client-concierge .r2-booking-wizard #summaryContent{padding:10px 16px}
+body.client-concierge .r2-booking-wizard .cn-location-methods{display:flex;flex-wrap:wrap;gap:8px}
+body.client-concierge .r2-booking-wizard .cn-location-methods button{flex:1 1 150px}
+body.client-concierge .r2-booking-wizard [data-step="0"] .cn-fieldset{margin-bottom:18px}
+body.client-concierge .r2-booking-wizard [data-step="0"] .cn-actions{border-top:1px solid #2c506a;padding-top:15px}
+body.client-concierge .r2-booking-wizard [data-step="1"]:not([hidden]){display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:12px;row-gap:13px}
+body.client-concierge .r2-booking-wizard [data-step="1"]>.cn-panel-heading,
+body.client-concierge .r2-booking-wizard [data-step="1"]>#checkedSchedule,
+body.client-concierge .r2-booking-wizard [data-step="1"]>.cn-actions{grid-column:1/-1}
+body.client-concierge .r2-booking-wizard [data-step="1"]>.cn-packages{grid-column:1;grid-row:3;align-self:start;gap:9px}
+body.client-concierge .r2-booking-wizard [data-step="1"]>#customizePackage{grid-column:2;grid-row:3;align-self:start;margin:0!important;padding:13px;border:1px solid #456f86;border-radius:9px;background:#0d334c}
+body.client-concierge .r2-booking-wizard .cn-package{padding:10px 12px;border:1px solid #406780;border-radius:8px;background:#0b314c}
+body.client-concierge .r2-booking-wizard .cn-package:has(input:checked){border-color:#56c4fb;background:#12476c}
+body.client-concierge .r2-booking-wizard .cn-package-choice{gap:8px;font-size:12px}
+body.client-concierge .r2-booking-wizard .cn-package-choice strong{font-size:13px}
+body.client-concierge .r2-booking-wizard .cn-package-choice b{font-size:12px;white-space:nowrap}
+body.client-concierge .r2-booking-wizard .cn-package-excerpt{font-size:11px;color:#bfd4e3;line-height:1.5}
+body.client-concierge .r2-booking-wizard .cn-package-detail{font-size:11px}
+body.client-concierge .r2-booking-wizard #customizePackage>summary{font-size:14px;color:#f1faff;font-weight:750}
+body.client-concierge .r2-booking-wizard #customizePackage #inclusionHelp{font-size:11px;line-height:1.55;color:#b6ccdf;margin:11px 0}
+body.client-concierge .r2-booking-wizard #packageInclusions{display:grid;gap:6px}
+body.client-concierge .r2-booking-wizard .r2-package-inclusion{padding:7px 9px;border:1px solid #39627b;border-radius:7px;background:#123a57;display:flex;align-items:center;gap:7px;font-size:11px;line-height:1.5}
+body.client-concierge .r2-booking-wizard .r2-package-mandatory{color:#c5f0d5}
+body.client-concierge .r2-booking-wizard .r2-package-mandatory i{color:#67d69b}
+body.client-concierge .r2-booking-wizard [data-step="2"] .cn-fields{gap:13px}
+body.client-concierge .r2-booking-wizard [data-step="3"] .cn-review-block{background:#0c314d;border:1px solid #365c76;border-radius:9px;padding:14px;margin-bottom:10px}
+body.client-concierge .r2-booking-wizard .cn-review-heading{gap:10px}
+body.client-concierge .r2-booking-wizard .cn-review-grid{display:grid!important;grid-template-columns:minmax(0,1.1fr) minmax(235px,.9fr);gap:15px}
+body.client-concierge .r2-booking-wizard .cn-review-caption{border:1px solid #345b76;background:#103550;border-radius:8px}
+body.client-concierge .r2-booking-wizard .cn-agreement{background:#0c314b;border:1px solid #416781;border-radius:9px;padding:17px;margin-top:17px}
+/* Three-step reschedule */
+body.client-concierge .r2-reschedule-wizard .r2-reschedule-steps{margin-bottom:22px}
+body.client-concierge .r2-reschedule-wizard .r2-reschedule-layout{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(235px,.85fr);align-items:start;gap:16px}
+body.client-concierge .r2-reschedule-wizard .r2-reschedule-panel{padding:22px}
+body.client-concierge .r2-reschedule-wizard .r2-reschedule-panel .cn-panel-heading{margin-bottom:16px}
+body.client-concierge .r2-reschedule-wizard .r2-reschedule-step-line{display:flex;align-items:flex-start;gap:13px;border-top:1px solid #2c536e;padding:15px 0}
+body.client-concierge .r2-reschedule-wizard .r2-step-bubble{width:27px;height:27px;flex:0 0 27px;background:#075a8f;border:1px solid #3199d8;color:white;border-radius:9px;display:grid;place-items:center;font-size:12px;font-weight:800}
+body.client-concierge .r2-reschedule-wizard .r2-reschedule-step-line .cn-field{flex:1;min-width:0}
+body.client-concierge .r2-reschedule-wizard .r2-reschedule-step-line .cn-help{margin:6px 0 9px}
+body.client-concierge .r2-reschedule-wizard .r2-reschedule-overview{position:sticky;top:18px;padding:20px}
+body.client-concierge .r2-reschedule-wizard .r2-reschedule-review-list{display:grid;gap:0;margin:0}
+body.client-concierge .r2-reschedule-wizard .r2-reschedule-review-list>div{display:flex;justify-content:space-between;gap:14px;align-items:start;padding:10px 0;border-bottom:1px solid #2f536c}
+body.client-concierge .r2-reschedule-wizard .r2-reschedule-review-list dt{color:#a9c7db;font-size:12px;font-weight:500}
+body.client-concierge .r2-reschedule-wizard .r2-reschedule-review-list dd{font-size:12px;font-weight:690;color:#f1faff;text-align:right;max-width:63%;overflow-wrap:anywhere;margin:0}
+body.client-concierge .r2-reschedule-wizard .r2-reschedule-overview .cn-help{margin-top:18px}
+body.client-concierge .r2-reschedule-wizard .r2-reschedule-confirmation{max-width:840px;padding:32px;margin:auto;text-align:center}
+body.client-concierge .r2-reschedule-wizard .r2-reschedule-confirmation .r2-reschedule-review-list{text-align:left;margin:22px 0}
+body.client-concierge .r2-reschedule-wizard .r2-success-icon{font-size:50px;color:#73ddac}
+body.client-concierge .r2-reschedule-wizard .r2-success-label{font-size:12px;color:#9bdcff}
+body.client-concierge .r2-reschedule-wizard .r2-reschedule-confirmation h2{font-size:24px;margin:7px 0;color:white}
+body.client-concierge .r2-reschedule-wizard .r2-reschedule-confirmation>.cn-actions{justify-content:center}
+body.client-concierge .r2-reschedule-wizard .r2-reschedule-review-list dd .r2-mini-status{font-weight:750}
+body.client-concierge .r2-reschedule-wizard .cn-approval-note{display:flex;gap:8px;padding:13px 15px;border:1px solid #48647c;background:#113952;border-radius:8px;color:#d5e6f2;margin-top:15px;flex-wrap:wrap}
+/* Payment: two clear steps, one payment summary, owner review unchanged */
+body.client-concierge .r2-payment-wizard .r2-payment-layout{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(240px,.86fr);gap:16px;align-items:start}
+body.client-concierge .r2-payment-wizard .r2-payment-primary{min-width:0}
+body.client-concierge .r2-payment-wizard .r2-payment-side{display:grid;gap:12px;min-width:0;position:sticky;top:18px}
+body.client-concierge .r2-payment-wizard .r2-payment-side .cn-panel{padding:16px}
+body.client-concierge .r2-payment-wizard .r2-payment-side h2{display:flex;align-items:center;gap:8px;color:white;font-size:15px;font-weight:750;margin-bottom:12px}
+body.client-concierge .r2-payment-wizard .r2-payment-side h2 i{color:#67c5f7}
+body.client-concierge .r2-payment-wizard .r2-payment-summary dl{display:grid;gap:0;margin:0}
+body.client-concierge .r2-payment-wizard .r2-payment-summary dl>div{display:flex;justify-content:space-between;gap:13px;padding:9px 0;border-bottom:1px solid #2e506a}
+body.client-concierge .r2-payment-wizard .r2-payment-summary dt{font-size:11px;color:#a7c6d9;font-weight:500}
+body.client-concierge .r2-payment-wizard .r2-payment-summary dd{font-size:11px;color:#f2faff;font-weight:750;text-align:right;margin:0;max-width:62%;overflow-wrap:anywhere}
+body.client-concierge .r2-payment-wizard .r2-payment-qr p{font-size:12px;color:#b6d2e3;line-height:1.55;margin-bottom:10px}
+body.client-concierge .r2-payment-wizard .r2-payment-qr figure{display:block;padding:0;margin:0}
+body.client-concierge .r2-payment-wizard .r2-payment-qr figure img{display:block;width:min(100%,230px)!important;max-width:none;height:auto;aspect-ratio:1;object-fit:contain;background:white;border-radius:9px;margin:0 auto}
+body.client-concierge .r2-payment-wizard .r2-payment-qr figcaption{display:flex;gap:9px;justify-content:space-around;flex-wrap:wrap;margin-top:12px}
+body.client-concierge .r2-payment-wizard .r2-payment-qr figcaption a{font-size:11px}
+body.client-concierge .r2-payment-wizard .cn-payment-instructions{display:block!important}
+body.client-concierge .r2-payment-wizard .cn-instruction-list{margin-bottom:5px}
+body.client-concierge .r2-payment-wizard .cn-payment-option{min-height:54px;padding:11px;border:1px solid #406782;background:#0c334e;border-radius:7px}
+body.client-concierge .r2-payment-wizard .cn-payment-option:has(input:checked){background:#184767;border-color:#60c4f9}
+body.client-concierge .r2-payment-wizard .cn-payment-option small{color:#b7cfe1}
+body.client-concierge .r2-payment-wizard .r2-receipt-guidelines{display:none}
+body.client-concierge .r2-payment-wizard:has(#paymentProof:not([hidden])) .r2-receipt-guidelines{display:block}
+body.client-concierge .r2-payment-wizard:has(#paymentProof:not([hidden])) .r2-payment-qr{display:none!important}
+body.client-concierge .r2-payment-wizard .r2-receipt-guidelines ul{padding:0;margin:0;list-style:none;display:grid;gap:10px}
+body.client-concierge .r2-payment-wizard .r2-receipt-guidelines li{padding-left:22px;position:relative;color:#b5d2e2;font-size:12px;line-height:1.6}
+body.client-concierge .r2-payment-wizard .r2-receipt-guidelines li:before{content:"✓";position:absolute;left:0;color:#69d29c}
+body.client-concierge .r2-payment-wizard .cn-upload{padding:10px}
+body.client-concierge .r2-payment-wizard .client-payment-ack{background:#113f59;border:1px solid #39637d;border-radius:8px;padding:12px}
+@media(max-width:990px){
+ body.client-concierge .r2-booking-wizard .cn-workspace{grid-template-columns:minmax(0,1fr)!important;grid-template-areas:"task" "quote"!important}
+ body.client-concierge .r2-booking-wizard .cn-task{grid-area:task!important;grid-column:1!important;grid-row:1!important}
+ body.client-concierge .r2-booking-wizard .cn-summary-slot{grid-area:quote!important;grid-column:1!important;grid-row:2!important;position:static!important}
+ body.client-concierge .r2-reschedule-wizard .r2-reschedule-layout,body.client-concierge .r2-payment-wizard .r2-payment-layout{grid-template-columns:1fr}
+ body.client-concierge .r2-reschedule-wizard .r2-reschedule-overview,body.client-concierge .r2-payment-wizard .r2-payment-side{position:static}
+ body.client-concierge .r2-payment-wizard .r2-payment-side{grid-template-columns:repeat(2,minmax(0,1fr))}
+ body.client-concierge .r2-payment-wizard .r2-payment-summary{grid-row:span 2}
+}
+@media(max-width:650px){
+ body.client-concierge .r2-booking-wizard [data-step="1"]:not([hidden]){display:flex!important;flex-direction:column}
+ body.client-concierge .r2-booking-wizard [data-step="1"]>*{width:100%}
+ body.client-concierge .r2-booking-wizard .cn-review-grid{grid-template-columns:1fr!important}
+ body.client-concierge .r2-reschedule-wizard .r2-reschedule-panel,body.client-concierge .r2-reschedule-wizard .r2-reschedule-overview{padding:16px}
+ body.client-concierge .r2-payment-wizard .r2-payment-side{grid-template-columns:1fr}
+ body.client-concierge :is(.r2-booking-wizard,.r2-reschedule-wizard,.r2-payment-wizard) .cn-page-heading{flex-direction:column}
+ body.client-concierge .r2-reschedule-wizard .r2-reschedule-step-line{gap:9px}
+ body.client-concierge .r2-reschedule-wizard .r2-reschedule-review-list>div{gap:8px}
+}
+
+body.client-concierge .r2-reschedule-wizard .r2-reschedule-steps li:not(.is-active):not(.is-done) span{color:#c7e2f2!important}
+
+/* Same Client account controls remain available on full-screen booking/payment workflows. */
+body.client-concierge .r2-concierge-topbar{position:sticky!important;top:0;z-index:1100;background:#061e33;border-bottom:1px solid #395a74;box-shadow:0 7px 22px #00132166}
+body.client-concierge .r2-concierge-topbar nav{display:flex;align-items:center;gap:16px;min-width:0}
+body.client-concierge .r2-concierge-topbar .cn-exit{white-space:nowrap;gap:7px}
+body.client-concierge .r2-concierge-actions{display:flex;align-items:center;gap:9px;margin-left:auto;min-width:0}
+body.client-concierge .r2-concierge-icon{position:relative;color:#dcefff;display:inline-grid;place-items:center;width:41px;min-width:41px;height:41px;border-radius:9px;border:1px solid transparent;text-decoration:none;font-size:19px}
+body.client-concierge .r2-concierge-icon:hover,body.client-concierge .r2-concierge-icon:focus-visible{border-color:#4e7087;background:#184562;color:white}
+body.client-concierge .r2-concierge-count,body.client-concierge .r2-concierge-icon .communication-unread-badge:not([hidden]){position:absolute;top:-3px;right:-4px;border-radius:12px;min-width:19px;height:19px;display:inline-grid;place-items:center;background:#c93758;color:white;border:2px solid #071d31;font-size:10px;font-weight:800;padding-inline:3px}
+body.client-concierge .r2-concierge-account{position:relative}
+body.client-concierge .r2-concierge-account-toggle{border:1px solid #3c657e;border-radius:28px;background:#15374f;color:#effaff;display:flex;align-items:center;gap:7px;min-height:42px;padding:3px 11px 3px 3px;max-width:230px}
+body.client-concierge .r2-concierge-account-toggle:hover,body.client-concierge .r2-concierge-account-toggle:focus-visible{border-color:#69c2f1;background:#1b4a69}
+body.client-concierge .r2-concierge-avatar{width:34px;height:34px;flex:0 0 34px;display:grid;place-items:center;border-radius:50%;background:#15557c;color:#fff;font-size:12px;font-weight:800;overflow:hidden}
+body.client-concierge .r2-concierge-avatar img{width:100%;height:100%;object-fit:cover}
+body.client-concierge .r2-concierge-account-name{font-size:12px;font-weight:730;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+body.client-concierge .r2-concierge-account-toggle .bi-chevron-down{font-size:10px;color:#a6ccdf}
+body.client-concierge .r2-concierge-account-menu{background:#082943;border:1px solid #517187;border-radius:10px;color:white;min-width:210px;padding:6px;box-shadow:0 15px 28px #00122177}
+body.client-concierge .r2-concierge-account-menu .dropdown-header{font-size:11px;color:#acc7d9;white-space:normal}
+body.client-concierge .r2-concierge-account-menu .dropdown-item{font-size:13px;color:white;background:transparent;display:flex;gap:9px;align-items:center;border-radius:5px;min-height:39px}
+body.client-concierge .r2-concierge-account-menu .dropdown-item:hover,body.client-concierge .r2-concierge-account-menu .dropdown-item:focus-visible{background:#19516f;color:white}
+body.client-concierge .r2-concierge-account-menu .dropdown-divider{border-color:#365972}
+body.client-concierge .r2-concierge-account-menu form{margin:0}
+body.client-concierge .r2-concierge-topbar :is(a,button):focus-visible{outline:3px solid #f3c675;outline-offset:2px}
+@media(max-width:700px){
+ body.client-concierge .r2-concierge-topbar nav{gap:7px}
+ body.client-concierge .r2-concierge-actions{gap:3px}
+ body.client-concierge .r2-concierge-icon{width:35px;min-width:35px;height:38px;font-size:17px}
+ body.client-concierge .r2-concierge-account-name,body.client-concierge .r2-concierge-account-toggle>.bi-chevron-down{display:none}
+ body.client-concierge .r2-concierge-account-toggle{padding:2px;min-height:39px}
+ body.client-concierge .r2-concierge-avatar{width:34px;height:34px;flex-basis:34px}
+ body.client-concierge .r2-concierge-topbar .cn-exit-wide{display:none}
+ body.client-concierge .r2-concierge-topbar .cn-exit-small{display:inline}
+}
+
+
+@media(max-width:370px){
+ body.client-concierge .r2-concierge-topbar nav{gap:3px!important;padding-inline:6px!important}
+ body.client-concierge .r2-concierge-topbar .client-brand{flex-shrink:1;min-width:0!important;max-width:116px;overflow:hidden}
+ body.client-concierge .r2-concierge-topbar .cn-exit{font-size:11px!important;padding:5px 3px!important;min-width:0}
+ body.client-concierge .r2-concierge-actions{gap:1px!important}
+ body.client-concierge .r2-concierge-icon{width:31px!important;min-width:31px!important}
+}
+
+
+/* ========== ORIGINAL: client-final-20261108.css ========== */
+/* Client final-round refinements: scope all styling to authenticated Client workspace. */
+body.client-hub .hub-account .hub-account-dropdown.dropdown-menu,
+body.client-hub .hub-topbar .hub-account .hub-account-dropdown.dropdown-menu.show {
+ background:#092b43!important; color:#f3f9ff!important; border:1px solid #416780!important;
+ --bs-dropdown-bg:#092b43;--bs-dropdown-color:#f3f9ff;--bs-dropdown-link-color:#f3f9ff;
+ --bs-dropdown-link-hover-bg:#185173;--bs-dropdown-link-hover-color:#fff;
+ --bs-dropdown-link-active-bg:#17648b;--bs-dropdown-link-active-color:#fff;
+ --bs-dropdown-header-color:#c4daea;--bs-dropdown-divider-bg:#45647d;
+}
+body.client-hub .hub-account-dropdown .dropdown-header{color:#c4daea!important;opacity:1!important}
+body.client-hub .hub-account-dropdown :is(a.dropdown-item,button.dropdown-item){color:#f3f9ff!important;background:transparent!important;opacity:1!important}
+body.client-hub .hub-account-dropdown :is(a.dropdown-item,button.dropdown-item):is(:hover,:focus-visible){color:#fff!important;background:#185173!important}
+body.client-hub .hub-account-dropdown :is(.dropdown-item,.dropdown-header) i{color:inherit!important}
+body.client-hub .hub-account-dropdown .dropdown-divider{border-color:#45647d!important;opacity:1}
+body.client-hub :is(.cn-input,.form-select,.form-control){color-scheme:dark}
+body.client-hub :is(.cn-input,.form-select,.form-control) option{background:#10334c;color:#fff}
+body.client-hub .r2-bookings-tools{display:grid;grid-template-columns:minmax(200px,1.6fr) repeat(2,minmax(170px,1fr));align-items:end;gap:14px}
+body.client-hub .cn-danger-action{background:#7f243e!important;border:1px solid #d86c83!important;color:#fff!important}
+body.client-hub .cn-danger-action:hover{background:#9c2948!important}
+body.client-hub .cn-booking-actions .cn-support{width:auto;max-width:none;display:inline-flex;margin:0!important}
+body.client-hub .cn-booking-actions .cn-support button{margin:0!important}
+body.client-hub .cn-booking-actions{align-items:center}
+body.client-hub .cn-booking-actions>p{margin:2px 0;color:#c8dfef}
+body.client-hub .client-final-refund-home,.client-final-refund{max-width:1100px;margin:auto}
+body.client-hub .client-final-refund-grid{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(280px,.88fr);gap:16px;align-items:start}
+body.client-hub .client-final-refund .hub-card,.client-final-refund-home .hub-card{padding:clamp(16px,2vw,24px);background:#092b43!important;border:1px solid #315b78!important;border-radius:12px;color:#f0f8ff}
+body.client-hub .client-final-refund-fields{display:grid;gap:14px}
+body.client-hub .client-final-refund-fields h2,.client-final-refund-side h2{font-size:18px;color:#f4faff;margin:0 0 8px}
+body.client-hub .client-final-refund .cn-field{display:grid;gap:5px}
+body.client-hub .client-final-refund .cn-field label{font-size:13px;font-weight:650;color:#d9eafb}
+body.client-hub .client-final-refund .cn-input{width:100%;min-height:42px;background:#0b2941!important;border:1px solid #416680!important;border-radius:7px;color:#f6fbff!important;padding:9px 12px}
+body.client-hub .client-final-refund .cn-input:focus-visible{outline:2px solid #64bff7;outline-offset:2px}
+body.client-hub .client-final-refund .cn-help{font-size:12px;margin:2px 0;color:#c6dae9}
+body.client-hub .client-final-refund .client-refund-ack{display:flex;gap:9px;align-items:flex-start;color:#e2eef8;background:#113b54;border:1px solid #3a627b;border-radius:8px;padding:12px}
+body.client-hub .client-final-refund .client-refund-ack input{margin:3px 0 0;accent-color:#46b6ee}
+body.client-hub .client-final-refund-buttons{display:flex;gap:10px;flex-wrap:wrap}
+body.client-hub .client-final-refund-side{display:grid;gap:14px}
+body.client-hub .client-final-refund-summary{margin:8px 0 0}
+body.client-hub .client-final-refund-summary>div{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:11px 0;border-bottom:1px solid #315570}
+body.client-hub .client-final-refund-summary>div:last-child{border:0}
+body.client-hub .client-final-refund-summary dt{font-size:12px;color:#c1d8e9}
+body.client-hub .client-final-refund-summary dd{font-size:13px;color:#f6fbff;text-align:right;overflow-wrap:anywhere;margin:0;max-width:62%}
+body.client-hub .client-final-refund-guide ul{color:#cfe2f1;font-size:13px;line-height:1.8;padding-left:20px;margin:0}
+body.client-hub .client-final-refund-start{display:flex;justify-content:space-between;gap:20px;align-items:center}
+body.client-hub .client-final-refund-start h2,.client-final-refund-history h2{font-size:19px;color:#fff}
+body.client-hub .client-final-refund-history{margin-top:22px}
+body.client-hub .client-final-refund-history-list{display:grid;gap:7px}
+body.client-hub .client-final-refund-history-row{display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:10px;align-items:center;padding:12px 14px;border:1px solid #315b78;border-radius:9px;color:#e4f3fc;background:#092a41;text-decoration:none;font-size:13px}
+body.client-hub .client-final-refund-history-row:hover{background:#154363;color:white}
+@media(max-width:900px){body.client-hub .r2-bookings-tools{grid-template-columns:repeat(2,minmax(0,1fr))}body.client-hub .r2-bookings-tools>.cn-field:first-child{grid-column:1/-1}body.client-hub .client-final-refund-grid{grid-template-columns:1fr}}
+@media(max-width:560px){body.client-hub .r2-bookings-tools{grid-template-columns:1fr}body.client-hub .client-final-refund-start{flex-direction:column;align-items:flex-start}body.client-hub .client-final-refund-history-row{grid-template-columns:1fr auto}body.client-hub .client-final-refund-history-row span:nth-child(2){text-align:right}}
+
+
+/* ========== ORIGINAL: client-ultra-20261108.css ========== */
+/* Ultra Final client improvements — isolated to Client workspace and concierge flows. */
+body.client-hub .r2-bookings-tools{display:grid!important;grid-template-columns:minmax(0,1.9fr) minmax(215px,1fr)!important;gap:15px;align-items:end}
+body.client-hub .r2-bookings-tools>.cn-field{min-width:0;width:100%;max-width:none}
+body.client-hub .r2-bookings-tools .cn-input{width:100%;min-height:44px}
+body.client-hub .ultra-payment-deadline,body.client-concierge .ultra-payment-deadline{background:#163d4e;border:1px solid #4c90ab;border-left:4px solid #f0c26f;padding:10px 13px;border-radius:8px;color:#eaf5ff;font-size:13px;line-height:1.5;margin:9px 0}
+body.client-hub .ultra-payment-deadline strong,body.client-concierge .ultra-payment-deadline strong{color:#fff}
+body.client-hub .ultra-payment-deadline p{margin:3px 0;font-size:15px;font-weight:730;color:#ffe0a1}
+body.client-hub .ultra-payment-deadline small{font-size:12px;color:#cbe3f2}
+body.client-hub .ultra-payment-deadline span{display:block;color:#bde1ee;margin-top:4px}
+body.client-concierge .r2-concierge-topbar .ultra-my-bookings-button,body.client-concierge .cn-page-heading .ultra-my-bookings-button{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:39px;padding:8px 13px!important;border:1px solid #6ea8ca!important;background:#123952!important;color:#f3faff!important;border-radius:9px;text-decoration:none;font-size:13px;font-weight:700;white-space:nowrap}
+body.client-concierge .ultra-my-bookings-button:hover,body.client-concierge .ultra-my-bookings-button:focus-visible{border-color:#a1d9ff!important;background:#1d5c80!important;color:#fff!important;outline-offset:3px}
+body.client-concierge .r2-booking-wizard .cn-summary .ultra-summary-header{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:15px 16px;border-bottom:1px solid #365b73}
+body.client-concierge .r2-booking-wizard .cn-summary .ultra-summary-header strong{color:#fff;font-size:15px}
+body.client-concierge .r2-booking-wizard .cn-summary .ultra-summary-header span{font-size:12px;color:#c4dbe8}
+body.client-concierge .r2-booking-wizard .ultra-event-summary{overflow:hidden!important}
+body.client-concierge .r2-booking-wizard .ultra-event-summary #r2EventPreview{padding:12px 16px}
+body.client-concierge .r2-booking-wizard #customizePackage{display:block;min-width:0;margin-top:20px;background:#103650;border:1px solid #3a6480;border-radius:12px;padding:16px}
+body.client-concierge .r2-booking-wizard #customizePackage[hidden]{display:none!important}
+body.client-concierge .r2-booking-wizard #customizePackage h3{color:#f4faff;font-size:17px;font-weight:750;margin:0 0 9px}
+body.client-concierge .r2-booking-wizard #customizePackage #inclusionHelp{color:#c0d8e7;font-size:13px;line-height:1.5;margin:0 0 14px}
+body.client-concierge .r2-booking-wizard #packageInclusions{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+body.client-concierge .r2-booking-wizard .ultra-inclusion-item{display:flex;align-items:center;gap:11px;flex-wrap:wrap;min-height:59px;padding:12px;background:#163d58;border:1px solid #416b86;border-radius:9px;color:#fff;min-width:0;cursor:pointer}
+body.client-concierge .r2-booking-wizard .ultra-inclusion-name{font-size:13px;line-height:1.35;min-width:0;flex:1 1 115px;overflow-wrap:anywhere}
+body.client-concierge .r2-booking-wizard .ultra-inclusion-state{font-size:11px;color:#c5dce8;white-space:nowrap;margin-left:auto}
+body.client-concierge .r2-booking-wizard .ultra-inclusion-toggle{appearance:none;-webkit-appearance:none;position:relative;width:40px;height:23px;flex:0 0 40px;border-radius:20px;border:1px solid #8aa3b7;background:#4c5f6e;cursor:pointer;transition:background .15s}
+body.client-concierge .r2-booking-wizard .ultra-inclusion-toggle:checked{background:#147ac3;border-color:#68c8ff}
+body.client-concierge .r2-booking-wizard .ultra-inclusion-toggle::before{content:"";position:absolute;left:3px;top:3px;width:15px;height:15px;border-radius:50%;background:#fff;transition:transform .15s}
+body.client-concierge .r2-booking-wizard .ultra-inclusion-toggle:checked::before{transform:translateX(16px)}
+body.client-concierge .r2-booking-wizard .ultra-inclusion-toggle:focus-visible{outline:3px solid #ffe7a1;outline-offset:3px}
+body.client-concierge .r2-booking-wizard .ultra-inclusion-locked{cursor:default;background:#103047}
+body.client-concierge .r2-booking-wizard .ultra-inclusion-locked i{color:#76d5a2;font-size:19px}
+body.client-concierge .r2-booking-wizard [data-step="2"] .cn-fields{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:start}
+body.client-concierge .r2-booking-wizard [data-step="2"] .cn-fields .cn-field{min-width:0;width:100%;max-width:none;margin:0;align-self:start}
+body.client-concierge .r2-booking-wizard [data-step="2"] .cn-field .cn-help{min-height:0}
+body.client-concierge .r2-booking-wizard form.is-review .cn-workspace{display:block!important;grid-template-columns:1fr!important}
+body.client-concierge .r2-booking-wizard form.is-review .cn-task{width:100%!important;max-width:none!important;grid-column:1/-1!important}
+body.client-concierge .r2-booking-wizard form.is-review .cn-summary-slot{display:none!important}
+body.client-concierge .r2-booking-wizard form.is-review .cn-review{max-width:100%!important;width:100%!important;min-width:0}
+body.client-concierge .r2-booking-wizard .ultra-review-grid{display:flex!important;flex-direction:column!important;gap:12px!important}
+body.client-concierge .r2-booking-wizard #bookingReview{display:flex!important;flex-direction:column!important;gap:12px!important;min-width:0}
+body.client-concierge .r2-booking-wizard #bookingReview .cn-review-block{width:100%!important;min-width:0;margin:0!important}
+body.client-concierge .r2-booking-wizard #bookingReview .cn-review-block dl{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px 18px}
+body.client-concierge .r2-booking-wizard #bookingReview .cn-review-block dl>div{min-width:0;overflow-wrap:anywhere}
+body.client-concierge .r2-booking-wizard #reviewPricing{width:100%!important;min-width:0;margin:0!important}
+body.client-concierge .r2-booking-wizard #reviewPricing .cn-quote{width:100%;max-width:none!important}
+body.client-concierge .cn-terms-dialog{width:min(780px,calc(100vw - 28px))!important;max-width:780px!important;max-height:min(90dvh,850px)!important;background:#0a2940!important;border:1px solid #537a93!important;border-radius:15px;box-shadow:0 24px 65px #0009;color:#eaf5fb;padding:0!important}
+body.client-concierge .cn-terms-dialog header{background:#123951;border-bottom:1px solid #416780;padding:19px 23px;display:flex;justify-content:space-between;align-items:center;gap:16px}
+body.client-concierge .cn-terms-dialog header h2{color:white;font-size:20px;margin:0;font-weight:800}
+body.client-concierge .cn-terms-dialog header button{min-width:36px;min-height:36px;border:1px solid #60839a;border-radius:8px;background:#16445e;color:#fff;font-size:23px}
+body.client-concierge .cn-terms-dialog .cn-terms-full-text{max-height:min(58dvh,510px)!important;overflow-y:auto;padding:20px 25px;line-height:1.75;font-size:14px;color:#d9eaf4}
+body.client-concierge .cn-terms-dialog .cn-terms-full-text h3{font-size:16px;color:#f6d48f;margin:17px 0 7px;font-weight:750}
+body.client-concierge .cn-terms-dialog .cn-terms-full-text h3:first-child{margin-top:0}
+body.client-concierge .cn-terms-dialog .cn-terms-full-text p{margin:0 0 12px;line-height:1.7;color:#e1eff8}
+body.client-concierge .cn-terms-dialog .client-terms-consent{display:flex;gap:10px;align-items:flex-start;background:#123d55;margin:13px 23px;padding:13px;border:1px solid #4b7892;border-radius:8px;color:#f1f8fe}
+body.client-concierge .cn-terms-dialog .client-terms-consent input{margin-top:3px;accent-color:#2096dd;min-width:17px;min-height:17px}
+body.client-concierge .cn-terms-dialog>.cn-actions{padding:13px 23px 18px;margin:0;border-top:1px solid #315c77;display:flex;justify-content:flex-end;flex-wrap:wrap;gap:10px}
+body.client-concierge .cn-terms-dialog button:focus-visible{outline:3px solid #ffdc80;outline-offset:2px}
+@media(max-width:850px){body.client-concierge .r2-booking-wizard #bookingReview .cn-review-block dl{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:650px){body.client-hub .r2-bookings-tools{grid-template-columns:1fr!important}body.client-concierge .r2-booking-wizard #packageInclusions{grid-template-columns:1fr!important}body.client-concierge .r2-booking-wizard [data-step="2"] .cn-fields{grid-template-columns:1fr!important}body.client-concierge .r2-booking-wizard #bookingReview .cn-review-block dl{grid-template-columns:1fr}body.client-concierge .cn-terms-dialog .cn-terms-full-text{padding:15px;max-height:52dvh!important}body.client-concierge .cn-terms-dialog header{padding:13px 15px}body.client-concierge .cn-terms-dialog>.cn-actions{padding:12px 15px}body.client-concierge .r2-concierge-topbar .ultra-my-bookings-button{padding:7px!important;min-width:36px}}
+
+
+/* ========== ORIGINAL: client-pro-max-20261108.css ========== */
+/* Pro Max Ultra Final: scoped Client-only refinements; no financial rule changes. */
+
+/* Context-aware Event Details: hidden conditional fields must never reserve a grid cell. */
+body.client-concierge .r2-booking-wizard [data-step="2"] [data-event-field][hidden]{
+  display:none!important;
+}
+body.client-concierge .r2-booking-wizard [data-step="2"] .cn-fields{
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:16px!important;
+  align-items:start;
+}
+body.client-concierge .r2-booking-wizard [data-step="2"] .cn-fields>.cn-field{
+  min-width:0!important;
+  margin:0!important;
+  align-self:start;
+}
+body.client-concierge .r2-booking-wizard [data-step="2"] .cn-fields label{
+  display:block;
+  line-height:1.45;
+  font-size:13px;
+  margin-bottom:5px;
+}
+body.client-concierge .r2-booking-wizard [data-step="2"] select.cn-input{
+  padding-right:36px!important;
+}
+body.client-concierge .r2-booking-wizard [data-step="2"] .cn-input{
+  width:100%;
+  min-width:0;
+  min-height:45px;
+}
+
+/* Pricing card: flex/nowrap rules in booking-concierge.css caused the screenshot overflow.
+   Keep labels and monetary amounts in flexible columns and totals on a dedicated line. */
+body.client-concierge .r2-booking-wizard .cn-quote,
+body.client-concierge .r2-booking-wizard .cn-quote dl{
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
+}
+body.client-concierge .r2-booking-wizard .cn-quote dl>div{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) minmax(0,auto)!important;
+  gap:8px 12px!important;
+  align-items:start!important;
+  min-width:0;
+}
+body.client-concierge .r2-booking-wizard .cn-quote dl>div dt{
+  min-width:0;
+  max-width:none!important;
+  overflow-wrap:anywhere;
+  white-space:normal!important;
+}
+body.client-concierge .r2-booking-wizard .cn-quote dl>div dd{
+  min-width:0;
+  max-width:100%;
+  margin:0;
+  text-align:right;
+  overflow-wrap:anywhere;
+  word-break:normal;
+  white-space:normal!important;
+}
+body.client-concierge .r2-booking-wizard .cn-quote dl>div.pro-estimate-total{
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:flex-start!important;
+  gap:5px!important;
+  padding-top:14px!important;
+  border-top:1px solid #43657b;
+}
+body.client-concierge .r2-booking-wizard .cn-quote .pro-estimate-total dt{
+  color:#d6e9f6;
+  font-size:12px;
+  line-height:1.3;
+}
+body.client-concierge .r2-booking-wizard .cn-quote .pro-estimate-total dd{
+  width:100%;
+  max-width:100%;
+  font-size:clamp(18px,2vw,23px)!important;
+  line-height:1.35;
+  font-weight:800;
+  color:#fff;
+  text-align:left;
+  overflow-wrap:anywhere;
+  white-space:normal!important;
+}
+body.client-concierge .r2-booking-wizard .cn-quote .pro-estimate-pending{
+  display:block;
+  background:#133c51;
+  color:#d9e9f3;
+  border-left:3px solid #e4b866;
+  border-radius:4px;
+  padding:10px 12px;
+  margin:7px 0 13px;
+  font-size:12px;
+  line-height:1.55;
+  overflow-wrap:anywhere;
+}
+body.client-concierge .r2-booking-wizard .cn-quote .pro-estimate-pending[hidden]{
+  display:none!important;
+}
+body.client-concierge .r2-booking-wizard .ultra-summary-header{
+  min-width:0;
+  flex-wrap:wrap;
+}
+body.client-concierge .r2-booking-wizard .ultra-summary-header strong,
+body.client-concierge .r2-booking-wizard .ultra-summary-header span{
+  min-width:0;
+  white-space:normal;
+  overflow-wrap:anywhere;
+}
+body.client-concierge .r2-booking-wizard .cn-deposit{
+  min-width:0;
+  max-width:100%;
+  overflow-wrap:anywhere;
+}
+body.client-concierge .r2-booking-wizard .cn-deposit strong{
+  white-space:normal;
+}
+
+/* Refund initiation matches the existing Payments empty-state and card vocabulary. */
+body.client-hub .pro-refund-home{
+  max-width:min(875px,100%);
+  margin:0 auto;
+  min-width:0;
+}
+body.client-hub .pro-refund-home>.hub-heading{
+  margin-bottom:22px;
+}
+body.client-hub .pro-refund-action{
+  display:grid!important;
+  grid-template-columns:48px minmax(0,1fr) auto;
+  gap:16px!important;
+  align-items:center;
+  padding:clamp(18px,2.7vw,25px)!important;
+  border-radius:13px;
+  min-width:0;
+}
+body.client-hub .pro-refund-action-icon{
+  display:grid;
+  place-items:center;
+  width:46px;height:46px;
+  border:1px solid #517894;
+  border-radius:12px;
+  background:#113f5d;
+  color:#8bd2f6;
+  font-size:22px;
+}
+body.client-hub .pro-refund-action-copy{
+  min-width:0;
+}
+body.client-hub .pro-refund-action h2{
+  margin:0 0 6px;
+  font-weight:760;
+  font-size:18px;
+  color:#fff;
+}
+body.client-hub .pro-refund-action p{
+  margin:0;
+  max-width:540px;
+  color:#cae0ee;
+  line-height:1.65;
+  font-size:13px;
+}
+body.client-hub .pro-refund-action .cn-button{
+  white-space:nowrap;
+  min-height:44px;
+}
+body.client-hub .pro-refund-empty{
+  display:flex!important;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  gap:12px;
+  min-height:255px;
+  padding:clamp(22px,5vw,38px)!important;
+  text-align:center;
+  border-radius:13px;
+  width:100%;
+  min-width:0;
+}
+body.client-hub .pro-refund-empty>i{
+  color:#6fd7ac;
+  font-size:30px;
+  line-height:1.2;
+}
+body.client-hub .pro-refund-empty h2{
+  color:#fff;
+  font-size:19px;
+  margin:0;
+}
+body.client-hub .pro-refund-empty p{
+  color:#cee2ef;
+  margin:0 0 5px;
+  max-width:470px;
+  font-size:13px;
+  line-height:1.65;
+}
+body.client-hub .pro-refund-footnote{
+  margin:14px 2px 0;
+  color:#a9c8da;
+  font-size:12px;
+  line-height:1.6;
+}
+body.client-hub .pro-refund-footnote i{margin-right:6px}
+@media(max-width:720px){
+  body.client-hub .pro-refund-action{
+    grid-template-columns:44px minmax(0,1fr);
+  }
+  body.client-hub .pro-refund-action .cn-button{
+    grid-column:2;
+    justify-self:start;
+  }
+}
+@media(max-width:560px){
+  body.client-concierge .r2-booking-wizard [data-step="2"] .cn-fields{
+    grid-template-columns:minmax(0,1fr)!important;
+    gap:12px!important;
+  }
+  body.client-concierge .r2-booking-wizard .cn-quote dl>div{
+    grid-template-columns:minmax(0,1fr)!important;
+    gap:3px!important;
+  }
+  body.client-concierge .r2-booking-wizard .cn-quote dl>div dd{
+    text-align:left;
+  }
+  body.client-hub .pro-refund-action{
+    grid-template-columns:minmax(0,1fr);
+    gap:10px!important;
+  }
+  body.client-hub .pro-refund-action .cn-button{
+    grid-column:1;
+  }
+}
+
+
+/* ========== ORIGINAL: client-messaging-final-20261108.css ========== */
+/* Client Messaging + Package Layout Final 2026-11-08.
+   Scoped refinements only; financial calculations, permissions and messaging remain server-owned. */
+
+/* Provide the messaging workspace with the full horizontal area available after the sidebar. */
+body.client-hub.client-communications-index .hub-content.container{
+  max-width:none!important;width:100%;padding-left:clamp(14px,2vw,30px)!important;
+  padding-right:clamp(14px,2vw,30px)!important;
+}
+body.client-hub .comm-page-client.hub-messages{width:100%;max-width:none;min-width:0;}
+body.client-hub .comm-page-client>.hub-heading{margin-bottom:14px;align-items:center;}
+body.client-hub .comm-page-client>.hub-heading h1{margin:0 0 3px;font-size:clamp(23px,2.2vw,30px);}
+body.client-hub .comm-page-client>.hub-heading p{font-size:12px;line-height:1.45;max-width:690px;}
+body.client-hub .comm-page-client .comm-workspace{
+  display:grid!important;grid-template-columns:minmax(245px,28%) minmax(0,1fr)!important;
+  width:100%!important;min-width:0!important;
+  height:clamp(560px,calc(100dvh - 175px),940px)!important;
+  min-height:480px!important;max-height:none!important;
+  overflow:hidden;border-radius:13px!important;
+}
+body.client-hub .comm-page-client .comm-conversation-panel,
+body.client-hub .comm-page-client .comm-chat-panel{min-width:0!important;min-height:0!important;}
+body.client-hub .comm-page-client .comm-chat-panel{display:flex;flex-direction:column;}
+body.client-hub .comm-page-client .comm-chat-header{
+  min-height:67px!important;padding:11px 17px!important;flex:0 0 auto;flex-wrap:nowrap;
+}
+body.client-hub .comm-page-client .comm-chat-avatar{
+  width:40px!important;height:40px!important;min-width:40px;
+  display:grid;place-items:center;overflow:hidden;border-radius:50%;
+}
+body.client-hub .comm-page-client :is(.comm-avatar,.comm-chat-avatar,.comm-sender-avatar){
+  overflow:hidden;
+}
+body.client-hub .comm-page-client :is(.comm-avatar,.comm-chat-avatar,.comm-sender-avatar)>img{
+  display:block;width:100%;height:100%;object-fit:cover;object-position:center;
+  border-radius:inherit;
+}
+body.client-hub .comm-page-client :is(.comm-avatar,.comm-chat-avatar,.comm-sender-avatar)>img[hidden]{
+  display:none!important;
+}
+body.client-hub .comm-page-client .comm-chat-title{min-width:0;gap:11px;}
+body.client-hub .comm-page-client .comm-chat-title>div{min-width:0;}
+body.client-hub .comm-page-client .comm-chat-title p{
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:min(56vw,600px);
+  color:#bdd5e6!important;font-size:12px;
+}
+body.client-hub .comm-page-client .cx-chat-connection{
+  flex:0 0 auto;padding:5px 17px!important;min-height:27px;
+}
+body.client-hub .comm-page-client .comm-message-history{
+  flex:1 1 auto!important;min-height:0!important;max-height:none!important;overflow-y:auto!important;
+  overflow-x:hidden;padding:16px 18px 18px!important;
+  overscroll-behavior:contain;
+}
+/* Both directions align against their own edge, not the narrow center of the message list. */
+body.client-hub .comm-page-client .comm-message{
+  position:relative;align-self:flex-start;display:flex!important;flex-direction:column;
+  width:fit-content!important;max-width:min(82%,660px)!important;
+  margin:0 auto 13px 0!important;min-width:0!important;align-items:flex-start!important;
+}
+body.client-hub .comm-page-client .comm-message.mine{
+  align-self:flex-end;margin:0 0 13px auto!important;align-items:flex-end!important;
+}
+body.client-hub .comm-page-client .comm-message.theirs{
+  padding-left:38px;
+}
+body.client-hub .comm-page-client .comm-sender-avatar{
+  position:absolute;top:17px;left:0;
+  display:grid;place-items:center;
+  width:30px!important;height:30px!important;min-width:30px;
+  border-radius:50%;font-size:11px;
+}
+body.client-hub .comm-page-client .comm-message-meta{
+  max-width:100%;display:flex;align-items:center;flex-wrap:wrap;gap:5px 8px;
+  margin:0 0 5px!important;overflow-wrap:anywhere;
+}
+body.client-hub .comm-page-client .comm-message.mine .comm-message-meta{
+  justify-content:flex-end;flex-direction:row;
+}
+body.client-hub .comm-page-client .comm-bubble{
+  width:fit-content;max-width:100%;min-width:0;
+  padding:10px 14px!important;line-height:1.55!important;
+  white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;
+}
+body.client-hub .comm-page-client .comm-booking-context-chip,
+body.client-hub .comm-page-client .comm-action-card{max-width:100%;min-width:0;overflow-wrap:anywhere;}
+body.client-hub .comm-page-client .comm-delivery-state{margin:4px 1px 0;}
+body.client-hub .comm-page-client .comm-composer{
+  flex:0 0 auto;padding:10px 16px 10px!important;
+}
+body.client-hub .comm-page-client .comm-booking-selector{
+  display:grid;grid-template-columns:auto minmax(0,1fr);
+  gap:5px 12px;align-items:center;margin:0 0 9px!important;
+}
+body.client-hub .comm-page-client .comm-booking-selector label{
+  margin:0;white-space:nowrap;font-size:12px;
+}
+body.client-hub .comm-page-client .comm-booking-selector select{
+  min-width:0;width:100%;min-height:37px!important;max-width:none;
+  padding:7px 12px;font-size:12px;
+}
+body.client-hub .comm-page-client .comm-booking-selector>span{
+  grid-column:2;margin:0;font-size:10px;line-height:1.2;
+}
+body.client-hub .comm-page-client .comm-composer-row{gap:8px;}
+body.client-hub .comm-page-client #commMessageInput{max-height:100px;}
+body.client-hub .comm-page-client .comm-composer-note{margin-top:4px;}
+
+/* A pending venue needs an amber-accented navy notice, not a brown/gray alert. */
+body.client-hub .cn-page .cn-event .cn-notice.client-location-review-notice{
+  margin:16px 0!important;padding:14px 16px!important;
+  background:#12354a!important;border:1px solid #496c82!important;
+  border-left:4px solid #e6bb65!important;border-radius:10px!important;
+  color:#dceaf5!important;box-shadow:none!important;
+  overflow-wrap:anywhere;
+}
+body.client-hub .client-location-review-title{
+  display:flex;align-items:center;gap:9px;
+  color:#ffe2a3;font-size:14px;line-height:1.4;margin:0 0 8px;
+}
+body.client-hub .client-location-review-title>i{font-size:16px;flex-shrink:0;}
+body.client-hub .client-location-review-title strong{color:inherit;font-weight:750;}
+body.client-hub .cn-page .client-location-review-notice p{
+  color:#dceaf5!important;font-size:13px;line-height:1.6;margin:7px 0 0;
+}
+body.client-hub .cn-page .client-location-review-notice .client-location-review-meta{
+  color:#a9d2e9!important;font-size:12px;
+}
+body.client-hub .cn-page .client-location-review-notice .cn-check{color:#e8f5ff;}
+
+/* Package selection: choices first; inclusions below, spanning the full main column. */
+body.client-concierge .r2-booking-wizard [data-step="1"]:not([hidden]){
+  display:grid!important;grid-template-columns:minmax(0,1fr)!important;
+  gap:14px!important;align-items:start;
+}
+body.client-concierge .r2-booking-wizard [data-step="1"]>:is(.cn-panel-heading,#checkedSchedule,.cn-packages,#customizePackage,.cn-actions){
+  grid-column:1/-1!important;grid-row:auto!important;min-width:0!important;
+}
+body.client-concierge .r2-booking-wizard [data-step="1"]>.cn-packages{
+  display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  gap:12px!important;align-items:stretch;
+}
+body.client-concierge .r2-booking-wizard .cn-packages>.cn-package{
+  width:100%;min-width:0;display:flex;flex-direction:column;
+  padding:14px 13px!important;overflow-wrap:anywhere;
+}
+body.client-concierge .r2-booking-wizard .cn-package-choice{
+  display:flex;flex-wrap:wrap;align-items:flex-start;gap:8px;
+}
+body.client-concierge .r2-booking-wizard .cn-package-choice>span{
+  min-width:0;flex:1 1 110px;
+}
+body.client-concierge .r2-booking-wizard .cn-package-choice b{
+  margin-left:auto;text-align:right;font-size:13px;white-space:normal;overflow-wrap:anywhere;
+}
+body.client-concierge .r2-booking-wizard .cn-package-excerpt{
+  margin-top:10px;font-size:12px;line-height:1.55;
+  display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden;
+}
+body.client-concierge .r2-booking-wizard .cn-package-detail{margin-top:auto;padding-top:9px;}
+body.client-concierge .r2-booking-wizard [data-step="1"]>#customizePackage{
+  margin:0!important;padding:16px!important;
+  width:100%!important;max-width:none!important;
+}
+body.client-concierge .r2-booking-wizard [data-step="1"]>#customizePackage[hidden]{
+  display:none!important;
+}
+body.client-concierge .r2-booking-wizard #packageInclusions{
+  display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  gap:9px!important;align-items:stretch;
+}
+body.client-concierge .r2-booking-wizard #packageInclusions>.ultra-inclusion-item{
+  display:flex;align-items:center;flex-wrap:wrap;gap:8px;
+  min-height:62px!important;padding:10px!important;margin:0!important;
+  border-radius:9px;min-width:0;
+}
+body.client-concierge .r2-booking-wizard .ultra-inclusion-name{
+  font-size:12px;flex:1 1 105px;overflow-wrap:anywhere;
+}
+body.client-concierge .r2-booking-wizard .ultra-inclusion-state{
+  margin-left:auto;font-size:10px;line-height:1.4;
+}
+body.client-concierge .r2-booking-wizard .ultra-inclusion-toggle{flex-shrink:0;}
+
+/* Keep estimate independent while allowing main selection content to take available width. */
+body.client-concierge .r2-booking-wizard form:not(.is-review) .cn-workspace{
+  grid-template-columns:minmax(0,1fr) minmax(265px,295px)!important;gap:16px!important;
+}
+@media(max-width:1320px){
+  body.client-concierge .r2-booking-wizard [data-step="1"]>.cn-packages{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  }
+  body.client-concierge .r2-booking-wizard #packageInclusions{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  }
+}
+@media(max-width:1090px){
+  body.client-hub .comm-page-client .comm-workspace{
+    grid-template-columns:minmax(205px,30%) minmax(0,1fr)!important;
+  }
+  body.client-concierge .r2-booking-wizard form:not(.is-review) .cn-workspace{
+    grid-template-columns:minmax(0,1fr)!important;
+    grid-template-areas:"task" "quote"!important;
+  }
+}
+@media(max-width:820px){
+  body.client-hub .comm-page-client .comm-workspace{
+    grid-template-columns:minmax(0,1fr)!important;
+    height:calc(100dvh - 150px)!important;min-height:360px!important;
+    max-height:none!important;
+  }
+  body.client-hub .comm-page-client .comm-chat-header{padding:10px 12px!important;}
+  body.client-hub .comm-page-client .comm-message-history{padding:14px 12px!important;}
+  body.client-hub .comm-page-client .comm-message{max-width:94%!important;}
+  body.client-hub .comm-page-client .comm-composer{padding:10px 12px!important;}
+  body.client-hub .comm-page-client .comm-booking-selector{
+    grid-template-columns:1fr;gap:4px;
+  }
+  body.client-hub .comm-page-client .comm-booking-selector>span{grid-column:1;}
+  body.client-hub .comm-page-client .comm-chat-title p{max-width:40vw;}
+}
+@media(max-width:660px){
+  body.client-concierge .r2-booking-wizard [data-step="1"]>.cn-packages,
+  body.client-concierge .r2-booking-wizard #packageInclusions{
+    grid-template-columns:minmax(0,1fr)!important;
+  }
+  body.client-concierge .r2-booking-wizard .cn-packages>.cn-package{padding:12px!important;}
+  body.client-hub .comm-page-client .comm-workspace{height:calc(100dvh - 132px)!important;}
+  body.client-hub .comm-page-client .comm-message.theirs{padding-left:34px;}
+  body.client-hub .comm-page-client .comm-sender-avatar{width:27px!important;height:27px!important;min-width:27px;}
+}
+@media(max-height:630px){
+  body.client-hub .comm-page-client .comm-workspace{height:calc(100dvh - 110px)!important;min-height:290px!important;}
+  body.client-hub .comm-page-client>.hub-heading{margin-bottom:8px;}
+}
+@media(max-width:820px){
+  body.client-hub .comm-page-client .comm-conversation-panel{display:flex!important;}
+  body.client-hub .comm-page-client .comm-chat-panel{display:none!important;}
+  body.client-hub .comm-page-client.comm-has-selection .comm-conversation-panel{display:none!important;}
+  body.client-hub .comm-page-client.comm-has-selection .comm-chat-panel{display:flex!important;}
+  body.client-hub .comm-page-client .comm-mobile-back{display:flex!important;align-items:center;justify-content:center;}
+}
+/* Respect visualViewport when the mobile keyboard opens; preserve the chat composer. */
+body.client-hub .comm-page-client .comm-workspace{
+  height:var(--comm-available-height,calc(100dvh - 170px))!important;
+  min-height:300px!important;
+}
+@media(max-width:820px){
+  body.client-hub .comm-page-client .comm-workspace{min-height:240px!important;}
+}
+
+
+/* ========== ORIGINAL: confirmed-booking-edit-20261109.css ========== */
+/* Confirmed booking amendments. Shared, strictly scoped to the new editor and review panel. */
+.confirmed-change-page{display:grid;gap:16px;max-width:1370px;margin:auto}
+.confirmed-change-heading{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+.confirmed-change-eyebrow{color:#f5c66c;font-size:12px;font-weight:750;letter-spacing:.05em}
+.confirmed-change-heading h1{font-size:25px;color:#f3faff;font-weight:780;margin:3px 0}
+.confirmed-change-heading p{color:#c8d9e8;font-size:13px;margin:0}
+.confirmed-change-layout{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(270px,.75fr);gap:15px;align-items:start}
+.confirmed-change-card{min-width:0;background:#0b2a42;border:1px solid #395f7b;border-radius:13px;padding:20px;color:#f4faff}
+.confirmed-change-card h2{color:#fff;font-size:18px;margin-bottom:19px}
+.confirmed-change-field{display:grid;gap:7px;margin-bottom:18px}
+.confirmed-change-field label,.confirmed-change-coordinates label{font-size:12px;color:#e6f3fb;font-weight:700}
+.confirmed-change-field small,.confirmed-change-card>p,.confirmed-change-coordinates p{color:#c1d6e5;font-size:12px;line-height:1.65}
+.confirmed-change-field .form-control,.confirmed-change-field .form-select,.confirmed-change-coordinates .form-control{min-height:44px;background:#0d3651;color:#fff;border:1px solid #57819a;border-radius:9px;font-size:13px;padding:10px}
+.confirmed-change-field .form-control:focus,.confirmed-change-field .form-select:focus,.confirmed-change-coordinates .form-control:focus{outline:2px solid #82cdf8;outline-offset:2px}
+.confirmed-change-search{display:flex;gap:8px;flex-wrap:wrap}
+.confirmed-change-search input{flex:1 1 230px}
+.confirmed-change-places{display:grid;gap:6px;margin-top:6px;color:#bfd3e4;font-size:12px}
+.confirmed-change-place{border:1px solid #4a82a3;border-radius:7px;background:#164968;color:#fff;text-align:left;padding:10px;font-size:12px}
+.confirmed-change-place:hover,.confirmed-change-place:focus-visible{background:#26719a;outline:2px solid #8bccf1}
+.confirmed-change-coordinates{margin:0 0 18px;padding:12px;background:#103b54;border-radius:9px}
+.confirmed-change-coordinates summary{cursor:pointer;color:#d8f0ff;font-weight:700;font-size:12px}
+.confirmed-change-coordinate-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.confirmed-change-coordinate-row>div{display:grid;gap:5px}
+.confirmed-change-notice{background:#193d50;border-left:3px solid #f6c679;padding:13px;border-radius:8px;color:#e5f1fb;font-size:12px;margin-bottom:17px}
+.confirmed-change-notice p{margin:4px 0 0;line-height:1.6}
+.confirmed-change-submit{min-height:43px;padding:10px 18px;background:#127ab5!important;border-color:#56a3d1!important}
+.confirmed-change-summary dl,.booking-change-pending dl{display:grid;gap:10px;margin:0 0 16px}
+.confirmed-change-summary dl>div,.booking-change-pending dl>div{display:grid;grid-template-columns:115px minmax(0,1fr);gap:9px;border-bottom:1px solid #315b74;padding-bottom:9px}
+.confirmed-change-summary dt,.booking-change-pending dt{font-size:11px;color:#b9d1e2}
+.confirmed-change-summary dd,.booking-change-pending dd{font-size:12px;font-weight:700;overflow-wrap:anywhere;color:#fff;margin:0}
+.booking-change-pending{background:#0e3650;color:#f4faff;border:1px solid #4e7a96;border-radius:12px;padding:19px;margin:15px 0}
+.booking-change-pending h2{color:#fff;font-size:18px;font-weight:780;margin:0 0 10px}
+.booking-change-pending p{color:#d2e5f2;font-size:12px;line-height:1.65}
+.booking-change-pending strong{color:#ffdb92}
+.booking-change-pending .booking-change-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.booking-change-pending .booking-change-actions button{min-height:39px;font-size:12px;padding:9px 14px}
+.booking-change-pending .booking-change-actions .btn-primary{background:#096da7;border-color:#4e9ed1;color:#fff}
+.booking-change-pending .booking-change-actions .btn-outline-secondary{color:#e5f6ff;border-color:#64859c}
+.booking-change-pending .form-check{display:flex;align-items:flex-start;gap:8px;margin:12px 0;color:#e5f4ff;font-size:12px}
+.booking-change-pending .form-check input{margin-top:3px}
+@media(max-width:950px){.confirmed-change-layout{grid-template-columns:1fr}}
+@media(max-width:570px){.confirmed-change-card{padding:15px}.confirmed-change-coordinate-row{grid-template-columns:1fr}.confirmed-change-summary dl>div,.booking-change-pending dl>div{grid-template-columns:95px minmax(0,1fr)}}
+
+
+/* ========== ORIGINAL: aries-round3-ui.css ========== */
+/* Owner UI Round 3 / consistent three-role paging. No business-rule changes. */
+.aries-five-pager{display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;padding:1rem 0 .25rem;margin-top:.9rem;border-top:1px solid #2a4760;color:#d0e2f1;max-width:100%;min-width:0}
+.aries-five-actions{display:flex;align-items:center;justify-content:flex-end;gap:.6rem;min-width:0}
+.aries-five-page{font-size:.86rem;color:#dce9f5;white-space:nowrap;min-width:6.7rem;text-align:center}
+.aries-five-total{font-size:.81rem;color:#b4c9d9}
+.aries-five-pager .btn{width:37px;height:37px;min-width:37px;border-radius:9px;display:inline-grid;place-items:center;padding:0;line-height:1}
+.aries-five-pager button:disabled{opacity:.35;cursor:not-allowed;pointer-events:none}
+.aries-five-pager :is(a,button):focus-visible,.aries-round3-toolbar :is(a,button,input,select):focus-visible,
+.aries-client-round3-toolbar :is(input,button,select):focus-visible,.staff-round2-calendar-pager button:focus-visible{outline:3px solid #f6ca53;outline-offset:3px}
+body.internal-ui .aries-round3-toolbar{display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;padding:.7rem;border:1px solid #25465d;border-radius:14px;background:#0b2741;box-shadow:none;min-width:0}
+body.internal-ui .aries-round3-toolbar .am-filter-row{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;width:100%;min-width:0}
+body.internal-ui .aries-round3-toolbar .am-filter-search{position:relative;min-width:170px;flex:1 1 280px;background:transparent;border:0;padding:0;box-shadow:none}
+body.internal-ui .aries-round3-toolbar .am-filter-search .input-group{background:transparent;box-shadow:none}
+body.internal-ui .aries-round3-toolbar .am-filter-search input{min-height:40px;border:1px solid #42617d;border-radius:10px!important;color:#e8f4ff;background:#102e49;box-shadow:none;padding-left:2.25rem;width:100%}
+body.internal-ui .aries-round3-toolbar .am-filter-search i.bi-search{position:absolute;left:.8rem;top:50%;transform:translateY(-50%);z-index:1;color:#afc7dd;pointer-events:none}
+body.internal-ui .aries-round3-toolbar .am-filter-search input::placeholder{color:#a8bfd2;opacity:1}
+body.internal-ui .aries-round3-toolbar .btn:not(.visually-hidden){min-height:40px;border-radius:10px;white-space:nowrap}
+body.internal-ui .aries-round3-toolbar .dropdown{position:relative}
+body.internal-ui .aries-round3-toolbar .dropdown-menu{min-width:min(310px,calc(100vw - 48px));max-width:calc(100vw - 36px);padding:1rem;background:#11344f;color:#ecf5fd;border:1px solid #496882;border-radius:12px;box-shadow:0 18px 28px #0007}
+body.internal-ui .aries-round3-toolbar .dropdown-menu :is(label,h6){color:#eaf5ff}
+body.internal-ui .aries-round3-toolbar .dropdown-menu :is(input,select){min-height:38px;background:#0a2742;color:#f3f9ff;border:1px solid #4b6f8e}
+body.internal-ui .aries-round3-toolbar .dropdown-menu a{margin-top:.3rem}
+body.internal-ui .aries-round3-toolbar .aries-round3-refresh{display:inline-flex;align-items:center;justify-content:center;gap:.4rem}
+.owner-dashboard .owner-round1-dashboard{max-width:100%;min-width:0}
+.owner-dashboard .owner-round3-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px;margin-bottom:15px;min-width:0}
+.owner-dashboard .owner-round3-metric{display:flex;align-items:center;gap:14px;min-width:0;min-height:109px;padding:17px;background:linear-gradient(125deg,#0c3152,#09253e);border:1px solid #275176;border-radius:13px}
+.owner-dashboard .owner-round3-metric>div{min-width:0;display:flex;flex-direction:column;gap:5px}
+.owner-dashboard .owner-round3-metric>div>span{font-size:.83rem;color:#c7dcf0}
+.owner-dashboard .owner-round3-metric strong{font-size:clamp(1.15rem,2vw,1.75rem);font-weight:750;color:#fff;overflow-wrap:anywhere;line-height:1.25}
+.owner-dashboard .owner-round3-metric small{color:#acc1d1;font-size:.73rem;overflow-wrap:anywhere}
+.owner-dashboard .owner-round3-metric-icon{flex:0 0 44px;width:44px;height:44px;display:grid;place-items:center;border-radius:10px;background:#124a6c;color:#80d8ff;font-size:1.3rem}
+.owner-dashboard .owner-round3-outstanding .owner-round3-metric-icon{background:#60304c;color:#ffa3c6}
+.owner-dashboard .owner-round3-value .owner-round3-metric-icon{background:#5a4824;color:#ffdb88}
+.owner-dashboard .owner-round3-grid{grid-template-columns:minmax(0,1.75fr) minmax(260px,.77fr);gap:14px;align-items:start}
+.owner-dashboard .owner-round3-upcoming{padding:17px;background:#0a2742;border:1px solid #244a67;border-radius:12px;min-width:0}
+.owner-dashboard .owner-round3-upcoming .dash-section-heading{margin-bottom:1rem}
+.owner-dashboard .owner-round3-upcoming h2{color:#f2f8ff;font-size:1.06rem;line-height:1.3}
+.owner-dashboard .owner-round3-upcoming p{color:#b6ccdd;font-size:.82rem;margin:.2rem 0 0}
+.owner-dashboard .owner-round3-event-list{margin:0;padding:0;list-style:none;display:flex;flex-direction:column}
+.owner-dashboard .owner-round3-event{display:flex;gap:.7rem;padding:.75rem 0;border-bottom:1px solid #294c66;min-width:0}
+.owner-dashboard .owner-round3-event:last-child{border-bottom:0;padding-bottom:0}
+.owner-dashboard .owner-round3-event-icon{flex:0 0 32px;display:grid;place-items:center;height:32px;background:#174365;border-radius:9px;color:#a1daff}
+.owner-dashboard .owner-round3-event>div{display:flex;flex-direction:column;gap:.3rem;min-width:0;overflow-wrap:anywhere}
+.owner-dashboard .owner-round3-event a{color:#f7c84c!important;text-decoration:none;font-size:.82rem;font-weight:700}
+.owner-dashboard .owner-round3-event :is(time,span){font-size:.75rem;color:#b9d0df}
+.owner-dashboard .owner-round3-requests{min-width:0}
+.owner-dashboard .owner-round3-grid .owner-round1-request-row{grid-template-columns:minmax(110px,1.25fr) minmax(95px,.85fr) minmax(80px,.8fr) minmax(100px,1fr) auto;gap:9px;padding:11px}
+.owner-dashboard .owner-round3-grid .owner-round1-request-row .btn{border-radius:8px}
+body.internal-ui .owner-financial-page .owner-audit-table td{padding:.65rem .55rem}
+body.internal-ui .owner-financial-page .owner-proof-thumb{max-width:68px;max-height:48px;object-fit:contain}
+body.internal-ui .owner-financial-page .owner-booking-code{color:#f5c647}
+body.internal-ui .owner-financial-page .ocr-badge{white-space:normal;line-height:1.3}
+body.internal-ui .owner-financial-page .status-badge{white-space:normal}
+body.internal-ui .staff-round2-calendar-pager{display:flex;gap:.7rem;align-items:center;justify-content:flex-end;flex-wrap:wrap}
+body.internal-ui .staff-round2-calendar-pager>span{font-size:.86rem;color:#cfe0ed;white-space:nowrap}
+body.internal-ui .staff-round2-calendar-pager button{min-width:37px;min-height:37px;border-radius:9px}
+body.internal-ui .staff-round2-calendar-pager button:disabled{opacity:.35}
+body.internal-ui .staff-upcoming-panel .staff-upcoming-tools{display:none!important}
+body.client-body .aries-client-round3-toolbar{display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;max-width:100%;min-width:0;padding:.75rem;background:#09273f;border:1px solid #31516d;border-radius:14px;box-shadow:none}
+body.client-body .aries-client-round3-toolbar .am-filter-search{position:relative;flex:1 1 250px;min-width:0;background:transparent;border:0;padding:0}
+body.client-body .aries-client-round3-toolbar .am-filter-search i{position:absolute;top:50%;left:.85rem;transform:translateY(-50%);z-index:1;color:#b1d0e5}
+body.client-body .aries-client-round3-toolbar .am-filter-search input{width:100%;min-height:42px;padding-left:2.3rem;border:1px solid #4a7190;border-radius:11px;background:#123750;color:#f4f9fd;box-shadow:none}
+body.client-body .aries-client-round3-toolbar .am-filter-search input::placeholder{color:#b5c9d9;opacity:1}
+body.client-body .aries-client-round3-toolbar .btn{min-height:42px;border-radius:11px}
+body.client-body .aries-client-round3-toolbar .dropdown-menu{background:#12344f;color:#f7fbff;border:1px solid #3c6684;border-radius:12px;min-width:230px;max-width:calc(100vw - 36px)}
+body.client-body .aries-client-round3-toolbar .dropdown-menu label{display:block;margin-bottom:.4rem;color:#e8f5ff}
+body.client-body .aries-client-round3-toolbar .dropdown-menu select{background:#09283e;color:#f7fbff;border:1px solid #4b7391;border-radius:9px;width:100%;padding:.55rem}
+body.client-body .aries-client-five-pager{margin:1.2rem 0;padding:1rem;background:#09273e;border:1px solid #31516d;border-radius:13px}
+body.client-body .aries-client-five-pager .aries-five-page{color:#ecf8ff}
+@media(max-width:1110px){
+ .owner-dashboard .owner-round3-grid{grid-template-columns:minmax(0,1fr)}
+ .owner-dashboard .owner-round3-upcoming{width:100%}
+ .owner-dashboard .owner-round3-grid .owner-round1-request-row{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .owner-dashboard .owner-round3-grid .owner-round1-request-row .btn{justify-self:start}
+}
+@media(max-width:740px){
+ .owner-dashboard .owner-round3-metrics{grid-template-columns:1fr}
+ .owner-dashboard .owner-round3-metric{min-height:94px}
+ .owner-dashboard .owner-round3-grid .owner-round1-request-row{grid-template-columns:1fr}
+ body.internal-ui .aries-round3-toolbar .am-filter-search{flex-basis:100%}
+ body.client-body .aries-client-round3-toolbar .am-filter-search{flex-basis:100%}
+ .aries-five-pager{justify-content:center;gap:.7rem}
+ .aries-five-total{text-align:center;flex-basis:100%}
+}
+@media print{.aries-five-pager,.aries-client-round3-toolbar,.aries-round3-toolbar{display:none!important}}
+body.internal-ui.staff-dashboard .staff-day-more{color:#eef8ff!important;font-weight:800}
+
+/* Round 3 Client search / filter / refresh remain one coherent toolbar. */
+body.client-body .aries-client-round3-toolbar{
+ display:grid!important;
+ grid-template-columns:minmax(0,1fr) max-content max-content!important;
+ align-items:center!important;gap:.65rem!important
+}
+body.client-body .aries-client-round3-toolbar>.am-filter-search{grid-column:1;flex:auto!important;width:auto!important}
+body.client-body .aries-client-round3-toolbar>.dropdown{grid-column:2;min-width:0;width:auto}
+body.client-body .aries-client-round3-toolbar>#clientBookingRefresh{grid-column:3;min-width:0;width:auto!important;max-width:max-content!important;justify-self:end}
+@media(max-width:620px){
+ body.client-body .aries-client-round3-toolbar{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important}
+ body.client-body .aries-client-round3-toolbar>.am-filter-search{grid-column:1/-1}
+ body.client-body .aries-client-round3-toolbar>.dropdown{grid-column:1;width:100%;min-width:0}
+ body.client-body .aries-client-round3-toolbar>.dropdown>.btn{width:100%}
+ body.client-body .aries-client-round3-toolbar>#clientBookingRefresh{grid-column:2;width:100%!important;max-width:none!important}
+}
+
+/* Mobile Staff header: show one identity only, avoid logo/label collision. */
+@media(max-width:767px){
+ body.internal-ui.staff-dashboard .dashboard-topbar .workspace-brand{display:none!important}
+ body.internal-ui.staff-dashboard .dashboard-topbar .topbar-left{min-width:0;flex:1 1 auto;gap:.6rem}
+ body.internal-ui.staff-dashboard .dashboard-topbar .staff-round2-header-identity{min-width:0;max-width:min(100%,175px)}
+ body.internal-ui.staff-dashboard .dashboard-topbar .staff-round2-header-identity :is(small,strong){overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
+ body.internal-ui.staff-dashboard .dashboard-topbar .topbar-right{flex:0 0 auto}
+}
+
+/* Owner Packages reuses the Staff package-card presentation and 3-column grid. */
+body.internal-ui.owner-dashboard .staff-package-page .staff-package-grid{
+ display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;
+ gap:13px!important;align-items:stretch!important
+}
+body.internal-ui.owner-dashboard .staff-package-grid .staff-package-card{min-width:0}
+@media(max-width:1140px){
+ body.internal-ui.owner-dashboard .staff-package-page .staff-package-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+}
+@media(max-width:750px){
+ body.internal-ui.owner-dashboard .staff-package-page .staff-package-grid{grid-template-columns:minmax(0,1fr)!important}
+}

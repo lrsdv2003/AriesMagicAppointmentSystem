@@ -1,7 +1,11 @@
 {
   "name": "aries-magic-verification",
   "private": true,
-  "scripts": { "test:dom": "node tests/OwnerRegression/ui.dom.mjs" },
+  "scripts": {
+    "test:dom": "node tests/OwnerRegression/ui.dom.mjs",
+    "test:css": "node scripts/verify-css-bundles.mjs",
+    "css:sync": "node scripts/sync-css-bundles.mjs"
+  },
   "engines": { "node": ">=24" },
   "devDependencies": { "jsdom": "30.1.3" }
 }

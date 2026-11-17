@@ -58,27 +58,20 @@
     <title>@ViewData["Title"] - Aries Magic Dashboard</title>
     <link rel="stylesheet" href="~/lib/bootstrap-icons/font/bootstrap-icons.min.css" />
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    @foreach (var sheet in new[] { "tokens", "site", "soft-ui", "communication-center", "ocr-verification", "internal-operations", "package-cards", "owner-interface", "filters", "package-editor", "notifications", "admin-console", "role-dashboards", "internal-profile", "staff-calendar", "internal-ui", "app-ui", "feedback", "internal-workspaces" }) {
-        <link rel="stylesheet" href="~/css/@(sheet).css" asp-append-version="true" />
-    }
+    <link rel="stylesheet" href="~/css/internal-core.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/aries-final-ui.css" asp-append-version="true" />
 <link rel="stylesheet" href="~/AriesMagicAppointmentSystem.styles.css" asp-append-version="true" />
     @if (role == "Staff") {
-        <link rel="stylesheet" href="~/css/confirmed-booking-edit-20261109.css" asp-append-version="true" />
         <link rel="stylesheet" href="~/css/staff.css" asp-append-version="true" />
     }
     @if (role == "Owner") {
         <link rel="stylesheet" href="~/css/owner.css" asp-append-version="true" />
     }
-    @if (currentController == "Personnel") {
-        <link rel="stylesheet" href="~/css/personnel.css" asp-append-version="true" />
-    }
-    @if (currentController == "Communications") {
-        <link rel="stylesheet" href="~/css/unified-support-20261108.css" asp-append-version="true" />
-    }
-<link rel="stylesheet" href="~/css/aries-round3-ui.css" asp-append-version="true" />
-@if (role == "Staff") {
-    <link rel="stylesheet" href="~/css/staff-final-round-20261116.css" asp-append-version="true" />
+    @* Personnel styles remain scoped to .personnel-console, following Owner styles in owner.css. *@
+    @* Owner and Staff bundles contain the ordered messaging and final-round layers.
+       Preserve a combined fallback tail for any non-Owner/Staff legacy role. *@
+@if (role != "Staff" && role != "Owner") {
+    <link rel="stylesheet" href="~/css/aries-round3-ui.css" asp-append-version="true" />
 }
 </head>
 <body class="internal-ui dashboard-body midnight-workspace @(role.ToLowerInvariant())-dashboard">

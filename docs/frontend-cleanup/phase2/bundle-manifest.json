@@ -1,0 +1,126 @@
+{
+  "OriginalCount": 41,
+  "OptimizedCount": 13,
+  "BundleMap": {
+    "site.css": [
+      "site.css",
+      "tokens.css",
+      "aries-client-theme.css"
+    ],
+    "client-core.css": [
+      "client-foundations.css",
+      "communication-center.css",
+      "ocr-verification.css",
+      "package-cards.css",
+      "filters.css",
+      "notifications.css",
+      "client-refresh.css",
+      "app-ui.css",
+      "client-experience.css",
+      "feedback.css"
+    ],
+    "booking-concierge.css": [
+      "booking-concierge.css",
+      "client-improvements-20261107.css"
+    ],
+    "client-hub.css": [
+      "site.css",
+      "tokens.css",
+      "aries-client-theme.css",
+      "client-foundations.css",
+      "communication-center.css",
+      "ocr-verification.css",
+      "package-cards.css",
+      "filters.css",
+      "notifications.css",
+      "client-refresh.css",
+      "app-ui.css",
+      "client-experience.css",
+      "feedback.css",
+      "booking-concierge.css",
+      "client-hub.css"
+    ],
+    "aries-final-ui.css": [
+      "aries-final-ui.css"
+    ],
+    "client-hub-overrides.css": [
+      "client-redesign-final.css",
+      "client-improvements-20261107.css",
+      "unified-support-20261108.css",
+      "client-round2-20261108.css",
+      "client-final-20261108.css",
+      "client-ultra-20261108.css",
+      "client-pro-max-20261108.css",
+      "client-messaging-final-20261108.css",
+      "confirmed-booking-edit-20261109.css",
+      "aries-round3-ui.css"
+    ],
+    "internal-core.css": [
+      "tokens.css",
+      "site.css",
+      "soft-ui.css",
+      "communication-center.css",
+      "ocr-verification.css",
+      "internal-operations.css",
+      "package-cards.css",
+      "owner-interface.css",
+      "filters.css",
+      "package-editor.css",
+      "notifications.css",
+      "admin-console.css",
+      "role-dashboards.css",
+      "internal-profile.css",
+      "staff-calendar.css",
+      "internal-ui.css",
+      "app-ui.css",
+      "feedback.css",
+      "internal-workspaces.css"
+    ],
+    "staff.css": [
+      "confirmed-booking-edit-20261109.css",
+      "staff.css",
+      "unified-support-20261108.css",
+      "aries-round3-ui.css",
+      "staff-final-round-20261116.css"
+    ],
+    "owner.css": [
+      "owner.css",
+      "personnel.css",
+      "unified-support-20261108.css",
+      "aries-round3-ui.css"
+    ],
+    "aries-round3-ui.css": [
+      "unified-support-20261108.css",
+      "aries-round3-ui.css"
+    ],
+    "booking-create.css": [
+      "booking-location.css",
+      "client-round2-20261108.css",
+      "client-ultra-20261108.css",
+      "client-pro-max-20261108.css",
+      "client-messaging-final-20261108.css"
+    ],
+    "client-form-overrides.css": [
+      "client-round2-20261108.css",
+      "client-ultra-20261108.css"
+    ],
+    "client-submission.css": [
+      "client-round2-20261108.css"
+    ]
+  },
+  "DirectPageOverrides": [
+    "booking-create.css",
+    "client-form-overrides.css",
+    "client-submission.css"
+  ],
+  "CascadeBoundaries": [
+    "AriesMagicAppointmentSystem.styles.css between earlier and later styles on public, Hub, and internal layouts"
+  ],
+  "Notes": [
+    "Rules retained in original order inside every bundle",
+    "Role-specific bundles intentionally duplicate shared rules where original loading orders differ",
+    "No production deployment; check commit and visual diffs before merge",
+    "Staff and Owner post-isolation bundles include the scoped communications and final-round layers; 6 CSS requests for each role on ordinary/communications pages.",
+    "Non-owner/staff fallback uses aries-round3-ui.css with .comm-page-scoped communication rules."
+  ]
+}

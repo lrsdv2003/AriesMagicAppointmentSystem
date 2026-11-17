@@ -9,8 +9,7 @@
     var packageData = packages.Select(p => new { p.Id, p.Name, p.Price, p.DurationInHours, Inclusions = p.Inclusions.OrderBy(i => i.Id).Select(i => new { i.Id, i.Name, i.IsRemovable }) });
 }
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
-<link rel="stylesheet" href="~/css/booking-location.css" asp-append-version="true"/>
-<link rel="stylesheet" href="~/css/client-round2-20261108.css" asp-append-version="true"/><link rel="stylesheet" href="~/css/client-ultra-20261108.css" asp-append-version="true"/><link rel="stylesheet" href="~/css/client-pro-max-20261108.css" asp-append-version="true"/><link rel="stylesheet" href="~/css/client-messaging-final-20261108.css" asp-append-version="true"/><div class="cn-page cn-booking-page r2-booking-wizard">
+<link rel="stylesheet" href="~/css/booking-create.css" asp-append-version="true" /><div class="cn-page cn-booking-page r2-booking-wizard">
     <header class="cn-page-heading"><div><p class="cn-kicker">Concierge booking</p><h1>Plan your event.</h1></div><p>Four steps. One thoughtful celebration.</p></header>
 @if (!packages.Any())
 {

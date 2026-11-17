@@ -17,27 +17,11 @@
 <html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><meta name="theme-color" content="#03162b"/><meta name="robots" content="noindex,nofollow"/><title>@ViewData["Title"] · Aries d’ Magic Artist</title>
 <link rel="preload" href="~/fonts/wonder/dm-sans-latin.woff2" as="font" type="font/woff2" crossorigin/>
 <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css"/><link rel="stylesheet" href="~/lib/bootstrap-icons/font/bootstrap-icons.min.css" asp-append-version="true"/>
-@* The client stack is ordered intentionally. Keep the legacy cascade sequence. *@
-@foreach (var sheet in new[] {
-    "site", "tokens", "aries-client-theme", "client-foundations",
-    "communication-center", "ocr-verification", "package-cards", "filters",
-    "notifications", "client-refresh", "app-ui", "client-experience",
-    "feedback", "booking-concierge", "client-hub"
-}) {
-    <link rel="stylesheet" href="~/css/@(sheet).css" asp-append-version="true" />
-}
+@* Preserves the complete original Client Hub pre-isolation cascade. *@
+<link rel="stylesheet" href="~/css/client-hub.css" asp-append-version="true" />
 <link rel="stylesheet" href="~/css/aries-final-ui.css" asp-append-version="true" />
-<link rel="stylesheet" href="~/AriesMagicAppointmentSystem.styles.css" asp-append-version="true"/>@* Later Client overlays also appear in certain standalone views; do not reorder. *@
-@foreach (var sheet in new[] {
-    "client-redesign-final", "client-improvements-20261107",
-    "unified-support-20261108", "client-round2-20261108",
-    "client-final-20261108", "client-ultra-20261108",
-    "client-pro-max-20261108", "client-messaging-final-20261108"
-}) {
-    <link rel="stylesheet" href="~/css/@(sheet).css" asp-append-version="true" />
-}
-<link rel="stylesheet" href="~/css/confirmed-booking-edit-20261109.css" asp-append-version="true"/>
-<link rel="stylesheet" href="~/css/aries-round3-ui.css" asp-append-version="true" />
+<link rel="stylesheet" href="~/AriesMagicAppointmentSystem.styles.css" asp-append-version="true"/>@* Preserves the Client Hub post-isolation overlays and their precedence. *@
+<link rel="stylesheet" href="~/css/client-hub-overrides.css" asp-append-version="true" />
 </head>
 <body class="client-body client-inner-page client-booking-page client-concierge client-hub client-@hubController client-@hubController-@hubAction">
 <a class="hub-skip" href="#mainContent">Skip to content</a>

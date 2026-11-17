@@ -1,6 +1,6 @@
 @model AriesMagicAppointmentSystem.ViewModels.PaymentUploadViewModel
 @{ ViewData["Title"] = "Payment"; ViewData["BookingExperience"] = true; }
-<link rel="stylesheet" href="~/css/client-round2-20261108.css" asp-append-version="true"/><link rel="stylesheet" href="~/css/client-ultra-20261108.css" asp-append-version="true"/><div class="cn-page cn-payment-page r2-payment-wizard">
+<link rel="stylesheet" href="~/css/client-form-overrides.css" asp-append-version="true" /><div class="cn-page cn-payment-page r2-payment-wizard">
 <header class="cn-page-heading"><div><p class="cn-kicker">Your booking, your next step</p><h1>Complete your payment.</h1><p>Send your payment, keep your successful receipt, and upload it for Owner verification.</p></div><a asp-controller="Bookings" asp-action="MyBookings" class="cn-button cn-secondary ultra-my-bookings-button"><i class="bi bi-arrow-left" aria-hidden="true"></i> My bookings</a></header>
 <div class="cn-progress"><p class="cn-progress-caption" id="paymentStepCaption">Step 1 of 2 · Payment instructions</p><ol class="cr-steps cr-payment-steps" aria-label="Payment progress"><li class="is-active" aria-current="step"><span>Payment instructions</span></li><li><span>Upload proof</span></li></ol></div>
 @if (!Model.Bookings.Any())

@@ -1,5 +1,7 @@
 # Frontend cleanup — implementation, structure and validation
 
+> **Phase 2 update (November 18, 2026):** The current CSS count is now **13** in the dedicated `refactor/frontend-css-phase2-20261118` branch, with 6 CSS requests on the tested Staff, Owner and Client role pages. The 41-file figures below document the historical first pass. See [Phase 2 results](phase2/README.md) for the current implementation, trade-offs and test evidence.
+
 ## Guardrails and source
 
 - Dedicated branch: `refactor/frontend-cleanup-20261117`

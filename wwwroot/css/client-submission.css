@@ -1,3 +1,8 @@
+/* ARIES CSS PHASE 2 BUNDLE: client-submission.css — exact-order source sections.
+   Source snapshots preserved in git history; do not reorder declarations.
+   Some legacy sections are repeated in role-specific bundles to preserve cascade. */
+
+/* ========== ORIGINAL: client-round2-20261108.css ========== */
 /* Aries d' Magic Artist — Client Round 2, additive on Round 1 */
 body.client-hub{--r2-navy:#031a2e;--r2-panel:#082b43;--r2-line:#2a536b;--r2-text:#e9f6ff;--r2-muted:#b1c9d9}
 body.client-hub .hub-topbar{
