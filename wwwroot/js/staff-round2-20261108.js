@@ -71,6 +71,13 @@
       window.clearTimeout(timer);
       timer = window.setTimeout(search, 350);
     });
+    // The two-option Staff sort control must apply immediately without a separate Filter button.
+    form.querySelectorAll('select[name="sortBy"]').forEach(sort => {
+      sort.addEventListener("change", () => {
+        window.clearTimeout(timer);
+        search();
+      });
+    });
     form.addEventListener("submit", event => {
       if (event.submitter?.classList.contains("staff-search-standard-submit")) return;
       event.preventDefault();window.clearTimeout(timer);search();
