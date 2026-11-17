@@ -34,6 +34,8 @@ namespace AriesMagicAppointmentSystem.Controllers
                 filters.PaymentStatus = null;
                 filters.RefundStatus = null;
                 if (filters.SortBy is "HighestRevenue" or "LowestRevenue") filters.SortBy = "Newest";
+            if (User.IsInRole("Staff") && !User.IsInRole("Owner") && filters.SortBy == "ClientName")
+                filters.SortBy = "Newest";
             }
             var model = await _historyService.GetHistoryAsync(filters);
             return View(model);

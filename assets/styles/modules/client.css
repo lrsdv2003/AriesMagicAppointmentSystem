@@ -6093,3 +6093,16 @@ body.client-hub .comm-page-client .comm-workspace{
 @media(max-width:820px){
   body.client-hub .comm-page-client .comm-workspace{min-height:240px!important;}
 }
+
+/* Part 3 shared profile and messaging: maximize client workspace content width. */
+body.client-body .client-main:has(.hub-profile-layout,.comm-page-client) .client-page-wrap,
+body.client-body .client-main:has(.hub-profile-layout,.comm-page-client) .hub-content{
+    width:100%!important;max-width:none!important;
+    padding-inline:clamp(10px,1.5vw,22px)!important;
+}
+@media(max-width:767px){
+ body.client-body .client-main:has(.hub-profile-layout,.comm-page-client) .client-page-wrap,
+ body.client-body .client-main:has(.hub-profile-layout,.comm-page-client) .hub-content{
+    padding-inline:10px!important;
+ }
+}

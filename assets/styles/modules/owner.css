@@ -1257,3 +1257,15 @@ body.internal-ui.owner-dashboard .owner-round3-upcoming {
 .personnel-console td:last-child{min-width:240px}
 .personnel-console li{overflow-wrap:anywhere;margin-block:8px}
 .personnel-console .table-responsive:focus-visible{outline:2px solid var(--workspace-gold);outline-offset:3px}
+
+/* Part 3 shared profile and messaging: more useful content width, unchanged forms/actions. */
+body.internal-ui.owner-dashboard .dashboard-content:has(.account-page,.comm-page-dashboard){
+    padding:14px clamp(12px,1.45vw,22px) 24px!important;
+}
+body.internal-ui.owner-dashboard .dashboard-content:has(.account-page,.comm-page-dashboard)>:not(.modal),
+body.internal-ui.owner-dashboard :is(.account-page,.comm-page-dashboard){
+    width:100%!important;max-width:none!important;min-width:0;
+}
+@media(max-width:767px){
+ body.internal-ui.owner-dashboard .dashboard-content:has(.account-page,.comm-page-dashboard){padding:9px 8px 18px!important}
+}

@@ -9,9 +9,9 @@
 @if(financial){<p>Completed events appear here. <a asp-controller="TrashHistory" asp-action="Index">View cancelled, declined and expired bookings in Archives.</a></p>}
 <partial name="_HistoryFilters" model="Model" />
 <div data-staff-search-results="history">
+@if(financial) {
 <div class="ui-toolbar">
 <p class="ui-result-count">@Model.TotalCount record@(Model.TotalCount==1?"":"s")</p>
-@if(financial) {
 <div class="dropdown">
 <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" id="historyExport">Export</button>
 <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="historyExport">
@@ -19,8 +19,8 @@
 <li><a class="dropdown-item" asp-action="ExportCsv" asp-all-route-data="@HistoryPresentation.Routes(Model.Filters)">CSV</a></li>
 <li><a class="dropdown-item" asp-action="ExportPdf" asp-all-route-data="@HistoryPresentation.Routes(Model.Filters)">PDF</a></li>
 </ul></div>
-}
 </div>
+}
 @if(!Model.Bookings.Any()) {
 <div class="ui-empty" role="status"><p>@(HistoryPresentation.Filtered(Model.Filters) ? "No records match the selected filters." : "No history records found.")</p>
 @if(HistoryPresentation.Filtered(Model.Filters)) { <a asp-action="Index" class="btn btn-outline-secondary">Clear Filters</a> }</div>

@@ -7,7 +7,11 @@
     });
   });
   document.querySelectorAll('form[data-staff-autosearch="bookings"]').forEach(form => {
-    form.querySelectorAll('select[name="bookingStatus"], select[name="sortBy"]').forEach(input =>
+    form.querySelectorAll('select[name="sortBy"]').forEach(input =>
+      input.addEventListener('change', () => form.requestSubmit()));
+  });
+  document.querySelectorAll('form[data-staff-autosearch="reschedules"]').forEach(form => {
+    form.querySelectorAll('select[name="sortBy"]').forEach(input =>
       input.addEventListener('change', () => form.requestSubmit()));
   });
   document.querySelectorAll('form[data-aries-filter-auto="true"]').forEach(form => {

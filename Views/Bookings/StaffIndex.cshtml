@@ -36,33 +36,15 @@
                 <label class="visually-hidden" for="staffBookingSearch">Search bookings</label>
                 <i class="bi bi-search" aria-hidden="true"></i><input id="staffBookingSearch" type="search" name="search" value="@Model.Search" class="form-control" placeholder="Search booking ID, client, package, or venue" autocomplete="off" />
             </div>
-<div class="dropdown"><button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false"><i class="bi bi-funnel" aria-hidden="true"></i> Filters</button><div class="dropdown-menu dropdown-menu-end"><h6>Filter requests</h6>
-            <div>
-                <label class="form-label" for="staffBookingStatus">Booking status</label>
-                <select id="staffBookingStatus" name="bookingStatus" class="form-select">
-                    <option value="AllRequests" selected="@(Model.BookingStatus == "AllRequests")">All Staff Actions</option>
-                    <option value="Pending" selected="@(Model.BookingStatus == "Pending")">Pending</option>
-                    <option value="RequiresReview" selected="@(Model.BookingStatus == "RequiresReview")">Venue / Client Confirmation Review</option>
-                </select>
-            </div>
-
-            <div>
-                <label class="form-label" for="staffBookingSort">Sort requests by submission</label>
-                <select id="staffBookingSort" name="sortBy" class="form-select">
+<div class="staff-part3-sort-control">
+                <label for="staffBookingSort">Sort by</label>
+                <select id="staffBookingSort" name="sortBy" class="form-select" aria-label="Sort booking requests">
                     <option value="newest" selected="@((string?)ViewBag.StaffSort != "oldest")">Newest to Oldest</option>
                     <option value="oldest" selected="@((string?)ViewBag.StaffSort == "oldest")">Oldest to Newest</option>
                 </select>
-            </div>
-</div></div><button type="button" class="btn btn-outline-secondary aries-refresh-now" aria-label="Refresh booking requests"><i class="bi bi-arrow-clockwise" aria-hidden="true"></i></button><button type="submit" class="visually-hidden">Search bookings</button></form>
+            </div><button type="button" class="btn btn-outline-secondary aries-refresh-now" aria-label="Refresh booking requests"><i class="bi bi-arrow-clockwise" aria-hidden="true"></i></button><button type="submit" class="visually-hidden">Search bookings</button></form>
     </div>
     <div class="dashboard-panel staff-booking-table-panel">
-        <div class="staff-booking-panel-heading">
-            <div>
-                <h2>Requests Requiring Attention</h2>
-                <p>Operational booking review only. Payment verification is handled by the Owner.</p>
-            </div>
-        </div>
-
         @if (!requests.Any())
         {
             <div class="empty-state staff-booking-empty">
@@ -128,7 +110,6 @@
     var staffPager = new AriesMagicAppointmentSystem.ViewModels.QueuePaginationViewModel(
         Model.TotalCount, Model.Page, 5, "Index", new Dictionary<string,string> {
             ["search"] = Model.Search ?? "",
-            ["bookingStatus"] = Model.BookingStatus ?? "AllRequests",
             ["sortBy"] = (string?)ViewBag.StaffSort ?? "newest"
         });
 }

@@ -69,12 +69,9 @@ namespace AriesMagicAppointmentSystem.Controllers
                 // Keep pending venue-review and customer-acceptance records discoverable,
                 // but never expose Owner-only payment states here.
                 bookingsQuery = bookingsQuery.Where(b => b.Status == BookingStatus.Pending);
-                bookingStatus = bookingStatus is "RequiresReview" or "Pending" or "AllRequests"
-                    ? bookingStatus : "AllRequests";
-                if (bookingStatus == "RequiresReview")
-                    bookingsQuery = bookingsQuery.Where(b => b.RequiresManualReview
-                        || b.TravelFeeStatus == VenueLocationPolicy.PendingReview
-                        || b.TravelFeeStatus == VenueLocationPolicy.AwaitingCustomerAcceptance);
+                // Staff has one actionable Pending queue; sorting is the only
+                // selectable list filter. Legacy bookingStatus URLs are ignored.
+                bookingStatus = "AllRequests";
                 // This date filter was intentionally removed from the Staff UI.
                 eventDate = null;
                 serviceId = null;

@@ -14,7 +14,7 @@
 @if(User.IsInRole("Owner")) {
 <div><label for="historyPayment">Payment review state</label><select class="form-select" id="historyPayment" name="PaymentStatus"><option value="">All states</option>@foreach(var status in new[]{"No Payment",PaymentStatus.Pending,PaymentStatus.Verified,PaymentStatus.Rejected,PaymentStatus.AdditionalEvidenceRequired}) { <option value="@status" selected="@(f.PaymentStatus==status)">@AriesMagicAppointmentSystem.ViewModels.BusinessActivityPresentation.Label(status)</option> }</select></div>
 }
-<div><label for="historySort">Sort by</label><select class="form-select" id="historySort" name="SortBy"><option value="Newest" selected="@(f.SortBy=="Newest"||string.IsNullOrEmpty(f.SortBy))">Newest event</option><option value="Oldest" selected="@(f.SortBy=="Oldest")">Oldest event</option><option value="ClientName" selected="@(f.SortBy=="ClientName")">Client name</option></select></div>
+<div><label for="historySort">Sort by</label><select class="form-select" id="historySort" name="SortBy"><option value="Newest" selected="@(f.SortBy=="Newest"||string.IsNullOrEmpty(f.SortBy))">Newest event</option><option value="Oldest" selected="@(f.SortBy=="Oldest")">Oldest event</option>@if (!User.IsInRole("Staff") || User.IsInRole("Owner")) { <option value="ClientName" selected="@(f.SortBy=="ClientName")">Client name</option> }</select></div>
 <div class="am-filter-actions"><a asp-action="Index" class="btn btn-outline-secondary btn-sm">Reset filters</a></div>
 </div>
 </div>

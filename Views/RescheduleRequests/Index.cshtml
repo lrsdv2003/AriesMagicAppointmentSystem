@@ -4,6 +4,7 @@
     Layout = "_DashboardLayout";
     ViewData["Title"] = "Reschedule Requests";
     var canDecide = User.CanApproveRescheduleRequests();
+    var staffOnly = User.IsInRole("Staff") && !User.IsInRole("Owner");
     string BookingCode(Booking booking) => $"BK-{booking.CreatedAt.Year}-{booking.Id:D3}";
     DateTime? OriginalDate(RescheduleRequest request) => request.OriginalDate ?? (request.Status == RescheduleRequestStatus.Pending ? request.Booking?.EventDate : null);
     DateTime? OriginalStart(RescheduleRequest request) => request.OriginalStartTime ?? (request.Status == RescheduleRequestStatus.Pending ? request.Booking?.StartTime : null);
@@ -36,32 +37,48 @@
 
             <label class="visually-hidden" for="rescheduleSearch">Search reschedule requests</label>
             <div class="am-filter-search"><i class="bi bi-search" aria-hidden="true"></i><input id="rescheduleSearch" type="search" name="search" value="@Model.Search" class="form-control" placeholder="Booking ID, client, or package" /></div>
-<div class="dropdown"><button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false"><i class="bi bi-funnel" aria-hidden="true"></i> Filters</button><div class="dropdown-menu dropdown-menu-end"><h6>Filter requests</h6>
-            <label for="rescheduleStatus" class="form-label">Request status</label>
-            <select id="rescheduleStatus" name="status" class="form-select mb-3">
-                <option value="Pending" selected="@(Model.StatusFilter == RescheduleRequestStatus.Pending)">Pending review</option>
-                <option value="All" selected="@(Model.StatusFilter == "All")">All requests</option>
-                <option value="Approved" selected="@(Model.StatusFilter == RescheduleRequestStatus.Approved)">Approved</option>
-                <option value="Rejected" selected="@(Model.StatusFilter == RescheduleRequestStatus.Rejected)">Rejected</option>
-            </select>
-            <label class="form-label" for="rescheduleSort">Sort requests</label>
-            <select id="rescheduleSort" name="sortBy" class="form-select mb-3">
-                <option value="newest" selected="@(Model.SortBy == "newest")">Newest first</option>
-                <option value="oldest" selected="@(Model.SortBy == "oldest")">Oldest first</option>
-            </select>
-</div></div><button type="button" class="btn btn-outline-secondary aries-refresh-now"><i class="bi bi-arrow-clockwise" aria-hidden="true"></i><span class="visually-hidden">Refresh requests</span></button><button type="submit" class="visually-hidden">Search reschedules</button></form>
+@if (staffOnly)
+            {
+                <div class="staff-part3-sort-control">
+                    <label for="rescheduleSort">Sort by</label>
+                    <select id="rescheduleSort" name="sortBy" class="form-select" aria-label="Sort pending reschedule requests">
+                        <option value="newest" selected="@(Model.SortBy != "oldest")">Newest to Oldest</option>
+                        <option value="oldest" selected="@(Model.SortBy == "oldest")">Oldest to Newest</option>
+                    </select>
+                </div>
+            }
+            else
+            {
+                <div class="dropdown"><button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false"><i class="bi bi-funnel" aria-hidden="true"></i> Filters</button><div class="dropdown-menu dropdown-menu-end">
+                    <label class="form-label" for="rescheduleStatus">Request status</label>
+                    <select id="rescheduleStatus" name="status" class="form-select mb-3">
+                        <option value="Pending" selected="@(Model.StatusFilter == RescheduleRequestStatus.Pending)">Pending review</option>
+                        <option value="All" selected="@(Model.StatusFilter == "All")">All requests</option>
+                        <option value="Approved" selected="@(Model.StatusFilter == RescheduleRequestStatus.Approved)">Approved</option>
+                        <option value="Rejected" selected="@(Model.StatusFilter == RescheduleRequestStatus.Rejected)">Rejected</option>
+                    </select>
+                    <label class="form-label" for="rescheduleSortOwner">Sort requests</label>
+                    <select id="rescheduleSortOwner" name="sortBy" class="form-select">
+                        <option value="newest" selected="@(Model.SortBy != "oldest")">Newest first</option>
+                        <option value="oldest" selected="@(Model.SortBy == "oldest")">Oldest first</option>
+                    </select>
+                </div></div>
+            }<button type="button" class="btn btn-outline-secondary aries-refresh-now"><i class="bi bi-arrow-clockwise" aria-hidden="true"></i><span class="visually-hidden">Refresh requests</span></button><button type="submit" class="visually-hidden">Search reschedules</button></form>
     </div>
 
     <div class="dashboard-panel staff-reschedule-table-panel">
-        <div class="staff-reschedule-panel-heading">
-            <div>
-                <h2>@(Model.StatusFilter == RescheduleRequestStatus.Pending ? "Pending Reschedule Requests" : "Reschedule Request History")</h2>
-                <p>@(Model.StatusFilter == RescheduleRequestStatus.Pending ? "Only requests still requiring a Staff decision appear here by default." : "Processed requests remain available for audit and reference.")</p>
+        @if (!staffOnly)
+        {
+            <div class="staff-reschedule-panel-heading">
+                <div>
+                    <h2>@(Model.StatusFilter == RescheduleRequestStatus.Pending ? "Pending Reschedule Requests" : "Reschedule Request History")</h2>
+                    <p>@(Model.StatusFilter == RescheduleRequestStatus.Pending ? "Only requests still requiring a Staff decision appear here by default." : "Processed requests remain available for audit and reference.")</p>
+                </div>
+                @if(Model.StatusFilter != RescheduleRequestStatus.Pending){
+                    <a class="btn btn-outline-primary staff-round2-history-link" asp-action="Index" asp-route-status="Pending">Back to pending reviews</a>
+                }
             </div>
-            @if(Model.StatusFilter != RescheduleRequestStatus.Pending){
-              <a class="btn btn-outline-primary staff-round2-history-link" asp-action="Index" asp-route-status="Pending">Back to pending reviews</a>
-            }
-        </div>
+        }
 
         @if (!Model.Requests.Any())
         {
@@ -160,7 +177,7 @@
 @{
     var reschedulePager = new AriesMagicAppointmentSystem.ViewModels.QueuePaginationViewModel(
         Model.TotalCount, Model.Page, 5, "Index", new Dictionary<string,string> {
-            ["status"] = Model.StatusFilter ?? "Pending",
+            ["status"] = staffOnly ? "Pending" : (Model.StatusFilter ?? "Pending"),
             ["search"] = Model.Search ?? "",
             ["requestedDate"] = Model.RequestedDate?.ToString("yyyy-MM-dd") ?? "",
             ["sortBy"] = Model.SortBy

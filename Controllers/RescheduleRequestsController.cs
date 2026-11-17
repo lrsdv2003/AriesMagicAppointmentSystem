@@ -204,6 +204,11 @@ namespace AriesMagicAppointmentSystem.Controllers
             DateTime? requestedDate = null,
             string sortBy = "newest", int page = 1, int pageSize = 10)
         {
+            // The Staff module is a decision queue, not the processed-request archive.
+            // Enforce Pending server-side even for manually supplied status query values.
+            if (User.IsInRole("Staff") && !User.IsInRole("Owner"))
+                status = RescheduleRequestStatus.Pending;
+
             var allowedStatuses = new[]
             {
                 RescheduleRequestStatus.Pending,

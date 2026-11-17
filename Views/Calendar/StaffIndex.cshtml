@@ -43,10 +43,7 @@
 
     <section class="staff-calendar-panel" aria-labelledby="calendarHeading">
         <div class="staff-calendar-toolbar">
-            <div>
-                <h2 id="calendarHeading">Confirmed Schedule</h2>
-                <p>Select a date with events to open the booking preview.</p>
-            </div>
+            <h2 id="calendarHeading" class="visually-hidden">Confirmed booking calendar</h2>
             <div class="staff-calendar-nav" aria-label="Calendar navigation">
                 @if(User.IsInRole("Owner")){<a asp-action="Settings" class="btn btn-primary"><i class="bi bi-gear" aria-hidden="true"></i> Calendar Settings</a>}
                 <button type="button" class="btn btn-outline-secondary" id="calPrev" aria-label="Previous month"><i class="bi bi-chevron-left" aria-hidden="true"></i></button>
@@ -133,10 +130,12 @@
                 }
             </div>
             <div class="staff-upcoming-empty d-none" id="upcomingFilteredEmpty" role="status"><i class="bi bi-calendar-x" aria-hidden="true"></i><span>No confirmed bookings match the selected package.</span></div>
-            <nav class="staff-round2-calendar-pager" aria-label="Upcoming confirmed booking pages">
-              <button type="button" class="btn btn-outline-secondary" id="staffUpcomingPrev" aria-label="Previous confirmed booking page"><i class="bi bi-chevron-left" aria-hidden="true"></i></button>
-              <span id="staffUpcomingPageInfo" aria-live="polite">Page 1 of 1</span>
-              <button type="button" class="btn btn-primary" id="staffUpcomingNext" aria-label="Next confirmed booking page"><i class="bi bi-chevron-right" aria-hidden="true"></i></button>
+            <nav class="staff-round2-calendar-pager @(useStaffColors ? "aries-five-pager" : "")" aria-label="Upcoming confirmed booking pages">
+                <div class="aries-five-actions">
+                    <button type="button" class="btn btn-outline-secondary" id="staffUpcomingPrev" aria-label="Previous confirmed booking page"><i class="bi bi-chevron-left" aria-hidden="true"></i></button>
+                    <span class="aries-five-page" id="staffUpcomingPageInfo" aria-live="polite">Page 1 of 1</span>
+                    <button type="button" class="btn btn-primary" id="staffUpcomingNext" aria-label="Next confirmed booking page"><i class="bi bi-chevron-right" aria-hidden="true"></i></button>
+                </div>
             </nav>
         }
     </section>

@@ -56,7 +56,8 @@
         }
         document.title = result.title || document.title;
         window.history.replaceState({}, "", url.pathname + url.search);
-        feedback.textContent = "Search updated";
+        // Do not add a persistent "Search updated" label to Staff toolbars.
+        feedback.textContent = "";
       } catch (error) {
         if (error.name !== "AbortError") {
           feedback.textContent = "Search unavailable. Press Enter to retry.";

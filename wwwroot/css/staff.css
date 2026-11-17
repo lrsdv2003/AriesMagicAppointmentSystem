@@ -2990,3 +2990,95 @@ body.internal-ui.staff-dashboard :is(.sidebar-link,.topbar-icon,.account-menu-tr
     animation:none!important;
   }
 }
+
+/* Staff Final Round Part 3: compact operational list layout.
+   Staff scope only; historical History table hierarchy remains canonical. */
+body.internal-ui.staff-dashboard .dashboard-content:has(.staff-booking-page,.staff-calendar-page,.staff-reschedule-page,.history-page,.account-page,.comm-page-dashboard,.staff-booking-details-page){
+    padding:14px clamp(12px,1.45vw,22px) 24px!important;
+}
+body.internal-ui.staff-dashboard .dashboard-content:has(.staff-booking-page,.staff-calendar-page,.staff-reschedule-page,.history-page,.account-page,.comm-page-dashboard,.staff-booking-details-page)>:not(.modal){
+    max-width:none!important;
+}
+body.internal-ui.staff-dashboard :is(.staff-booking-page,.staff-reschedule-page,.staff-final-round-calendar,.history-page){
+    width:100%!important;max-width:none!important;min-width:0;
+}
+body.internal-ui.staff-dashboard :is(.staff-booking-table-panel,.staff-reschedule-table-panel){
+    padding:10px!important;border-radius:10px!important;
+}
+body.internal-ui.staff-dashboard .staff-part3-sort-control{
+    display:flex;align-items:center;gap:10px;flex:0 0 auto;min-width:0;
+}
+body.internal-ui.staff-dashboard .staff-part3-sort-control label{
+    color:#c8ddee;font-weight:650;font-size:12px;white-space:nowrap;
+}
+body.internal-ui.staff-dashboard .staff-part3-sort-control select{
+    width:auto;min-width:165px;max-width:225px;min-height:42px!important;
+    background:#0c3048!important;color:#f6faff!important;border:1px solid #456c86!important;
+}
+body.internal-ui.staff-dashboard :is(.staff-booking-page,.staff-reschedule-page) .staff-final-filter-toolbar{
+    flex-wrap:wrap!important;gap:12px!important;
+}
+body.internal-ui.staff-dashboard :is(.staff-booking-page,.staff-reschedule-page) .staff-final-filter-toolbar .am-filter-search{
+    flex:1 1 320px!important;
+}
+body.internal-ui.staff-dashboard :is(.staff-booking-page,.staff-reschedule-page,.history-page)~.aries-five-pager,
+body.internal-ui.staff-dashboard :is(.staff-booking-page,.staff-reschedule-page,.history-page) .aries-five-pager{
+    justify-content:flex-end!important;border:1px solid #315973!important;background:#0e3048!important;
+    border-radius:0 0 10px 10px!important;padding:10px 13px!important;margin:0!important;
+}
+body.internal-ui.staff-dashboard .staff-final-round-calendar .staff-calendar-panel{
+    padding:12px!important;
+}
+body.internal-ui.staff-dashboard .staff-final-round-calendar .staff-calendar-toolbar{
+    justify-content:flex-end!important;margin-bottom:10px!important;
+}
+body.internal-ui.staff-dashboard .staff-final-round-calendar #calendar .fc-scrollgrid-sync-table>tbody>tr{
+    height:66px!important;min-height:66px!important;max-height:66px!important;
+}
+body.internal-ui.staff-dashboard .staff-final-round-calendar #calendar :is(.fc-daygrid-day,.fc-daygrid-day-frame){
+    height:66px!important;min-height:66px!important;max-height:66px!important;
+}
+body.internal-ui.staff-dashboard .staff-final-round-calendar .staff-round2-calendar-pager.aries-five-pager{
+    border-radius:0 0 10px 10px!important;justify-content:flex-end!important;
+    margin-top:0!important;padding:10px 13px!important;min-height:52px;
+    background:#0e3048!important;border:1px solid #315973!important;
+}
+body.internal-ui.staff-dashboard .staff-final-round-calendar .staff-round2-calendar-pager.aries-five-pager .aries-five-actions{
+    display:flex;align-items:center;gap:9px;justify-content:flex-end;
+}
+body.internal-ui.staff-dashboard :is(.staff-booking-table,.staff-reschedule-table){
+    border-collapse:collapse!important;width:100%!important;
+}
+body.internal-ui.staff-dashboard :is(.staff-booking-table,.staff-reschedule-table) thead th{
+    border-bottom:1px solid #395c75!important;background:#153852!important;
+}
+body.internal-ui.staff-dashboard :is(.staff-booking-table,.staff-reschedule-table) tbody td{
+    border-bottom:1px solid #274c68!important;vertical-align:middle!important;
+}
+body.internal-ui.staff-dashboard .history-page .ui-table{
+    border-collapse:collapse!important;
+}
+body.internal-ui.staff-dashboard .history-page .ui-table-wrap{
+    padding:0!important;margin:0!important;
+}
+@media(max-width:767px){
+    body.internal-ui.staff-dashboard .dashboard-content:has(.staff-booking-page,.staff-calendar-page,.staff-reschedule-page,.history-page,.account-page,.comm-page-dashboard,.staff-booking-details-page){
+        padding:9px 8px 18px!important;
+    }
+    body.internal-ui.staff-dashboard :is(.staff-booking-page,.staff-reschedule-page) .staff-part3-sort-control{
+        flex:1 1 225px!important;max-width:calc(100% - 58px);justify-content:flex-start;
+    }
+    body.internal-ui.staff-dashboard .staff-part3-sort-control select{
+        flex:1;width:100%;max-width:100%;min-width:0;
+    }
+    body.internal-ui.staff-dashboard :is(.staff-booking-page,.staff-reschedule-page) .staff-final-filter-toolbar .aries-refresh-now{
+        flex:0 0 44px!important;width:44px!important;min-width:44px!important;
+        max-width:44px!important;height:44px!important;padding:0!important;margin:0!important;
+    }
+    body.internal-ui.staff-dashboard .staff-final-round-calendar #calendar .fc-scrollgrid-sync-table>tbody>tr{
+        height:55px!important;min-height:55px!important;max-height:55px!important;
+    }
+    body.internal-ui.staff-dashboard .staff-final-round-calendar #calendar :is(.fc-daygrid-day,.fc-daygrid-day-frame){
+        height:55px!important;min-height:55px!important;max-height:55px!important;
+    }
+}
