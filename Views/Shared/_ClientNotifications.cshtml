@@ -1,5 +1,56 @@
 @model IEnumerable<AriesMagicAppointmentSystem.Models.Notification>
-@{var notices=Model.OrderByDescending(n=>n.CreatedAt).ToList();var unread=notices.Count(n=>!n.IsRead);}
-<div class="hub-heading"><div><span class="hub-kicker">@(User.IsInRole("Owner")?"Financial & account updates":User.IsInRole("Staff")?"Staff operations":"Booking & account updates")</span>@if(!User.IsInRole("Owner")){<h1>Notifications</h1>}<p>@unread unread · @notices.Count total updates, newest first.</p></div>@if(unread>0){<form asp-action="MarkAllRead" method="post">@Html.AntiForgeryToken()<button class="cn-button cn-secondary" type="submit">Mark all as read</button></form>}</div>
-@if(notices.Count==0){<section class="hub-card hub-empty"><h2>You’re all caught up.</h2><p>@(User.IsInRole("Owner")?"Payment, refund and account updates will appear here.":User.IsInRole("Staff")?"New booking requests, reschedules and Client messages will appear here.":"New booking, payment and account updates will appear here.")</p><a asp-controller="@(User.IsInRole("Owner")?"Dashboard":"Bookings")" asp-action="@(User.IsInRole("Owner")?"Owner":User.IsInRole("Staff")?"Index":"MyBookings")" class="cn-button cn-secondary">@(User.IsInRole("Owner")?"Owner Dashboard":User.IsInRole("Staff")?"Booking Requests":"My bookings")</a></section>}
-else{<div id="hubNotices" class="client-notification-list">@foreach(var group in notices.GroupBy(n=>n.CreatedAt.Date==DateTime.Today?"Today":"Earlier")){<section class="hub-notice-group"><h2>@group.Key</h2><div class="hub-card hub-notice-list">@foreach(var notice in group){<partial name="_NotificationRow" model="notice"/>}</div></section>}</div>}
+@{
+    var notices = Model.OrderByDescending(n => n.CreatedAt).ToList();
+    var unread = notices.Count(n => !n.IsRead);
+    var isOwner = User.IsInRole("Owner");
+    var isStaff = User.IsInRole("Staff") && !isOwner;
+    var kicker = isOwner ? "Financial & account updates" : isStaff ? "Staff operations" : "Booking & account updates";
+    var emptyCopy = isOwner
+        ? "Payment, refund and account updates will appear here."
+        : isStaff ? "New booking requests, reschedules and Client messages will appear here."
+        : "New booking, payment and account updates will appear here.";
+    var emptyController = isOwner ? "Dashboard" : "Bookings";
+    var emptyAction = isOwner ? "Owner" : isStaff ? "Index" : "MyBookings";
+    var emptyLabel = isOwner ? "Owner Dashboard" : isStaff ? "Booking Requests" : "My bookings";
+}
+<section class="aries-notifications" aria-labelledby="ariesNotificationsTitle">
+    <header class="hub-heading aries-notifications-heading">
+        <div>
+            <span class="hub-kicker">@kicker</span>
+            <h1 id="ariesNotificationsTitle">Notifications</h1>
+            <p><strong>@unread unread</strong> <span aria-hidden="true">&middot;</span> @notices.Count total updates, newest first.</p>
+        </div>
+        @if (unread > 0)
+        {
+            <form asp-controller="Notifications" asp-action="MarkAllRead" method="post">
+                @Html.AntiForgeryToken()
+                <button class="cn-button cn-secondary" type="submit">Mark all as read</button>
+            </form>
+        }
+    </header>
+    @if (notices.Count == 0)
+    {
+        <section class="hub-card hub-empty aries-notifications-empty" role="status">
+            <h2>You're all caught up.</h2>
+            <p>@emptyCopy</p>
+            <a asp-controller="@emptyController" asp-action="@emptyAction" class="cn-button cn-secondary">@emptyLabel</a>
+        </section>
+    }
+    else
+    {
+        <div id="hubNotices" class="client-notification-list aries-notifications-list">
+            @foreach (var group in notices.GroupBy(n => n.CreatedAt.Date == DateTime.Today ? "Today" : "Earlier"))
+            {
+                <section class="hub-notice-group" aria-label="@group.Key notifications">
+                    <h2>@group.Key</h2>
+                    <div class="hub-card hub-notice-list">
+                        @foreach (var notice in group)
+                        {
+                            <partial name="_NotificationRow" model="notice" />
+                        }
+                    </div>
+                </section>
+            }
+        </div>
+    }
+</section>

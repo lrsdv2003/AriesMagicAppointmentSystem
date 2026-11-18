@@ -3083,6 +3083,7 @@ body.internal-ui.staff-dashboard .history-page .ui-table-wrap{
     }
 }
 
+
 /* Staff Final Round Part 3 follow-up: consistent edge-to-edge list workspace.
    Keep role isolation and the consolidated stylesheet; no new CSS files. */
 body.internal-ui.staff-dashboard .dashboard-content:has(> .staff-booking-page),

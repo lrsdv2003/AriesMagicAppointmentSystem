@@ -7857,6 +7857,244 @@ body.internal-ui.staff-dashboard .account-page .account-actions .btn-primary{bac
 .aries-live-updates li{margin:.35rem 0;font-size:.8rem}
 .aries-live-updates a{color:#a5dbff;text-decoration:underline}
 
+
+/* Canonical Notifications UI: Client / Staff / Owner use the same shared Razor
+   partial and one CSS rule set. Scoped to prevent changes to other hub pages. */
+.aries-notifications.aries-notifications {
+  width:100%;
+  min-width:0;
+  max-width:none;
+  color:#f3faff;
+}
+body .aries-notifications.aries-notifications .aries-notifications-heading {
+  display:flex!important;
+  justify-content:space-between!important;
+  align-items:center!important;
+  flex-wrap:wrap!important;
+  gap:16px!important;
+  margin:0 0 22px!important;
+  padding:0!important;
+}
+body .aries-notifications.aries-notifications .aries-notifications-heading .hub-kicker {
+  display:block!important;
+  color:#f3c766!important;
+  font-size:12px!important;
+  line-height:1.5!important;
+  font-weight:600!important;
+  letter-spacing:0!important;
+  text-transform:none!important;
+  margin:0 0 6px!important;
+}
+body .aries-notifications.aries-notifications .aries-notifications-heading h1 {
+  margin:0 0 6px!important;
+  color:#f4faff!important;
+  font-size:clamp(24px,2.3vw,34px)!important;
+  font-weight:750!important;
+  line-height:1.2!important;
+}
+body .aries-notifications.aries-notifications .aries-notifications-heading p {
+  color:#bacddd!important;
+  font-size:13px!important;
+  line-height:1.5!important;
+  margin:0!important;
+}
+body .aries-notifications.aries-notifications .aries-notifications-heading p strong {
+  color:#f3faff!important;
+  font-weight:700!important;
+}
+body .aries-notifications.aries-notifications .cn-button.cn-secondary {
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  padding:9px 15px!important;
+  min-height:42px!important;
+  border:1px solid #408fc5!important;
+  border-radius:8px!important;
+  background:#176fae!important;
+  color:#fff!important;
+  font-size:12px!important;
+  font-weight:650!important;
+  text-decoration:none!important;
+  cursor:pointer;
+}
+body .aries-notifications.aries-notifications .cn-button.cn-secondary:hover {
+  background:#1b83c6!important;
+  border-color:#75bceb!important;
+}
+body .aries-notifications.aries-notifications .aries-notifications-list {
+  display:grid!important;
+  gap:18px!important;
+  width:100%;
+  min-width:0;
+  max-width:none!important;
+  padding:0!important;
+  margin:0!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+}
+body .aries-notifications.aries-notifications .hub-notice-group {
+  margin:0!important;
+  min-width:0;
+}
+body .aries-notifications.aries-notifications .hub-notice-group>h2 {
+  font-size:13px!important;
+  font-weight:700!important;
+  color:#c8dce9!important;
+  margin:0 0 9px!important;
+  line-height:1.4!important;
+}
+body .aries-notifications.aries-notifications .hub-card.hub-notice-list {
+  display:grid!important;
+  gap:9px!important;
+  padding:0!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  min-width:0;
+}
+body .aries-notifications.aries-notifications .hub-notice-list .notice-row {
+  display:grid!important;
+  grid-template-columns:42px minmax(0,1fr) auto!important;
+  align-items:center!important;
+  gap:14px!important;
+  padding:15px!important;
+  margin:0!important;
+  border:1px solid #325773!important;
+  border-radius:10px!important;
+  background:#09243e!important;
+  color:#f3faff!important;
+  box-shadow:0 3px 10px rgba(0,0,0,.08)!important;
+  min-width:0;
+}
+body .aries-notifications.aries-notifications .hub-notice-list .notice-row:last-child {
+  border:1px solid #325773!important;
+}
+body .aries-notifications.aries-notifications .hub-notice-list .notice-row.notice-unread {
+  background:#0d3050!important;
+  box-shadow:inset 3px 0 #4daef1,0 3px 10px rgba(0,0,0,.08)!important;
+}
+body .aries-notifications.aries-notifications .hub-notice-list .notice-icon {
+  display:grid!important;
+  place-items:center!important;
+  width:42px!important;
+  height:42px!important;
+  border-radius:9px!important;
+  background:#113f61!important;
+  color:#82ceff!important;
+}
+body .aries-notifications.aries-notifications .hub-notice-list .notice-copy {
+  min-width:0!important;
+}
+body .aries-notifications.aries-notifications .hub-notice-list .notice-copy h2 {
+  color:#f3f8ff!important;
+  font-size:14px!important;
+  font-weight:700!important;
+  margin:3px 0!important;
+}
+body .aries-notifications.aries-notifications .hub-notice-list .notice-unread .notice-copy h2 {
+  color:#83d0ff!important;
+}
+body .aries-notifications.aries-notifications .hub-notice-list .notice-copy p {
+  color:#c2d7e7!important;
+  font-size:12px!important;
+  line-height:1.5!important;
+  margin:0!important;
+  overflow-wrap:anywhere;
+}
+body .aries-notifications.aries-notifications .hub-notice-list .notice-meta {
+  display:flex!important;
+  gap:8px!important;
+  flex-wrap:wrap!important;
+  align-items:center!important;
+  color:#a6c6dd!important;
+  font-size:10px!important;
+}
+body .aries-notifications.aries-notifications .hub-notice-list .notice-category {
+  color:#d0e4f2!important;
+  font-weight:700!important;
+}
+body .aries-notifications.aries-notifications .hub-notice-list :is(.notice-state,.notice-meta time) {
+  color:#a6c6dd!important;
+}
+body .aries-notifications.aries-notifications .hub-notice-list .notice-unread .notice-state {
+  color:#81caff!important;
+}
+body .aries-notifications.aries-notifications .hub-notice-list .notice-open-form {
+  grid-column:auto!important;
+  justify-self:end!important;
+  align-self:center!important;
+  margin:0!important;
+}
+body .aries-notifications.aries-notifications .hub-notice-list .notice-action {
+  display:inline-flex!important;
+  align-items:center!important;
+  gap:7px!important;
+  min-height:40px!important;
+  padding:8px 12px!important;
+  border:1px solid #408fc5!important;
+  border-radius:8px!important;
+  background:#176fae!important;
+  color:#fff!important;
+  font-size:12px!important;
+  font-weight:650!important;
+  text-decoration:none!important;
+  white-space:nowrap!important;
+}
+body .aries-notifications.aries-notifications .hub-notice-list .notice-action:hover {
+  background:#1b83c6!important;
+  border-color:#75bceb!important;
+}
+body .aries-notifications.aries-notifications .aries-notifications-empty {
+  padding:26px!important;
+  background:#09243e!important;
+  border:1px solid #325773!important;
+  border-radius:12px!important;
+  box-shadow:none!important;
+  color:#f3faff!important;
+}
+body .aries-notifications.aries-notifications .aries-notifications-empty h2 {
+  font-size:18px!important;
+  margin:0 0 8px!important;
+  color:#f3faff!important;
+}
+body .aries-notifications.aries-notifications .aries-notifications-empty p {
+  font-size:13px!important;
+  margin:0 0 16px!important;
+  color:#c2d7e7!important;
+}
+body .aries-notifications.aries-notifications :is(.cn-button,.notice-action):focus-visible {
+  outline:3px solid #f3c766!important;
+  outline-offset:3px!important;
+}
+@media(max-width:767px) {
+  body .aries-notifications.aries-notifications .aries-notifications-heading {
+    align-items:flex-start!important;
+    gap:12px!important;
+    margin-bottom:18px!important;
+  }
+  body .aries-notifications.aries-notifications .aries-notifications-list {
+    gap:14px!important;
+  }
+  body .aries-notifications.aries-notifications .hub-notice-list .notice-row {
+    grid-template-columns:39px minmax(0,1fr)!important;
+    gap:11px!important;
+  }
+  body .aries-notifications.aries-notifications .hub-notice-list .notice-icon {
+    width:39px!important;
+    height:39px!important;
+  }
+  body .aries-notifications.aries-notifications .hub-notice-list .notice-open-form {
+    grid-column:2!important;
+    justify-self:start!important;
+  }
+  body .aries-notifications.aries-notifications .hub-notice-list .notice-action {
+    white-space:normal!important;
+  }
+}
+
 /* ========== CANONICAL: aries-round3-ui.css ========== */
 /* Owner UI Round 3 / consistent three-role paging. No business-rule changes. */
 .aries-five-pager{display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;padding:1rem 0 .25rem;margin-top:.9rem;border-top:1px solid #2a4760;color:#d0e2f1;max-width:100%;min-width:0}

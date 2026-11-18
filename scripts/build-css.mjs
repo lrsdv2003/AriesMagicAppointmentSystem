@@ -73,7 +73,10 @@ for (const [name, recipe] of allBundles) {
   }
   const dest = path.join(outDir, name);
   const existing = fs.readFileSync(dest, 'utf8');
-  if (existing === generated) continue;
+  // Git on Windows can check out these bundles with CRLF even when the
+  // canonical recipe uses LF. EOL-only differences must not stale all 13 bundles.
+  const normalizeEol = s => s.replace(/\r\n/g, '\n');
+  if (normalizeEol(existing) === normalizeEol(generated)) continue;
   stale++;
   const hash = text => crypto.createHash('sha256').update(text, 'utf8').digest('hex').slice(0, 12);
   if (checking) {
