@@ -60,12 +60,11 @@ try {
  assert(await page.$eval('#clientGallery',el=>!el.open));
  assert(await page.$eval('[data-gallery-src]',el=>el===document.activeElement));
  checks+=5;
- await go('Profile-Index');await page.click('[data-bs-target="#editModal"]');await page.waitForSelector('#editModal.show');
- assert(await page.$eval('#editModal',el=>el.contains(document.activeElement)));
- await page.keyboard.press('Escape');
+ await go('Profile-Index');await page.focus('#profileFullName');
+ assert(await page.$eval('#hubProfileForm',el=>el.contains(document.activeElement)&&el.querySelector('[name="__RequestVerificationToken"]')));
  await page.emulateMediaFeatures([{name:'prefers-reduced-motion',value:'reduce'}]);
  await go('Home-Index');
- assert.equal(await page.$eval('.cx-package-art img',el=>getComputedStyle(el).transitionDuration),'0s');
+ assert.equal(await page.$eval('.ws-gallery-item>img',el=>getComputedStyle(el).transitionDuration),'0s');
  checks+=2;
  if(process.env.AXE_CORE_PATH) {await fs.writeFile(path.join(snapshots,'client-accessibility.json'),JSON.stringify(accessibility,null,2));assert.deepEqual(accessibility,[],'Client WCAG A/AA violations; see client-accessibility.json');}
  console.log('SUCCESS:',checks,'client viewport and interaction checks');

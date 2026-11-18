@@ -6,12 +6,14 @@ using System.Text.RegularExpressions;
 using AriesMagicAppointmentSystem.Data;
 using AriesMagicAppointmentSystem.Models;
 using AriesMagicAppointmentSystem.Services;
+using AriesMagicAppointmentSystem.ViewComponents;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -42,6 +44,26 @@ internal static class ReleaseIntegrationRunner
     }
     static async Task Main(string[] args)
     {
+        Check(PaymentOptions.Build(10000m, 0m).Select(o => (o.Key, o.Amount)).SequenceEqual(new[] { ("Minimum", 2000m), ("Half", 5000m), ("Full", 10000m) }), "Initial payment options are server-calculated from the final total");
+        Check(PaymentOptions.Build(3000m, 0m).Select(o => (o.Key, o.Amount)).SequenceEqual(new[] { ("Minimum", 2000m), ("Full", 3000m) }), "Invalid 50 percent option is omitted without lowering the minimum");
+        Check(PaymentOptions.Build(2000m, 0m).Select(o => (o.Key, o.Amount)).SequenceEqual(new[] { ("Minimum", 2000m) }), "Duplicate full/minimum amount is shown once");
+        Check(PaymentOptions.Build(1999.99m, 0m).Count == 0, "Below-minimum totals produce no invalid payment option");
+        Check(PaymentOptions.Build(10000m, 2000m).Count == 0, "Verified initial payment locks additional client upload choices");
+        var cancellationTime = new DateTime(2026, 11, 3, 12, 0, 0, DateTimeKind.Utc);
+        var cancellationPayment = new Payment { Status = PaymentStatus.Verified, InitialVerificationAtUtc = cancellationTime };
+        var cancellationBooking = new Booking { Status = BookingStatus.Confirmed };
+        Check(BookingCancellationPolicy.IsClientDirectCancellationAllowed(cancellationBooking, cancellationPayment, cancellationTime.AddHours(23).AddMinutes(59)), "Client may cancel strictly before the verified 24-hour deadline");
+        Check(!BookingCancellationPolicy.IsClientDirectCancellationAllowed(cancellationBooking, cancellationPayment, cancellationTime.AddHours(24)), "Client cancellation is denied at the exact 24-hour deadline");
+        Check(!BookingCancellationPolicy.IsClientDirectCancellationAllowed(cancellationBooking, new Payment { Status = PaymentStatus.Pending, InitialVerificationAtUtc = cancellationTime }, cancellationTime.AddHours(1)), "Pending payment does not start the Client cancellation window");
+        Check(!BookingCancellationPolicy.IsClientDirectCancellationAllowed(cancellationBooking, new Payment { Status = PaymentStatus.Verified }, cancellationTime.AddHours(1)), "Legacy verified records without an immutable UTC timestamp are not assigned a fabricated window");
+        Check(!BookingCancellationPolicy.IsClientDirectCancellationAllowed(new Booking { Status = BookingStatus.Completed }, cancellationPayment, cancellationTime.AddHours(1)), "Completed booking cannot be directly cancelled");
+        Check(!BookingCancellationPolicy.IsClientDirectCancellationAllowed(new Booking { Status = BookingStatus.Confirmed, RefundEligible = true }, cancellationPayment, cancellationTime.AddHours(1)), "Already refund-eligible booking cannot be cancelled again");
+        if(args.SequenceEqual(new[]{"--confirmed-booking-change-policy-only"})) { ConfirmedBookingChangePolicyTests.Run(); return; }
+        if(args.SequenceEqual(new[]{"--payment-window-only"})) { await InitialPaymentWindowTests.RunAsync(); return; }
+        if(args.SequenceEqual(new[]{"--pro-max-event-fields"})) { ProMaxEventDetailsTests.Run(); return; }
+        if(args.SequenceEqual(new[]{"--pro-max-refund-seed"})) { await ProMaxRefundFixtureSeed.RunAsync(); return; }
+        if(args.SequenceEqual(new[]{"--age-release-payment-window"})) { await PaymentWindowFixtureAdjust.RunAsync(); return; }
+        if(args.SequenceEqual(new[]{"--unified-messaging-only"})) { await UnifiedMessagingTests.RunAsync(); return; }
         if(args.SequenceEqual(new[]{"--internal-workspaces-ui-fixture"})) { await InternalWorkspaceFixture.RunAsync(); return; }
         if(args.SequenceEqual(new[]{"--internal-workspaces-empty-fixture"})) { await InternalWorkspaceFixture.RunAsync(empty:true); return; }
         if(args.SequenceEqual(new[]{"--auth-ui-fixture"})) { await AuthBrowserFixture.RunAsync(); return; }
@@ -52,6 +74,10 @@ internal static class ReleaseIntegrationRunner
         if(args.SequenceEqual(new[]{"--manual-ui-preview"})) { await BookingBrowserFixture.RunAsync(manualPreview:true); return; }
         if(args.SequenceEqual(new[]{"--independent-findings"})) { await IndependentFindingsReview.RunAsync(); return; }
         if(args.SequenceEqual(new[]{"--reproduce-findings"})) { await IndependentFindingsReview.RunAsync(reproduce:true); return; }
+        if(args.SequenceEqual(new[]{"--location-only"})) { await LocationUpgradeTests.RunAsync(); return; }
+        if(args.SequenceEqual(new[]{"--ocr-amount-only"})) { OcrAmountRegressionTests.Run(); return; }
+        if(args.SequenceEqual(new[]{"--personnel-only"})) { await PersonnelProvisioningTests.RunAsync(); return; }
+        if(args.SequenceEqual(new[]{"--personnel-operator-only"})) { await PersonnelOperatorContractTests.RunAsync(); return; }
         if(args.Length != 0) throw new ArgumentException("Unknown test mode.");
         Environment.SetEnvironmentVariable("BackgroundJobs__Enabled", "false");
         Environment.SetEnvironmentVariable("Database__InitializeOnStartup", "false");
@@ -60,14 +86,18 @@ internal static class ReleaseIntegrationRunner
         if (!Regex.IsMatch(localInstance, "^[A-Za-z][A-Za-z0-9_-]{0,63}$")) throw new Exception("Invalid local test instance name.");
         var connection = $"Server=(localdb)\\{localInstance};Database={database};Integrated Security=True;TrustServerCertificate=True";
         var options = new DbContextOptionsBuilder<ApplicationDbContext>().UseSqlServer(connection).Options;
-        var root = Path.GetFullPath(Path.Combine(".tmp-owner-build", database));
+        // Native Windows OCR cannot reliably open deeply nested checkout paths.
+        var root = Path.Combine(Path.GetTempPath(), database);
         Directory.CreateDirectory(root);
         await using var db = new ApplicationDbContext(options);
         await using var smtp = new SmtpFixture(); smtp.Start();
         var mapBuilder = WebApplication.CreateBuilder(); mapBuilder.Logging.ClearProviders();
         await using var map = mapBuilder.Build(); map.Urls.Add("http://127.0.0.1:0");
         var mapFails = false;
-        map.MapGet("/search", () => mapFails ? Microsoft.AspNetCore.Http.Results.StatusCode(503) : Microsoft.AspNetCore.Http.Results.Json(new[] { new { lat="14.58125", lon="121.1258", display_name="Isolated fixture venue, Philippines" } }));
+        map.MapGet("/search", () => mapFails ? Microsoft.AspNetCore.Http.Results.StatusCode(503) : Microsoft.AspNetCore.Http.Results.Json(new[] {
+            new { lat="7.58125",lon="125.1258",display_name="Wrong fixture venue",addresstype="building",place_rank=30 },
+            new { lat="14.58125", lon="121.1258",display_name="Fixture venue",addresstype="building",place_rank=30 }
+        }));
         await map.StartAsync();
         var mapUrl = new Uri(map.Services.GetRequiredService<IServer>().Features.Get<IServerAddressesFeature>()!.Addresses.Single());
         try
@@ -151,16 +181,19 @@ internal static class ReleaseIntegrationRunner
             var date=DateTime.Today.AddDays(40).ToString("yyyy-MM-dd");
             (string,string)[] bookingFields=[("EventType","Company Events"),("Motif","Blue"),("PartyTheme","Corporate"),("EventDate",date),("StartTime","09:00:00"),
                 ("PartyVenue","Fixture venue"),("PaxCount","25"),("ContactPerson","Fixture Client"),("ContactNumber","09123456789"),("ServiceId",package.Id.ToString()),
-                ("AcceptTerms","true"),("FinalPrice","0.01"),("TravelFee","-99999"),("VenueLatitude","90")];
+                ("AcceptTerms","true"),("AcceptedTermsVersion","2026-11-03-v2"),("FinalPrice","0.01"),("TravelFee","-99999"),("VenueLatitude","14.58125"),("VenueLongitude","121.1258"),("VenueSelectionMethod","Search"),("CustomerConfirmedLocation","true")];
             using(var response=await Post(client,"/Bookings/SubmitBooking",clientToken,bookingFields)) Check(response.StatusCode==HttpStatusCode.Redirect,"Client booking submitted over authenticated HTTP");
             var booking=await db.Bookings.AsNoTracking().SingleAsync();
-            Check(booking.FinalPrice==10000 && booking.TravelFee==0 && booking.VenueLatitude==14.58125,"Database stores trusted server price and actual geocoding response");
+            Check(booking.FinalPrice==10000 && booking.TravelFee==0 && booking.VenueLatitude==14.58125
+                && booking.VenueLongitude==121.1258 && booking.TravelFeeStatus==VenueLocationPolicy.Calculated,
+                "Exact selected geocoder result wins over earlier incorrect suggestions; server validates price and coordinates");
             using(var response=await Post(staff,$"/Bookings/Approve/{booking.Id}",staffToken)) Check(response.StatusCode==HttpStatusCode.Redirect,"Staff approval HTTP completes");
             Check(await db.Bookings.AsNoTracking().AnyAsync(b=>b.Id==booking.Id&&b.Status==BookingStatus.AwaitingDownpayment),"Staff approval persists awaiting-downpayment status");
             using(var contextPage=await client.GetAsync($"/Payments/Upload?bookingId={booking.Id}")) {
                 var html=await contextPage.Content.ReadAsStringAsync();var payload=Regex.Match(html,"id=\"clientBookingContext\">(.*?)</script>",RegexOptions.Singleline).Groups[1].Value;
                 using var doc=System.Text.Json.JsonDocument.Parse(payload);var row=doc.RootElement.EnumerateArray().Single();
                 Check(row.GetProperty("Id").GetInt32()==booking.Id&&row.GetProperty("Balance").GetDecimal()==10000m&&row.GetProperty("Verified").GetDecimal()==0m,"Concierge presentation reads authoritative own-booking financial values");
+                Check(row.GetProperty("PaymentOptions").EnumerateArray().Select(o=>(o.GetProperty("Key").GetString()!,o.GetProperty("Amount").GetDecimal())).SequenceEqual(new[]{("Minimum",2000m),("Half",5000m),("Full",10000m)}),"Payment choice amounts are serialized from server-calculated options");
             }
             using(var contextPage=await otherClient.GetAsync($"/Payments/Upload?bookingId={booking.Id}"))Check(!(await contextPage.Content.ReadAsStringAsync()).Contains("id=\"clientBookingContext\""),"Concierge payment metadata does not expose an unrelated booking");
             using(var contextPage=await client.GetAsync($"/RescheduleRequests/Create?bookingId={booking.Id}")) {
@@ -170,26 +203,17 @@ internal static class ReleaseIntegrationRunner
             }
             using(var contextPage=await otherClient.GetAsync($"/RescheduleRequests/Create?bookingId={booking.Id}"))Check(!(await contextPage.Content.ReadAsStringAsync()).Contains("id=\"clientBookingContext\""),"Concierge schedule metadata does not expose an unrelated booking");
             var png=await File.ReadAllBytesAsync("tests/ReleaseIntegration/Fixtures/payment.png");
-            async Task<HttpResponseMessage> Upload(decimal amount) {
+            async Task<HttpResponseMessage> Upload(string option, int expectedLatestPaymentId = 0, decimal forgedAmount = 99999m) {
                 var form=new MultipartFormDataContent(); form.Add(new StringContent(clientToken),"__RequestVerificationToken");
-                form.Add(new StringContent("0"),"ExpectedLatestPaymentId");
-                form.Add(new StringContent(booking.Id.ToString()),"BookingId");form.Add(new StringContent(amount.ToString(System.Globalization.CultureInfo.InvariantCulture)),"Amount");form.Add(new StringContent("GCash"),"PaymentMethod");
+                form.Add(new StringContent(expectedLatestPaymentId.ToString()),"ExpectedLatestPaymentId");
+                form.Add(new StringContent(booking.Id.ToString()),"BookingId");form.Add(new StringContent(forgedAmount.ToString(System.Globalization.CultureInfo.InvariantCulture)),"Amount");form.Add(new StringContent(option),"PaymentOption");form.Add(new StringContent("GCash"),"PaymentMethod");
                 var image=new ByteArrayContent(png);image.Headers.ContentType=new("image/png");form.Add(image,"ProofImage","proof.png");
                 return await client.PostAsync("/Payments/Upload",form);
             }
-            using(var response=await Upload(1000)) Check(response.StatusCode==HttpStatusCode.OK && !await db.Payments.AnyAsync(),"Server rejects downpayment below PHP 2,000");
-            using(var response=await Upload(2000)) Check(response.StatusCode==HttpStatusCode.Redirect,"Real multipart proof upload succeeds");
+            using(var response=await Upload("Invalid",forgedAmount:1000m)) Check(response.StatusCode==HttpStatusCode.OK && !await db.Payments.AnyAsync(),"Server rejects an invalid payment option and ignores a below-minimum forged amount");
+            using(var response=await Upload("Minimum",forgedAmount:99999m)) Check(response.StatusCode==HttpStatusCode.Redirect,"Real multipart proof upload succeeds using a server-selected minimum option");
             var payment=await db.Payments.AsNoTracking().SingleAsync();
-            using(var form=new MultipartFormDataContent()) {
-                form.Add(new StringContent(clientToken),"__RequestVerificationToken"); form.Add(new StringContent(booking.Id.ToString()),"BookingId");
-                form.Add(new StringContent("Isolated Client"),"GCashAccountName");form.Add(new StringContent("09123456789"),"GCashNumber");
-                var image=new ByteArrayContent(png);image.Headers.ContentType=new("image/png");form.Add(image,"PaymentProofImage","refund.png");
-                using var response=await client.PostAsync("/Payments/RequestRefund",form);
-                Check(response.StatusCode==HttpStatusCode.Redirect,"Client submits eligible refund request using real HTTP proof");
-            }
-            var refund=await db.RefundRequests.AsNoTracking().SingleAsync();
-            using(var response=await Post(owner,$"/Payments/ApproveRefund/{refund.Id}",ownerToken)) Check(response.StatusCode==HttpStatusCode.Redirect,"Unverified original receipt cannot yet authorize refund");
-            Check(await db.RefundRequests.AsNoTracking().AnyAsync(x=>x.Id==refund.Id&&x.Status==RefundStatus.UnderReview),"Refund retains review state before original payment verification");
+            Check(payment.Amount==2000m,"Browser-posted amount cannot override the selected server-calculated minimum");
             Check(File.Exists(Path.Combine(root,"financial-proofs",payment.ProofImagePath.Replace('/',Path.DirectorySeparatorChar))),"Uploaded proof resides in configured private storage");
             Check(await db.OcrVerifications.AnyAsync(x=>x.PaymentId==payment.Id && x.ProcessingError==null && x.ExtractedAmount==2000),"Actual native OCR extracts PHP 2,000 from the generated receipt");
             using(var response=await otherClient.GetAsync($"/Bookings/Details/{booking.Id}")) Check(response.StatusCode==HttpStatusCode.NotFound,"Unrelated real Client cookie cannot read another booking by direct ID");
@@ -197,14 +221,52 @@ internal static class ReleaseIntegrationRunner
             using(var proof=await client.GetAsync($"/Payments/PaymentProof/{payment.Id}")) Check(proof.StatusCode==HttpStatusCode.OK && proof.Headers.CacheControl?.NoStore==true,"Own proof served through protected noncached HTTP route");
             using(var proof=await owner.GetAsync($"/Payments/PaymentProof/{payment.Id}")) Check(proof.StatusCode==HttpStatusCode.OK && proof.Headers.CacheControl?.NoStore==true && (await proof.Content.ReadAsByteArrayAsync()).SequenceEqual(png),"Real Owner cookie reads exact original private proof bytes through protected HTTP route");
             using(var proof=await staff.GetAsync($"/Payments/PaymentProof/{payment.Id}")) Check(proof.StatusCode==HttpStatusCode.Redirect,"Staff cookie denied private financial proof");
-            using(var response=await Post(owner,$"/Payments/Verify/{payment.Id}",ownerToken)) Check(response.StatusCode==HttpStatusCode.Redirect,"Owner verification HTTP commits");
+            Check(payment.ExpectedAmountAtUpload==2000m,"Selected payment amount is preserved separately from OCR and later Owner-confirmed amount");
+            using(var reanalysis=await Post(owner,$"/Payments/ReanalyzeProof/{payment.Id}",ownerToken))
+                Check(reanalysis.StatusCode==HttpStatusCode.Redirect,"Owner can safely reanalyze a pending receipt");
+            Check(await db.OcrVerifications.CountAsync(o=>o.PaymentId==payment.Id&&o.VerificationPurpose==OcrVerificationPurposes.PaymentProof)==2
+                && await db.Payments.AnyAsync(p=>p.Id==payment.Id&&p.Status==PaymentStatus.Pending&&p.Amount==2000m),
+                "Reanalysis creates new advisory OCR evidence without crediting funds");
+            using(var invalidCorrection=await Post(owner,$"/Payments/Verify/{payment.Id}",ownerToken,("verifiedAmount","3500")))
+                Check(invalidCorrection.StatusCode==HttpStatusCode.Redirect&&await db.Payments.AnyAsync(p=>p.Id==payment.Id&&p.Status==PaymentStatus.Pending),
+                    "Unexplained change from PHP 2,000 to PHP 3,500 cannot approve or credit payment");
+            using(var response=await Post(owner,$"/Payments/Verify/{payment.Id}",ownerToken,
+                ("verifiedAmount","2000"),("correctedReference","OWNER-CORRECTED-REF-123456"),
+                ("amountCorrectionReason","Owner cross-checked the transfer reference against provider records.")))
+                Check(response.StatusCode==HttpStatusCode.Redirect,"Owner may correct OCR reference with a documented reason during manual approval");
+            Check(await db.Payments.AnyAsync(p=>p.Id==payment.Id&&p.TransactionReference=="OWNER-CORRECTED-REF-123456"
+                &&p.ExpectedAmountAtUpload==2000m&&p.Amount==2000m),
+                "Correction preserves original expected amount and Owner confirmed financial ledger");
             Check(await db.Bookings.AsNoTracking().AnyAsync(b=>b.Id==booking.Id&&b.Status==BookingStatus.Confirmed),"Verified downpayment confirms booking in SQL");
             var finance=await new PaymentFinancialService(db).GetSummaryAsync(booking.Id);
             Check(finance.TotalVerifiedPayments==2000 && finance.RemainingBalance==8000,"Verified downpayment reduces outstanding balance exactly once");
             using(var response=await Post(owner,$"/Payments/Verify/{payment.Id}",ownerToken)) Check(response.StatusCode==HttpStatusCode.Redirect,"Duplicate verification safely redirects");
             Check((await new PaymentFinancialService(db).GetSummaryAsync(booking.Id)).TotalVerifiedPayments==2000,"Duplicate request does not reapply money");
             Check(await db.EmailOutboxMessages.CountAsync(x=>x.EventKey=="payment-verified:"+payment.Id)==1,"Committed verification atomically queues one confirmation email");
-            using(var response=await Post(owner,$"/Payments/ApproveRefund/{refund.Id}",ownerToken)) Check(response.StatusCode==HttpStatusCode.Redirect,"Owner approves verified-receipt refund over HTTP");
+            Check((await db.Payments.AsNoTracking().SingleAsync(p=>p.Id==payment.Id)).InitialVerificationAtUtc.HasValue,"Owner verification records the immutable UTC window anchor");
+            using(var response=await Upload("Minimum",expectedLatestPaymentId:payment.Id)) Check(response.StatusCode==HttpStatusCode.OK&&await db.Payments.CountAsync(p=>p.BookingId==booking.Id)==1,"Direct Client upload remains locked after initial payment verification despite an outstanding balance");
+            using(var history=await owner.GetAsync($"/Payments/ProofHistory/{payment.Id}")) Check(history.StatusCode==HttpStatusCode.OK,"Owner can inspect retained private payment proof history");
+            using(var deniedHistory=await staff.GetAsync($"/Payments/ProofHistory/{payment.Id}")) Check(deniedHistory.StatusCode==HttpStatusCode.Redirect,"Staff cannot inspect Owner-only financial proof history");
+            using(var response=await Post(client,"/RescheduleRequests/Create",clientToken,("BookingId",booking.Id.ToString()),("RequestedDate",DateTime.Today.AddDays(45).ToString("yyyy-MM-dd")),("RequestedStartTime","11:00:00"),("Reason","Isolated schedule test")))
+                Check(response.StatusCode==HttpStatusCode.Redirect,"Client reschedule request persists through HTTP");
+            var reschedule=await db.RescheduleRequests.AsNoTracking().SingleAsync();
+            using(var response=await Post(staff,$"/RescheduleRequests/Approve/{reschedule.Id}",staffToken)) Check(response.StatusCode==HttpStatusCode.Redirect,"Staff processes real reschedule request");
+            Check((await db.Bookings.AsNoTracking().SingleAsync()).StartTime==reschedule.RequestedStartTime,"Rescheduling updates the single calendar/upcoming schedule record");
+            var paymentForBoundary=await db.Payments.SingleAsync(p=>p.Id==payment.Id);
+            paymentForBoundary.InitialVerificationAtUtc=DateTime.UtcNow.AddHours(-24);
+            await db.SaveChangesAsync();
+            using(var exactBoundary=await Post(client,$"/Bookings/Cancel",clientToken,("id",booking.Id.ToString())))
+                Check(exactBoundary.StatusCode==HttpStatusCode.Redirect&&await db.Bookings.AnyAsync(b=>b.Id==booking.Id&&b.Status==BookingStatus.Confirmed),"Client cancellation POST is rejected at the exact 24-hour boundary");
+            paymentForBoundary.InitialVerificationAtUtc=DateTime.UtcNow.AddHours(-23).AddMinutes(-59);
+            await db.SaveChangesAsync();
+            using(var cancel=await Post(client,"/Bookings/Cancel",clientToken,("id",booking.Id.ToString()))) Check(cancel.StatusCode==HttpStatusCode.Redirect,"Client cancels within the verified 24-hour window");
+            Check(await db.Bookings.AnyAsync(b=>b.Id==booking.Id&&b.Status==BookingStatus.Cancelled&&b.RefundEligible&&b.RefundEligibilityReason=="ClientCancellationWithin24Hours"),"Client cancellation and system refund eligibility are recorded together");
+            var refundToken=await GetToken(client,$"/Payments/RequestRefund?bookingId={booking.Id}");
+            using(var refundForm=new FormUrlEncodedContent(new Dictionary<string,string>{{"PaymentId",payment.Id.ToString()},{"GCashAccountName","Isolated Client"},{"GCashNumber","09123456789"},{"__RequestVerificationToken",refundToken}}))
+            using(var response=await client.PostAsync("/Payments/RequestRefund",refundForm)) Check(response.StatusCode==HttpStatusCode.Redirect,"Client requests review for the verified payment linked to the recorded cancellation");
+            var refund=await db.RefundRequests.AsNoTracking().SingleAsync();
+            Check(refund.EligibilityReason=="ClientCancellationWithin24Hours"&&refund.Amount==payment.Amount&&refund.OriginalPaymentId==payment.Id,"Refund amount and reason come from the verified eligible payment record");
+            using(var response=await Post(owner,$"/Payments/ApproveRefund/{refund.Id}",ownerToken)) Check(response.StatusCode==HttpStatusCode.Redirect,"Owner approves only the verified eligible receipt over HTTP");
             using(var form=new MultipartFormDataContent()) {
                 form.Add(new StringContent(ownerToken),"__RequestVerificationToken");
                 var image=new ByteArrayContent(png);image.Headers.ContentType=new("image/png");form.Add(image,"refundProofImage","confirmation.png");
@@ -216,11 +278,32 @@ internal static class ReleaseIntegrationRunner
             Check(completed.Status==RefundStatus.Refunded&&completed.ApprovedAmount==2000&&completed.RefundCompletedAt!=null,"Refund amount, final status and audit timestamps persist");
             using(var response=await Post(owner,$"/Payments/MarkAsRefunded/{refund.Id}",ownerToken)) Check(response.StatusCode==HttpStatusCode.Redirect,"Duplicate refund completion safely redirects");
             Check((await db.RefundRequests.AsNoTracking().SingleAsync(x=>x.Id==refund.Id)).RefundCompletedAt==completed.RefundCompletedAt,"Duplicate refund does not change original completion");
-            using(var response=await Post(client,"/RescheduleRequests/Create",clientToken,("BookingId",booking.Id.ToString()),("RequestedDate",DateTime.Today.AddDays(45).ToString("yyyy-MM-dd")),("RequestedStartTime","11:00:00"),("Reason","Isolated schedule test")))
-                Check(response.StatusCode==HttpStatusCode.Redirect,"Client reschedule request persists through HTTP");
-            var reschedule=await db.RescheduleRequests.AsNoTracking().SingleAsync();
-            using(var response=await Post(staff,$"/RescheduleRequests/Approve/{reschedule.Id}",staffToken)) Check(response.StatusCode==HttpStatusCode.Redirect,"Staff processes real reschedule request");
-            Check((await db.Bookings.AsNoTracking().SingleAsync()).StartTime==reschedule.RequestedStartTime,"Rescheduling updates the single calendar/upcoming schedule record");
+            var requestDate=DateTime.Today.AddDays(90);
+            var reviewBooking=new Booking {ClientId=booking.ClientId,ApplicationUserId=booking.ApplicationUserId,ServiceId=package.Id,PackageName=package.Name,
+                EventType="Birthday",PartyVenue="Cancellation review fixture",ContactPerson="Fixture Client",ContactNumber="09123456789",EventDate=requestDate,
+                StartTime=requestDate.AddHours(10),EndTime=requestDate.AddHours(12),FinalPrice=10000m,BasePrice=10000m,RequiredDownpayment=2000m,Status=BookingStatus.Confirmed};
+            db.Bookings.Add(reviewBooking);await db.SaveChangesAsync();
+            var reviewPayment=new Payment {BookingId=reviewBooking.Id,Amount=2000m,ProofImagePath=payment.ProofImagePath,PaymentMethod="GCash",Status=PaymentStatus.Verified,
+                UploadedAt=DateTime.Now.AddDays(-2),VerifiedAt=DateTime.Now.AddDays(-2),InitialVerificationAtUtc=DateTime.UtcNow.AddHours(-25)};
+            db.Payments.Add(reviewPayment);await db.SaveChangesAsync();
+            var reviewClientToken=await GetToken(client,$"/Bookings/Details/{reviewBooking.Id}");
+            using(var request=await Post(client,"/Communications/RequestBookingCancellation",reviewClientToken,("bookingId",reviewBooking.Id.ToString()),("reason","Client has a documented venue conflict.")))
+                Check(request.StatusCode==HttpStatusCode.Redirect&&await db.Messages.AnyAsync(m=>db.Bookings.Any(b=>b.Id==reviewBooking.Id&&b.CancellationRequestMessageId==m.Id)&&m.MessageContent.Contains("documented venue conflict")),"Client cancellation after 24 hours becomes a private linked booking message");
+            using(var forgedRequest=await Post(otherClient,"/Communications/RequestBookingCancellation",otherChatToken,("bookingId",reviewBooking.Id.ToString()),("reason","Not the booking owner")))
+                Check(forgedRequest.StatusCode==HttpStatusCode.NotFound,"Unrelated Client cannot submit cancellation request for another booking");
+            using(var staffDetails=await staff.GetAsync($"/Bookings/Details/{reviewBooking.Id}"))
+                Check(staffDetails.StatusCode==HttpStatusCode.OK&&(await staffDetails.Content.ReadAsStringAsync()).Contains("Client cancellation review"),"Staff can review the authorized, linked Client cancellation request");
+            using(var shortReason=await Post(staff,$"/Bookings/CancelAfterReview",staffToken,("id",reviewBooking.Id.ToString()),("reason","No")))
+                Check(shortReason.StatusCode==HttpStatusCode.Redirect&&await db.Bookings.AnyAsync(b=>b.Id==reviewBooking.Id&&b.Status==BookingStatus.Confirmed),"Staff cannot cancel without a meaningful recorded decision reason");
+            using(var staffCancel=await Post(staff,"/Bookings/CancelAfterReview",staffToken,("id",reviewBooking.Id.ToString()),("reason","Venue conflict was reviewed and the client request is valid.")))
+                Check(staffCancel.StatusCode==HttpStatusCode.Redirect&&await db.Bookings.AnyAsync(b=>b.Id==reviewBooking.Id&&b.Status==BookingStatus.Cancelled&&b.RefundEligible&&b.RefundEligibilityReason=="StaffApprovedCancellation"),"Staff cancellation creates audit and Owner refund eligibility without approving payment");
+            var staffRefundToken=await GetToken(client,$"/Payments/RequestRefund?bookingId={reviewBooking.Id}");
+            using(var form=new FormUrlEncodedContent(new Dictionary<string,string>{{"PaymentId",reviewPayment.Id.ToString()},{"GCashAccountName","Isolated Client"},{"GCashNumber","09123456789"},{"__RequestVerificationToken",staffRefundToken}}))
+            using(var response=await client.PostAsync("/Payments/RequestRefund",form)) Check(response.StatusCode==HttpStatusCode.Redirect,"Client may request refund review after Staff-approved cancellation");
+            var staffRefund=await db.RefundRequests.AsNoTracking().SingleAsync(r=>r.OriginalPaymentId==reviewPayment.Id);
+            Check(staffRefund.EligibilityReason=="StaffApprovedCancellation"&&staffRefund.Amount==reviewPayment.Amount,"Staff cancellation refund ties to the system-approved reason and exact verified amount");
+            using(var deniedApproval=await Post(staff,$"/Payments/ApproveRefund/{staffRefund.Id}",staffToken))
+                Check(deniedApproval.StatusCode==HttpStatusCode.Redirect&&deniedApproval.Headers.Location!.ToString().Contains("AccessDenied")&&await db.RefundRequests.AnyAsync(r=>r.Id==staffRefund.Id&&r.Status==RefundStatus.UnderReview),"Staff cannot approve a refund created by a Staff cancellation");
             // Decisions queue mail atomically; the dispatcher alone contacts SMTP.
             var mailBeforeOutbox=smtp.Messages.Count;
             await OutboxTests(factory,smtp,connection,mailBeforeOutbox);
@@ -228,9 +311,69 @@ internal static class ReleaseIntegrationRunner
             await ConcurrentRefunds(db,owner,ownerToken,booking.Id);
             await IntegrityChecks(db,booking.Id,payment.Id);
             await FinancialRollback(db,connection,smtp.Port,mapUrl,root,passwords["Owner"],booking,package.Id);
-            var bookingsBeforeFailure=await db.Bookings.CountAsync();
+            var beforeManual=await db.Bookings.CountAsync();
             mapFails=true;
-            using(var response=await Post(client,"/Bookings/SubmitBooking",clientToken,bookingFields)) Check(response.StatusCode==HttpStatusCode.OK && await db.Bookings.CountAsync()==bookingsBeforeFailure,"Real mapping 503 prevents booking with understandable validation and no partial data");
+            var manualFields=bookingFields
+                .Where(x=>x.Item1 is not ("PartyVenue" or "VenueLatitude" or "VenueLongitude"
+                    or "VenueSelectionMethod" or "EventDate"))
+                .Concat(new (string,string)[] {
+                    ("EventDate",DateTime.Today.AddDays(62).ToString("yyyy-MM-dd")),
+                    ("PartyVenue",""),
+                    ("VenueSelectionMethod","Manual"),
+                    ("ManualStreet","Unit 4 Maple Subdivision"),
+                    ("ManualBarangay","San Isidro"),
+                    ("ManualCity","Antipolo"),
+                    ("ManualProvince","Rizal"),
+                    ("ManualVenueName","Synthetic events hall"),
+                    ("VenueDirections","Next to the community library")
+                }).ToArray();
+            using(var response=await Post(client,"/Bookings/SubmitBooking",clientToken,manualFields))
+                Check(response.StatusCode==HttpStatusCode.Redirect&&await db.Bookings.CountAsync()==beforeManual+1,
+                    "Manual address booking succeeds even during geocoding outage");
+            var manual=await db.Bookings.AsNoTracking().OrderByDescending(b=>b.Id).FirstAsync();
+            Check(manual.VenueSelectionMethod==VenueLocationPolicy.Manual && manual.VenueLatitude==null
+                && manual.DistanceKm==null && manual.TravelFee==0m
+                && manual.TravelFeeStatus==VenueLocationPolicy.PendingReview && manual.RequiresManualReview,
+                "Manual address preserves detailed venue and explicitly pending travel charge, never fake coordinates");
+            Check(manual.PartyVenue.Contains("Maple Subdivision")&&manual.PartyVenue.Contains("Antipolo")
+                &&manual.VenueDirections=="Next to the community library",
+                "Manual address, barangay, city, province and directions preserved");
+            using(var blocked=await Post(staff,$"/Bookings/Approve/{manual.Id}",staffToken))
+                Check(blocked.StatusCode==HttpStatusCode.Redirect
+                    &&await db.Bookings.AnyAsync(b=>b.Id==manual.Id&&b.Status==BookingStatus.Pending),
+                    "Staff cannot approve an unresolved manual location for payment");
+            using(var resolve=await Post(staff,$"/Bookings/ResolveVenue/{manual.Id}",staffToken,
+                ("latitude","14.58125"),("longitude","121.1258"),
+                ("confirmedTravelFee","250.00"),("reviewReason","Confirmed venue with client and adjusted travel charge.")))
+                Check(resolve.StatusCode==HttpStatusCode.Redirect,
+                    "Staff submits a confirmed venue pin and revised travel quote");
+            var quoted=await db.Bookings.AsNoTracking().SingleAsync(b=>b.Id==manual.Id);
+            Check(quoted.TravelFeeStatus==VenueLocationPolicy.AwaitingCustomerAcceptance
+                &&quoted.TravelFee==250m &&quoted.FinalPrice==10250m &&quoted.Status==BookingStatus.Pending
+                &&quoted.VenueLatitude==14.58125 &&quoted.VenueStaffReviewedAtUtc.HasValue,
+                "Staff resolution updates quote only, without allowing payment or altering event details");
+            using(var blocked=await Post(staff,$"/Bookings/Approve/{manual.Id}",staffToken))
+                Check(blocked.StatusCode==HttpStatusCode.Redirect &&
+                    await db.Bookings.AnyAsync(b=>b.Id==manual.Id&&b.Status==BookingStatus.Pending),
+                    "Staff cannot bypass customer acceptance of revised travel charge");
+            using(var unrelated=await Post(otherClient,$"/Bookings/AcceptVenueQuote/{manual.Id}",otherChatToken,
+                ("quotedTotal","10250"),("acceptTravelQuote","true")))
+                Check(unrelated.StatusCode==HttpStatusCode.NotFound,"Unrelated client cannot accept another booking quote");
+            using(var stale=await Post(client,$"/Bookings/AcceptVenueQuote/{manual.Id}",clientToken,
+                ("quotedTotal","9999"),("acceptTravelQuote","true")))
+                Check(stale.StatusCode==HttpStatusCode.Redirect&&
+                    await db.Bookings.AnyAsync(b=>b.Id==manual.Id&&b.TravelFeeStatus==VenueLocationPolicy.AwaitingCustomerAcceptance),
+                    "Stale/forged travel quote is rejected");
+            using(var accept=await Post(client,$"/Bookings/AcceptVenueQuote/{manual.Id}",clientToken,
+                ("quotedTotal","10250"),("acceptTravelQuote","true")))
+                Check(accept.StatusCode==HttpStatusCode.Redirect&&
+                    await db.Bookings.AnyAsync(b=>b.Id==manual.Id&&b.TravelFeeStatus==VenueLocationPolicy.Accepted
+                        &&b.TravelQuoteAcceptedAtUtc.HasValue),
+                    "Only actual customer explicitly accepts Staff-reviewed quote");
+            using(var approve=await Post(staff,$"/Bookings/Approve/{manual.Id}",staffToken))
+                Check(approve.StatusCode==HttpStatusCode.Redirect&&
+                    await db.Bookings.AnyAsync(b=>b.Id==manual.Id&&b.Status==BookingStatus.AwaitingDownpayment),
+                    "Staff may approve only after customer accepts revised quote");
             mapFails=false;
             Check(await db.Notifications.AnyAsync(x=>x.UserId==booking.ApplicationUserId),"Client receives persisted workflow notifications");
             await FeedbackFeatureTests.RunAsync(connection,smtp.Port,mapUrl,root,passwords,otherPassword,Check);
@@ -421,6 +564,25 @@ internal static class ReleaseIntegrationRunner
                 && await restoredDb.BookingTimelines.CountAsync()==await db.BookingTimelines.CountAsync()
                 && (await restoredDb.Database.GetAppliedMigrationsAsync()).SequenceEqual(await db.Database.GetAppliedMigrationsAsync()),"Restored refund, timeline and migration history match the source snapshot");
             await using(var factory=new ReleaseFactory(restoredConnection,smtpPort,mapUrl,root)) {using var client=await Login(factory,"Client",clientPassword);Check((await client.GetAsync("/Bookings/MyBookings")).StatusCode==HttpStatusCode.OK,"Actual application authenticates and reads restored SQL database");}
+            // The uniquely named restored synthetic copy is the only downgrade target.
+            // Remove the new fields to construct the pre-policy schema, then test its forward upgrade.
+            var baseline = restoredDb.Database.GetMigrations().TakeWhile(m=>m!="20261102185718_AddBookingPaymentFeedbackPolicy").Last();
+            var migrator = restoredDb.GetService<Microsoft.EntityFrameworkCore.Migrations.IMigrator>();
+            await migrator.MigrateAsync(baseline);
+            await migrator.MigrateAsync();
+            Check(await restoredDb.Bookings.CountAsync()==await db.Bookings.CountAsync()
+                && await restoredDb.Payments.SumAsync(p=>p.Amount)==await db.Payments.SumAsync(p=>p.Amount)
+                && await restoredDb.RefundRequests.CountAsync()==await db.RefundRequests.CountAsync()
+                && await restoredDb.EventFeedbacks.CountAsync()==await db.EventFeedbacks.CountAsync(),
+                "Forward upgrade from populated pre-policy schema preserves bookings, money, refunds and feedback");
+            Check(!await restoredDb.Payments.AnyAsync(p=>p.InitialVerificationAtUtc!=null)
+                && !await restoredDb.EventFeedbacks.AnyAsync(f=>f.SharingPreference!=null),
+                "Legacy verification timestamps and consent are not fabricated by either migration");
+            await using(var upgradedFactory=new ReleaseFactory(restoredConnection,smtpPort,mapUrl,root)) {
+                using var upgradedClient=await Login(upgradedFactory,"Client",clientPassword);
+                Check((await upgradedClient.GetAsync("/Bookings/MyBookings")).StatusCode==HttpStatusCode.OK,
+                    "Application starts and reads legacy records after the two forward migrations");
+            }
             watch.Stop();restoreSeconds=watch.Elapsed.TotalSeconds;Console.WriteLine($"RESTORE EVIDENCE: synthetic source only; CHECKSUM/VERIFYONLY/CHECKDB passed; recovery {restoreSeconds:F2} seconds.");
             await restoredDb.Database.EnsureDeletedAsync();
         }

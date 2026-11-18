@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Threading.RateLimiting;
 using Microsoft.Data.SqlClient;
+using Microsoft.AspNetCore.Authentication;
 
 var builder = WebApplication.CreateBuilder(args);
 if (!builder.Environment.IsDevelopment()) ProductionSafeLogging.Configure(builder.Services);
@@ -78,14 +79,16 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddOptions<EmailSettings>().Bind(builder.Configuration.GetSection("EmailSettings"))
-    .Validate(o => builder.Environment.IsDevelopment() ||
-        (!string.IsNullOrWhiteSpace(o.Host) && o.Port is > 0 and <= 65535 && o.EnableSsl
-        && !string.IsNullOrWhiteSpace(o.Username) && !string.IsNullOrWhiteSpace(o.Password)
-        && new System.ComponentModel.DataAnnotations.EmailAddressAttribute().IsValid(o.SenderEmail)),
-        "Production EmailSettings require a provider, TLS, valid sender and configured credentials.")
+    .Validate(o => builder.Environment.IsDevelopment() || EmailConfiguration.IsValid(o),
+        "Email provider configuration is invalid; values omitted.")
     .ValidateOnStart();
-
-builder.Services.AddScoped<IEmailService, SmtpEmailService>();
+builder.Services.AddScoped<SmtpEmailService>();
+builder.Services.AddHttpClient<HttpsEmailService>(c => c.Timeout = TimeSpan.FromSeconds(30))
+    .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false })
+    .RemoveAllLoggers();
+builder.Services.AddScoped<IEmailService>(sp => sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<EmailSettings>>().Value.Provider.Equals("Smtp", StringComparison.OrdinalIgnoreCase)
+    ? sp.GetRequiredService<SmtpEmailService>() : sp.GetRequiredService<HttpsEmailService>());
+builder.Services.AddScoped<OwnerEmailChangeService>();
 builder.Services.AddScoped<EmailOutbox>();
 builder.Services.AddScoped<EmailOutboxDispatcher>();
 builder.Services.AddScoped<IEmailVerificationService, EmailVerificationService>();
@@ -94,12 +97,14 @@ builder.Services.AddScoped<IPasswordHasher<EmailVerification>, PasswordHasher<Em
 builder.Services.AddScoped<IHistoryService, HistoryService>();
 builder.Services.AddScoped<ISystemActivityService, SystemActivityService>();
 builder.Services.AddScoped<AccountCredentialRecovery>();
+builder.Services.AddOptions<PersonnelOptions>().Bind(builder.Configuration.GetSection("Personnel"))
+    .Validate(o=>o.InvitationHours is >=1 and <=48,"Personnel invitations must expire within 1 to 48 hours.").ValidateOnStart();
+builder.Services.AddScoped<PersonnelProvisioning>();
 builder.Services.AddOptions<FeedbackMediaOptions>().Bind(builder.Configuration.GetSection("FeedbackMedia"))
-    .Validate(o=>o.MaxImages is >=1 and <=5 && o.MaxImageBytes is >=1 and <=10*1024*1024
+    .Validate(o=>o.MaxImages is >=1 and <=5 && o.MaxImageBytes is >=1 and <=10*1024*1024 && o.MaxVideoBytes is >=1024*1024 and <=25*1024*1024
         && o.MaxDimension is >=1 and <=6000 && o.MaxPixels is >=1 and <=16_000_000
         && o.ClamAvPort is >0 and <=65535,"Feedback media limits must stay within the supported safe bounds.").ValidateOnStart();
 builder.Services.AddScoped<IFeedbackMalwareScanner,ClamAvFeedbackScanner>();
-builder.Services.AddSingleton<IFeedbackVideoProcessor,DisabledFeedbackVideoProcessor>();
 builder.Services.AddScoped<FeedbackMediaService>();
 builder.Services.AddScoped<ITrashHistoryService, TrashHistoryService>();
 builder.Services.AddScoped<IBookingExpirationService, BookingExpirationService>();
@@ -137,8 +142,15 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.Cookie.SameSite = SameSiteMode.Lax;
     options.ExpireTimeSpan = TimeSpan.FromHours(8);
     options.SlidingExpiration = true;
+    options.Events.OnValidatePrincipal = async context => {
+        await SecurityStampValidator.ValidatePrincipalAsync(context);
+        if(context.Principal?.Identity?.IsAuthenticated!=true)return;
+        var users=context.HttpContext.RequestServices.GetRequiredService<UserManager<ApplicationUser>>();
+        var user=await users.GetUserAsync(context.Principal);
+        if(user==null||!user.IsActive){context.RejectPrincipal();await context.HttpContext.SignOutAsync(IdentityConstants.ApplicationScheme);}
+    };
 });
-builder.Services.Configure<SecurityStampValidatorOptions>(options => options.ValidationInterval = TimeSpan.FromMinutes(1));
+builder.Services.Configure<SecurityStampValidatorOptions>(options => options.ValidationInterval = TimeSpan.Zero);
 
 var app = builder.Build();
 CertificateDataProtection.ValidateStartup(app.Services);

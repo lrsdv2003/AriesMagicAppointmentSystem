@@ -58,7 +58,7 @@
                 new AboutPhoto("participation", "~/images/client/about/participation.jpeg", "Aries holding a yellow and white snake as children and guests take part", 2048, 1365, "(max-width: 767px) 80vw, 390px", Caption: "The shared moment"),
                 new AboutPhoto("celebration", "~/images/client/wonder-studio/celebration.jpeg", "Aries and fellow entertainers with children at a decorated celebration", 1600, 1057, "(max-width: 767px) 80vw, 390px", Caption: "The celebration") })
             {
-                <button type="button" class="wa-gallery-item ws-gallery-item" data-gallery-src="@Url.Content(photo.Original)" data-gallery-alt="@photo.Alt" aria-label="Enlarge photograph: @photo.Alt">
+                <button type="button" class="wa-gallery-item ws-gallery-item" data-gallery-src="@Url.Content(photo.Original)" data-gallery-alt="@photo.Alt">
                     <picture><source type="image/webp" srcset="@Url.Content("~/images/client/about/"+photo.Key+"-480.webp") 480w, @Url.Content("~/images/client/about/"+photo.Key+"-960.webp") 960w" sizes="@photo.Sizes" /><img src="@Url.Content(photo.Original)" alt="@photo.Alt" width="@photo.Width" height="@photo.Height" loading="lazy" decoding="async" /></picture>
                     <span class="wa-gallery-caption"><strong>@photo.Caption</strong><span aria-hidden="true">↗</span></span>
                 </button>

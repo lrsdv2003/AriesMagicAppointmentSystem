@@ -5,9 +5,9 @@ namespace AriesMagicAppointmentSystem.ViewModels
 {
     public class RefundRequestViewModel
     {
-        [Required(ErrorMessage = "Please select a booking.")]
-        [Display(Name = "Booking")]
-        public int BookingId { get; set; }
+        [Required(ErrorMessage = "Select an eligible payment.")]
+        [Range(1, int.MaxValue)]
+        public int PaymentId { get; set; }
 
         public decimal FixedRefundAmount { get; set; } = 2000m;
 
@@ -21,8 +21,10 @@ namespace AriesMagicAppointmentSystem.ViewModels
         [StringLength(20)]
         public string GCashNumber { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "Please upload your payment proof.")]
-        [Display(Name = "Payment Proof")]
+        // Enforced explicitly by PaymentsController.RequestRefund.
+        // MVC's boolean Range adapter incorrectly fails an otherwise checked checkbox in jQuery.
+        public bool RefundAcknowledged { get; set; }
+
         public IFormFile? PaymentProofImage { get; set; }
 
         [Display(Name = "Reason")]

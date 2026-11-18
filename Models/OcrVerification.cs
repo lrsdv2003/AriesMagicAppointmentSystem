@@ -12,6 +12,9 @@ namespace AriesMagicAppointmentSystem.Models
         [Required, MaxLength(60)] public string VerificationPurpose { get; set; } = OcrVerificationPurposes.PaymentProof;
 
         public decimal? ExtractedAmount { get; set; }
+        [MaxLength(40)] public string? AmountReliability { get; set; }
+        [MaxLength(64)] public string? ProofSha256 { get; set; }
+        public bool IsDuplicateImage { get; set; }
         [MaxLength(100)] public string? ExtractedReferenceNumber { get; set; }
         [MaxLength(200)] public string? ExtractedSender { get; set; }
         [MaxLength(200)] public string? ExtractedReceiver { get; set; }

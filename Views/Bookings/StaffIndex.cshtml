@@ -1,12 +1,14 @@
 @model AriesMagicAppointmentSystem.ViewModels.BookingManagementViewModel
 @using AriesMagicAppointmentSystem.Models
+@using AriesMagicAppointmentSystem.Services
 @{
     Layout = "_DashboardLayout";
     ViewData["Title"] = "Booking Requests";
     var requests = Model.Bookings.ToList();
     var pendingCount = requests.Count(x => x.BookingStatus == BookingStatus.Pending);
-    var approvedCount = requests.Count(x => x.BookingStatus == BookingStatus.AwaitingDownpayment || x.BookingStatus == BookingStatus.AwaitingVerification);
+    var waitingClientCount = requests.Count(x => x.TravelFeeStatus == VenueLocationPolicy.AwaitingCustomerAcceptance);
     var reviewCount = requests.Count(x => x.RequiresManualReview);
+
     string StatusClass(string status) => status switch {
         BookingStatus.Pending => "status-pending",
         BookingStatus.AwaitingDownpayment => "status-confirmed",
@@ -17,19 +19,9 @@
         BookingStatus.Confirmed => "status-confirmed",
         _ => "status-read"
     };
-    string StatusLabel(string status) => status switch {
-        BookingStatus.AwaitingDownpayment => "Approved · Awaiting Payment",
-        BookingStatus.AwaitingVerification => "Approved · Awaiting Owner Verification",
-        _ => status
-    };
 }
 <div class="staff-booking-page">
-    <div class="ui-toolbar page-header staff-booking-header">
-
-        <a asp-controller="Calendar" asp-action="Index" class="btn btn-outline-primary">
-            <i class="bi bi-calendar3" aria-hidden="true"></i> Upcoming Events
-        </a>
-    </div>
+    <p class="staff-round2-intro">Staff action queue · Pending approvals and venue reviews only. Owner payment verification is managed separately.</p>
 
     @if (TempData["Success"] != null)
     {
@@ -41,32 +33,27 @@
     }
 
     <div class="staff-booking-stats" aria-label="Booking request summary">
-        <div class="staff-booking-stat"><span>Requests Shown</span><strong>@requests.Count</strong></div>
-        <div class="staff-booking-stat"><span>Pending Staff Review</span><strong>@pendingCount</strong></div>
-        <div class="staff-booking-stat"><span>Approved / Awaiting Payment</span><strong>@approvedCount</strong></div>
-        <div class="staff-booking-stat"><span>Venue Review Needed</span><strong>@reviewCount</strong></div>
+        <div class="staff-booking-stat"><span class="staff-stat-label"><i class="bi bi-card-checklist" aria-hidden="true"></i> Staff Queue Total</span><strong>@Model.TotalCount</strong></div>
+        <div class="staff-booking-stat"><span class="staff-stat-label"><i class="bi bi-hourglass-split" aria-hidden="true"></i> Requests on Page</span><strong>@requests.Count</strong></div>
+        <div class="staff-booking-stat"><span class="staff-stat-label"><i class="bi bi-hourglass" aria-hidden="true"></i> Awaiting Client Venue Confirmation (page)</span><strong>@waitingClientCount</strong></div>
+        <div class="staff-booking-stat"><span class="staff-stat-label"><i class="bi bi-geo-alt" aria-hidden="true"></i> Manual Venue Review (page)</span><strong>@reviewCount</strong></div>
     </div>
     <div class="am-filter-container">
-        <form method="get" asp-action="Index" class="am-filter-bar am-filter-row">
+        <form method="get" asp-action="Index" class="am-filter-bar am-filter-row staff-final-filter-toolbar" data-staff-autosearch="bookings" role="search">
             <div class="am-filter-search">
                 <label class="visually-hidden" for="staffBookingSearch">Search bookings</label>
-                <input id="staffBookingSearch" type="search" name="search" value="@Model.Search" class="form-control" placeholder="Booking ID, client, email, or package" />
+                <i class="bi bi-search" aria-hidden="true"></i><input id="staffBookingSearch" type="search" name="search" value="@Model.Search" class="form-control" placeholder="Search booking ID, client, package, or venue" autocomplete="off" />
             </div>
 <div class="dropdown"><button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false"><i class="bi bi-funnel" aria-hidden="true"></i> Filters</button><div class="dropdown-menu dropdown-menu-end"><h6>Filter requests</h6>
             <div>
                 <label class="form-label" for="staffBookingStatus">Booking status</label>
                 <select id="staffBookingStatus" name="bookingStatus" class="form-select">
-                    <option value="AllRequests" selected="@(Model.BookingStatus == "AllRequests")">All Requests</option>
+                    <option value="AllRequests" selected="@(Model.BookingStatus == "AllRequests")">All Staff Actions</option>
                     <option value="Pending" selected="@(Model.BookingStatus == "Pending")">Pending</option>
-                    <option value="ApprovedAwaitingPayment" selected="@(Model.BookingStatus == "ApprovedAwaitingPayment")">Approved / Awaiting Payment</option>
-                    <option value="Declined" selected="@(Model.BookingStatus == "Declined")">Declined</option>
-                    <option value="RequiresReview" selected="@(Model.BookingStatus == "RequiresReview")">Requires Review</option>
+                    <option value="RequiresReview" selected="@(Model.BookingStatus == "RequiresReview")">Venue / Client Confirmation Review</option>
                 </select>
             </div>
-            <div>
-                <label class="form-label" for="staffEventDate">Event date</label>
-                <input id="staffEventDate" type="date" name="eventDate" value="@(Model.EventDate?.ToString("yyyy-MM-dd"))" class="form-control" />
-            </div>
+
             <div>
                 <label class="form-label" for="staffService">Package</label>
                 <select id="staffService" name="serviceId" class="form-select">
@@ -78,9 +65,8 @@
                 </select>
             </div>
 <div class="am-filter-actions">
-            <a asp-action="Index" class="btn btn-outline-secondary">Clear Filters</a>
             <button type="submit" class="btn btn-primary"><i class="bi bi-funnel" aria-hidden="true"></i> Apply Filters</button>
-        </div></div></div><button type="submit" class="btn btn-primary">Search</button></form>
+        </div></div></div><a asp-action="Index" class="btn btn-outline-secondary staff-final-clear">Clear Filters</a><button type="submit" class="visually-hidden">Search bookings</button></form>
     </div>
     <div class="dashboard-panel staff-booking-table-panel">
         <div class="staff-booking-panel-heading">
@@ -116,11 +102,10 @@
                     @foreach (var item in requests)
                     {
                         var venueText = string.IsNullOrWhiteSpace(item.VenueAddress) ? "Venue not provided" : item.VenueAddress;
-                        var shortVenue = venueText.Length > 58 ? venueText[..55] + "..." : venueText;
                         <tr>
                             <td>
                                 <strong class="staff-booking-code">@item.BookingCode</strong>
-                                <span class="staff-booking-subtext">@item.ServiceName</span>
+
                             </td>
                             <td><strong>@item.ClientName</strong></td>
                             <td>
@@ -130,44 +115,17 @@
                                 </div>
                             </td>
                             <td>
-                                <div class="staff-venue-cell" title="@venueText">
-                                    <strong>@shortVenue</strong>
-                                    @if (item.DistanceKm.HasValue)
-                                    {
-                                        <span class="staff-venue-distance"><i class="bi bi-signpost-split" aria-hidden="true"></i>@item.DistanceKm.Value.ToString("N1") km</span>
-                                        <small>@(string.IsNullOrWhiteSpace(item.ServiceZone) ? "Service zone unavailable" : item.ServiceZone) · @(item.TravelFee > 0 ? $"₱{item.TravelFee:N2}" : "No travel fee")</small>
-                                        @if (item.RequiresManualReview)
-                                        {
-                                            <span class="venue-awareness-pill venue-awareness-review"><i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>Venue review</span>
-                                        }
-                                        else if (!item.IsServiceable)
-                                        {
-                                            <span class="venue-awareness-pill venue-awareness-unavailable"><i class="bi bi-x-circle-fill" aria-hidden="true"></i>Not serviceable</span>
-                                        }
-                                        else
-                                        {
-                                            <span class="venue-awareness-pill venue-awareness-serviceable"><i class="bi bi-check-circle-fill" aria-hidden="true"></i>Serviceable</span>
-                                        }
-                                    }
-                                    else { <span>Distance unavailable</span> }
-                                </div>
+                                <div class="staff-venue-cell" title="@venueText"><strong>@venueText</strong></div>
                             </td>
                             <td>
-                                <span class="status-badge staff-status-badge @StatusClass(item.BookingStatus)">@StatusLabel(item.BookingStatus)</span>
+                                @if(item.TravelFeeStatus == VenueLocationPolicy.AwaitingCustomerAcceptance){<span class="status-badge status-pending">Awaiting Client Venue Confirmation</span>}
+                                else if(item.TravelFeeStatus == VenueLocationPolicy.PendingReview || item.RequiresManualReview){<span class="status-badge status-pending">Venue Review Needed</span>}
+                                else{<span class="status-badge staff-status-badge @StatusClass(item.BookingStatus)">Pending Staff Approval</span>}
                             </td>
                             <td class="text-end">
                                 <div class="staff-booking-actions">
-                                    @if (item.BookingStatus == BookingStatus.Pending)
-                                    {
-                                        <button type="button" class="btn btn-sm btn-success js-approve-booking" data-booking-id="@item.Id" data-booking-code="@item.BookingCode" data-bs-toggle="modal" data-bs-target="#approveBookingModal">
-                                            <i class="bi bi-check-lg" aria-hidden="true"></i> Approve
-                                        </button>
-                                        <button type="button" class="btn btn-sm btn-outline-danger js-decline-booking" data-booking-id="@item.Id" data-booking-code="@item.BookingCode" data-bs-toggle="modal" data-bs-target="#declineBookingModal">
-                                            <i class="bi bi-x-lg" aria-hidden="true"></i> Decline
-                                        </button>
-                                    }
-                                    <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-outline-secondary">
-                                        <i class="bi bi-eye" aria-hidden="true"></i> Details
+                                    <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-primary staff-final-details-action">
+                                        <i class="bi bi-eye" aria-hidden="true"></i> View Details
                                     </a>
                                 </div>
                             </td>
@@ -179,73 +137,13 @@
         }
     </div>
 </div>
+@if(Model.TotalPages > 1 || Model.TotalCount > 0){
+<nav class="staff-round2-server-pager" aria-label="Booking queue pages">
 
-<div class="modal fade staff-booking-modal" id="approveBookingModal" tabindex="-1" aria-labelledby="approveBookingModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <form asp-action="Approve" method="post" class="js-booking-decision-form">
-                @Html.AntiForgeryToken()
-                <input type="hidden" name="id" id="approveBookingId" />
-                <div class="modal-header">
-                    <h2 class="modal-title fs-5" id="approveBookingModalLabel">Approve Booking</h2>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <p class="mb-3">Approve <strong id="approveBookingCode">this booking</strong>? The client will be allowed to proceed to payment.</p>
-                    <label for="approveInternalNote" class="form-label">Internal Note <span class="text-muted">— Optional</span></label>
-                    <textarea id="approveInternalNote" name="internalNote" class="form-control" rows="4" maxlength="1000" placeholder="Add an internal operational note if needed."></textarea>
-                    <div class="form-text">Internal notes are not shown to the client.</div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-success js-decision-submit" data-loading-text="Approving...">Approve Booking</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<div class="modal fade staff-booking-modal" id="declineBookingModal" tabindex="-1" aria-labelledby="declineBookingModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <form asp-action="Decline" method="post" class="js-booking-decision-form">
-                @Html.AntiForgeryToken()
-                <input type="hidden" name="id" id="declineBookingId" />
-                <div class="modal-header">
-                    <h2 class="modal-title fs-5" id="declineBookingModalLabel">Decline Booking</h2>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <p class="mb-3">Decline <strong id="declineBookingCode">this booking</strong>?</p>
-                    <label for="declineInternalNote" class="form-label">Reason / Internal Note <span class="text-muted">— Optional</span></label>
-                    <textarea id="declineInternalNote" name="internalNote" class="form-control" rows="4" maxlength="1000" placeholder="Add an internal reason or operational note if needed."></textarea>
-                    <div class="form-text">This note remains internal and is not automatically shown to the client.</div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-danger js-decision-submit" data-loading-text="Declining...">Decline Booking</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-@section Scripts {
-<script>
-    document.querySelectorAll('.js-approve-booking').forEach(button => button.addEventListener('click', () => {
-        document.getElementById('approveBookingId').value = button.dataset.bookingId;
-        document.getElementById('approveBookingCode').textContent = button.dataset.bookingCode;
-    }));
-    document.querySelectorAll('.js-decline-booking').forEach(button => button.addEventListener('click', () => {
-        document.getElementById('declineBookingId').value = button.dataset.bookingId;
-        document.getElementById('declineBookingCode').textContent = button.dataset.bookingCode;
-    }));
-    document.querySelectorAll('.js-booking-decision-form').forEach(form => form.addEventListener('submit', () => {
-        const submit = form.querySelector('.js-decision-submit');
-        if (!submit || submit.disabled) return;
-        submit.disabled = true;
-        submit.setAttribute('aria-disabled', 'true');
-        submit.textContent = submit.dataset.loadingText || 'Processing...';
-    }));
-</script>
+  <span>Page @Model.Page of @Model.TotalPages · @Model.TotalCount matching requests</span>
+  <div class="staff-round2-page-buttons">
+    @if(Model.Page>1){<a class="btn btn-outline-secondary" asp-action="Index" asp-route-page="@(Model.Page-1)" asp-route-pageSize="@Model.PageSize" asp-route-search="@Model.Search" asp-route-bookingStatus="@Model.BookingStatus" asp-route-serviceId="@Model.ServiceId">Previous</a>}
+    @if(Model.Page<Model.TotalPages){<a class="btn btn-primary" asp-action="Index" asp-route-page="@(Model.Page+1)" asp-route-pageSize="@Model.PageSize" asp-route-search="@Model.Search" asp-route-bookingStatus="@Model.BookingStatus" asp-route-serviceId="@Model.ServiceId">Next</a>}
+  </div>
+</nav>
 }

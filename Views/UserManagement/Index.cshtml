@@ -1,11 +1,12 @@
 @model IEnumerable<AriesMagicAppointmentSystem.Models.ApplicationUser>
+@inject Microsoft.Extensions.Options.IOptions<AriesMagicAppointmentSystem.Services.PersonnelOptions> PersonnelSettings
 @{
     Layout = "_DashboardLayout";
     ViewData["Title"] = "User Management";
     var roles = ViewBag.UserRoles as Dictionary<string, string> ?? new();
 }
 <div class="admin-console">
-<header class="admin-heading"><button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createStaffModal">Create Staff Account</button></header>
+<header class="admin-heading">@if(PersonnelSettings.Value.AdminMayManageStaff){<a class="btn btn-primary" asp-controller="Personnel" asp-action="Index">Personnel invitations</a>}else{<p>Personnel invitations require explicit Owner/operator authorization.</p>}</header>
 @if (TempData["SuccessMessage"] != null) { <div class="alert alert-success" role="status">@TempData["SuccessMessage"]</div> }
 @if (TempData["ErrorMessage"] != null) { <div class="alert alert-danger" role="alert">@TempData["ErrorMessage"]</div> }
 <form method="get" asp-action="Index" class="am-filter-bar"><div class="am-filter-row">
@@ -17,64 +18,8 @@
 </div></form>
 <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th scope="col">User</th><th scope="col">Email</th><th scope="col">Role</th><th scope="col">Account status</th><th scope="col">Verification</th><th scope="col">Actions</th></tr></thead><tbody>
 @foreach(var user in Model) {
-<tr><td data-label="User"><strong>@user.FullName</strong></td><td data-label="Email">@user.Email</td><td data-label="Role"><span class="admin-badge">@roles.GetValueOrDefault(user.Id, "Not assigned")</span></td><td data-label="Account status"><span class="admin-badge">@(!user.IsActive ? "Disabled" : user.LockoutEnd > DateTimeOffset.UtcNow ? "Locked" : "Active")</span></td><td data-label="Verification">@(user.EmailConfirmed ? "Verified" : "Unverified")</td><td data-label="Actions"><a asp-action="Details" asp-route-id="@user.Id" class="btn btn-outline-secondary">View</a></td></tr>
+<tr><td data-label="User"><strong>@user.FullName</strong></td><td data-label="Email">@user.Email</td><td data-label="Role"><span class="admin-badge">@roles.GetValueOrDefault(user.Id, "Not assigned")</span></td><td data-label="Account status"><span class="admin-badge @(!user.IsActive ? "admin-state-danger" : user.LockoutEnd > DateTimeOffset.UtcNow ? "admin-state-warning" : "admin-state-success")">@(!user.IsActive ? "Disabled" : user.LockoutEnd > DateTimeOffset.UtcNow ? "Locked" : "Active")</span></td><td data-label="Verification"><span class="admin-badge @(user.EmailConfirmed ? "admin-state-success" : "admin-state-warning")">@(user.EmailConfirmed ? "Verified" : "Unverified")</span></td><td data-label="Actions"><a asp-action="Details" asp-route-id="@user.Id" class="btn btn-outline-secondary">View</a></td></tr>
 }
 </tbody></table>@if(!Model.Any()) { <div class="admin-empty"><p>No users found for the selected filters.</p><a asp-action="Index" class="btn btn-outline-secondary">Clear Filters</a></div> }</div>
-<p class="admin-note">Staff accounts inactive for 30 days are automatically disabled. Staff account access can be managed from their details.</p>
-<!-- Create Staff Modal -->
-<div class="modal fade" id="createStaffModal" tabindex="-1" aria-labelledby="createStaffModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content custom-modal">
-            <div class="modal-header">
-                <h5 class="modal-title" id="createStaffModalLabel"><i class="bi bi-person-plus me-2" aria-hidden="true"></i>Create Staff Account</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-
-            <form asp-controller="UserManagement" asp-action="CreateStaff" method="post">
-                @Html.AntiForgeryToken()
-
-                <div class="modal-body">
-                    <p class="modal-subtitle small text-muted">Create a new internal staff account for system access.</p>
-
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold" for="create-FullName">Full Name <span class="text-danger">*</span></label><input id="create-FullName" type="text" name="FullName" class="form-control" placeholder="Enter full name" required />
-                        </div>
-
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold" for="create-Email">Email <span class="text-danger">*</span></label><input id="create-Email" type="email" name="Email" class="form-control" placeholder="Enter email address" required />
-                        </div>
-
-                        <div class="col-md-6">
-                            <label class="form-label" for="create-PhoneNumber">Phone Number</label><input id="create-PhoneNumber" type="text" name="PhoneNumber" required class="form-control" placeholder="Enter phone number" />
-                        </div>
-
-                        <div class="col-md-6">
-                            <label class="form-label">Role</label>
-                            <div class="form-control-plaintext">
-                                <span class="badge bg-secondary">Staff</span>
-                            </div>
-                        </div>
-
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold" for="create-Password">Password <span class="text-danger">*</span></label><input id="create-Password" type="password" name="Password" class="form-control" placeholder="Enter password" required />
-                            <div class="form-text">Minimum 12 characters</div>
-                        </div>
-
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold" for="create-ConfirmPassword">Confirm Password <span class="text-danger">*</span></label><input id="create-ConfirmPassword" type="password" name="ConfirmPassword" class="form-control" placeholder="Confirm password" required />
-                        </div>
-                    </div>
-                </div>
-
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary"><i class="bi bi-person-plus me-1" aria-hidden="true"></i> Create Account</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-
+<p class="admin-note">Account management actions are available only where your current permissions allow them.</p>
 </div>

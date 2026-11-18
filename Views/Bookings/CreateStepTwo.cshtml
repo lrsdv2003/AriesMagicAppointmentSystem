@@ -163,6 +163,7 @@
 </div>
 
 <form asp-controller="Bookings" asp-action="SubmitBooking" method="post" id="bookingStepTwoForm">
+    <input type="hidden" name="AcceptedTermsVersion" value="2026-11-03-v2" />
     @Html.AntiForgeryToken()
 
     <input asp-for="EventType" type="hidden" />
@@ -453,8 +454,7 @@
                     <div class="agreement-term-content">
                         <h6>1. Downpayment</h6>
                         <p>
-                            A &#8369;2,000 downpayment is required to secure your reservation.
-                            The remaining balance will be paid after the event.
+                            Choose a valid initial payment of at least &#8369;2,000: the minimum downpayment, 50% of the final booking total, or 100%. After Owner verification, any balance remaining after the minimum or 50% option is due on the event day.
                         </p>
                     </div>
                 </div>
@@ -466,8 +466,7 @@
                     <div class="agreement-term-content">
                         <h6>2. Cancellation Policy</h6>
                         <p>
-                            The client must notify the service provider at least two (2) weeks
-                            before the event. Late cancellation may forfeit reimbursement.
+                            Direct Client cancellation is available for 24 hours after the Owner verifies the initial payment. At the exact deadline it ends; contact Staff through booking messages for a later cancellation review. Staff may approve a valid documented request. Cancellation does not automatically issue a refund.
                         </p>
                     </div>
                 </div>

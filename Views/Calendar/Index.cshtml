@@ -1,8 +1,9 @@
 @model AriesMagicAppointmentSystem.ViewModels.CalendarIndexViewModel
+@using AriesMagicAppointmentSystem.Models
 @{ Layout = "_DashboardLayout"; ViewData["Title"] = "Calendar Management"; var creators = ViewBag.BlockCreators as Dictionary<string,string> ?? new(); }
 <div class="admin-console">
 <header class="admin-heading"><div><h2>Calendar availability</h2></div></header>
-<section class="admin-panel"><h3>Calendar rules</h3><dl class="admin-facts"><div><dt>Maximum daily bookings</dt><dd><strong>3</strong> <span class="admin-note">Fixed system rule</span></dd></div></dl></section>
+<section class="admin-panel"><h3>Calendar rules</h3><dl class="admin-facts"><div><dt>Maximum daily bookings</dt><dd><strong>@BookingRules.MaximumDailyBookings</strong> <span class="admin-note">Fixed system rule</span></dd></div></dl></section>
 <section class="admin-panel"><h3>Add blocked date</h3>
 <form asp-action="BlockDateAjax" method="post" data-admin-ajax data-admin-confirm="Block this date for new bookings? Existing confirmed bookings will remain unchanged.">
 @Html.AntiForgeryToken()
@@ -12,7 +13,7 @@
 <section class="admin-panel"><h3>Blocked dates</h3>
 <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th scope="col">Date</th><th scope="col">Reason</th><th scope="col">Created by</th><th scope="col">Status</th><th scope="col">Actions</th></tr></thead><tbody>
 @foreach(var item in Model.Manage.BlockedDates) {
-<tr><td data-label="Date">@item.Date.ToString("MMM d, yyyy")</td><td data-label="Reason">@item.Reason</td><td data-label="Created by">@creators.GetValueOrDefault(item.Id.ToString(), "Not recorded")</td><td data-label="Status"><span class="admin-badge">@(item.Date.Date < DateTime.Today ? "Past" : "Blocked")</span></td><td data-label="Actions"><form asp-action="UnblockDateAjax" method="post" data-admin-ajax data-admin-confirm="Remove this blocked date?">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@item.Id" /><button class="btn btn-outline-danger">Unblock</button><p class="admin-form-feedback" role="status"></p></form></td></tr>
+<tr><td data-label="Date">@item.Date.ToString("MMM d, yyyy")</td><td data-label="Reason">@item.Reason</td><td data-label="Created by">@creators.GetValueOrDefault(item.Id.ToString(), "Not recorded")</td><td data-label="Status"><span class="admin-badge @(item.Date.Date < DateTime.Today ? "admin-state-neutral" : "admin-state-warning")">@(item.Date.Date < DateTime.Today ? "Past" : "Blocked")</span></td><td data-label="Actions"><form asp-action="UnblockDateAjax" method="post" data-admin-ajax data-admin-confirm="Remove this blocked date?">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@item.Id" /><button class="btn btn-outline-danger">Unblock</button><p class="admin-form-feedback" role="status"></p></form></td></tr>
 }
 </tbody></table>@if(!Model.Manage.BlockedDates.Any()) { <p class="admin-empty">No blocked dates configured.</p> }</div></section>
 </div>

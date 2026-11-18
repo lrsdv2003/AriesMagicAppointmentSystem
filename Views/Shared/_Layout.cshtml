@@ -4,7 +4,7 @@
     var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? "Index";
     var isHome = currentController == "Home" && currentAction == "Index";
     var isGallery = currentController == "Home" && currentAction == "Gallery";
-    var isAuth = currentController == "Account" && new[] { "Login", "Register", "VerifyEmail", "EmailVerified", "ForgotPassword", "ResetPassword", "AccessDenied" }.Contains(currentAction);
+    var isAuth = currentController == "PersonnelEnrollment" || currentController == "Account" && new[] { "Login", "Register", "VerifyEmail", "EmailVerified", "ForgotPassword", "ResetPassword", "AccessDenied" }.Contains(currentAction);
     var isBookingExperience = ViewData["BookingExperience"] as bool? == true;
     var isAbout = currentController == "Home" && currentAction == "About";
     var isExperiences = currentController == "Home" && (currentAction == "Packages" || currentAction == "Package");
@@ -57,7 +57,7 @@
     <link rel="stylesheet" href="~/css/app-ui.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/client-experience.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/feedback.css" asp-append-version="true" />
-@if (isBookingExperience) { <link rel="stylesheet" href="~/css/booking-concierge.css" asp-append-version="true" /> }
+@if (isBookingExperience) { <link rel="stylesheet" href="~/css/booking-concierge.css" asp-append-version="true" /><link rel="stylesheet" href="~/css/client-improvements-20261107.css" asp-append-version="true"/> }
 </head>
 <body class="client-body @pageClass @(isHome ? "client-home-page" : "client-inner-page")">
     <a class="magic-skip-link" href="#mainContent">Skip to content</a>
@@ -75,7 +75,7 @@
     <header class="client-navbar-wrap" id="siteHeader">
         <nav class="navbar navbar-expand-lg client-navbar" aria-label="Main navigation">
             <div class="container magic-nav-container">
-                <a class="navbar-brand client-brand" asp-controller="Home" asp-action="Index" aria-label="Aries d’ Magic Artist home">
+                <a class="navbar-brand client-brand" asp-controller="Home" asp-action="Index">
                     <partial name="_WonderBrand" />
                 </a>
 
@@ -110,11 +110,9 @@
                                     <span>My Account</span>
                                 </button>
                                 <ul class="dropdown-menu dropdown-menu-end magic-account-menu">
-                                    <li><a class="dropdown-item" asp-controller="Bookings" asp-action="Dashboard"><i class="bi bi-house" aria-hidden="true"></i> My Dashboard</a></li>
                                     <li><a class="dropdown-item" asp-controller="Bookings" asp-action="MyBookings"><i class="bi bi-calendar2-event" aria-hidden="true"></i> My Bookings</a></li>
                                     <li><a class="dropdown-item" asp-controller="Payments" asp-action="MyUploads"><i class="bi bi-wallet2" aria-hidden="true"></i> My Payments</a></li>
                                     <li><a class="dropdown-item" asp-controller="Communications" asp-action="Index" asp-route-view="inbox"><i class="bi bi-chat-dots" aria-hidden="true"></i> Messages</a></li>
-                                    <li><a class="dropdown-item" asp-controller="Feedback" asp-action="Index">My feedback</a></li>
                                     <li><a class="dropdown-item" asp-controller="Profile" asp-action="Index"><i class="bi bi-person-circle" aria-hidden="true"></i> Profile</a></li>
                                     <li><a class="dropdown-item" asp-controller="Notifications" asp-action="Index"><i class="bi bi-bell" aria-hidden="true"></i> Notifications</a></li>
                                     <li><hr class="dropdown-divider" /></li>
@@ -159,7 +157,6 @@
     {
         <nav class="cx-account-nav" aria-label="Your account">
             <div class="container">
-                <a asp-controller="Bookings" asp-action="Dashboard" aria-current="@(currentAction is "Dashboard" or "ClientDashboard" ? "page" : null)">Overview</a>
                 <a asp-controller="Bookings" asp-action="MyBookings" aria-current="@(currentAction == "MyBookings" ? "page" : null)">Bookings</a>
                 <a asp-controller="Payments" asp-action="MyUploads" aria-current="@(currentController == "Payments" ? "page" : null)">Payments</a>
                 <a asp-controller="RescheduleRequests" asp-action="MyRequests" aria-current="@(currentController == "RescheduleRequests" ? "page" : null)">Rescheduling</a>
@@ -209,7 +206,6 @@
                         <h2 class="cx-footer-heading">Your plans</h2>
                         @if (isClient)
                         {
-                            <a asp-controller="Bookings" asp-action="Dashboard">My Dashboard</a>
                             <a asp-controller="Bookings" asp-action="MyBookings">My Bookings</a>
                             <a asp-controller="Payments" asp-action="MyUploads">Payments</a>
                             <a asp-controller="Profile" asp-action="Index">Profile</a>
@@ -243,6 +239,7 @@
         <script src="~/js/communication-global.js" asp-append-version="true"></script>
     }
     @await RenderSectionAsync("Scripts", required: false)
+    @if (isBookingExperience) { <script src="~/js/client-improvements-20261107.js" asp-append-version="true"></script> }
     <script src="~/js/filters.js" asp-append-version="true"></script>
     <script src="~/js/app-ui.js" asp-append-version="true"></script>
 </body>

@@ -5,5 +5,5 @@ namespace AriesMagicAppointmentSystem.Services
         Task<IReadOnlyList<GeocodingResult>> SearchAsync(string query, CancellationToken cancellationToken = default);
     }
 
-    public record GeocodingResult(string DisplayName, double Latitude, double Longitude);
+    public record GeocodingResult(string DisplayName, double Latitude, double Longitude, bool IsPrecise = true);
 }

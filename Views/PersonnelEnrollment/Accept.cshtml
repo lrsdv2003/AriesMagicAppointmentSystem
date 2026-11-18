@@ -1,0 +1,10 @@
+@model AriesMagicAppointmentSystem.Controllers.PersonnelEnrollmentInput
+@{Layout="_Layout";ViewData["Title"]="Complete personnel enrollment";}
+<section class="au-page"><div class="container au-split"><div><span class="cr-eyebrow">Your Aries Magic workspace</span><h2>Ready for your next chapter.</h2><p>Join your authorized team. Keep your invitation private and choose a password only you know.</p></div><div class="au-panel"><div class="au-panel-heading"><h1>Complete your enrollment</h1><p>This single-use link verifies your invited email. Choose a password with at least 12 characters. Your role is assigned by the invitation.</p></div>
+<form asp-action="Accept" method="post" id="personnelEnrollment"><div asp-validation-summary="All" class="text-danger" role="alert"></div>
+<input type="hidden" name="UserId" id="enrollmentUser" value=""/><input type="hidden" name="Token" id="enrollmentToken" value=""/>
+<div class="au-field"><label asp-for="Password"></label><input asp-for="Password" class="form-control au-input" autocomplete="new-password" minlength="12" maxlength="128" required value=""/></div>
+<div class="au-field"><label asp-for="ConfirmPassword"></label><input asp-for="ConfirmPassword" class="form-control au-input" autocomplete="new-password" required value=""/></div>
+<p id="enrollmentLinkStatus" role="status">Open the original invitation link to enroll. If it expired, request a new invitation.</p>
+<button type="submit" class="au-button au-primary">Verify email and activate account</button></form></div></div></section>
+@section Scripts{<script src="~/js/personnel-enrollment.js" asp-append-version="true"></script>}

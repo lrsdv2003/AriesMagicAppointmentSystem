@@ -30,6 +30,7 @@ sealed class ReleaseFactory(string connection, int smtpPort, Uri mapServer, stri
             _ = authUi; // Preserve earlier named callers; every synthetic host must avoid the user profile key ring.
             services.AddDataProtection().UseEphemeralDataProtectionProvider();
             if(cleanFeedbackMedia) {
+                services.PostConfigure<FeedbackMediaOptions>(o => {o.UploadsEnabled=true;o.ClamAvHost="isolated-fixture";});
                 services.RemoveAll<IFeedbackMalwareScanner>();
                 services.AddSingleton<IFeedbackMalwareScanner,FixtureCleanFeedbackScanner>();
             }

@@ -4,17 +4,35 @@
  if(!form)return;
  const files=form.querySelector('[name="Files"]'),previews=document.getElementById('feedbackPreviews');
  const status=document.getElementById('feedbackUploadStatus'),progress=document.getElementById('feedbackUploadProgress');
- const errors=document.getElementById('feedbackFormErrors'),submit=form.querySelector('button[type="submit"]');
+ const errors=document.getElementById('feedbackFormErrors'),submit=document.getElementById('openFeedbackConsent');
+ const dialog=document.getElementById('feedbackConsentDialog'),choiceError=document.getElementById('sharingChoiceError');
+ const closeDialog=()=>dialog?.close();
+ document.getElementById('openFeedbackConsent')?.addEventListener('click',()=>{
+  const choices=[...dialog.querySelectorAll('input[name="SharingPreference"]')];
+  choices.forEach(choice=>choice.disabled=true);
+  const valid=form.reportValidity();
+  choices.forEach(choice=>choice.disabled=false);
+  if(valid){dialog.showModal();dialog.querySelector('input[type="radio"]')?.focus();}
+ });
+ document.querySelectorAll('[data-close-feedback-consent]').forEach(button=>button.addEventListener('click',closeDialog));
+ document.getElementById('confirmFeedbackConsent')?.addEventListener('click',()=>{
+  if(!dialog.querySelector('input[name="SharingPreference"]:checked')){choiceError.hidden=false;dialog.querySelector('fieldset')?.focus();return;}
+  choiceError.hidden=true;closeDialog();form.requestSubmit();
+ });
  let urls=[],sending=false;
- const clear=()=>{urls.forEach(URL.revokeObjectURL);urls=[];previews.replaceChildren();};
- files.addEventListener('change',()=>{
+ const clear=()=>{urls.forEach(URL.revokeObjectURL);urls=[];previews?.replaceChildren();};
+ files?.addEventListener('change',()=>{
   clear();files.setCustomValidity('');
   const selected=[...files.files];
-  if(selected.length>Number(form.dataset.maxFiles)||selected.some(f=>f.size>Number(form.dataset.maxBytes)))
-   files.setCustomValidity('Choose up to '+form.dataset.maxFiles+' photos within the stated size limit.');
-  for(const file of selected.slice(0,Number(form.dataset.maxFiles))){
+  const videos=selected.filter(f=>f.type==='video/mp4'&&f.name.toLowerCase().endsWith('.mp4'));
+  const images=selected.filter(f=>['image/jpeg','image/png','image/webp'].includes(f.type));
+  if(images.length>Number(form.dataset.maxFiles)||videos.length>1||selected.length!==images.length+videos.length
+    ||images.some(f=>f.size>Number(form.dataset.maxBytes))||videos.some(f=>f.size>Number(form.dataset.maxVideoBytes)))
+   files.setCustomValidity('Choose up to '+form.dataset.maxFiles+' photos and one MP4 video within the separate size limits.');
+  for(const file of selected){
    const figure=document.createElement('figure'),caption=document.createElement('figcaption');caption.textContent=file.name;
    if(['image/jpeg','image/png','image/webp'].includes(file.type)){const image=document.createElement('img');image.src=URL.createObjectURL(file);urls.push(image.src);image.alt='Local preview of '+file.name;figure.append(image);}
+   else if(file.type==='video/mp4'&&file.name.toLowerCase().endsWith('.mp4')){const video=document.createElement('video');video.src=URL.createObjectURL(file);urls.push(video.src);video.controls=true;video.preload='metadata';video.setAttribute('aria-label','Local preview of '+file.name);figure.append(video);}
    figure.append(caption);previews.append(figure);
   }
  });

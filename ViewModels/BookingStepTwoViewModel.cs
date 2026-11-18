@@ -7,8 +7,8 @@ namespace AriesMagicAppointmentSystem.ViewModels
         // Step 1 Data
         [Required]
         public string EventType { get; set; } = string.Empty;
-        [Required]
-        public string Motif { get; set; } = string.Empty;
+        // Optional for supported events; irrelevant values are discarded before persistence.
+        public string? Motif { get; set; }
         public DateTime EventDate { get; set; }
         public TimeSpan StartTime { get; set; }
 
@@ -23,6 +23,15 @@ namespace AriesMagicAppointmentSystem.ViewModels
         public bool IsServiceable { get; set; }
         public string? ServiceZone { get; set; }
         public bool RequiresManualReview { get; set; }
+        [MaxLength(20)] public string VenueSelectionMethod { get; set; } = "Search";
+        [MaxLength(180)] public string? ManualStreet { get; set; }
+        [MaxLength(100)] public string? ManualBarangay { get; set; }
+        [MaxLength(100)] public string? ManualCity { get; set; }
+        [MaxLength(100)] public string? ManualProvince { get; set; }
+        [MaxLength(12)] public string? ManualPostalCode { get; set; }
+        [MaxLength(120)] public string? ManualVenueName { get; set; }
+        [MaxLength(500)] public string? VenueDirections { get; set; }
+        public bool CustomerConfirmedLocation { get; set; }
 
         public string? CelebrantName { get; set; }
 
@@ -46,6 +55,7 @@ namespace AriesMagicAppointmentSystem.ViewModels
         public decimal FinalPrice { get; set; }
         public decimal RequiredDownpayment { get; set; } = 2000;
         public bool AcceptTerms { get; set; }
+        public string? AcceptedTermsVersion { get; set; }
 
         public List<ServiceOptionViewModel> AvailablePackages { get; set; } = new();
         public List<PackageInclusionSelectionViewModel> Inclusions { get; set; } = new();

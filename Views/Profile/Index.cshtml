@@ -10,13 +10,13 @@
  var uid=User.FindFirstValue(ClaimTypes.NameIdentifier);var verified=!string.IsNullOrEmpty(uid)&&await ProfileDb.Users.AsNoTracking().AnyAsync(u=>u.Id==uid&&u.EmailConfirmed);
  var passwordLength=Math.Max(12,IdentitySettings.Value.Password.RequiredLength);
 }
-<header class="hub-heading"><div><span class="hub-kicker">Your account</span><h1>Personal details.</h1><p>Keep the details used for your bookings up to date.</p></div></header>
+<header class="hub-heading"><div><span class="hub-kicker">Your account</span><h1>Personal details.</h1><p>Keep the details used for your bookings up to date.</p></div><a asp-controller="Home" asp-action="Index" class="cn-button cn-secondary"><i class="bi bi-box-arrow-up-right" aria-hidden="true"></i> Visit website</a></header>
 @if(TempData["Success"] is string success){<div class="cn-success" role="status">@success</div>}
 @if(TempData["Error"] is string error){<div class="cn-error-summary" role="alert" tabindex="-1">@error</div>}
 <div class="hub-profile-layout">
-<section class="hub-card hub-personal"><div class="hub-section-heading"><h2>Contact information</h2><span class="hub-help">Used to prefill new bookings</span></div>
+<section class="hub-card hub-personal"><div class="hub-section-heading"><h2>Personal and contact information</h2></div>
 <form asp-action="Edit" method="post" id="hubProfileForm">@Html.AntiForgeryToken()<div class="cn-field"><label for="profileFullName">Full name</label><input id="profileFullName" name="FullName" value="@edit.FullName" class="cn-input" required minlength="2" maxlength="100" autocomplete="name"/></div><div class="cn-field"><label for="profileEmail">Email address</label><input id="profileEmail" name="Email" value="@edit.Email" type="email" class="cn-input" autocomplete="email" aria-describedby="profileEmailHelp"/><p id="profileEmailHelp" class="cn-help">Changing your email requires re-verification.</p></div><div class="cn-field"><label for="profilePhoneNumber">Phone number</label><input id="profilePhoneNumber" name="PhoneNumber" value="@edit.PhoneNumber" type="tel" class="cn-input" pattern="^09\d{9}$" autocomplete="tel-national" aria-describedby="profilePhoneHelp"/><p id="profilePhoneHelp" class="cn-help">11 digits, starting with 09.</p></div><div class="cn-actions"><button type="submit" class="cn-button cn-primary">Save personal details</button></div></form></section>
-<aside class="hub-profile-side"><section class="hub-card hub-profile-photo"><div class="hub-avatar">@if(!string.IsNullOrWhiteSpace(Model.ProfilePicturePath)){<img src="@Model.ProfilePicturePath" alt="Your current profile photo" width="88" height="88"/>}else{<span aria-hidden="true">@initials</span>}</div><h2>@Model.FullName</h2><p class="hub-help">Member since @Model.CreatedAt.ToString("MMMM yyyy")</p><button type="button" class="cn-button cn-secondary" data-bs-toggle="modal" data-bs-target="#photoModal">@(string.IsNullOrWhiteSpace(Model.ProfilePicturePath)?"Add a photo":"Change photo")</button>@if(!string.IsNullOrWhiteSpace(Model.ProfilePicturePath)){<form asp-action="RemovePhoto" method="post" onsubmit="return confirm('Remove your profile photo?')">@Html.AntiForgeryToken()<button class="cn-edit" type="submit">Remove photo</button></form>}<p class="cn-help">JPG, PNG or WEBP · up to 2 MB</p></section>
+<aside class="hub-profile-side"><section class="hub-card hub-profile-photo"><button type="button" class="hub-avatar client-photo-trigger" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Open profile photo actions">@if(!string.IsNullOrWhiteSpace(Model.ProfilePicturePath)){<img src="@Model.ProfilePicturePath" alt="Your current profile photo" width="88" height="88"/>}else{<span aria-hidden="true">@initials</span>}<span class="client-photo-edit"><i class="bi bi-camera" aria-hidden="true"></i></span></button><div class="dropdown-menu client-photo-menu"><button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#photoModal">@(string.IsNullOrWhiteSpace(Model.ProfilePicturePath)?"Add a photo":"Change photo")</button>@if(!string.IsNullOrWhiteSpace(Model.ProfilePicturePath)){<form asp-action="RemovePhoto" method="post" onsubmit="return confirm('Remove your profile photo?')">@Html.AntiForgeryToken()<button class="dropdown-item" type="submit">Remove photo</button></form>}</div><h2>@Model.FullName</h2><p class="hub-help">Member since @Model.CreatedAt.ToString("MMMM yyyy")</p></section>
 <section class="hub-card hub-security"><h2>Account security</h2><p><strong>Email</strong><span>@(verified?"Verified":"Check your email verification")</span></p><p><strong>Password</strong><span>Your password stays private</span></p><button type="button" class="cn-edit" data-bs-toggle="modal" data-bs-target="#passwordModal">Change password</button><p class="cn-help">Last login: @(Model.LastLoginAt?.ToString("MMM d, yyyy · h:mm tt")??"Not recorded")</p></section></aside>
 </div>
 <!-- Photo Modal -->
@@ -34,14 +34,13 @@
                         <img id="photoPreview" class="d-none profile-photo-preview" alt="Preview" />
                         <div id="uploadPlaceholder" class="profile-photo-placeholder">
                             <i class="bi bi-cloud-arrow-up" aria-hidden="true"></i>
-                            <span>Choose an image</span>
-                            <small>JPG, PNG, WEBP • Max 2 MB</small>
+                            <span>Choose a profile picture</span>
                         </div>
                     </div>
                     <label class="form-label" for="profileImage">Profile photo</label>
                     <input type="file" name="profileImage" id="profileImage" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" class="form-control mt-3" required />
                     <p id="profilePhotoError" class="text-danger mt-2" role="alert" hidden></p>
-                    <div class="form-text">Square image (500×500) works best. Max 2 MB.</div>
+                    
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>

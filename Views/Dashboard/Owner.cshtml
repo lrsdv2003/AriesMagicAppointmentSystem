@@ -1,41 +1,159 @@
 @model AriesMagicAppointmentSystem.ViewModels.RoleDashboardViewModel
 @using AriesMagicAppointmentSystem.Models
-@{ Layout = "_DashboardLayout"; ViewData["Title"] = "Owner Dashboard"; var events=Model.TodayEvents.Concat(Model.UpcomingEvents).Take(3).ToList(); }
-<div class="role-workspace" data-role="Owner">
-<partial name="_DashboardStart" model="Model" />
-<div class="workspace-dashboard-grid">
-<section class="dash-panel workspace-main-panel" aria-labelledby="workspacePaymentTitle">
-<div class="dash-section-heading"><h2 id="workspacePaymentTitle"><i class="bi bi-credit-card" aria-hidden="true"></i>Verify payments</h2><a asp-controller="Payments" asp-action="PendingVerification">Open verification queue <i class="bi bi-arrow-right" aria-hidden="true"></i></a></div>
-@if(Model.UnavailableSections.Contains("queues")){<p class="dash-empty">Unable to load payment submissions.</p>}
-else if(!Model.RecentPaymentsToVerify.Any()){<p class="dash-empty">No payments currently require verification.</p>}
-else{<div class="workspace-table-scroll" role="region" aria-label="Payments awaiting verification" tabindex="0"><table class="workspace-table" role="table"><caption class="visually-hidden">Pending payment proofs, oldest first</caption><thead role="rowgroup"><tr role="row"><th role="columnheader" scope="col">Client</th><th role="columnheader" scope="col">Booking</th><th role="columnheader" scope="col">Amount claimed</th><th role="columnheader" scope="col">Proof</th><th role="columnheader" scope="col">Review status</th><th role="columnheader" scope="col">Action</th></tr></thead><tbody role="rowgroup">
-@foreach(var payment in Model.RecentPaymentsToVerify){
-var ocr=payment.OcrVerifications.Where(o=>o.VerificationPurpose==OcrVerificationPurposes.PaymentProof).OrderByDescending(o=>o.ProcessedAt).FirstOrDefault();
-<tr role="row"><td role="cell" data-label="Client"><strong>@(payment.Booking?.Client?.FullName??"Client not recorded")</strong></td><td role="cell" data-label="Booking">BK-@(payment.Booking?.CreatedAt.Year)-@payment.BookingId.ToString("D3")<small>@payment.Booking?.PackageName</small></td><td role="cell" data-label="Amount claimed" class="workspace-money">₱@payment.Amount.ToString("N2")</td><td role="cell" data-label="Proof"><a class="dash-button" asp-controller="Payments" asp-action="PaymentProof" asp-route-id="@payment.Id">View receipt<span class="visually-hidden"> for payment @payment.Id</span></a></td><td role="cell" data-label="Review status"><partial name="_DashboardBadge" model="payment.Status" /><small>OCR: @AriesMagicAppointmentSystem.ViewModels.AdminActivityPresentation.Label(ocr?.VerificationResult??"Not processed")</small></td><td role="cell" data-label="Action"><a class="workspace-table-action" asp-controller="Payments" asp-action="Verify" asp-route-id="@payment.Id">Review<span class="visually-hidden"> payment @payment.Id</span></a></td></tr>
+@{
+     Layout = "_DashboardLayout";
+    ViewData["Title"] = "Owner Dashboard";
+    var events = Model.TodayEvents.Concat(Model.UpcomingEvents).Take(3).ToList();
 }
-</tbody></table></div><p class="workspace-panel-note">Open the receipt and compare its details before deciding. OCR is advisory; pending amounts are not verified collections.</p>}
-</section>
-<section class="dash-panel" aria-labelledby="workspaceRefundTitle">
-<div class="dash-section-heading"><h2 id="workspaceRefundTitle"><i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i>Refund requests</h2><a asp-controller="Payments" asp-action="RefundRequests">Review refunds <i class="bi bi-arrow-right" aria-hidden="true"></i></a></div>
-@if(Model.UnavailableSections.Contains("queues")){<p class="dash-empty">Unable to load refund requests.</p>}
-else if(!Model.RecentRefundRequests.Any()){<p class="dash-empty">No refunds currently require review.</p>}
-else{<div class="dash-list">@foreach(var refund in Model.RecentRefundRequests){<article class="dash-row"><div class="dash-record"><strong>RF-@refund.Id.ToString("D4") · @(refund.Booking?.Client?.FullName??"Client not recorded")</strong><small>Booking #@refund.BookingId</small><strong class="workspace-money">₱@refund.Amount.ToString("N2") requested</strong>@if(!string.IsNullOrWhiteSpace(refund.ClientReason)){<p class="workspace-clamp">@refund.ClientReason</p>}<partial name="_DashboardBadge" model="refund.Status" /></div><a class="workspace-table-action" asp-controller="Payments" asp-action="RefundReview" asp-route-id="@refund.Id">Review<span class="visually-hidden"> refund @refund.Id</span></a></article>}</div>}
-<div class="workspace-panel-body workspace-review-note"><h3>Review checklist</h3><p>Check booking history, supporting proof and refund reason in the secure review workflow.</p><a class="dash-button" asp-controller="Payments" asp-action="RefundRequests">Open requests</a></div>
-</section>
-<section class="dash-panel workspace-main-panel" aria-labelledby="workspaceCollectionsTitle">
-<div class="dash-section-heading"><h2 id="workspaceCollectionsTitle"><i class="bi bi-bar-chart" aria-hidden="true"></i>Payment overview</h2><a asp-controller="Reports" asp-action="Index">View report <i class="bi bi-arrow-right" aria-hidden="true"></i></a></div>
-@if(Model.UnavailableSections.Contains("financial overview")){<p class="dash-empty">Unable to load financial overview. No estimated totals are displayed.</p>}
-else{<dl class="workspace-finance-facts"><div><dt>Verified collections</dt><dd>₱@Model.VerifiedRevenue.ToString("N2")</dd><small>All-time verified payments</small></div><div><dt>Completed refunds</dt><dd>₱@Model.CompletedRefunds.ToString("N2")</dd><small>Refunds actually paid</small></div><div class="workspace-net-total"><dt>Net collected</dt><dd>₱@Model.NetCollectedRevenue.ToString("N2")</dd><small>Verified collections less completed refunds</small></div><div><dt>Outstanding balance</dt><dd>₱@Model.OutstandingReceivables.ToString("N2")</dd><small>Relevant bookings; money still owed</small></div><div><dt>Booking value</dt><dd>₱@Model.BookingValue.ToString("N2")</dd><small>Excludes cancelled, declined and expired</small></div></dl><p class="workspace-panel-note">All-time totals use the same financial service as Reports. These are recorded collections, not an accounting revenue forecast.</p>}
-</section>
-<partial name="_DashboardRecentActivity" model="Model" />
-<section class="dash-panel workspace-main-panel"><div class="dash-section-heading"><h2><i class="bi bi-calendar-check" aria-hidden="true"></i>Business overview</h2><a asp-controller="Calendar" asp-action="Index">Open calendar <i class="bi bi-arrow-right" aria-hidden="true"></i></a></div>
-@if(Model.UnavailableSections.Contains("business overview")){<p class="dash-empty">Unable to load business overview.</p>}
-else{<div class="dash-business-facts"><div><span>Confirmed this month</span><strong>@Model.ConfirmedBookings</strong></div><div><span>Completed this month</span><strong>@Model.CompletedBookings</strong></div><div><span>Most booked package this month</span><strong>@Model.MostBookedPackage</strong><small>Confirmed and completed events</small></div></div>
-@if(Model.BookingTrend.Any()){<figure class="dash-trend"><figcaption>Booking volume by event month <span>All statuses · Latest six months</span></figcaption><div class="dash-trend-rows">@foreach(var point in Model.BookingTrend){<div class="dash-trend-row"><span>@point.Label</span><meter min="0" max="@Math.Max(1,Model.BookingTrend.Max(p=>p.Count))" value="@point.Count" aria-label="@point.Label bookings">@point.Count</meter><strong>@point.Count</strong></div>}</div></figure>}}
-</section>
-<section class="dash-panel"><div class="dash-section-heading"><h2><i class="bi bi-calendar3" aria-hidden="true"></i>Upcoming confirmed events</h2></div>
-@if(Model.UnavailableSections.Contains("schedule")){<p class="dash-empty">Unable to load upcoming events.</p>}else if(!events.Any()){<p class="dash-empty">No upcoming confirmed events.</p>}else{<partial name="_DashboardEvents" model="events" />}
-</section>
-</div>
-<partial name="_WorkspaceQuickAccess" model="Model" />
+<div class="role-workspace owner-round1-dashboard" data-role="Owner">
+    <header class="owner-round1-heading">
+        <span class="dash-eyebrow">Owner Workspace</span>
+        <h1>Owner Dashboard</h1>
+        <p>Monitor finances and review pending requests.</p>
+    </header>
+    <div class="owner-round1-grid">
+        <section class="dash-panel owner-round1-requests" aria-labelledby="ownerFinancialRequestsTitle">
+            <div class="dash-section-heading">
+                <div><h2 id="ownerFinancialRequestsTitle"><i class="bi bi-credit-card" aria-hidden="true"></i> Financial Requests</h2><p>Review pending payment proofs and refund requests.</p></div>
+            </div>
+            <div class="owner-round1-tabs" role="tablist" aria-label="Financial request type">
+                <button id="ownerPaymentsTab" class="owner-round1-tab active" type="button" role="tab" aria-controls="ownerPaymentsPanel" aria-selected="true" data-owner-tab="payments">Verify Payments (@Model.PendingPayments)</button>
+                <button id="ownerRefundsTab" class="owner-round1-tab" type="button" role="tab" aria-controls="ownerRefundsPanel" aria-selected="false" data-owner-tab="refunds">Refund Requests (@(Model.PendingRefunds + Model.RefundProofsAwaitingVerification))</button>
+            </div>
+            <div id="ownerPaymentsPanel" class="owner-round1-tabpanel" role="tabpanel" aria-labelledby="ownerPaymentsTab" data-owner-panel="payments">
+                @if(Model.UnavailableSections.Contains("queues")){<p class="dash-empty">Unable to load payment requests.</p>}
+                else if(!Model.RecentPaymentsToVerify.Any()){<p class="dash-empty">No payment proofs currently require review.</p>}
+                else {
+                    <div class="owner-round1-request-list">
+                    @foreach(var payment in Model.RecentPaymentsToVerify) {
+                        var ocr = payment.OcrVerifications.Where(o => o.VerificationPurpose == OcrVerificationPurposes.PaymentProof).OrderByDescending(o => o.ProcessedAt).FirstOrDefault();
+                        var indicator = ocr?.VerificationResult == OcrVerificationResults.MismatchDetected ? "Amount mismatch" : ocr?.VerificationResult == OcrVerificationResults.OcrFailed ? "OCR unclear" : ocr?.IsDuplicateReference == true || ocr?.IsDuplicateImage == true ? "Possible duplicate" : "Needs manual review";
+                        <article class="owner-round1-request-row">
+                            <div><strong class="owner-booking-code">BK-@(payment.Booking?.CreatedAt.Year)-@payment.BookingId.ToString("D3")</strong><span>@(payment.Booking?.Client?.FullName ?? "Client not recorded")</span></div>
+                            <div><small>Claimed Amount</small><strong>&#8369;@payment.Amount.ToString("N2")</strong></div>
+                            <div><small>Submitted</small><span>@payment.UploadedAt.ToString("MMM d, yyyy")</span></div>
+                            <div><span class="owner-round1-indicator">@indicator</span></div>
+                            <a class="btn btn-primary btn-sm" asp-controller="Payments" asp-action="Verify" asp-route-id="@payment.Id">Review<span class="visually-hidden"> payment @payment.Id</span></a>
+                        </article>
+                    }
+                    </div>
+                }
+                <a class="owner-round1-view-all" asp-controller="Payments" asp-action="PendingVerification">View all payment requests <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+            </div>
+            <div id="ownerRefundsPanel" class="owner-round1-tabpanel" role="tabpanel" aria-labelledby="ownerRefundsTab" data-owner-panel="refunds" hidden>
+                @if(Model.UnavailableSections.Contains("queues")){<p class="dash-empty">Unable to load refund requests.</p>}
+                else if(!Model.RecentRefundRequests.Any()){<p class="dash-empty">No refund requests currently require review.</p>}
+                else {
+                    <div class="owner-round1-request-list">
+                    @foreach(var refund in Model.RecentRefundRequests) {
+                        <article class="owner-round1-request-row">
+                            <div><strong class="owner-booking-code">BK-@(refund.Booking?.CreatedAt.Year)-@refund.BookingId.ToString("D3")</strong><span>@(refund.Booking?.Client?.FullName ?? "Client not recorded")</span></div>
+                            <div><small>Requested Refund</small><strong>&#8369;@refund.Amount.ToString("N2")</strong></div>
+                            <div><small>Status</small><span>@refund.Status</span></div>
+                            <div><span class="owner-round1-indicator">Manual review required</span></div>
+                            <a class="btn btn-primary btn-sm" asp-controller="Payments" asp-action="RefundReview" asp-route-id="@refund.Id">Review<span class="visually-hidden"> refund @refund.Id</span></a>
+                        </article>
+                    }
+                    </div>
+                }
+                <a class="owner-round1-view-all" asp-controller="Payments" asp-action="RefundRequests">View all refund requests <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+            </div>
+        </section>
+        <aside class="owner-round1-metrics" aria-label="Financial overview">
+            @if(Model.UnavailableSections.Contains("financial overview")){<div class="dash-panel"><p class="dash-empty">Financial metrics unavailable. No estimated totals are shown.</p></div>}
+            else {
+                <article class="dash-panel owner-round1-metric"><span class="owner-round1-metric-icon"><i class="bi bi-wallet2" aria-hidden="true"></i></span><div><span>Net Collected</span><strong>&#8369;@Model.NetCollectedRevenue.ToString("N2")</strong><small>Verified collections less completed refunds</small></div></article>
+                <article class="dash-panel owner-round1-metric"><span class="owner-round1-metric-icon"><i class="bi bi-layers" aria-hidden="true"></i></span><div><span>Outstanding Balance</span><strong>&#8369;@Model.OutstandingReceivables.ToString("N2")</strong><small>Eligible outstanding collections</small></div></article>
+                <article class="dash-panel owner-round1-metric"><span class="owner-round1-metric-icon"><i class="bi bi-calendar3" aria-hidden="true"></i></span><div><span>Booking Value</span><strong>&#8369;@Model.BookingValue.ToString("N2")</strong><small>Total eligible booking value</small></div></article>
+            }
+            <p class="owner-round1-helper"><i class="bi bi-info-circle" aria-hidden="true"></i> Financial decisions are reviewed on dedicated pages. <a asp-controller="Reports" asp-action="Index">Financial summary</a></p>
+        </aside>
+    </div>
+        <partial name="_DashboardRecentActivity" model="Model" />
+
+    <section class="dash-panel workspace-main-panel">
+        <div class="dash-section-heading">
+            <h2>
+                <i class="bi bi-calendar-check" aria-hidden="true"></i>
+                Business overview
+            </h2>
+            <a asp-controller="Calendar" asp-action="Index">
+                Open calendar
+                <i class="bi bi-arrow-right" aria-hidden="true"></i>
+            </a>
+        </div>
+
+        @if (Model.UnavailableSections.Contains("business overview"))
+        {
+            <p class="dash-empty">Unable to load business overview.</p>
+        }
+        else
+        {
+            <div class="dash-business-facts">
+                <div>
+                    <span>Confirmed this month</span>
+                    <strong>@Model.ConfirmedBookings</strong>
+                </div>
+                <div>
+                    <span>Completed this month</span>
+                    <strong>@Model.CompletedBookings</strong>
+                </div>
+                <div>
+                    <span>Most booked package this month</span>
+                    <strong>@Model.MostBookedPackage</strong>
+                    <small>Confirmed and completed events</small>
+                </div>
+            </div>
+
+            @if (Model.BookingTrend.Any())
+            {
+                <figure class="dash-trend">
+                    <figcaption>
+                        Booking volume by event month
+                        <span>All statuses · Latest six months</span>
+                    </figcaption>
+
+                    <div class="dash-trend-rows">
+                        @foreach (var point in Model.BookingTrend)
+                        {
+                            <div class="dash-trend-row">
+                                <span>@point.Label</span>
+                                <meter min="0"
+                                       max="@Math.Max(1, Model.BookingTrend.Max(p => p.Count))"
+                                       value="@point.Count"
+                                       aria-label="@point.Label bookings">
+                                    @point.Count
+                                </meter>
+                                <strong>@point.Count</strong>
+                            </div>
+                        }
+                    </div>
+                </figure>
+            }
+        }
+    </section>
+
+    <section class="dash-panel">
+        <div class="dash-section-heading">
+            <h2>
+                <i class="bi bi-calendar3" aria-hidden="true"></i>
+                Upcoming confirmed events
+            </h2>
+        </div>
+
+        @if (Model.UnavailableSections.Contains("schedule"))
+        {
+            <p class="dash-empty">Unable to load upcoming events.</p>
+        }
+        else if (!events.Any())
+        {
+            <p class="dash-empty">No upcoming confirmed events.</p>
+        }
+        else
+        {
+            <partial name="_DashboardEvents" model="events" />
+        }
+    </section>
+
+    <partial name="_WorkspaceQuickAccess" model="Model" />
 </div>

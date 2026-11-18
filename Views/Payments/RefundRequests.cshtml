@@ -2,7 +2,7 @@
 @using AriesMagicAppointmentSystem.Models
 @{
     Layout = "_DashboardLayout";
-    ViewData["Title"] = "Refund Verification";
+    ViewData["Title"] = "Refund Requests";
     var requests = Model.ToList();
     var isOwner = User.IsInRole("Owner");
     string OcrClass(string? result) => result switch { OcrVerificationResults.LikelyMatch => "ocr-likely", OcrVerificationResults.PartialMatch => "ocr-partial", OcrVerificationResults.MismatchDetected => "ocr-mismatch", OcrVerificationResults.OcrFailed => "ocr-failed", _ => "ocr-manual" };
@@ -22,7 +22,7 @@
     </form>
     <div class="dashboard-panel owner-table-panel">
         @if(!requests.Any()){<div class="owner-empty-state"><i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i><h2>No refund requests require your attention.</h2><p>Try another filter if you are reviewing completed or rejected requests.</p></div>}
-        else{<div class="table-responsive"><table class="table owner-audit-table align-middle"><thead><tr><th scope="col">Booking</th><th scope="col">Client</th><th scope="col">Refund Amount</th><th scope="col">Reason</th><th scope="col">Proof</th><th scope="col">Verification Result</th><th scope="col">Status</th><th scope="col" class="text-end">Actions</th></tr></thead><tbody>
+        else{<div class="table-responsive"><table class="table owner-audit-table align-middle"><thead><tr><th scope="col">Booking</th><th scope="col">Client</th><th scope="col">Refund Amount</th><th scope="col">Reason</th><th scope="col">Proof</th><th scope="col">Review Indicator</th><th scope="col">Status</th><th scope="col" class="text-end">Actions</th></tr></thead><tbody>
         @foreach(var item in requests){var ocr=item.OcrVerifications.Where(o=>o.VerificationPurpose==OcrVerificationPurposes.RefundSupport).OrderByDescending(o=>o.ProcessedAt).FirstOrDefault(); var packageName=item.Booking?.PackageName??item.Booking?.Service?.Name??"Package";<tr><td><strong class="owner-booking-code">BK-@item.Booking?.CreatedAt.Year-@item.BookingId.ToString("D3")</strong><span class="owner-cell-subtext">@packageName</span></td><td><strong>@(item.Booking?.Client?.FullName??"Unknown client")</strong></td><td><strong>₱@item.Amount.ToString("N2")</strong><span class="owner-cell-subtext">Eligible: ₱@Math.Min(item.Amount,item.OriginalPayment?.Amount??0m).ToString("N2")</span></td><td><span title="@item.ClientReason">@ShortReason(item.ClientReason)</span></td><td><button type="button" class="owner-proof-button js-refund-proof" data-proof-src="@Url.Action("RefundProof","Payments",new{id=item.Id})" data-proof-title="Refund evidence for BK-@item.BookingId" aria-label="Enlarge refund proof"><img src="@Url.Action("RefundProof","Payments",new{id=item.Id})" class="owner-proof-thumb" alt="Refund proof thumbnail" /></button></td><td><span class="ocr-badge @OcrClass(ocr?.VerificationResult)">@(ocr?.VerificationResult??"Manual Review Required")</span></td><td><span class="status-badge @StatusClass(item.Status)">@StatusLabel(item.Status)</span></td><td class="text-end"><a asp-action="RefundReview" asp-route-id="@item.Id" class="btn btn-sm btn-primary">@(isOwner?"Review":"View")</a></td></tr>}
         </tbody></table></div>}
     </div>

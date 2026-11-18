@@ -1,9 +1,12 @@
 @model AriesMagicAppointmentSystem.Models.Service
 @{
     var inclusions = Model.Inclusions.OrderBy(i => i.Id).ToList();
-    var preview = inclusions.Take(3).ToList();
+    var showAllForStaff = (User.IsInRole("Staff") || User.IsInRole("Admin")) && !User.IsInRole("Owner");
+    var preview = showAllForStaff ? inclusions : inclusions.Take(3).ToList();
+    var packageName = Model.Name ?? string.Empty;
+    var packageTone = packageName.Contains("All In", StringComparison.OrdinalIgnoreCase) ? "all-in" : packageName.Contains("Deluxe", StringComparison.OrdinalIgnoreCase) ? "deluxe" : packageName.Contains("Premium", StringComparison.OrdinalIgnoreCase) ? "premium" : "standard";
 }
-<article class="staff-package-card">
+<article class="staff-package-card" data-package-tone="@packageTone">
     <div class="staff-package-card-head">
         <div class="staff-package-title-wrap">
             <partial name="_StatusBadge" model="@(Model.IsArchived ? "Archived" : "Active")" />
@@ -16,10 +19,10 @@
         <div><span>Availability</span><strong>@(Model.IsArchived ? "Unavailable" : "Active")</strong></div>
     </div>
     <div class="staff-package-inclusions">
-        <span class="staff-package-section-label">Main Inclusions</span>
+        <span class="staff-package-section-label">@(showAllForStaff ? $"Package inclusions ({inclusions.Count})" : "Main Inclusions")</span>
         @if (preview.Count == 0) { <p class="staff-package-muted">No inclusions configured.</p> }
         else {
-            <ul>@foreach (var inclusion in preview) { <li><i class="bi bi-check2" aria-hidden="true"></i><span>@inclusion.Name</span></li> }</ul>
+            <ul tabindex="0" aria-label="Inclusions in @Model.Name (scroll for more)">@foreach (var inclusion in preview) { <li><i class="bi bi-check2" aria-hidden="true"></i><span>@inclusion.Name</span></li> }</ul>
             @if (inclusions.Count > preview.Count) { <span class="staff-package-more">+ @(inclusions.Count - preview.Count) more</span> }
         }
     </div>

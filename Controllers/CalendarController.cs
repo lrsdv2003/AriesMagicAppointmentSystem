@@ -165,6 +165,8 @@ namespace AriesMagicAppointmentSystem.Controllers
                     endTime = b.EndTime.ToString("hh:mm tt"),
                     eventTime = b.StartTime.ToString("hh:mm tt") + " - " + b.EndTime.ToString("hh:mm tt"),
                     venue = b.PartyVenue ?? "N/A",
+                    contactPerson = b.ContactPerson ?? "",
+                    contactNumber = b.ContactNumber ?? "",
                     distanceKm = b.DistanceKm,
                     serviceZone = b.ServiceZone ?? "N/A",
                     eventType = b.EventType ?? "N/A",

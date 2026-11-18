@@ -1265,6 +1265,7 @@ body.client-body.client-auth-page .au-field .form-label{display:block;font:500 1
 body.client-body.client-auth-page .au-input{min-height:50px;width:100%;max-width:100%;padding:12px 14px;border:1px solid #74869b;border-radius:8px;background:#051a30!important;color:var(--studio-white)!important;font:400 16px/1.5 var(--studio-ui)!important;box-shadow:none!important}
 body.client-body.client-auth-page .au-input::placeholder{color:#afbbca!important;opacity:1}
 body.client-body.client-auth-page .au-input:focus{outline:2px solid var(--studio-gold);outline-offset:2px;border-color:var(--studio-gold)!important;box-shadow:none!important}
+body.client-body.client-auth-page .au-input:is(:autofill,:-webkit-autofill){-webkit-text-fill-color:var(--studio-white)!important;caret-color:var(--studio-white);box-shadow:0 0 0 1000px #051a30 inset!important}
 body.client-auth-page .au-fields{display:grid;grid-template-columns:1fr 1fr;gap:18px}
 body.client-auth-page .au-fields .au-field{margin-bottom:18px}
 body.client-auth-page .au-password{position:relative}

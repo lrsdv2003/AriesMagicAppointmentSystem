@@ -342,7 +342,7 @@ namespace AriesMagicAppointmentSystem.Controllers
 
                 if (await _userManager.IsInRoleAsync(user, "Client"))
                 {
-                    return RedirectToAction("Dashboard", "Bookings");
+                    return RedirectToAction("MyBookings", "Bookings");
                 }
 
                 await _signInManager.SignOutAsync();
@@ -407,7 +407,7 @@ namespace AriesMagicAppointmentSystem.Controllers
 
             var user = await _userManager.FindByEmailAsync(model.Email);
 
-            if (user == null)
+            if (user == null || !user.IsActive || !user.EmailConfirmed)
             {
                 TempData["SuccessMessage"] = "If an account with that email exists, a password reset link has been sent.";
                 return RedirectToAction(nameof(Login));
@@ -474,7 +474,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             }
 
             var user = await _userManager.FindByEmailAsync(model.Email);
-            if (user == null)
+            if (user == null || !user.IsActive || !user.EmailConfirmed)
             {
                 TempData["SuccessMessage"] = "Password has been reset successfully. You may now log in.";
                 return RedirectToAction(nameof(Login));

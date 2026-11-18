@@ -54,6 +54,41 @@ static class BookingBrowserFixture
    for(var i=0;i<3;i++)db.Bookings.Add(NewBooking(40,BookingStatus.Confirmed,2+i*7));
    db.BlockedDates.Add(new(){Date=DateTime.Today.AddDays(41),Reason="Synthetic blocked-date test"});await db.SaveChangesAsync();
    var hub=hubPreview?await ClientHubFixtureSeed.AddAsync(db,users,client,password,legacy,packages[0],confirmed,directory):null;
+   int? editEligibleId = null;
+   if (releaseReview)
+   {
+    // Confirmed, verified, upcoming and with no outstanding reschedule/refund:
+    // a dedicated synthetic fixture for the Client-approved amendment workflow.
+    var editable = NewBooking(36, BookingStatus.Confirmed);
+    editable.VenueLatitude = 14.58125;
+    editable.VenueLongitude = 121.1258;
+    editable.TravelFeeStatus = VenueLocationPolicy.Accepted;
+    editable.VenueVerificationStatus = VenueLocationPolicy.StaffVerified;
+    editable.ServiceZone = "Zone A";
+    db.Bookings.Add(editable);
+    await db.SaveChangesAsync();
+    db.Payments.Add(new Payment {
+      BookingId=editable.Id,Amount=2000m,ProofImagePath="synthetic-verification-only.png",
+      PaymentMethod="GCash",Status=PaymentStatus.Verified,
+      VerifiedAt=DateTime.Now.AddDays(-1),
+      InitialVerificationAtUtc=DateTime.UtcNow.AddDays(-1),
+      VerifiedByUserId=(await users.FindByEmailAsync("owner@example.test"))?.Id,
+      VerifiedByUserName="Synthetic Owner"
+    });
+    await db.SaveChangesAsync();
+    editEligibleId=editable.Id;
+    // Explicit synthetic approval marker and expired record for Ultra Final UI verification.
+    db.BookingTimelines.Add(new BookingTimeline {
+      BookingId=payable.Id,EventType=TimelineEventType.PaymentWindowOpened,
+      CreatedAt=DateTime.UtcNow,Notes="Synthetic Staff approval opened initial payment window."
+    });
+    var expiredExample=NewBooking(87,BookingStatus.Expired);
+    expiredExample.ArchivedAt=DateTime.UtcNow;
+    expiredExample.TrashReason=TrashReason.BookingRequestExpired;
+    expiredExample.TrashNotes="Synthetic payment proof deadline expiry for UI tests.";
+    db.Bookings.Add(expiredExample);
+    await db.SaveChangesAsync();
+   }
    var environment=scope.ServiceProvider.GetRequiredService<IWebHostEnvironment>().EnvironmentName;
    var effectiveConnection=scope.ServiceProvider.GetRequiredService<ApplicationDbContext>().Database.GetDbConnection();
    if(environment!="Development"||effectiveConnection.DataSource!=@"(localdb)\MSSQLLocalDB"||effectiveConnection.Database!=database)throw new InvalidOperationException("Preview isolation verification failed.");
@@ -62,11 +97,11 @@ static class BookingBrowserFixture
      .Select(s=>new{s.Id,s.Name,s.Price,s.DurationInHours,s.Description,Inclusions=s.Inclusions.OrderBy(i=>i.Id).Select(i=>new{i.Id,i.Name}).ToList()}).ToListAsync();
     await File.WriteAllTextAsync(Path.Combine(root,".tmp-owner-build/unified-public-catalog.json"),JsonSerializer.Serialize(new{Source="Isolated synthetic technical inclusions; not authoritative commercial offers",Packages=catalog}));
    }
-   await File.WriteAllTextAsync(statePath,JsonSerializer.Serialize(new{Pid=Environment.ProcessId,Directory=directory,BaseUrl=baseUrl,Environment=environment,Runtime=Environment.Version.ToString(),Database=database,Hub=hub,Email=client.Email,Password=password,PayableId=payable.Id,ConfirmedId=confirmed.Id,FullDate=DateTime.Today.AddDays(40).ToString("yyyy-MM-dd"),BlockedDate=DateTime.Today.AddDays(41).ToString("yyyy-MM-dd"),AvailableDate=DateTime.Today.AddDays(50).ToString("yyyy-MM-dd"),RescheduleDate=DateTime.Today.AddDays(52).ToString("yyyy-MM-dd")}));
+   await File.WriteAllTextAsync(statePath,JsonSerializer.Serialize(new{Pid=Environment.ProcessId,Directory=directory,BaseUrl=baseUrl,Environment=environment,Runtime=Environment.Version.ToString(),Database=database,Hub=hub,Email=client.Email,Password=password,PayableId=payable.Id,ConfirmedId=confirmed.Id,EditEligibleId=editEligibleId,FullDate=DateTime.Today.AddDays(40).ToString("yyyy-MM-dd"),BlockedDate=DateTime.Today.AddDays(41).ToString("yyyy-MM-dd"),AvailableDate=DateTime.Today.AddDays(50).ToString("yyyy-MM-dd"),RescheduleDate=DateTime.Today.AddDays(52).ToString("yyyy-MM-dd")}));
    using var http=new HttpClient(factory.Server.CreateHandler()){BaseAddress=new Uri("http://localhost")};
    proxy.Run(async context=>{
     var path=context.Request.Path.Value??"/";
-    var allowed=path=="/"||path=="/favicon.ico"||new[]{"/Account/","/Home/","/Bookings/","/Payments/","/RescheduleRequests/","/css/","/js/","/lib/","/fonts/","/images/"}.Any(path.StartsWith)||path.EndsWith(".styles.css")||path=="/Communications/UnreadCount";
+    var allowed=path=="/"||path=="/favicon.ico"||new[]{"/Account/","/Home/","/Bookings/","/Payments/","/RescheduleRequests/","/css/","/js/","/lib/","/fonts/","/images/"}.Any(path.StartsWith)||path.EndsWith(".styles.css")||path=="/Communications/UnreadCount"||(releaseReview&&path.StartsWith("/BookingChanges/"));
     if(!fullPreview&&!allowed){context.Response.StatusCode=404;return;}
     using var request=new HttpRequestMessage(new HttpMethod(context.Request.Method),context.Request.Path+context.Request.QueryString);
     if(context.Request.ContentLength>0){using var memory=new MemoryStream();await context.Request.Body.CopyToAsync(memory);request.Content=new ByteArrayContent(memory.ToArray());}
@@ -87,6 +122,18 @@ static class BookingBrowserFixture
   } finally {
    if(!Regex.IsMatch(database,"^AriesBookingVisual_[0-9a-f]{32}$"))throw new Exception("Unsafe teardown target.");
    await db.Database.EnsureDeletedAsync();if(File.Exists(statePath))File.Delete(statePath);
+   // Only clean the exact synthetic image generated for this isolated browser fixture.
+   var avatarTracker=Path.Combine(directory,"synthetic-staff-avatar.txt");
+   if(File.Exists(avatarTracker)){
+    var avatarFile=(await File.ReadAllTextAsync(avatarTracker)).Trim();
+    if(avatarFile.EndsWith(".png",StringComparison.OrdinalIgnoreCase)
+       && Guid.TryParseExact(Path.GetFileNameWithoutExtension(avatarFile),"N",out _)
+       && avatarFile==Path.GetFileName(avatarFile)){
+     var avatarPath=Path.Combine(root,"App_Data","profiles",avatarFile);
+     if(File.Exists(avatarPath))File.Delete(avatarPath);
+    }
+    File.Delete(avatarTracker);
+   }
    if(fullPreview)foreach(var name in new[]{"manual-mailbox.json","manual-mailbox.json.pending"}){var file=Path.Combine(directory,name);if(File.Exists(file))File.Delete(file);}
   }
  }

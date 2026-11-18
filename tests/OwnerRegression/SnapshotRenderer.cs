@@ -58,6 +58,8 @@ static class SnapshotRenderer
             ("Bookings","AddNote",booking),
             ("Payments","PendingVerification",new[] {payment}),
             ("Payments","Verify",payment),
+            ("Payments","ProofHistory",new Payment {Id=payment.Id,Booking=booking,BookingId=booking.Id,Amount=2000,Status=PaymentStatus.Pending,
+                ProofRevisions=[new(){Id=9001,PaymentId=payment.Id,ProofImagePath="private:synthetic",Amount=2000,PaymentMethod="GCash",Status=PaymentStatus.AdditionalEvidenceRequired,UploadedAt=DateTime.Now.AddDays(-1),ArchivedAtUtc=DateTime.UtcNow,ReviewerNote="Synthetic clearer-proof request"}]}),
             ("Payments","RefundRequests",new[] {refund}),
             ("Payments","RefundReview",refund),
             ("Reports","Index",reports),
@@ -78,6 +80,10 @@ static class SnapshotRenderer
             ConsentedAtUtc=DateTime.UtcNow,Version=[0,0,0,0,0,0,0,1],
             Media=[new(){Id=701,DisplayFilename="event-photo.jpg",ProcessingStatus="Ready",ScannedAtUtc=DateTime.UtcNow},new(){Id=702,DisplayFilename="awaiting-scan.jpg",ProcessingStatus="Quarantined"}]};
         pages = pages.Concat(new (string Controller,string Action,object Model)[] {
+            ("Personnel","Index",new AriesMagicAppointmentSystem.Controllers.PersonnelPage([
+                new("synthetic-staff","Synthetic Staff","staff@example.test","Staff","Active"),
+                new("synthetic-pending","Synthetic Admin","pending@example.test","Admin","Pending")],[],true,true)),
+            ("PersonnelEnrollment","Accept",new AriesMagicAppointmentSystem.Controllers.PersonnelEnrollmentInput()),
             ("Feedback","Create",new FeedbackInput {BookingId=booking.Id,EventLabel=displayPackage.Name}),
             ("Feedback","Index",new ClientFeedbackPage([feedback],[feedbackBooking],1,1)),
             ("Feedback","Details",feedback),
@@ -93,8 +99,9 @@ static class SnapshotRenderer
             ("Account","EmailVerified",new object()),
             ("Account","AccessDenied",new object()),
             ("Bookings","ClientDashboard",new[]{clientBooking}), ("Bookings","ClientDetails",clientBooking),
+            ("Bookings","Cancel",clientBooking),
             ("Bookings","Create",new BookingStepTwoViewModel {EventDate=DateTime.Today.AddDays(7),StartTime=new TimeSpan(10,0,0),PaxCount=50,ContactPerson="Fixture Client",ContactNumber="09000000000"}),
-            ("Payments","Upload",new PaymentUploadViewModel {FixedDownpaymentAmount=2000,Amount=2000,GCashQrPath="/images/gcash-qr.jpeg",Bookings=[new(){Value="1",Text="Fixture booking — balance PHP 10,000"}]}),
+            ("Payments","Upload",new PaymentUploadViewModel {BookingId=1,Options=AriesMagicAppointmentSystem.ViewComponents.PaymentOptions.Build(10000,0),FixedDownpaymentAmount=2000,Amount=2000,GCashQrPath="/images/gcash-qr.jpeg",Bookings=[new(){Value="1",Text="Fixture booking — balance PHP 10,000"}]}),
             ("Payments","MyUploads",new[]{payment}),
             ("Profile","Index",new ProfileViewModel {FullName="Fixture Client",Email="client@example.test",CreatedAt=DateTime.Today.AddYears(-1)}),
             ("Payments","RequestRefund",new RefundRequestViewModel()),
@@ -114,7 +121,11 @@ static class SnapshotRenderer
             ("TrashHistory","Index",new TrashHistoryIndexViewModel { TotalPages = 2, ArchivedPackages=[new Service {Id=55,Name="Archived Fixture",IsArchived=true}], Bookings = [new TrashHistoryRowViewModel {BookingCode="BK-2026-001",ClientName="Test Client",ArchiveDateRecorded=true,ArchivedAt=DateTime.UtcNow,ArchivedBy="Test Staff"}] }),
             ("Calendar","StaffIndex",new CalendarIndexViewModel { Bookings = Enumerable.Range(0,8).Select(i=>new Booking { Id = 990+i, Status = BookingStatus.Confirmed, EventDate = DateTime.Today.AddDays(i<6?2:1), StartTime = DateTime.Today.AddHours(10), EndTime = DateTime.Today.AddHours(12), PackageName = i%2==0?"Regression Package":"Other Package", PartyVenue = "Fixture Venue" }).ToList() }),
             ("History","Details",new HistoryDetailsViewModel {Booking=new Booking {Id=booking.Id,Client=booking.Client,Status=BookingStatus.Completed,EventType="Birthday",PartyVenue="Fixture Venue",PackageName=booking.PackageName,EventDate=booking.EventDate,StartTime=booking.StartTime,EndTime=booking.EndTime,FinalPrice=booking.FinalPrice,PaxCount=50},CompletedAt=DateTime.Today.AddDays(-2),BookingCode="BK-2026-001",AmountPaid=3000,RemainingBalance=7000,PaymentStatus="Verified",FinancialSummary=finance,Timeline=[new(){EventType="BookingCompleted",CreatedAt=DateTime.Today.AddDays(-2)},new(){EventType="PaymentVerified",Notes="Private financial marker",CreatedAt=DateTime.Today.AddDays(-3)}]}),
-            ("Bookings","StaffDetails",booking),
+            ("Bookings","StaffDetails",new Booking {Id=booking.Id,CreatedAt=booking.CreatedAt,Client=booking.Client,Service=displayPackage,PackageName=displayPackage.Name,
+                EventDate=booking.EventDate,StartTime=booking.StartTime,EndTime=booking.EndTime,Status=BookingStatus.Confirmed,FinalPrice=10000,
+                PartyVenue="Synthetic review venue",ContactPerson="Synthetic client",ContactNumber="09123456789",
+                CancellationRequestAtUtc=DateTime.UtcNow.AddHours(-1),CancellationRequestReason="The client has a documented venue conflict.",
+                Payments=[new(){Status=PaymentStatus.Verified,Amount=2000,InitialVerificationAtUtc=DateTime.UtcNow.AddHours(-25)}]}),
             ("UserManagement","Index",Enumerable.Range(1,12).Select(i=>new ApplicationUser {Id="fixture-"+i,FullName="Test User "+i,Email="user"+i+"@example.test",EmailConfirmed=i%2==0,IsActive=i%3!=0}).ToArray()),
             ("UserManagement","Details",new ApplicationUser {Id="fixture-1",FullName="Test Staff",Email="staff@example.test",PhoneNumber="123456789",EmailConfirmed=true}),
             ("Calendar","Index",new CalendarIndexViewModel {Manage=new CalendarManageViewModel {MaxBookingsPerDay=3,BlockedDates=[new BlockedDate {Id=1,Date=DateTime.Today.AddDays(10),Reason="System maintenance"}]}}),
@@ -128,8 +139,8 @@ static class SnapshotRenderer
         var rendered = 0;
         foreach(var page in pages)
         {
-            var isClientPage = page.Controller == "Feedback" || page.Controller == "Home" || page.Controller == "Profile" || page.Controller == "RescheduleRequests" && page.Action is "Create" or "MyRequests" || page.Controller == "Bookings" && new[]{"ClientDashboard","ClientDetails","Create"}.Contains(page.Action) || page.Controller == "Payments" && new[]{"Upload","MyUploads","RequestRefund","MyRefundRequests"}.Contains(page.Action);
-            var defaultRole = isClientPage ? "Client" : page.Controller == "Testimonials" ? "Staff" : page.Controller == "Dashboard" ? page.Action : page.Action == "Admin" || page.Controller == "Calendar" && page.Action == "Index" ? "Admin" : page.Action == "MyBookings" ? "Client" : page.Action is "StaffIndex" or "StaffDetails" || page.Controller == "RescheduleRequests" ? "Staff" : page.Controller is "UserManagement" or "SystemActivity" or "TrashHistory" ? "Admin" : "Owner";
+            var isClientPage = page.Controller == "Feedback" || page.Controller == "Home" || page.Controller == "Profile" || page.Controller == "RescheduleRequests" && page.Action is "Create" or "MyRequests" || page.Controller == "Bookings" && new[]{"ClientDashboard","ClientDetails","Create","Cancel"}.Contains(page.Action) || page.Controller == "Payments" && new[]{"Upload","MyUploads","RequestRefund","MyRefundRequests"}.Contains(page.Action);
+            var defaultRole = page.Controller == "PersonnelEnrollment" ? "Guest" : isClientPage ? "Client" : page.Controller == "Testimonials" ? "Staff" : page.Controller == "Dashboard" ? page.Action : page.Action == "Admin" || page.Controller == "Calendar" && page.Action == "Index" ? "Admin" : page.Action == "MyBookings" ? "Client" : page.Action is "StaffIndex" or "StaffDetails" || page.Controller == "RescheduleRequests" ? "Staff" : page.Controller is "UserManagement" or "SystemActivity" or "TrashHistory" ? "Admin" : "Owner";
             var roles = page.Controller == "Account" ? new[] {"Guest"} : page.Controller == "Home" && (page.Action == "Index" || page.Action == "About" || page.Action == "Gallery") ? new[] {"Client","Guest"} : page.Controller == "History" ? new[] {"Owner","Staff"} : page.Controller == "InternalProfile" ? new[] { "Owner", "Staff", "Admin" } : page.Controller == "Services" && page.Action is "Index" or "Details" ? new[] { "Owner", "Staff", "Admin" } : page.Controller == "Communications" ? new[] { "Owner", "Admin", "Staff", "Client" } : page.Controller == "Notifications" ? new[] { "Owner", "Client" } : new[] { defaultRole };
             foreach (var role in roles)
             {
@@ -177,6 +188,9 @@ static class SnapshotRenderer
             data["WizardPackages"]=new List<Service>{displayPackage}; data["EventTypes"]=new List<string>{"Birthday","Company Events","Bridal Shower","Gender Reveal","School Events","Halloween","Christmas Parties","Easter Events"};
             data["FinancialSummaries"]=new Dictionary<int,BookingFinancialSummaryViewModel>{[booking.Id]=finance};
             data["FinancialSummary"]=finance; data["ExpectedReceiver"]="Aries Magic"; data["Filter"]="awaiting";
+            data["CancellationDeadline"]=DateTime.UtcNow.AddHours(12);
+            data["CanDirectCancel"]=true;
+            data["CancellationRequestLinked"]=true;
             data["PackageColors"] = new Dictionary<string,string> { ["Regression Package"] = "pink", ["Other Package"] = "blue" };
             data["BlockedDates"] = new[] { new { date=DateTime.Today.AddDays(2).ToString("yyyy-MM-dd"), reason="Fixture blocked date" } };
             data["UserRoles"] = Enumerable.Range(1,12).ToDictionary(i=>"fixture-"+i,i=>new[]{"Client","Staff","Owner","Admin"}[i%4]);

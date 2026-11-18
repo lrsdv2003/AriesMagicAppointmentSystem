@@ -82,7 +82,7 @@
                 (File: "celebration.jpeg", Alt: "Aries and fellow entertainers with children at a decorated celebration", Title: "A memory to keep", Caption: "Your people. Your occasion.") })
             {
                 var source = Url.Content("~/images/client/wonder-studio/" + item.File);
-                <button type="button" class="ws-gallery-item" data-gallery-src="@source" data-gallery-alt="@item.Alt" aria-label="Enlarge photograph: @item.Alt">
+                <button type="button" class="ws-gallery-item" data-gallery-src="@source" data-gallery-alt="@item.Alt">
                     <img src="@source" alt="@item.Alt" width="2048" height="1365" loading="lazy" />
                     <span class="ws-gallery-caption"><strong>@item.Title</strong><span>@item.Caption</span><span class="ws-gallery-open" aria-hidden="true">↗</span></span>
                 </button>

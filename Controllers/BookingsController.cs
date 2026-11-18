@@ -13,6 +13,7 @@ namespace AriesMagicAppointmentSystem.Controllers
 {
     public class BookingsController : Controller
     {
+        private const string CurrentTermsVersion = "2026-11-08-v3";
         private readonly ApplicationDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IHistoryService _historyService;
@@ -49,7 +50,7 @@ namespace AriesMagicAppointmentSystem.Controllers
         }
 
         [Authorize(Roles = "Staff,Owner")]
-        public async Task<IActionResult> Index(string? search, string? bookingStatus, string? paymentStatus, DateTime? eventDate, int? serviceId)
+        public async Task<IActionResult> Index(string? search, string? bookingStatus, string? paymentStatus, DateTime? eventDate, int? serviceId, int page = 1, int pageSize = 10)
         {
             // Lazily flip any bookings whose event has already ended into Completed/archived
             // before we build this list, so nothing that has already happened lingers here.
@@ -64,21 +65,18 @@ namespace AriesMagicAppointmentSystem.Controllers
 
             if (isStaff)
             {
-                bookingsQuery = bookingsQuery.Where(b =>
-                    b.Status == BookingStatus.Pending ||
-                    b.Status == BookingStatus.AwaitingDownpayment ||
-                    b.Status == BookingStatus.AwaitingVerification ||
-                    b.Status == BookingStatus.Declined);
-
-                bookingStatus = string.IsNullOrWhiteSpace(bookingStatus) ? "AllRequests" : bookingStatus;
-                bookingsQuery = bookingStatus switch
-                {
-                    "Pending" => bookingsQuery.Where(b => b.Status == BookingStatus.Pending),
-                    "ApprovedAwaitingPayment" => bookingsQuery.Where(b => b.Status == BookingStatus.AwaitingDownpayment || b.Status == BookingStatus.AwaitingVerification),
-                    "Declined" => bookingsQuery.Where(b => b.Status == BookingStatus.Declined),
-                    "RequiresReview" => bookingsQuery.Where(b => b.RequiresManualReview),
-                    _ => bookingsQuery
-                };
+                // Action queue, not a second payment-verification or historical booking list.
+                // Keep pending venue-review and customer-acceptance records discoverable,
+                // but never expose Owner-only payment states here.
+                bookingsQuery = bookingsQuery.Where(b => b.Status == BookingStatus.Pending);
+                bookingStatus = bookingStatus is "RequiresReview" or "Pending" or "AllRequests"
+                    ? bookingStatus : "AllRequests";
+                if (bookingStatus == "RequiresReview")
+                    bookingsQuery = bookingsQuery.Where(b => b.RequiresManualReview
+                        || b.TravelFeeStatus == VenueLocationPolicy.PendingReview
+                        || b.TravelFeeStatus == VenueLocationPolicy.AwaitingCustomerAcceptance);
+                // This date filter was intentionally removed from the Staff UI.
+                eventDate = null;
             }
             else if (!string.IsNullOrWhiteSpace(bookingStatus) && bookingStatus != "All")
             {
@@ -95,22 +93,66 @@ namespace AriesMagicAppointmentSystem.Controllers
                 bookingsQuery = bookingsQuery.Where(b => b.ServiceId == serviceId.Value);
             }
 
-            var bookings = await bookingsQuery
-                .OrderByDescending(b => b.CreatedAt)
-                .ToListAsync();
-
-            if (!string.IsNullOrWhiteSpace(search))
+            search = search?.Trim();
+            pageSize = 10; // Fixed Staff operational page size; UI exposes Previous/Next only.
+            page = Math.Max(1, page);
+            int totalCount;
+            List<Booking> bookings;
+            if (isStaff)
             {
-                var lowered = search.ToLower();
-
-                bookings = bookings.Where(b =>
-                    $"BK-{b.CreatedAt.Year}-{b.Id:D3}".ToLower().Contains(lowered) ||
-                    (b.Client?.FullName?.ToLower().Contains(lowered) ?? false) ||
-                    (b.Client?.Email?.ToLower().Contains(lowered) ?? false) ||
-                    (b.Service?.Name?.ToLower().Contains(lowered) ?? false)
-                ).ToList();
+                if (!string.IsNullOrWhiteSpace(search))
+                {
+                    var term = search.Length > 100 ? search[..100] : search;
+                    search = term;
+                    // Keep Booking ID search correct (BK-year-id) without fetching the full queue.
+                    if (term.StartsWith("BK-", StringComparison.OrdinalIgnoreCase))
+                    {
+                        var parts = term.Split('-', 3);
+                        if (parts.Length >= 2 && int.TryParse(parts[1], out var year))
+                        {
+                            bookingsQuery = bookingsQuery.Where(b => b.CreatedAt.Year == year);
+                            if (parts.Length == 3 && int.TryParse(parts[2], out var bookingId))
+                                bookingsQuery = bookingsQuery.Where(b => b.Id == bookingId);
+                            else if (parts.Length == 3 && parts[2].Length > 0)
+                            {
+                                var suffix = parts[2].TrimStart('0');
+                                if (suffix.Length == 0) suffix = "0";
+                                bookingsQuery = bookingsQuery.Where(b => b.Id.ToString().Contains(suffix));
+                            }
+                        }
+                        else
+                            bookingsQuery = bookingsQuery.Where(b => false);
+                    }
+                    else
+                    {
+                        bookingsQuery = bookingsQuery.Where(b =>
+                            b.Id.ToString().Contains(term)
+                            || (b.Client != null && (b.Client.FullName.Contains(term) || b.Client.Email.Contains(term)))
+                            || (b.Service != null && b.Service.Name.Contains(term))
+                            || b.PartyVenue.Contains(term));
+                    }
+                }
+                totalCount = await bookingsQuery.CountAsync();
+                var totalPages = Math.Max(1, (int)Math.Ceiling(totalCount / (double)pageSize));
+                page = Math.Min(page, totalPages);
+                bookings = await bookingsQuery.OrderByDescending(b => b.CreatedAt).ThenByDescending(b => b.Id)
+                    .Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
             }
-
+            else
+            {
+                bookings = await bookingsQuery.OrderByDescending(b => b.CreatedAt).ToListAsync();
+                if (!string.IsNullOrWhiteSpace(search))
+                {
+                    var lowered = search.ToLowerInvariant();
+                    bookings = bookings.Where(b =>
+                        $"BK-{b.CreatedAt.Year}-{b.Id:D3}".Contains(search, StringComparison.OrdinalIgnoreCase) ||
+                        (b.Client?.FullName?.ToLowerInvariant().Contains(lowered) ?? false) ||
+                        (b.Client?.Email?.ToLowerInvariant().Contains(lowered) ?? false) ||
+                        (b.Service?.Name?.ToLowerInvariant().Contains(lowered) ?? false)
+                    ).ToList();
+                }
+                totalCount = bookings.Count;
+            }
             var bookingFinancials = await _financialService.GetSummariesAsync(bookings.Select(b => b.Id));
             var rows = bookings.Select(b =>
             {
@@ -135,7 +177,8 @@ namespace AriesMagicAppointmentSystem.Controllers
                     DistanceKm = b.DistanceKm,
                     ServiceZone = b.ServiceZone,
                     TravelFee = b.TravelFee,
-                    RequiresManualReview = b.RequiresManualReview
+                    RequiresManualReview = b.RequiresManualReview,
+                    TravelFeeStatus = b.TravelFeeStatus
                 };
             }).ToList();
 
@@ -147,6 +190,9 @@ namespace AriesMagicAppointmentSystem.Controllers
             var viewModel = new BookingManagementViewModel
             {
                 Search = search,
+                Page = page,
+                PageSize = pageSize,
+                TotalCount = totalCount,
                 BookingStatus = bookingStatus ?? "All",
                 PaymentStatus = paymentStatus ?? "All",
                 EventDate = eventDate,
@@ -164,6 +210,7 @@ namespace AriesMagicAppointmentSystem.Controllers
 
         [Authorize(Roles = "Client")]
         [HttpGet]
+        [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("account")]
         public async Task<IActionResult> SearchVenue(string query)
         {
             if (string.IsNullOrWhiteSpace(query))
@@ -176,7 +223,8 @@ namespace AriesMagicAppointmentSystem.Controllers
                 {
                     displayName = r.DisplayName,
                     latitude = r.Latitude,
-                    longitude = r.Longitude
+                    longitude = r.Longitude,
+                    isPrecise = r.IsPrecise
                 }));
             }
             catch
@@ -185,76 +233,134 @@ namespace AriesMagicAppointmentSystem.Controllers
             }
         }
 
-        [Authorize(Roles = "Client")]
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CheckVenueServiceability(string partyVenue, DateTime? eventDate, TimeSpan? startTime)
+        private sealed record VenueEvaluation(
+            string Address, string Method, double? Latitude, double? Longitude,
+            VenueDistanceResult? Distance, string VerificationStatus, string FeeStatus,
+            bool IsServiceable, string Message);
+
+        private async Task<VenueEvaluation> EvaluateVenueAsync(
+            string? venue, string? method, double? latitude, double? longitude,
+            DateTime date, TimeSpan time, string? street = null, string? barangay = null,
+            string? city = null, string? province = null, string? postal = null,
+            string? venueName = null)
         {
-            if (string.IsNullOrWhiteSpace(partyVenue))
+            var selection = VenueLocationPolicy.IsMethod(method) ? method! : VenueLocationPolicy.Search;
+            if (selection == VenueLocationPolicy.Manual)
             {
-                return BadRequest(new
-                {
-                    success = false,
-                    message = "Please select a venue before continuing."
-                });
+                if (!VenueLocationPolicy.SufficientManualAddress(street, barangay, city, province))
+                    throw new ArgumentException("Enter a city, province, and a street, subdivision, or barangay.");
+                var address = VenueLocationPolicy.FormatManualAddress(street, barangay, city, province, postal, venueName);
+                if (address.Length > 500)
+                    throw new ArgumentException("The address is too long. Shorten it and add directions in the optional field.");
+                return new VenueEvaluation(address, selection, null, null, null,
+                    VenueLocationPolicy.NeedsStaffReview, VenueLocationPolicy.PendingReview, true,
+                    "Manual address received. Staff must confirm service coverage and travel charges before payment.");
             }
+
+            if (string.IsNullOrWhiteSpace(venue) || venue.Length > 500)
+                throw new ArgumentException("Enter a complete event address or choose manual entry.");
+
+            if (!VenueLocationPolicy.HasCoordinatePair(latitude, longitude) ||
+                !VenueLocationPolicy.InPhilippines(latitude!.Value, longitude!.Value))
+            {
+                if (selection == VenueLocationPolicy.MapPin)
+                    throw new ArgumentException("Place your map pin within the Philippines and confirm its position.");
+                // Never silently select the provider's first match as the exact venue.
+                // Old forms without coordinates can still request a booking, but the address
+                // and service area must be reviewed by Staff before a quote or payment.
+                return new VenueEvaluation(venue.Trim(), selection, null, null, null,
+                    VenueLocationPolicy.NeedsStaffReview, VenueLocationPolicy.PendingReview, true,
+                    "No exact venue pin was confirmed. Staff will review the address and travel charges.");
+            }
+
+            if (selection == VenueLocationPolicy.MapPin)
+                return new VenueEvaluation(venue.Trim(), selection, latitude, longitude, null,
+                    VenueLocationPolicy.CustomerConfirmed, VenueLocationPolicy.PendingReview, true,
+                    "Customer-placed pin received. Staff must confirm location and travel charges.");
 
             try
             {
-                // Resolve the venue again on the server. Client-posted coordinates,
-                // distance, travel fee, and serviceability are never trusted.
-                var matches = await _geocodingService.SearchAsync(partyVenue);
-                var selected = matches.FirstOrDefault();
+                var matches = await _geocodingService.SearchAsync(venue.Trim());
+                var selected = matches.FirstOrDefault(r =>
+                    string.Equals(r.DisplayName.Trim(),venue.Trim(),StringComparison.OrdinalIgnoreCase)
+                    && Math.Abs(r.Latitude - latitude!.Value) < 0.0002
+                    && Math.Abs(r.Longitude - longitude!.Value) < 0.0002);
+                if (selected is null || !selected.IsPrecise)
+                    return new VenueEvaluation(venue.Trim(), selection, latitude, longitude, null,
+                        VenueLocationPolicy.NeedsStaffReview, VenueLocationPolicy.PendingReview, true,
+                        "Search result is approximate or could not be reconfirmed. Staff will clarify the exact venue.");
+                var distance = await CalculateVenueServiceabilityAsync(date, time, selected.Latitude, selected.Longitude);
+                return new VenueEvaluation(venue.Trim(), selection, selected.Latitude, selected.Longitude,
+                    distance, VenueLocationPolicy.CustomerConfirmed, VenueLocationPolicy.Calculated,
+                    distance.IsServiceable, distance.IsServiceable
+                        ? "Customer confirmed a precise search result. Distance is an estimate, not a routed road distance."
+                        : GetVenueServiceabilityError(distance));
+            }
+            catch (HttpRequestException)
+            {
+                return new VenueEvaluation(venue.Trim(), selection, latitude, longitude, null,
+                    VenueLocationPolicy.NeedsStaffReview, VenueLocationPolicy.PendingReview, true,
+                    "Location search is temporarily unavailable. Staff will confirm your address.");
+            }
+            catch (TaskCanceledException)
+            {
+                return new VenueEvaluation(venue.Trim(), selection, latitude, longitude, null,
+                    VenueLocationPolicy.NeedsStaffReview, VenueLocationPolicy.PendingReview, true,
+                    "The map search timed out. Staff will review your address.");
+            }
+        }
 
-                if (selected == null || !_venueDistanceService.IsValidCoordinate(selected.Latitude, selected.Longitude))
-                {
-                    return UnprocessableEntity(new
-                    {
-                        success = false,
-                        status = "NOT_VERIFIED",
-                        message = "Unable to verify this venue location. Please select another location or try again."
-                    });
-                }
-
-                var distance = eventDate.HasValue && startTime.HasValue
-                    ? await CalculateVenueServiceabilityAsync(eventDate.Value, startTime.Value, selected.Latitude, selected.Longitude)
-                    : _venueDistanceService.Calculate(selected.Latitude, selected.Longitude);
-
+        [Authorize(Roles = "Client")]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CheckVenueServiceability(
+            string? partyVenue, DateTime? eventDate, TimeSpan? startTime,
+            string? venueSelectionMethod, double? venueLatitude, double? venueLongitude,
+            string? manualStreet, string? manualBarangay, string? manualCity,
+            string? manualProvince, string? manualPostalCode, string? manualVenueName)
+        {
+            try
+            {
+                if (!eventDate.HasValue || !startTime.HasValue)
+                    return BadRequest(new { success=false, message="Select your event date and time." });
+                var eval = await EvaluateVenueAsync(partyVenue,venueSelectionMethod,
+                    venueLatitude,venueLongitude,eventDate.Value,startTime.Value,
+                    manualStreet,manualBarangay,manualCity,manualProvince,manualPostalCode,manualVenueName);
+                var distance = eval.Distance;
                 return Json(new
                 {
-                    success = true,
-                    status = distance.RequiresManualReview
-                        ? "FOR_STAFF_REVIEW"
-                        : distance.IsServiceable
-                            ? "SERVICEABLE"
-                            : "NOT_SERVICEABLE",
-                    displayName = selected.DisplayName,
-                    latitude = selected.Latitude,
-                    longitude = selected.Longitude,
-                    distanceKm = distance.DistanceKm,
-                    travelFee = distance.TravelFee,
-                    serviceZone = distance.ServiceZone,
-                    isServiceable = distance.IsServiceable,
-                    requiresManualReview = distance.RequiresManualReview,
-                    maximumServiceDistanceKm = distance.MaximumServiceDistanceKm,
-                    estimatedTravelTimeMinutes = distance.EstimatedTravelTimeMinutes,
-                    availableTravelTimeMinutes = distance.AvailableTravelTimeMinutes,
-                    usesPreviousEventLocation = distance.UsesPreviousEventLocation,
-                    serviceabilityReason = distance.ServiceabilityReason,
-                    // A public estimate must not identify another Client's event venue.
-                    originLatitude = distance.UsesPreviousEventLocation ? (double?)null : distance.OriginLatitude,
-                    originLongitude = distance.UsesPreviousEventLocation ? (double?)null : distance.OriginLongitude,
-                    startingPointName = distance.UsesPreviousEventLocation ? "Previous confirmed event" : distance.StartingPointName
+                    success=true,
+                    status=!eval.IsServiceable ? "NOT_SERVICEABLE"
+                        : eval.FeeStatus==VenueLocationPolicy.PendingReview ? "PENDING_LOCATION_REVIEW"
+                        : distance?.RequiresManualReview==true ? "FOR_STAFF_REVIEW" : "SERVICEABLE",
+                    displayName=eval.Address,
+                    latitude=eval.Latitude,
+                    longitude=eval.Longitude,
+                    locationVerificationStatus=eval.VerificationStatus,
+                    travelFeeStatus=eval.FeeStatus,
+                    travelFeePending=eval.FeeStatus==VenueLocationPolicy.PendingReview,
+                    distanceKm=distance?.DistanceKm,
+                    travelFee=distance?.TravelFee,
+                    serviceZone=distance?.ServiceZone,
+                    isServiceable=eval.IsServiceable,
+                    requiresManualReview=eval.FeeStatus==VenueLocationPolicy.PendingReview
+                        || distance?.RequiresManualReview==true,
+                    estimatedTravelTimeMinutes=distance?.EstimatedTravelTimeMinutes,
+                    availableTravelTimeMinutes=distance?.AvailableTravelTimeMinutes,
+                    usesPreviousEventLocation=distance?.UsesPreviousEventLocation ?? false,
+                    serviceabilityReason=eval.Message,
+                    startingPointName=distance?.UsesPreviousEventLocation==true
+                        ? "Previous confirmed event" : distance?.StartingPointName
                 });
+            }
+            catch (ArgumentException e)
+            {
+                return UnprocessableEntity(new { success=false, message=e.Message });
             }
             catch
             {
-                return StatusCode(503, new
-                {
-                    success = false,
-                    status = "NOT_VERIFIED",
-                    message = "Unable to verify this venue location. Please select another location or try again."
-                });
+                return StatusCode(503,new { success=false,
+                    message="Travel checks are temporarily unavailable. Please try again or enter your address manually." });
             }
         }
 
@@ -500,39 +606,48 @@ namespace AriesMagicAppointmentSystem.Controllers
                 return await ClientWizardViewAsync(model);
             }
 
-            // Never trust client-posted coordinates, distance, or travel fee. Re-geocode and recalculate on the server.
-            VenueDistanceResult venueDistance;
-            try
+            if (!model.CustomerConfirmedLocation)
             {
-                var matches = await _geocodingService.SearchAsync(model.PartyVenue);
-                var selectedVenue = matches.FirstOrDefault();
-                if (selectedVenue == null || !_venueDistanceService.IsValidCoordinate(selectedVenue.Latitude, selectedVenue.Longitude))
-                {
-                    ModelState.AddModelError(nameof(model.PartyVenue), "The venue could not be verified. Please return to Step 1 and select a valid venue.");
-                    return await ClientWizardViewAsync(model);
-                }
-
-                model.PartyVenue = selectedVenue.DisplayName;
-                model.VenueLatitude = selectedVenue.Latitude;
-                model.VenueLongitude = selectedVenue.Longitude;
-                venueDistance = await CalculateVenueServiceabilityAsync(model.EventDate, model.StartTime, selectedVenue.Latitude, selectedVenue.Longitude);
-                model.DistanceKm = venueDistance.DistanceKm;
-                model.TravelFee = venueDistance.TravelFee;
-                model.IsServiceable = venueDistance.IsServiceable;
-                model.ServiceZone = venueDistance.ServiceZone;
-                model.RequiresManualReview = venueDistance.RequiresManualReview;
-
-                if (!venueDistance.IsServiceable)
-                {
-                    ModelState.AddModelError(nameof(model.PartyVenue), GetVenueServiceabilityError(venueDistance));
-                    return await ClientWizardViewAsync(model);
-                }
-            }
-            catch (Exception)
-            {
-                ModelState.AddModelError(nameof(model.PartyVenue), "The venue could not be verified right now. Please try again.");
+                ModelState.AddModelError(nameof(model.CustomerConfirmedLocation), "Confirm the selected location or manual address before submitting.");
                 return await ClientWizardViewAsync(model);
             }
+            if (!VenueLocationPolicy.IsMethod(model.VenueSelectionMethod))
+            {
+                ModelState.AddModelError(nameof(model.VenueSelectionMethod), "Choose a supported location method.");
+                return await ClientWizardViewAsync(model);
+            }
+            // Never trust client-posted distance, price or serviceability. Search selections
+            // are matched to the specific geocoder result; customer pins and manual addresses
+            // always require staff resolution before payment.
+            VenueEvaluation evaluated;
+            try
+            {
+                evaluated = await EvaluateVenueAsync(model.PartyVenue, model.VenueSelectionMethod,
+                    model.VenueLatitude, model.VenueLongitude, model.EventDate, model.StartTime,
+                    model.ManualStreet, model.ManualBarangay, model.ManualCity,
+                    model.ManualProvince, model.ManualPostalCode, model.ManualVenueName);
+            }
+            catch (ArgumentException ex)
+            {
+                ModelState.AddModelError(nameof(model.PartyVenue), ex.Message);
+                return await ClientWizardViewAsync(model);
+            }
+            if (!evaluated.IsServiceable)
+            {
+                ModelState.AddModelError(nameof(model.PartyVenue), evaluated.Message);
+                return await ClientWizardViewAsync(model);
+            }
+            model.PartyVenue = evaluated.Address;
+            ModelState.Remove(nameof(model.PartyVenue));
+            model.VenueLatitude = evaluated.Latitude;
+            model.VenueLongitude = evaluated.Longitude;
+            var venueDistance = evaluated.Distance;
+            model.DistanceKm = venueDistance?.DistanceKm;
+            model.TravelFee = venueDistance?.TravelFee ?? 0m;
+            model.IsServiceable = evaluated.IsServiceable;
+            model.ServiceZone = venueDistance?.ServiceZone;
+            model.RequiresManualReview = evaluated.FeeStatus==VenueLocationPolicy.PendingReview
+                || venueDistance?.RequiresManualReview==true;
 
             var isBlocked = await _context.BlockedDates
                 .AnyAsync(x => x.Date.Date == model.EventDate.Date);
@@ -575,7 +690,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                 ? FixedInclusionDeduction
                 : 0m;
 
-            var finalPrice = selectedPackage.Price - totalDeduction + venueDistance.TravelFee;
+            var finalPrice = selectedPackage.Price - totalDeduction + (venueDistance?.TravelFee ?? 0m);
 
             if (finalPrice < 0)
             {
@@ -606,9 +721,9 @@ namespace AriesMagicAppointmentSystem.Controllers
             ModelState.Remove(nameof(model.FinalPrice));
             ModelState.Remove(nameof(model.RequiredDownpayment));
 
-            if (!model.AcceptTerms)
+            if (!model.AcceptTerms || !string.Equals(model.AcceptedTermsVersion, CurrentTermsVersion, StringComparison.Ordinal))
             {
-                ModelState.AddModelError("AcceptTerms", "You must agree to the Terms and Agreement before submitting your booking.");
+                ModelState.AddModelError("AcceptTerms", "Please review and accept the current Terms and Conditions before submitting your booking.");
             }
 
             if (!ModelState.IsValid)
@@ -695,16 +810,21 @@ namespace AriesMagicAppointmentSystem.Controllers
                 IsCompletedLocked = false,
 
                 EventType = model.EventType,
-                Motif = model.Motif,
+                Motif = model.Motif ?? string.Empty,
                 PartyTheme = model.PartyTheme,
                 PartyVenue = model.PartyVenue,
                 VenueLatitude = model.VenueLatitude,
                 VenueLongitude = model.VenueLongitude,
-                DistanceKm = venueDistance.DistanceKm,
-                TravelFee = venueDistance.TravelFee,
-                IsServiceable = venueDistance.IsServiceable,
-                ServiceZone = venueDistance.ServiceZone,
-                RequiresManualReview = venueDistance.RequiresManualReview,
+                DistanceKm = venueDistance?.DistanceKm,
+                TravelFee = venueDistance?.TravelFee ?? 0m,
+                IsServiceable = evaluated.IsServiceable,
+                ServiceZone = venueDistance?.ServiceZone,
+                RequiresManualReview = model.RequiresManualReview,
+                VenueSelectionMethod = evaluated.Method,
+                VenueVerificationStatus = evaluated.VerificationStatus,
+                TravelFeeStatus = evaluated.FeeStatus,
+                VenueDirections = model.VenueDirections?.Trim(),
+                VenueManualDetails = evaluated.Method == VenueLocationPolicy.Manual ? evaluated.Address : null,
                 CelebrantName = model.CelebrantName,
                 Age = model.Age,
                 PaxCount = model.PaxCount,
@@ -715,7 +835,9 @@ namespace AriesMagicAppointmentSystem.Controllers
                 BasePrice = selectedPackage.Price,
                 FinalPrice = finalPrice,
                 RequiredDownpayment = FixedRequiredDownpayment,
-                RemovedInclusionsJson = removedInclusionsJson
+                RemovedInclusionsJson = removedInclusionsJson,
+                AcceptedTermsVersion = CurrentTermsVersion,
+                TermsAcceptedAtUtc = DateTime.UtcNow
             };
 
             _context.Bookings.Add(booking);
@@ -725,7 +847,8 @@ namespace AriesMagicAppointmentSystem.Controllers
             {
                 BookingId = booking.Id,
                 EventType = TimelineEventType.BookingCreated,
-                Notes = $"Booking was created by client using the client booking flow. Venue distance: {venueDistance.DistanceKm:N2} KM, zone: {venueDistance.ServiceZone}, travel fee: ₱{venueDistance.TravelFee:N2}, manual review: {venueDistance.RequiresManualReview}. Removed inclusions: {removedInclusionNames.Count}. Fixed total deduction: ₱{totalDeduction:N2}.",                CreatedAt = DateTime.Now
+                Notes = $"Customer-provided location method: {evaluated.Method}; travel charge status: {evaluated.FeeStatus}; distance: {(venueDistance is null ? "pending" : $"{venueDistance.DistanceKm:N2} km")}; fee: {(venueDistance is null ? "pending" : $"PHP {venueDistance.TravelFee:N2}")}. Fee cannot be collected until location review and customer acceptance as required.",
+                CreatedAt = DateTime.Now
             });
 
             var staffUsers = await _userManager.GetUsersInRoleAsync("Staff");
@@ -765,21 +888,22 @@ namespace AriesMagicAppointmentSystem.Controllers
         }
 
         [Authorize(Roles = "Client")]
-        public async Task<IActionResult> Dashboard()
-        {
-            var result = await MyBookings();
-            if (result is ViewResult view) view.ViewName = "ClientDashboard";
-            return result;
-        }
+        public IActionResult Dashboard() => RedirectToAction(nameof(MyBookings));
 
         [Authorize(Roles = "Client")]
         public async Task<IActionResult> MyBookings()
         {
+            // Reconcile after an idle host restart; the background worker also processes these.
+            await HttpContext.RequestServices.GetRequiredService<IBookingExpirationService>()
+                .ExpireOverdueBookingsAsync();
             var appUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            var bookings = await _context.Bookings
+            var bookings = await _context.Bookings.AsNoTracking()
                 .Include(b => b.Client)
                 .Include(b => b.Service)
+                .Include(b => b.Payments)
+                .Include(b => b.RescheduleRequests)
+                .AsSplitQuery()
                 .Where(b => b.ApplicationUserId == appUserId)
                 .OrderByDescending(b => b.CreatedAt)
                 .ToListAsync();
@@ -787,6 +911,8 @@ namespace AriesMagicAppointmentSystem.Controllers
             var unavailableBookingIds = await GetUnavailableBookingIdsAsync(bookings);
 
             ViewBag.UnavailableBookingIds = unavailableBookingIds;
+            ViewBag.PaymentDeadlines = await InitialPaymentWindowPolicy.GetDeadlinesUtcAsync(
+                _context, bookings.Select(b => b.Id));
             ViewBag.FinancialSummaries = await _financialService.GetSummariesAsync(bookings.Select(b => b.Id));
 
             return View(bookings);
@@ -833,22 +959,167 @@ namespace AriesMagicAppointmentSystem.Controllers
         {
             if (id == null) return NotFound();
             await _historyService.ArchiveDueBookingsAsync();
+            await HttpContext.RequestServices.GetRequiredService<IBookingExpirationService>()
+                .ExpireOverdueBookingsAsync();
 
             var booking = await _context.Bookings
                 .Include(b => b.Client)
                 .Include(b => b.Service)
                 .Include(b => b.Payments)
+                .ThenInclude(p => p.OcrVerifications)
                 .Include(b => b.RescheduleRequests)
                 .FirstOrDefaultAsync(b => b.Id == id && (!User.IsInRole("Client") || b.ApplicationUserId == User.FindFirstValue(ClaimTypes.NameIdentifier)));
 
             if (booking == null) return NotFound();
+            ViewBag.PendingConfirmedChange = booking.Status == BookingStatus.Confirmed
+                ? await ConfirmedBookingChangePolicy.PendingAsync(_context, booking.Id) : null;
 
             if (User.IsInRole("Staff") || User.IsInRole("Owner"))
+            {
+                ViewBag.CancellationRequestLinked = booking.CancellationRequestMessageId.HasValue
+                    && await _context.Messages.AnyAsync(m => m.Id == booking.CancellationRequestMessageId
+                        && m.SenderId == booking.CancellationRequestByUserId
+                        && m.Conversation != null &&
+                        ((m.Conversation.BookingId == booking.Id && m.Conversation.ConversationType == ConversationTypes.Booking)
+                         || (m.RelatedBookingId == booking.Id &&
+                             m.Conversation.ConversationType == ConversationTypes.ClientSupport &&
+                             m.Conversation.SupportClientId == booking.ApplicationUserId)));
+                if (User.IsInRole("Owner"))
+                {
+                    ViewBag.FinancialSummary = await _financialService.GetSummaryAsync(booking.Id);
+                    ViewBag.OwnerRefunds = await _context.RefundRequests.AsNoTracking()
+                        .Where(r => r.BookingId == booking.Id)
+                        .OrderByDescending(r => r.RequestedAt).ToListAsync();
+                }
                 return View("StaffDetails", booking);
+            }
 
             ViewBag.IsScheduleUnavailable = (await GetUnavailableBookingIdsAsync(new[] { booking })).Contains(booking.Id);
+            ViewBag.PaymentDeadline = await InitialPaymentWindowPolicy.GetDeadlineUtcAsync(_context, booking.Id);
             ViewBag.FinancialSummary = await _financialService.GetSummaryAsync(booking.Id);
+            var initialPayment = booking.Payments.Where(p => p.Status == PaymentStatus.Verified && p.InitialVerificationAtUtc.HasValue)
+                .OrderBy(p => p.InitialVerificationAtUtc).FirstOrDefault();
+            var deadline = initialPayment?.InitialVerificationAtUtc?.AddHours(24);
+            ViewBag.CanDirectCancel = deadline.HasValue && DateTime.UtcNow < deadline.Value
+                && ClientCancellableStatuses.Contains(booking.Status) && !booking.RefundEligible
+                && !booking.Payments.Any(p => p.Status is PaymentStatus.Pending or PaymentStatus.AdditionalEvidenceRequired);
+            ViewBag.CancellationDeadline = deadline;
+            ViewBag.CanRequestCancellationReview = deadline.HasValue && DateTime.UtcNow >= deadline.Value
+                && ClientCancellableStatuses.Contains(booking.Status) && !booking.RefundEligible
+                && !booking.Payments.Any(p => p.Status is PaymentStatus.Pending or PaymentStatus.AdditionalEvidenceRequired);
+            ViewBag.CancellationConversationId = booking.CancellationRequestMessageId.HasValue
+                ? await _context.Conversations.Where(c => c.SupportClientId == booking.ApplicationUserId &&
+                    c.ConversationType == ConversationTypes.ClientSupport)
+                    .Select(c => (int?)c.Id).FirstOrDefaultAsync()
+                : null;
+            ViewBag.HasRefundEligibility = booking.RefundEligible && booking.RefundEligibilityPaymentId.HasValue
+                && !await _context.RefundRequests.AnyAsync(r => r.OriginalPaymentId == booking.RefundEligibilityPaymentId);
+            if (User.IsInRole("Client"))
+                ViewBag.ClientRefunds = await _context.RefundRequests.AsNoTracking()
+                    .Where(r => r.BookingId == booking.Id).OrderByDescending(r => r.RequestedAt).ToListAsync();
             return View("ClientDetails", booking);
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "Staff,Owner")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ResolveVenue(int id, double? latitude, double? longitude,
+            decimal? confirmedTravelFee, string? correctedAddress, string? reviewReason)
+        {
+            await using var transaction = await _context.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
+            var booking = await _context.Bookings.FirstOrDefaultAsync(x => x.Id == id);
+            if (booking == null) return NotFound();
+            if (booking.Status != BookingStatus.Pending ||
+                booking.TravelFeeStatus is not (VenueLocationPolicy.PendingReview or VenueLocationPolicy.AwaitingCustomerAcceptance))
+            {
+                TempData["Error"]="Only pending location-review requests may be corrected.";
+                return RedirectToAction(nameof(Details),new { id });
+            }
+            if (!VenueLocationPolicy.HasCoordinatePair(latitude,longitude) ||
+                !VenueLocationPolicy.InPhilippines(latitude!.Value,longitude!.Value) ||
+                string.IsNullOrWhiteSpace(reviewReason) || reviewReason.Trim().Length is < 10 or > 700 ||
+                (correctedAddress is { Length: > 500 }) ||
+                (confirmedTravelFee.HasValue && (confirmedTravelFee.Value < 0m || confirmedTravelFee.Value > 25000m
+                    || confirmedTravelFee.Value != decimal.Round(confirmedTravelFee.Value,2))))
+            {
+                TempData["Error"]="Provide a valid Philippine venue pin, review reason (10-700 characters), and valid travel fee.";
+                return RedirectToAction(nameof(Details),new { id });
+            }
+            var distance=await CalculateVenueServiceabilityAsync(booking.EventDate,booking.StartTime.TimeOfDay,latitude.Value,longitude.Value);
+            if (!distance.IsServiceable)
+            {
+                TempData["Error"]=GetVenueServiceabilityError(distance);
+                return RedirectToAction(nameof(Details),new { id });
+            }
+            if (await _context.Payments.AnyAsync(x=>x.BookingId==id
+                && (x.Status == PaymentStatus.Pending || x.Status == PaymentStatus.Verified || x.Status == PaymentStatus.AdditionalEvidenceRequired)))
+            {
+                TempData["Error"]="A payment already exists; location changes require a separate financial review.";
+                return RedirectToAction(nameof(Details),new { id });
+            }
+            var oldTravelFee=booking.TravelFee;
+            var approvedFee=confirmedTravelFee ?? distance.TravelFee;
+            booking.TravelFee=approvedFee;
+            booking.FinalPrice=Math.Max(0m,booking.FinalPrice-oldTravelFee+approvedFee);
+            booking.DistanceKm=distance.DistanceKm;
+            booking.VenueLatitude=latitude;
+            booking.VenueLongitude=longitude;
+            booking.IsServiceable=true;
+            booking.ServiceZone=distance.ServiceZone;
+            booking.RequiresManualReview=distance.RequiresManualReview;
+            booking.VenueVerificationStatus=VenueLocationPolicy.StaffVerified;
+            booking.TravelFeeStatus=VenueLocationPolicy.AwaitingCustomerAcceptance;
+            booking.TravelQuoteAcceptedAtUtc=null;
+            booking.VenueStaffReviewedAtUtc=DateTime.UtcNow;
+            if (!string.IsNullOrWhiteSpace(correctedAddress)) booking.PartyVenue=correctedAddress.Trim();
+            var reviewer=User.FindFirstValue(ClaimTypes.NameIdentifier)??"Unknown";
+            var note=$"[{DateTime.UtcNow:O}] Staff venue resolution by {reviewer}: {reviewReason.Trim()}; "
+                + $"distance {distance.DistanceKm:N2} km; preliminary quote PHP {approvedFee:N2}; awaiting customer acceptance.";
+            booking.InternalNotes=string.IsNullOrWhiteSpace(booking.InternalNotes)
+                ? note : booking.InternalNotes+"\n"+note;
+            if (!string.IsNullOrWhiteSpace(booking.ApplicationUserId))
+                _context.Notifications.Add(new Notification {
+                    UserId=booking.ApplicationUserId,
+                    Title="Confirm your updated event location and travel quote",
+                    Message="Staff reviewed your venue. Review and accept the updated travel fee and booking total before payment becomes available.",
+                    Link=$"/Bookings/Details/{id}",IsRead=false,CreatedAt=DateTime.Now
+                });
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+            TempData["Success"]="Venue reviewed. The customer must accept the updated booking quote before Staff can approve payment.";
+            return RedirectToAction(nameof(Details),new { id });
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "Client")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AcceptVenueQuote(int id, decimal quotedTotal, bool acceptTravelQuote)
+        {
+            await using var transaction=await _context.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
+            var userId=User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var booking=await _context.Bookings.FirstOrDefaultAsync(b=>b.Id==id&&b.ApplicationUserId==userId);
+            if (booking==null) return NotFound();
+            if (booking.Status!=BookingStatus.Pending ||
+                booking.TravelFeeStatus!=VenueLocationPolicy.AwaitingCustomerAcceptance ||
+                !acceptTravelQuote || quotedTotal!=booking.FinalPrice || !booking.IsServiceable)
+            {
+                TempData["Error"]="This quote has changed or needs review. Check the latest total before accepting.";
+                return RedirectToAction(nameof(Details),new { id });
+            }
+            booking.TravelFeeStatus=VenueLocationPolicy.Accepted;
+            booking.TravelQuoteAcceptedAtUtc=DateTime.UtcNow;
+            var staff=await _userManager.GetUsersInRoleAsync("Staff");
+            var owners=await _userManager.GetUsersInRoleAsync("Owner");
+            foreach(var person in staff.Concat(owners).DistinctBy(x=>x.Id))
+                _context.Notifications.Add(new Notification {
+                    UserId=person.Id,Title="Customer accepted revised venue quote",
+                    Message=$"Booking #{id} location and travel quote were accepted; Staff may continue reviewing the booking.",
+                    Link=$"/Bookings/Details/{id}",IsRead=false,CreatedAt=DateTime.Now
+                });
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+            TempData["Success"]="You accepted the reviewed travel quote. Staff can now continue evaluating your booking.";
+            return RedirectToAction(nameof(Details),new { id });
         }
 
         [Authorize(Roles = "Owner")]
@@ -891,6 +1162,11 @@ namespace AriesMagicAppointmentSystem.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
+            if (!VenueLocationPolicy.CanOpenPayment(booking.TravelFeeStatus))
+            {
+                TempData["Error"]="The venue and travel quote must be reviewed and accepted before payment can be enabled.";
+                return RedirectToAction(nameof(Details),new { id });
+            }
             var now = DateTime.Now;
             var staffUserId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "Unknown";
             var staffAccount = await _userManager.GetUserAsync(User);
@@ -903,6 +1179,15 @@ namespace AriesMagicAppointmentSystem.Controllers
             }
 
             booking.Status = BookingStatus.AwaitingDownpayment;
+            var paymentOpensAtUtc = DateTime.UtcNow;
+            var paymentDeadlineUtc = paymentOpensAtUtc.Add(InitialPaymentWindowPolicy.Duration);
+            _context.BookingTimelines.Add(new BookingTimeline
+            {
+                BookingId = booking.Id,
+                EventType = TimelineEventType.PaymentWindowOpened,
+                Notes = $"Staff approval opened payment at {paymentOpensAtUtc:O}; deadline {paymentDeadlineUtc:O}.",
+                CreatedAt = paymentOpensAtUtc
+            });
 
             _context.BookingTimelines.Add(new BookingTimeline
             {
@@ -918,7 +1203,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                 {
                     UserId = booking.ApplicationUserId,
                     Title = "Booking Approved",
-                    Message = $"Your booking for {booking.EventDate:MMMM dd, yyyy} was approved and is now awaiting downpayment.",
+                    Message = $"Your booking for {booking.EventDate:MMMM dd, yyyy} was approved. Upload a valid initial payment proof by {InitialPaymentWindowPolicy.FormatManila(paymentDeadlineUtc)} or the request will expire. Owner verification can follow after timely submission.",
                     Link = "/Bookings/MyBookings",
                     IsRead = false,
                     CreatedAt = DateTime.Now
@@ -930,7 +1215,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                 $"Booking #{booking.Id} approved during Staff review.", staffUserId, staffName,
                 booking.Id.ToString(), "Booking", new { BookingId = booking.Id, Note = cleanNote, StaffUserId = staffUserId, StaffName = staffName, ActionTaken = "Approved", PreviousStatus = BookingStatus.Pending, NewStatus = BookingStatus.AwaitingDownpayment, Timestamp = now });
             await transaction.CommitAsync();
-            TempData["Success"] = "Booking approved. The client can now proceed to payment.";
+            TempData["Success"] = $"Booking approved. Client payment proof is due by {InitialPaymentWindowPolicy.FormatManila(paymentDeadlineUtc)}.";
             return RedirectToAction(nameof(Index));
         }
 
@@ -1062,7 +1347,8 @@ namespace AriesMagicAppointmentSystem.Controllers
         {
             BookingStatus.Pending,
             BookingStatus.AwaitingDownpayment,
-            BookingStatus.AwaitingVerification
+            BookingStatus.AwaitingVerification,
+            BookingStatus.Confirmed
         };
 
         [Authorize(Roles = "Client")]
@@ -1076,16 +1362,23 @@ namespace AriesMagicAppointmentSystem.Controllers
             var booking = await _context.Bookings
                 .Include(b => b.Client)
                 .Include(b => b.Service)
+                .Include(b => b.Payments)
                 .FirstOrDefaultAsync(b => b.Id == id && b.ApplicationUserId == appUserId);
 
             if (booking == null) return NotFound();
 
-            if (!ClientCancellableStatuses.Contains(booking.Status))
+            var verifiedInitial = booking.Payments.Where(p => p.Status == PaymentStatus.Verified && p.InitialVerificationAtUtc.HasValue)
+                .OrderBy(p => p.InitialVerificationAtUtc).FirstOrDefault();
+            if (booking.Payments.Any(p => p.Status is PaymentStatus.Pending or PaymentStatus.AdditionalEvidenceRequired)
+                || !BookingCancellationPolicy.IsClientDirectCancellationAllowed(booking, verifiedInitial, DateTime.UtcNow))
             {
-                TempData["Error"] = "This booking can no longer be cancelled because it is already confirmed, completed, or otherwise finalized. Please submit a refund or reschedule request instead.";
+                TempData["Error"] = verifiedInitial == null
+                    ? "Direct cancellation is available only after the Owner verifies the initial payment. Contact Staff to request help."
+                    : "Your 24-hour cancellation window has ended. Contact Staff to request a review.";
                 return RedirectToAction(nameof(MyBookings));
             }
 
+            ViewBag.CancellationDeadline = verifiedInitial!.InitialVerificationAtUtc!.Value.AddHours(24);
             return View(booking);
         }
 
@@ -1096,25 +1389,40 @@ namespace AriesMagicAppointmentSystem.Controllers
         {
             var appUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            var booking = await _context.Bookings
+            await using var transaction = await _context.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
+            var booking = await _context.Bookings.Include(b => b.Payments)
                 .FirstOrDefaultAsync(b => b.Id == id && b.ApplicationUserId == appUserId);
 
             if (booking == null) return NotFound();
 
-            if (!ClientCancellableStatuses.Contains(booking.Status))
+            var verifiedInitial = booking.Payments.Where(p => p.Status == PaymentStatus.Verified && p.InitialVerificationAtUtc.HasValue)
+                .OrderBy(p => p.InitialVerificationAtUtc).FirstOrDefault();
+            if (booking.Payments.Any(p => p.Status is PaymentStatus.Pending or PaymentStatus.AdditionalEvidenceRequired)
+                || !BookingCancellationPolicy.IsClientDirectCancellationAllowed(booking, verifiedInitial, DateTime.UtcNow))
             {
-                TempData["Error"] = "This booking can no longer be cancelled.";
+                TempData["Error"] = "This booking is outside the direct cancellation window or is no longer eligible. Contact Staff if you need a cancellation review.";
                 return RedirectToAction(nameof(MyBookings));
             }
 
+            var previousStatus = booking.Status;
+            booking.CancelledAtUtc = DateTime.UtcNow;
+            booking.CancelledByUserId = appUserId;
+            booking.CancellationActorRole = "Client";
+            booking.CancellationReason = "Client direct cancellation within 24 hours of initial payment verification.";
+            booking.CancellationSource = "Client24HourWindow";
+            booking.CancellationPreviousStatus = previousStatus;
+            booking.CancellationPaymentId = verifiedInitial!.Id;
+            booking.RefundEligible = true;
+            booking.RefundEligibilityReason = "ClientCancellationWithin24Hours";
+            booking.RefundEligibilityPaymentId = verifiedInitial.Id;
             booking.Status = BookingStatus.Cancelled;
 
             _context.BookingTimelines.Add(new BookingTimeline
             {
                 BookingId = booking.Id,
                 EventType = TimelineEventType.BookingCancelled,
-                Notes = "Booking was cancelled by the client.",
-                CreatedAt = DateTime.Now
+                Notes = "Booking was cancelled by the client within the verified initial-payment cancellation window.",
+                CreatedAt = DateTime.UtcNow
             });
 
             var staffUsers = await _userManager.GetUsersInRoleAsync("Staff");
@@ -1129,133 +1437,120 @@ namespace AriesMagicAppointmentSystem.Controllers
                     Message = $"A client cancelled their booking for {booking.EventDate:MMMM dd, yyyy}.",
                     Link = $"/Bookings/Details/{booking.Id}",
                     IsRead = false,
-                    CreatedAt = DateTime.Now
+                    CreatedAt = DateTime.UtcNow
                 });
             }
 
             await _context.SaveChangesAsync();
+            await _activityService.LogAsync(SystemActivityType.BookingCancelled,
+                $"Booking #{booking.Id} cancelled by Client.", appUserId!, User.Identity?.Name,
+                booking.Id.ToString(), "Booking", new { BookingId = booking.Id, ClientId = appUserId, ActorRole = "Client", Reason = booking.CancellationReason,
+                    PreviousStatus = previousStatus, NewStatus = booking.Status, AtUtc = booking.CancelledAtUtc,
+                    PaymentId = verifiedInitial.Id, RefundEligible = true, RefundEligibilityReason = booking.RefundEligibilityReason });
+            await transaction.CommitAsync();
 
             TempData["Success"] = "Your booking was cancelled successfully.";
             return RedirectToAction(nameof(MyBookings));
         }
 
+        [HttpPost]
+        [Authorize(Roles = "Staff")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CancelAfterReview(int id, string? reason)
+        {
+            reason = reason?.Trim();
+            if (string.IsNullOrWhiteSpace(reason) || reason.Length < 8 || reason.Length > 1000)
+            {
+                TempData["Error"] = "Record a cancellation reason of at least 8 characters.";
+                return RedirectToAction(nameof(Details), new { id });
+            }
+
+            await using var transaction = await _context.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
+            var booking = await _context.Bookings.Include(b => b.Payments).FirstOrDefaultAsync(b => b.Id == id);
+            if (booking == null) return NotFound();
+            var verifiedInitial = booking.Payments.Where(p => p.Status == PaymentStatus.Verified && p.InitialVerificationAtUtc.HasValue)
+                .OrderBy(p => p.InitialVerificationAtUtc).FirstOrDefault();
+            var linkedRequestExists = booking.CancellationRequestMessageId.HasValue
+                && await _context.Messages.AnyAsync(m => m.Id == booking.CancellationRequestMessageId
+                    && m.SenderId == booking.CancellationRequestByUserId
+                    && m.Conversation != null &&
+                    ((m.Conversation.BookingId == booking.Id && m.Conversation.ConversationType == ConversationTypes.Booking)
+                     || (m.RelatedBookingId == booking.Id &&
+                         m.Conversation.ConversationType == ConversationTypes.ClientSupport &&
+                         m.Conversation.SupportClientId == booking.ApplicationUserId)));
+            if (!ClientCancellableStatuses.Contains(booking.Status) || booking.RefundEligible
+                || booking.Payments.Any(p => p.Status is PaymentStatus.Pending or PaymentStatus.AdditionalEvidenceRequired)
+                || verifiedInitial == null || booking.Status is BookingStatus.Cancelled or BookingStatus.Completed
+                || !linkedRequestExists
+                || DateTime.UtcNow < verifiedInitial.InitialVerificationAtUtc!.Value.AddHours(24))
+            {
+                TempData["Error"] = "This booking is not eligible for Staff cancellation review.";
+                return RedirectToAction(nameof(Details), new { id });
+            }
+
+            var actor = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+            var previousStatus = booking.Status;
+            booking.Status = BookingStatus.Cancelled;
+            booking.CancelledAtUtc = DateTime.UtcNow;
+            booking.CancelledByUserId = actor;
+            booking.CancellationActorRole = "Staff";
+            booking.CancellationReason = reason;
+            booking.CancellationSource = "StaffApprovedClientRequest";
+            booking.CancellationPreviousStatus = previousStatus;
+            booking.CancellationPaymentId = verifiedInitial.Id;
+            booking.RefundEligible = true;
+            booking.RefundEligibilityReason = "StaffApprovedCancellation";
+            booking.RefundEligibilityPaymentId = verifiedInitial.Id;
+            _context.BookingTimelines.Add(new BookingTimeline { BookingId = booking.Id, EventType = TimelineEventType.BookingCancelled,
+                Notes = "Staff-approved client cancellation: " + reason, CreatedAt = DateTime.UtcNow });
+            await _context.SaveChangesAsync();
+            if (!string.IsNullOrWhiteSpace(booking.ApplicationUserId))
+            {
+                _context.Notifications.Add(new Notification
+                {
+                    UserId = booking.ApplicationUserId,
+                    Title = "Cancellation Approved for Refund Review",
+                    Message = "Staff recorded your cancellation request. The Owner must still review any refund; no refund has been approved or paid.",
+                    Link = "/Payments/MyRefundRequests",
+                    IsRead = false,
+                    CreatedAt = DateTime.UtcNow
+                });
+                await _context.SaveChangesAsync();
+            }
+            await _activityService.LogAsync(SystemActivityType.BookingCancelled, $"Booking #{booking.Id} cancelled by Staff after client request.",
+                actor, User.Identity?.Name, booking.Id.ToString(), "Booking", new { BookingId = booking.Id, ClientId = booking.ApplicationUserId,
+                    ActorRole = "Staff", Reason = reason, PreviousStatus = previousStatus, NewStatus = booking.Status,
+                    AtUtc = booking.CancelledAtUtc, PaymentId = verifiedInitial.Id,
+                    CancellationRequestMessageId = booking.CancellationRequestMessageId, ClientRequestReason = booking.CancellationRequestReason, RefundEligible = true,
+                    RefundEligibilityReason = booking.RefundEligibilityReason });
+            await transaction.CommitAsync();
+            TempData["Success"] = "The cancellation was recorded and is eligible for Owner refund review. No refund was approved or paid.";
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
         private void SetCreateStepOneViewBags()
         {
-            ViewBag.EventTypes = new List<string>
-            {
-                "Birthday",
-                "Company Events",
-                "Bridal Shower",
-                "Gender Reveal",
-                "School Events",
-                "Halloween",
-                "Christmas Parties",
-                "Easter Events"
-            };
+            ViewBag.EventTypes = BookingEventDetailsPolicy.EventTypes.ToList();
         }
 
         private void ValidateEventSpecificFields(BookingStepOneViewModel model)
         {
-            if (string.IsNullOrWhiteSpace(model.EventType))
-            {
-                return;
-            }
-
-            if (model.EventType == "Birthday")
-            {
-                if (string.IsNullOrWhiteSpace(model.PartyTheme))
-                    ModelState.AddModelError("PartyTheme", "Party theme is required for birthday events.");
-
-                if (string.IsNullOrWhiteSpace(model.CelebrantName))
-                    ModelState.AddModelError("CelebrantName", "Celebrant name is required for birthday events.");
-
-                if (model.Age == null || model.Age <= 0)
-                    ModelState.AddModelError("Age", "Age is required for birthday events.");
-            }
-            else if (model.EventType == "Bridal Shower")
-            {
-                if (string.IsNullOrWhiteSpace(model.PartyTheme))
-                    ModelState.AddModelError("PartyTheme", "Party theme is required for bridal shower events.");
-
-                if (string.IsNullOrWhiteSpace(model.CelebrantName))
-                    ModelState.AddModelError("CelebrantName", "Celebrant name is required for bridal shower events.");
-
-                model.Age = null;
-            }
-            else if (
-                model.EventType == "Gender Reveal" ||
-                model.EventType == "Halloween" ||
-                model.EventType == "Christmas Parties" ||
-                model.EventType == "Easter Events"
-            )
-            {
-                if (string.IsNullOrWhiteSpace(model.PartyTheme))
-                    ModelState.AddModelError("PartyTheme", "Party theme is required for this event type.");
-
-                model.CelebrantName = null;
-                model.Age = null;
-            }
-            else if (
-                model.EventType == "Company Events" ||
-                model.EventType == "School Events"
-            )
-            {
-                model.PartyTheme = null;
-                model.CelebrantName = null;
-                model.Age = null;
-            }
+            var normalized = BookingEventDetailsPolicy.ValidateAndNormalize(
+                model.EventType, model.Motif, model.PartyTheme, model.CelebrantName, model.Age, ModelState);
+            model.Motif = normalized.Motif;
+            model.PartyTheme = normalized.Theme;
+            model.CelebrantName = normalized.Celebrant;
+            model.Age = normalized.Age;
         }
 
         private void ValidateEventSpecificFields(BookingStepTwoViewModel model)
         {
-            if (string.IsNullOrWhiteSpace(model.EventType))
-            {
-                return;
-            }
-
-            if (model.EventType == "Birthday")
-            {
-                if (string.IsNullOrWhiteSpace(model.PartyTheme))
-                    ModelState.AddModelError("PartyTheme", "Party theme is required for birthday events.");
-
-                if (string.IsNullOrWhiteSpace(model.CelebrantName))
-                    ModelState.AddModelError("CelebrantName", "Celebrant name is required for birthday events.");
-
-                if (model.Age == null || model.Age <= 0)
-                    ModelState.AddModelError("Age", "Age is required for birthday events.");
-            }
-            else if (model.EventType == "Bridal Shower")
-            {
-                if (string.IsNullOrWhiteSpace(model.PartyTheme))
-                    ModelState.AddModelError("PartyTheme", "Party theme is required for bridal shower events.");
-
-                if (string.IsNullOrWhiteSpace(model.CelebrantName))
-                    ModelState.AddModelError("CelebrantName", "Celebrant name is required for bridal shower events.");
-
-                model.Age = null;
-            }
-            else if (
-                model.EventType == "Gender Reveal" ||
-                model.EventType == "Halloween" ||
-                model.EventType == "Christmas Parties" ||
-                model.EventType == "Easter Events"
-            )
-            {
-                if (string.IsNullOrWhiteSpace(model.PartyTheme))
-                    ModelState.AddModelError("PartyTheme", "Party theme is required for this event type.");
-
-                model.CelebrantName = null;
-                model.Age = null;
-            }
-            else if (
-                model.EventType == "Company Events" ||
-                model.EventType == "School Events"
-            )
-            {
-                model.PartyTheme = null;
-                model.CelebrantName = null;
-                model.Age = null;
-            }
+            var normalized = BookingEventDetailsPolicy.ValidateAndNormalize(
+                model.EventType, model.Motif, model.PartyTheme, model.CelebrantName, model.Age, ModelState);
+            model.Motif = normalized.Motif;
+            model.PartyTheme = normalized.Theme;
+            model.CelebrantName = normalized.Celebrant;
+            model.Age = normalized.Age;
         }
 
         private async Task<VenueDistanceResult> CalculateVenueServiceabilityAsync(

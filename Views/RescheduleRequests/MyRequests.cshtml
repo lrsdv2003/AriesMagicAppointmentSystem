@@ -1,40 +1,24 @@
 @model IEnumerable<AriesMagicAppointmentSystem.Models.RescheduleRequest>
-@using AriesMagicAppointmentSystem.Models
+@using Microsoft.AspNetCore.Mvc.Rendering
 @{
-    Layout = "_ClientHubLayout"; ViewData["Title"] = "Reschedule requests";
-    var requests = Model.OrderByDescending(r => r.Id).ToList();
+ Layout="_ClientHubLayout";ViewData["Title"]="Rescheduling";
+ var eligible=ViewBag.EligibleRescheduleOptions as List<SelectListItem>??new();
 }
-<div class="cn-page cn-payment-page">
-<header class="cn-page-heading"><div><p class="cn-kicker">Schedule changes</p><h1>Reschedule requests.</h1></div><a asp-action="Create" class="cn-button cn-primary">New request</a></header>
-@if(TempData["Success"] is string success){<div class="cn-success" role="status"><strong>Request sent for Staff review</strong>@success</div>}
-@if(TempData["Error"] is string error){<div class="cn-error-summary" role="alert">@error</div>}
-@if(!requests.Any())
-{
-    <section class="cn-empty"><h2>No schedule changes yet.</h2><p>Your requests and Staff decisions will appear here. Submitting a request keeps your current booking schedule until approval.</p><a asp-controller="Bookings" asp-action="MyBookings" class="cn-text-link">View my bookings</a></section>
-}
-else
-{
-<div class="cn-records">
-@foreach(var item in requests)
-{
-    var package = item.Booking?.PackageName ?? item.Booking?.Service?.Name ?? "Package";
-    var originalDate = item.OriginalDate ?? (item.Status == RescheduleRequestStatus.Pending ? item.Booking?.EventDate : null);
-    var originalStart = item.OriginalStartTime ?? (item.Status == RescheduleRequestStatus.Pending ? item.Booking?.StartTime : null);
-    var originalEnd = item.OriginalEndTime ?? (item.Status == RescheduleRequestStatus.Pending ? item.Booking?.EndTime : null);
-    var original = originalDate.HasValue && originalStart.HasValue && originalEnd.HasValue ? $"{originalDate.Value:MMM d, yyyy} · {originalStart.Value:h:mm tt}–{originalEnd.Value:h:mm tt}" : "Historical original schedule unavailable";
-    var requested = $"{item.RequestedDate:MMM d, yyyy} · {item.RequestedStartTime:h:mm tt}–{item.RequestedEndTime:h:mm tt}";
-    <article class="cn-record"><div class="cn-record-head"><div><span class="cn-reference">RS-@item.Id.ToString("D3")</span><h2>@package</h2></div><partial name="_StatusBadge" model="item.Status"/></div>
-    <dl class="cn-facts"><div><dt>Original</dt><dd>@original</dd></div><div><dt>Requested</dt><dd>@requested</dd></div></dl>
-    <div class="cn-next-step cn-request-outcome">
-    @if(item.Status == RescheduleRequestStatus.Pending){<span>Awaiting Staff review. Your current schedule stays in place until approval.</span>}
-    else if(item.Status == RescheduleRequestStatus.Approved){<span>Staff approved your request. Your booking has moved to @requested.</span>}
-    else if(item.Status == RescheduleRequestStatus.Rejected){<span>Staff declined this request. Your original event schedule remains unchanged.</span>}
-    else {<span>Open your booking for its current schedule.</span>}
-    </div>
-    <details class="cn-disclosure"><summary>Request details</summary><p>Reason: @item.Reason</p>@if(item.Status == RescheduleRequestStatus.Rejected && !string.IsNullOrWhiteSpace(item.ClientFacingReason)){<p>Staff response: @item.ClientFacingReason</p>}@if(item.ReviewedAt.HasValue){<p>Reviewed @item.ReviewedAt.Value.ToString("MMM d, yyyy · h:mm tt")</p>}</details>
-    <div class="cn-record-actions"><a asp-controller="Bookings" asp-action="Details" asp-route-id="@item.BookingId">View booking</a>@if(item.Status == RescheduleRequestStatus.Rejected){<a asp-action="Create">Request another date</a>}</div>
-    </article>
-}
-</div>
-}
+<div class="cn-page client-round2-action-page">
+ <header class="hub-heading"><div><span class="hub-kicker">Change your event schedule</span><h1>Request rescheduling.</h1><p>Submit a new schedule for a confirmed booking with verified payment. Track its review in My Bookings.</p></div></header>
+ @if(TempData["Success"] is string success){<div class="cn-success" role="status"><strong>Request submitted.</strong> @success <a asp-controller="Bookings" asp-action="MyBookings">Review your booking</a></div>}
+ @if(TempData["Error"] is string error){<div class="cn-error-summary" role="alert">@error</div>}
+ @if(eligible.Any()){
+  <section class="hub-card r2-select-card">
+   <div class="r2-card-icon"><i class="bi bi-calendar2-week" aria-hidden="true"></i></div>
+   <h2>Choose a booking to reschedule</h2>
+   <p>Only confirmed bookings with an Owner-verified payment and no pending rescheduling request are eligible.</p>
+   <form asp-action="Create" method="get" class="r2-selection-form">
+    <div class="cn-field"><label for="r2RescheduleBooking">Select verified booking</label><select id="r2RescheduleBooking" name="bookingId" class="cn-input" asp-items="eligible" required><option value="">Choose a booking</option></select></div>
+    <button type="submit" class="cn-button cn-primary">Request a new schedule <i class="bi bi-arrow-right" aria-hidden="true"></i></button>
+   </form>
+  </section>}
+ else{
+  <section class="hub-card r2-empty-action" role="status"><i class="bi bi-calendar-x" aria-hidden="true"></i><h2>No bookings available for rescheduling</h2><p>You currently have no verified bookings eligible for rescheduling. Open My Bookings to see your booking details or an existing pending request.</p><a asp-controller="Bookings" asp-action="MyBookings" class="cn-button cn-primary">View my bookings <i class="bi bi-arrow-right" aria-hidden="true"></i></a></section>}
+ <p class="r2-action-footnote"><i class="bi bi-info-circle" aria-hidden="true"></i> Your existing event schedule remains unchanged until Staff approves a request.</p>
 </div>

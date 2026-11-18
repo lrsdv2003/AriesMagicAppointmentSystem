@@ -1,8 +1,8 @@
 @model AriesMagicAppointmentSystem.ViewModels.PaymentUploadViewModel
 @{ ViewData["Title"] = "Payment"; ViewData["BookingExperience"] = true; }
-<div class="cn-page cn-payment-page">
-<header class="cn-page-heading"><div><p class="cn-kicker">Your booking, your next step</p><h1>Complete your payment.</h1></div><a asp-action="MyUploads" class="cn-text-link">Payment activity</a></header>
-<div class="cn-progress"><p class="cn-progress-caption" id="paymentStepCaption">Step 1 of 3 · Payment instructions</p><ol class="cr-steps cr-payment-steps" aria-label="Payment progress"><li class="is-active" aria-current="step"><span>Payment instructions</span></li><li><span>Upload proof</span></li><li><span>Owner verification</span></li></ol></div>
+<link rel="stylesheet" href="~/css/client-round2-20261108.css" asp-append-version="true"/><link rel="stylesheet" href="~/css/client-ultra-20261108.css" asp-append-version="true"/><div class="cn-page cn-payment-page r2-payment-wizard">
+<header class="cn-page-heading"><div><p class="cn-kicker">Your booking, your next step</p><h1>Complete your payment.</h1><p>Send your payment, keep your successful receipt, and upload it for Owner verification.</p></div><a asp-controller="Bookings" asp-action="MyBookings" class="cn-button cn-secondary ultra-my-bookings-button"><i class="bi bi-arrow-left" aria-hidden="true"></i> My bookings</a></header>
+<div class="cn-progress"><p class="cn-progress-caption" id="paymentStepCaption">Step 1 of 2 · Payment instructions</p><ol class="cr-steps cr-payment-steps" aria-label="Payment progress"><li class="is-active" aria-current="step"><span>Payment instructions</span></li><li><span>Upload proof</span></li></ol></div>
 @if (!Model.Bookings.Any())
 {
     <section class="cn-empty"><h2>No booking is ready for payment.</h2><p>Check your booking for its current status and next steps.</p><a asp-controller="Bookings" asp-action="MyBookings" class="cn-button cn-primary">View my bookings</a></section>
@@ -13,27 +13,49 @@ else
 @Html.AntiForgeryToken()
 <input asp-for="ExpectedLatestPaymentId" type="hidden"/>
 <div asp-validation-summary="All" class="cn-error-summary" role="alert" tabindex="-1"></div>
+<div class="r2-payment-layout"><div class="r2-payment-primary">
 <section class="cn-panel" id="paymentInstructions">
     <div class="cn-panel-heading"><h2 tabindex="-1">Pay, then send your receipt.</h2><p>Owner verification confirms the payment and updates your balance.</p></div>
-    <div class="cn-payment-booking"><div class="cn-field"><label asp-for="BookingId">Booking to pay</label><select asp-for="BookingId" asp-items="Model.Bookings" class="cn-input" required><option value="">Select an approved booking</option></select><span asp-validation-for="BookingId" id="BookingIdError" class="cn-field-error"></span></div><dl id="paymentFinancials" class="cn-inline-finance" aria-label="Selected booking balance"></dl></div>
-    <div class="cn-payment-instructions"><div><h3>Three simple steps</h3><ol class="cn-instruction-list"><li><strong>Send your payment</strong><span>Use the GCash QR. Confirm the recipient and amount in your payment app.</span></li><li><strong>Save the successful receipt</strong><span>Keep the full transaction details visible and readable.</span></li><li><strong>Upload it here</strong><span>Your balance changes after Owner verification.</span></li></ol><p class="cn-policy">Initial minimum: <strong>₱@Model.FixedDownpaymentAmount.ToString("N0")</strong>. You may pay more. If the remaining balance is below this amount, pay the exact balance.</p></div>
-    <figure class="cn-qr"><img src="@Model.GCashQrPath" alt="GCash payment QR code"/><figcaption><a href="@Model.GCashQrPath" target="_blank" rel="noopener">Open full-size QR</a><a href="@Model.GCashQrPath" download="aries-gcash-qr.jpeg">Save image</a></figcaption></figure></div>
+<p id="ultraPaymentDeadline" class="ultra-payment-deadline" role="status" hidden></p><div class="cn-payment-booking"><div class="cn-field"><label asp-for="BookingId">Booking to pay</label><select asp-for="BookingId" asp-items="Model.Bookings" class="cn-input" required><option value="">Select an approved booking</option></select><span asp-validation-for="BookingId" id="BookingIdError" class="cn-field-error"></span></div><dl id="paymentFinancials" class="cn-inline-finance" aria-label="Selected booking balance"></dl></div>
+    <fieldset class="cn-fieldset cn-payment-options"><legend>Choose your initial payment</legend>@foreach(var option in Model.Options){<label class="cn-payment-option" data-payment-option="@option.Key"><input type="radio" name="PaymentOption" value="@option.Key" checked="@(Model.PaymentOption==option.Key)" required/><span><strong>@option.Name</strong><small>@option.Explanation · Remaining after verification: ₱@option.Remaining.ToString("N2")</small></span><b>₱@option.Amount.ToString("N2")</b></label>}@if(!Model.Options.Any()){<p class="cn-help" data-no-payment-options>The minimum initial payment is ₱@Model.FixedDownpaymentAmount.ToString("N0"). This booking total does not have a valid payment choice; contact Staff for assistance.</p>}<span asp-validation-for="PaymentOption" class="cn-field-error"></span></fieldset>
+<div class="cn-payment-instructions"><div><h3>Three simple steps</h3><ol class="cn-instruction-list"><li><strong>Send your payment</strong><span>Use the GCash QR. Confirm the recipient and amount in your payment app.</span></li><li><strong>Save the successful receipt</strong><span>Keep the full transaction details visible and readable.</span></li><li><strong>Upload it here</strong><span>Your balance changes after Owner verification.</span></li></ol><p class="cn-policy">Choose a minimum ₱@Model.FixedDownpaymentAmount.ToString("N0"), 50%, or full initial payment. After the initial payment is verified, any remaining balance is due on the event day.</p></div>
+    </div>
     <div class="cn-actions"><button type="button" class="cn-button cn-primary" id="continuePayment">I have paid — upload receipt <span aria-hidden="true">→</span></button></div>
 </section>
 <section class="cn-panel" id="paymentProof" hidden>
-    <div class="cn-panel-heading"><h2 tabindex="-1">Send your payment receipt.</h2><p>Show the amount, recipient, reference number, date and successful status. Owner review is required; uploading does not verify payment.</p></div>
+    <div class="cn-panel-heading"><h2 tabindex="-1">Upload proof of payment</h2><p>Your receipt should clearly show a completed transaction.</p></div>
     <p id="paymentSelection" class="cn-context"></p>
     <fieldset class="cn-fieldset"><legend>Transaction details</legend><div class="cn-fields">
-        <div class="cn-field"><label asp-for="Amount">Amount paid (₱)</label><input asp-for="Amount" type="number" step="0.01" min="0.01" class="cn-input" required/><span asp-validation-for="Amount" id="AmountError" class="cn-field-error"></span></div>
+        
         <div class="cn-field"><label asp-for="PaymentMethod">Payment method</label><select asp-for="PaymentMethod" class="cn-input" required><option>GCash</option><option>Maya</option><option>Bank Transfer</option><option>Online Banking</option><option>Other</option></select><span asp-validation-for="PaymentMethod" id="PaymentMethodError" class="cn-field-error"></span></div>
     </div></fieldset>
     <fieldset class="cn-fieldset"><legend>Your private receipt</legend><div class="cn-upload"><div class="cn-field"><label asp-for="ProofImage">Choose a receipt image</label><input asp-for="ProofImage" type="file" class="cn-file-input" data-booking-file aria-describedby="proofHelp ProofImageError" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" required/><p class="cn-help" id="proofHelp">JPG, PNG, or WEBP · up to 5 MB. Your receipt stays private.</p><span asp-validation-for="ProofImage" id="ProofImageError" class="cn-field-error"></span></div>
     <figure class="cn-file-preview" data-booking-preview hidden><img alt="Your selected payment receipt"/><figcaption><span data-file-name></span><div class="cn-file-actions"><button type="button" class="cn-edit" data-booking-replace>Change image</button><button type="button" class="cn-edit" data-booking-remove>Remove</button></div></figcaption></figure></div></fieldset>
     @if (!ViewData.ModelState.IsValid) { <p class="cn-help">Please choose your receipt again before retrying. Files are not restored after a server response.</p> }
-    <div class="cn-actions"><button type="button" class="cn-button cn-secondary" id="backPayment">Back</button><button type="submit" class="cn-button cn-primary">Send receipt for verification <span aria-hidden="true">→</span></button></div>
-</section>
+    <label class="cn-check client-payment-ack"><input asp-for="AcknowledgesPaymentTerms" type="checkbox" id="paymentAcknowledgement" required/><span>I confirm this receipt represents a real, successful payment. I understand that upload is not payment verification, the Owner must review the receipt and amount, and invalid proof, underpayments or overpayments may require clarification or policy-based adjustments.</span></label><span asp-validation-for="AcknowledgesPaymentTerms" class="cn-field-error"></span>
+<div class="cn-actions"><button type="button" class="cn-button cn-secondary" id="backPayment">Back</button><button type="submit" class="cn-button cn-primary">Send receipt for verification <span aria-hidden="true">→</span></button></div>
+</section></div>
+<aside class="r2-payment-side" aria-label="Payment summary and receipt guidance">
+ <section class="cn-panel r2-payment-summary">
+  <h2><i class="bi bi-wallet2" aria-hidden="true"></i> Payment summary</h2>
+  <dl><div><dt>Booking</dt><dd id="r2PaymentBooking">Select a booking</dd></div>
+  <div><dt>Booking total</dt><dd id="r2PaymentTotal">?</dd></div>
+  <div><dt>Verified payments</dt><dd id="r2PaymentVerified">?</dd></div>
+  <div><dt>Remaining balance</dt><dd id="r2PaymentRemaining">?</dd></div>
+  <div><dt>Selected payment</dt><dd id="r2PaymentSelected">Choose an option</dd></div>
+  <div><dt>Balance after verification</dt><dd id="r2PaymentRemainingAfter">?</dd></div>
+  <div><dt>Payment method</dt><dd id="r2PaymentMethod">GCash</dd></div></dl>
+ </section>
+ <section class="cn-panel r2-payment-qr"><h2><i class="bi bi-qr-code" aria-hidden="true"></i> Pay via GCash</h2>
+ <p>Verify the payee and amount in your GCash app before sending.</p>
+ <figure class="cn-qr"><img src="@Model.GCashQrPath" alt="Configured Aries Magic GCash payment QR code"/><figcaption><a href="@Model.GCashQrPath" target="_blank" rel="noopener">Open full-size QR</a><a href="@Model.GCashQrPath" download="aries-gcash-qr.jpeg">Save image</a></figcaption></figure></section>
+ <section class="cn-panel r2-receipt-guidelines"><h2><i class="bi bi-shield-check" aria-hidden="true"></i> Receipt guidelines</h2>
+ <ul><li>Show the full transaction details and payment status.</li><li>Make the amount and recipient readable.</li><li>Upload only the receipt of your successful transaction.</li></ul></section>
+</aside>
+</div>
 </form>
 @await Component.InvokeAsync("BookingContext", new { allowedIds = Model.Bookings.Select(b => b.Value), includeFinance = true })
+<script type="application/json" id="ultraPaymentDeadlines">@Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.PaymentDeadlines ?? new Dictionary<int,string>()))</script>
 }
 </div>
-@section Scripts { <partial name="_ValidationScriptsPartial"/><script src="~/js/booking-experience.js" asp-append-version="true"></script> }
+@section Scripts { <partial name="_ValidationScriptsPartial"/><script src="~/js/booking-experience.js" asp-append-version="true"></script><script src="~/js/client-round2-20261108.js" asp-append-version="true"></script><script src="~/js/client-ultra-20261108.js" asp-append-version="true"></script> }

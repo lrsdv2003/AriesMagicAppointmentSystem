@@ -15,6 +15,7 @@ namespace AriesMagicAppointmentSystem.Models
 
         public int? OriginalPaymentId { get; set; }
         public Payment? OriginalPayment { get; set; }
+        [MaxLength(60)] public string? EligibilityReason { get; set; }
         public decimal? ApprovedAmount { get; set; }
 
         [Required]

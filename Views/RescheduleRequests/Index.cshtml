@@ -21,10 +21,7 @@
 }
 
 <div class="staff-reschedule-page">
-    <div class="ui-toolbar page-header staff-reschedule-header">
-
-        <a asp-controller="Calendar" asp-action="Index" class="btn btn-outline-primary"><i class="bi bi-calendar3" aria-hidden="true"></i> Calendar</a>
-    </div>
+    <p class="staff-round2-intro">Review requested schedule changes and handle pending approvals safely.</p>
 
     @if (TempData["Success"] != null)
     {
@@ -35,18 +32,19 @@
         <div class="alert alert-danger" role="alert">@TempData["Error"]</div>
     }
 
-    <nav class="reschedule-status-tabs am-filter-chips" aria-label="Reschedule request status">
-        <a asp-route-search="@Model.Search" asp-route-requestedDate="@Model.RequestedDate?.ToString("yyyy-MM-dd")" asp-route-sortBy="@Model.SortBy" asp-action="Index" asp-route-status="Pending" class="@(Model.StatusFilter == RescheduleRequestStatus.Pending ? "active" : "")">Pending <span>@Model.PendingCount</span></a>
-        <a asp-route-search="@Model.Search" asp-route-requestedDate="@Model.RequestedDate?.ToString("yyyy-MM-dd")" asp-route-sortBy="@Model.SortBy" asp-action="Index" asp-route-status="Approved" class="@(Model.StatusFilter == RescheduleRequestStatus.Approved ? "active" : "")">Approved <span>@Model.ApprovedCount</span></a>
-        <a asp-route-search="@Model.Search" asp-route-requestedDate="@Model.RequestedDate?.ToString("yyyy-MM-dd")" asp-route-sortBy="@Model.SortBy" asp-action="Index" asp-route-status="Rejected" class="@(Model.StatusFilter == RescheduleRequestStatus.Rejected ? "active" : "")">Rejected <span>@Model.RejectedCount</span></a>
-        <a asp-route-search="@Model.Search" asp-route-requestedDate="@Model.RequestedDate?.ToString("yyyy-MM-dd")" asp-route-sortBy="@Model.SortBy" asp-action="Index" asp-route-status="All" class="@(Model.StatusFilter == "All" ? "active" : "")">Request History</a>
-    </nav>
+    <section class="staff-round2-reschedule-metrics" aria-label="All reschedule requests summary">
+        <article><i class="bi bi-card-list" aria-hidden="true"></i><span>Requests in current view</span><strong>@Model.TotalCount</strong></article>
+        <article><i class="bi bi-hourglass-split" aria-hidden="true"></i><span>Pending Staff Review (all)</span><strong>@Model.PendingCount</strong></article>
+        <article><i class="bi bi-check-circle" aria-hidden="true"></i><span>Approved Requests (all)</span><strong>@Model.ApprovedCount</strong></article>
+        <article><i class="bi bi-x-circle" aria-hidden="true"></i><span>Rejected Requests (all)</span><strong>@Model.RejectedCount</strong></article>
+    </section>
 
     <div class="am-filter-container">
-        <form method="get" asp-action="Index" class="am-filter-bar am-filter-row">
+        <form method="get" asp-action="Index" class="am-filter-bar am-filter-row staff-final-filter-toolbar" data-staff-autosearch="reschedules" role="search">
             <input type="hidden" name="status" value="@Model.StatusFilter" />
+
             <label class="visually-hidden" for="rescheduleSearch">Search reschedule requests</label>
-            <div class="am-filter-search"><input id="rescheduleSearch" type="search" name="search" value="@Model.Search" class="form-control" placeholder="Booking ID, client, or package" /></div>
+            <div class="am-filter-search"><i class="bi bi-search" aria-hidden="true"></i><input id="rescheduleSearch" type="search" name="search" value="@Model.Search" class="form-control" placeholder="Booking ID, client, or package" /></div>
 <div class="dropdown"><button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false"><i class="bi bi-funnel" aria-hidden="true"></i> Filters</button><div class="dropdown-menu dropdown-menu-end"><h6>Filter requests</h6>
             <label class="form-label" for="rescheduleDate">Requested date</label>
             <input id="rescheduleDate" type="date" name="requestedDate" value="@(Model.RequestedDate?.ToString("yyyy-MM-dd"))" class="form-control mb-3" />
@@ -56,9 +54,8 @@
                 <option value="oldest" selected="@(Model.SortBy == "oldest")">Oldest first</option>
             </select>
 <div class="am-filter-actions">
-            <a asp-action="Index" asp-route-status="@Model.StatusFilter" class="btn btn-outline-secondary">Clear Filters</a>
-            <button type="submit" class="btn btn-primary"><i class="bi bi-search" aria-hidden="true"></i> Apply Filters</button>
-        </div></div></div><button type="submit" class="btn btn-primary">Search</button></form>
+            <button type="submit" class="btn btn-primary"><i class="bi bi-funnel" aria-hidden="true"></i> Apply Filters</button>
+        </div></div></div><a asp-action="Index" asp-route-status="@Model.StatusFilter" class="btn btn-outline-secondary staff-final-clear">Clear Filters</a><button type="submit" class="visually-hidden">Search reschedules</button></form>
     </div>
 
     <div class="dashboard-panel staff-reschedule-table-panel">
@@ -67,6 +64,11 @@
                 <h2>@(Model.StatusFilter == RescheduleRequestStatus.Pending ? "Pending Reschedule Requests" : "Reschedule Request History")</h2>
                 <p>@(Model.StatusFilter == RescheduleRequestStatus.Pending ? "Only requests still requiring a Staff decision appear here by default." : "Processed requests remain available for audit and reference.")</p>
             </div>
+            @if(Model.StatusFilter == RescheduleRequestStatus.Pending){
+              <a class="btn btn-outline-primary staff-round2-history-link" asp-action="Index" asp-route-status="All">Request history</a>
+            } else {
+              <a class="btn btn-outline-primary staff-round2-history-link" asp-action="Index" asp-route-status="Pending">Back to pending reviews</a>
+            }
         </div>
 
         @if (!Model.Requests.Any())
@@ -87,6 +89,9 @@
                             <th scope="col">Client</th>
                             <th scope="col">Original Date &amp; Time</th>
                             <th scope="col">Requested Date &amp; Time</th>
+                            <th scope="col">Package</th>
+                            <th scope="col">Requested on</th>
+                            <th scope="col">Status</th>
                             <th scope="col">Details</th>
                             <th scope="col" class="text-end">Actions</th>
                         </tr>
@@ -125,6 +130,9 @@
                                     }
                                 </div>
                             </td>
+                            <td class="staff-round1-table-package">@(booking.PackageName ?? booking.Service?.Name ?? "Package not recorded")</td>
+                            <td><time datetime="@request.CreatedAt.ToString("O")">@request.CreatedAt.ToString("MMM d, yyyy")</time></td>
+                            <td><span class="status-badge @StatusClass(request.Status)">@request.Status</span></td>
                             <td><a asp-action="Details" asp-route-id="@request.Id" class="btn btn-sm btn-outline-secondary"><i class="bi bi-eye" aria-hidden="true"></i> View Details</a></td>
                             <td class="text-end">
                                 <div class="staff-reschedule-actions">
@@ -161,7 +169,8 @@
                     var originalText = originalDate.HasValue && originalStart.HasValue && originalEnd.HasValue ? $"{originalDate.Value:MMM dd, yyyy} · {originalStart.Value:hh:mm tt} – {originalEnd.Value:hh:mm tt}" : "Historical original schedule unavailable";
                     var requestedText = $"{request.RequestedDate:MMM dd, yyyy} · {request.RequestedStartTime:hh:mm tt} – {request.RequestedEndTime:hh:mm tt}";
                     <article class="staff-reschedule-card">
-                        <div class="staff-reschedule-card-head"><div><strong class="staff-booking-code">@bookingCode</strong><span class="staff-booking-subtext">@(booking.PackageName ?? booking.Service?.Name)</span></div>@if (request.Status != RescheduleRequestStatus.Pending){<span class="status-badge @StatusClass(request.Status)">@request.Status</span>}</div>
+                        <div class="staff-reschedule-card-head"><div><strong class="staff-booking-code">@bookingCode</strong><span class="staff-booking-subtext">@(booking.PackageName ?? booking.Service?.Name)</span></div><span class="status-badge @StatusClass(request.Status)">@request.Status</span></div>
+                        <small class="staff-round1-requested-at">Requested @request.CreatedAt.ToString("MMM d, yyyy")</small>
                         <strong class="staff-reschedule-client">@(booking.Client?.FullName ?? "Unknown client")</strong>
                         <div class="staff-reschedule-card-schedules">
                             <div class="reschedule-schedule neutral"><span>Original</span><strong>@originalText</strong></div>
@@ -181,6 +190,16 @@
             </div>
         }
     </div>
+@if(Model.TotalCount > 0){
+<nav class="staff-round2-server-pager" aria-label="Reschedule request pages">
+
+ <span>Page @Model.Page of @Model.TotalPages · @Model.TotalCount requests</span>
+ <div class="staff-round2-page-buttons">
+  @if(Model.Page>1){<a class="btn btn-outline-secondary" asp-action="Index" asp-route-status="@Model.StatusFilter" asp-route-search="@Model.Search" asp-route-requestedDate="@Model.RequestedDate?.ToString("yyyy-MM-dd")" asp-route-sortBy="@Model.SortBy" asp-route-pageSize="@Model.PageSize" asp-route-page="@(Model.Page-1)">Previous</a>}
+  @if(Model.Page<Model.TotalPages){<a class="btn btn-primary" asp-action="Index" asp-route-status="@Model.StatusFilter" asp-route-search="@Model.Search" asp-route-requestedDate="@Model.RequestedDate?.ToString("yyyy-MM-dd")" asp-route-sortBy="@Model.SortBy" asp-route-pageSize="@Model.PageSize" asp-route-page="@(Model.Page+1)">Next</a>}
+ </div>
+</nav>
+}
 </div>
 
 @if (canDecide)

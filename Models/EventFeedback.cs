@@ -17,6 +17,8 @@ public class EventFeedback
     public bool NameConsent { get; set; }
     public bool MediaConsent { get; set; }
     public DateTime? ConsentedAtUtc { get; set; }
+    [MaxLength(10)] public string? SharingPreference { get; set; }
+    [MaxLength(40)] public string? ConsentVersion { get; set; }
     public DateTime? WithdrawnAtUtc { get; set; }
     public DateTime SubmittedAtUtc { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAtUtc { get; set; } = DateTime.UtcNow;
@@ -47,6 +49,9 @@ public class FeedbackMedia
     public bool PublicApproved { get; set; }
     public DateTime UploadedAtUtc { get; set; } = DateTime.UtcNow;
     public DateTime? ScannedAtUtc { get; set; }
+    public int ProcessingAttempts { get; set; }
+    public DateTime? ProcessingStartedAtUtc { get; set; }
+    [MaxLength(200)] public string? ProcessingError { get; set; }
     [Timestamp] public byte[] Version { get; set; } = [];
 }
 public class FeedbackPublicationEvent

@@ -32,6 +32,24 @@ namespace AriesMagicAppointmentSystem.Models
 
         public bool IsCompletedLocked { get; set; } = false;
 
+        public DateTime? CancelledAtUtc { get; set; }
+        [MaxLength(450)] public string? CancelledByUserId { get; set; }
+        [MaxLength(20)] public string? CancellationActorRole { get; set; }
+        [MaxLength(1000)] public string? CancellationReason { get; set; }
+        [MaxLength(40)] public string? CancellationSource { get; set; }
+        [MaxLength(40)] public string? CancellationPreviousStatus { get; set; }
+        public int? CancellationPaymentId { get; set; }
+        public DateTime? CancellationRequestAtUtc { get; set; }
+        [MaxLength(450)] public string? CancellationRequestByUserId { get; set; }
+        [MaxLength(1000)] public string? CancellationRequestReason { get; set; }
+        public int? CancellationRequestMessageId { get; set; }
+        public bool RefundEligible { get; set; }
+        [MaxLength(60)] public string? RefundEligibilityReason { get; set; }
+        public int? RefundEligibilityPaymentId { get; set; }
+
+        [MaxLength(40)] public string? AcceptedTermsVersion { get; set; }
+        public DateTime? TermsAcceptedAtUtc { get; set; }
+
         public string? ReopenReason { get; set; }
         public string? InternalNotes { get; set; }
 
@@ -64,6 +82,13 @@ namespace AriesMagicAppointmentSystem.Models
         public bool IsServiceable { get; set; } = true;
         public string? ServiceZone { get; set; }
         public bool RequiresManualReview { get; set; }
+        [MaxLength(20)] public string? VenueSelectionMethod { get; set; }
+        [MaxLength(32)] public string? VenueVerificationStatus { get; set; }
+        [MaxLength(32)] public string? TravelFeeStatus { get; set; }
+        [MaxLength(500)] public string? VenueDirections { get; set; }
+        [MaxLength(500)] public string? VenueManualDetails { get; set; }
+        public DateTime? VenueStaffReviewedAtUtc { get; set; }
+        public DateTime? TravelQuoteAcceptedAtUtc { get; set; }
 
         [Range(1, 120)]
         public int? Age { get; set; }

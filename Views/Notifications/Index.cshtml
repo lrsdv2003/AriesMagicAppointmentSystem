@@ -5,7 +5,7 @@
     var notifications = Model.OrderByDescending(x => x.CreatedAt).ToList();
     var unread = notifications.Count(x => !x.IsRead);
 }
-@if(User.IsInRole("Client")){<partial name="_ClientNotifications" model="Model"/>}
+@if(User.IsInRole("Client") || User.IsInRole("Staff")){<partial name="_ClientNotifications" model="Model"/>}
 else
 {
 <section class="notice-page" aria-labelledby="noticeTitle">

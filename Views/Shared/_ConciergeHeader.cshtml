@@ -1,6 +1,31 @@
-<header class="cn-header">
-    <nav aria-label="Booking navigation">
-        <a class="client-brand" asp-controller="Home" asp-action="Index" aria-label="Aries d’ Magic Artist home"><partial name="_WonderBrand" /></a>
-        <a class="cn-exit" asp-controller="Bookings" asp-action="Dashboard" aria-label="Exit to my dashboard"><span aria-hidden="true">←</span> <span class="cn-exit-wide">Back to dashboard</span><span class="cn-exit-small">Exit</span></a>
-    </nav>
+@using System.Security.Claims
+@using Microsoft.EntityFrameworkCore
+@inject AriesMagicAppointmentSystem.Data.ApplicationDbContext ConciergeDb
+@{
+ var uid=User.FindFirstValue(ClaimTypes.NameIdentifier);
+ var account=string.IsNullOrWhiteSpace(uid)?null:await ConciergeDb.Users.AsNoTracking()
+  .Where(u=>u.Id==uid).Select(u=>new {u.FullName,u.ProfilePicturePath}).FirstOrDefaultAsync();
+ var unread=string.IsNullOrWhiteSpace(uid)?0:await ConciergeDb.Notifications.CountAsync(n=>n.UserId==uid&&!n.IsRead);
+ var accountName=string.IsNullOrWhiteSpace(account?.FullName)?"Your account":account.FullName;
+ var initials=string.Concat(accountName.Split(' ',StringSplitOptions.RemoveEmptyEntries).Take(2).Select(w=>char.ToUpperInvariant(w[0])));
+ if(initials.Length==0)initials="AM";
+}
+<header class="cn-header r2-concierge-topbar">
+ <nav aria-label="Booking navigation">
+  <a class="client-brand" asp-controller="Home" asp-action="Index"><partial name="_WonderBrand"/></a>
+  <div class="r2-concierge-actions">
+   <a class="cn-exit ultra-my-bookings-button" asp-controller="Bookings" asp-action="MyBookings"><i class="bi bi-arrow-left" aria-hidden="true"></i><span class="cn-exit-wide">My bookings</span><span class="cn-exit-small">Back</span></a>
+   <a asp-controller="Communications" asp-action="Index" asp-route-view="inbox" class="r2-concierge-icon" aria-label="Open messages" title="Messages"><i class="bi bi-chat-dots" aria-hidden="true"></i><span class="communication-unread-badge" hidden>0</span></a>
+   <a asp-controller="Notifications" asp-action="Index" class="r2-concierge-icon" aria-label="Notifications (@unread unread)" title="Notifications"><i class="bi bi-bell" aria-hidden="true"></i>@if(unread>0){<span class="r2-concierge-count">@(unread>99?"99+":unread.ToString())</span>}</a>
+   <div class="dropdown r2-concierge-account">
+    <button type="button" class="r2-concierge-account-toggle" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Account menu for @accountName"><span class="r2-concierge-avatar">@if(!string.IsNullOrWhiteSpace(account?.ProfilePicturePath)){<img src="@account.ProfilePicturePath" alt="" width="34" height="34"/>}else{<span aria-hidden="true">@initials</span>}</span><span class="r2-concierge-account-name">@accountName</span><i class="bi bi-chevron-down" aria-hidden="true"></i></button>
+    <div class="dropdown-menu dropdown-menu-end r2-concierge-account-menu">
+     <span class="dropdown-header">Signed in as @accountName</span>
+     <a class="dropdown-item" asp-controller="Profile" asp-action="Index"><i class="bi bi-person-circle" aria-hidden="true"></i> My profile</a>
+     <div class="dropdown-divider"></div>
+     <form asp-controller="Account" asp-action="Logout" method="post">@Html.AntiForgeryToken()<button type="submit" class="dropdown-item"><i class="bi bi-box-arrow-right" aria-hidden="true"></i> Sign out</button></form>
+    </div>
+   </div>
+  </div>
+ </nav>
 </header>

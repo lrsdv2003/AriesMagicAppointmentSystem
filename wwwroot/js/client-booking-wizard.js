@@ -3,35 +3,59 @@
   const form = document.getElementById('clientBookingWizard');
   if (!form) return;
   const $ = id => document.getElementById(id);
-  const terms = $('fullBookingTerms'), termsLink = $('openBookingTerms');
-  if (terms?.showModal && termsLink) {
-    let previousOverflow;
-    termsLink.addEventListener('click',event=>{event.preventDefault();previousOverflow=document.body.style.overflow;terms.showModal();document.body.style.overflow='hidden';});
-    terms.querySelectorAll('[data-close-terms]').forEach(button=>button.addEventListener('click',()=>terms.close()));
-    terms.addEventListener('click',event=>{if(event.target===terms){const r=terms.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)terms.close();}});
-    terms.addEventListener('close',()=>{document.body.style.overflow=previousOverflow||'';termsLink.focus();});
+  const terms = $('fullBookingTerms'), consent = $('termsModalConsent'), agree = $('confirmBookingTerms');
+  let termsAccepted = false, previousOverflow = '';
+  function openTerms(){
+    termsAccepted = false; $('AcceptTerms').value = 'false';
+    consent.checked = false;agree.disabled = true;
+    previousOverflow = document.body.style.overflow;
+    terms.showModal();document.body.style.overflow = 'hidden';
+  }
+  if(terms?.showModal){
+    consent.addEventListener('change',()=>{agree.disabled=!consent.checked;});
+    terms.querySelectorAll('[data-close-terms]').forEach(b=>b.addEventListener('click',()=>terms.close()));
+    terms.addEventListener('click',e=>{if(e.target===terms){const r=terms.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)terms.close();}});
+    terms.addEventListener('close',()=>{
+      document.body.style.overflow=previousOverflow||'';
+      if(!termsAccepted)$('submitBooking')?.focus();
+    });
+    agree.addEventListener('click',()=>{
+      if(!consent.checked)return;
+      termsAccepted = true;
+      $('AcceptTerms').value = 'true';
+      terms.close();
+      form.requestSubmit($('submitBooking'));
+    });
   }
   const packages = JSON.parse($('wizardPackages').textContent);
+  const eventRules = JSON.parse($('wizardEventRules').textContent);
   const restoredRemoved = new Set(JSON.parse($('wizardRemoved').textContent).map(Number));
   const panels = [...form.querySelectorAll('[data-step]')];
   const steps = [...form.querySelectorAll('.cr-steps li')];
   const money = value => new Intl.NumberFormat('en-PH', { style:'currency', currency:'PHP' }).format(value);
   let step = 0, venueSelection = '', verifiedKey = '', venueResult = null, availableIds = [], checking = false, searchVersion = 0;
-  const key = () => [$('PartyVenue').value, $('EventDate').value, $('StartTime').value].join('|');
+  const key = () => [window.AriesLocation.key(),$('EventDate').value,$('StartTime').value].join('|');
   const selectedPackage = () => packages.find(p => p.Id === Number(form.querySelector('[name="ServiceId"]:checked')?.value));
-  const removed = () => [...form.querySelectorAll('[name="RemovedInclusionIds"]:checked')].map(i => Number(i.value));
+  const removed = () => [...form.querySelectorAll('input[name="RemovedInclusionIds"]:not(:disabled)')].map(i=>Number(i.value));
   function error(message) { $('wizardError').textContent = message; $('wizardError').hidden = !message; }
   let furthestStep = 0;
   const estimate = $('bookingEstimate'), quote = $('summaryContent');
-  const mobile = window.matchMedia?.('(max-width: 991px)');
-  if(estimate && mobile) { estimate.open = !mobile.matches; mobile.addEventListener?.('change',event=>{estimate.open=!event.matches;}); }
   function show(index, focus = true, historyMode = 'push') {
     step = index; furthestStep = Math.max(furthestStep,index);
     form.classList.toggle('is-review', index === 3);form.classList.toggle('is-location', index === 0);
     panels.forEach((p,i) => p.hidden = i !== index);
     steps.forEach((s,i) => { s.classList.toggle('is-active',i === index); s.classList.toggle('is-done',i < index); if(i===index)s.setAttribute('aria-current','step');else s.removeAttribute('aria-current'); });
     if($('conciergeStep'))$('conciergeStep').textContent=`Step ${index+1} of 4 · ${['Location & date','Package','Event details','Review'][index]}`;
-    if(estimate && quote){estimate.parentElement.hidden=index===0||index===3;(index===3?$('reviewPricing'):estimate).append(quote);}
+    if(estimate && quote){
+      estimate.parentElement.hidden=index===3;
+      (index===3?$('reviewPricing'):estimate).append(quote);
+      quote.hidden=index===0;
+      const eventPreview=$('r2EventPreview');
+      if(eventPreview)eventPreview.hidden=index!==0;
+      const title=$('r2SummaryTitle');
+      if(title)title.textContent=index===0?'Your event':'Your estimate';
+      if(index===0)updateEventPreview();
+    }
     if(historyMode!=='none' && window.history)window.history[historyMode==='replace'?'replaceState':'pushState']({...window.history.state,ariesConciergeStep:index},'');
     error('');if(focus)panels[index].querySelector('h2').focus();
     if(index===3)review();
@@ -45,58 +69,126 @@
   function valid(panel) { for (const input of panel.querySelectorAll('input,select')) { if(!input.disabled && !input.checkValidity()) { input.setAttribute('aria-invalid','true'); input.reportValidity(); return false; } } return true; }
   async function json(url, options) { const response = await fetch(url, options); if(!response.ok || !response.headers.get('content-type')?.includes('application/json')) throw new Error('This check is unavailable. Please try again or sign in again.'); return response.json(); }
   function invalidate() { verifiedKey = ''; venueResult = null; availableIds = []; $('locationResult').textContent = 'Continue to check travel and schedule availability.'; summary(); }
-  $('PartyVenue').addEventListener('input', () => { venueSelection = ''; if($('venueChoice'))$('venueChoice').hidden=true; ++searchVersion; $('venueResults').replaceChildren(); invalidate(); });
-  ['EventDate','StartTime'].forEach(id => $(id).addEventListener('change', invalidate));
-  $('PartyVenue').addEventListener('keydown', event => { if(event.key === 'Enter') { event.preventDefault(); $('findVenue').click(); } });
-  $('findVenue').addEventListener('click', async () => {
-    const query = $('PartyVenue').value.trim(); if(query.length < 3) { error('Enter at least three characters to search for a venue.'); return; }
-    const version = ++searchVersion; $('findVenue').disabled = true; error(''); $('venueResults').textContent = 'Searching…';
-    try {
-      const results = await json(form.dataset.searchUrl + '?query=' + encodeURIComponent(query));
-      if(version !== searchVersion) return;
-      $('venueResults').replaceChildren();
-      if(!results.length) $('venueResults').textContent = 'No venue found. Try a more complete address.';
-      for(const result of results) { const button = document.createElement('button'); button.type = 'button'; button.textContent = result.displayName; button.className = 'cn-search-result'; button.onclick = () => { $('PartyVenue').value = result.displayName; venueSelection = result.displayName; $('venueResults').replaceChildren(); invalidate(); if($('venueChoice')){$('venueChoice').hidden=false;$('venueChoice').textContent='Selected: '+result.displayName;} $('PartyVenue').focus(); }; $('venueResults').append(button); }
-    } catch(e) { if(version === searchVersion) { $('venueResults').replaceChildren(); error(e.message); } }
-    finally { $('findVenue').disabled = false; }
-  });
-  async function checkLocation() {
-    if(checking) return false;
-    if(!valid(panels[0])) return false;
-    if(!venueSelection) { error('Search for your venue and select a result so its location can be checked.'); return false; }
-    checking = true; $('checkLocation').disabled = true; const checkingKey = key(); $('locationResult').textContent = 'Checking venue, travel estimate, and schedule…'; error('');
-    try {
-      const data = new URLSearchParams({ partyVenue:venueSelection, eventDate:$('EventDate').value, startTime:$('StartTime').value, __RequestVerificationToken:form.querySelector('[name="__RequestVerificationToken"]').value });
-      const [venue,schedule] = await Promise.all([json(form.dataset.venueUrl, { method:'POST',body:data }), json(form.dataset.scheduleUrl + '?' + new URLSearchParams({date:$('EventDate').value,startTime:$('StartTime').value}))]);
-      if(checkingKey !== key()) return false;
-      if(!venue.success || !venue.isServiceable) throw new Error(venue.serviceabilityReason || venue.message || 'This venue cannot be served. Choose another venue.');
-      if(!schedule.available) throw new Error(schedule.message);
-      venueResult = venue; availableIds = schedule.availableIds; verifiedKey = checkingKey;
-      const minutes = Number(venue.estimatedTravelTimeMinutes);
-      const travelTime = Number.isFinite(minutes) && minutes > 0 ? ` · Estimated travel time: ${Math.floor(minutes / 60)} hr ${Math.round(minutes % 60)} min` : '';
-      $('locationResult').textContent = `${venue.requiresManualReview ? 'Serviceable — staff review required' : 'Serviceable'} · Estimated distance: ${Number(venue.distanceKm).toFixed(2)} km${travelTime} · Travel fee: ${money(venue.travelFee)}. ${schedule.message}`;
-      for(const option of form.querySelectorAll('[data-package-option]')) { const input = option.querySelector('input'); input.disabled = !availableIds.includes(Number(input.value)); option.hidden = input.disabled; if(input.disabled) input.checked = false; }
-      if(!selectedPackage()) $('customizePackage').hidden = true;
-      if($('checkedSchedule'))$('checkedSchedule').textContent=`${new Date($('EventDate').value+'T12:00:00').toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric'})} · ${new Date($('EventDate').value+'T'+$('StartTime').value).toLocaleTimeString('en-PH',{hour:'numeric',minute:'2-digit'})} · ${venueSelection}`; summary(); return true;
-    } catch(e) { verifiedKey = ''; venueResult = null; $('locationResult').textContent = e.message; error(e.message); summary(); return false; }
-    finally { checking = false; $('checkLocation').disabled = false; }
+  window.AriesLocation.init(invalidate,error);
+  ['EventDate','StartTime'].forEach(id=>$(id).addEventListener('change',invalidate));
+  function updateEventPreview(){
+    const eventDate=$('EventDate')?.value;
+    const date=eventDate?new Date(eventDate+'T12:00:00'):null;
+    const time=$('StartTime')?.value;
+    if($('r2EventDate'))$('r2EventDate').textContent=date&&!Number.isNaN(date.getTime())?date.toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric'}):'Choose an event date';
+    if($('r2EventTime'))$('r2EventTime').textContent=time||'Choose a start time';
+    if($('r2EventVenue'))$('r2EventVenue').textContent=$('PartyVenue')?.value||'Choose an event venue';
+    if($('r2EventAvailability'))$('r2EventAvailability').textContent=venueResult?.success?'Available after venue and schedule checks':'Not yet verified';
+  }
+  for(const id of ['EventDate','StartTime','PartyVenue'])$(id)?.addEventListener('input',updateEventPreview);
+
+  async function checkLocation(){
+    if(checking)return false;
+    if(!window.AriesLocation.canCheck()||!valid(panels[0]))return false;
+    checking=true;$('checkLocation').disabled=true;const checkedKey=key();
+    $('locationResult').textContent='Checking venue and schedule…';error('');
+    try{
+      const payload={...window.AriesLocation.payload(),
+        eventDate:$('EventDate').value,startTime:$('StartTime').value,
+        __RequestVerificationToken:form.querySelector('[name="__RequestVerificationToken"]').value};
+      const venuePromise=json(form.dataset.venueUrl,{method:'POST',body:new URLSearchParams(payload)});
+      const schedulePromise=json(form.dataset.scheduleUrl+'?'+new URLSearchParams({
+        date:$('EventDate').value,startTime:$('StartTime').value}));
+      const [venue,schedule]=await Promise.all([venuePromise,schedulePromise]);
+      if(checkedKey!==key())return false;
+      if(!venue.success||!venue.isServiceable)
+        throw new Error(venue.serviceabilityReason||venue.message||'The location is outside current service coverage.');
+      if(!schedule.available)throw new Error(schedule.message);
+      venueResult=venue;availableIds=schedule.availableIds;verifiedKey=checkedKey;
+      const pending=Boolean(venue.travelFeePending);
+      $('locationResult').textContent=(pending?'Location received for Staff review. Travel fee pending. ':
+        'Location confirmed by customer. Estimated distance: '+Number(venue.distanceKm).toFixed(2)+
+        ' km · Travel fee: '+money(venue.travelFee)+'. ')+schedule.message;
+      for(const option of form.querySelectorAll('[data-package-option]')){
+        const input=option.querySelector('input');
+        input.disabled=!availableIds.includes(Number(input.value));option.hidden=input.disabled;
+        if(input.disabled)input.checked=false;
+      }
+      if(!selectedPackage())$('customizePackage').hidden=true;
+      $('checkedSchedule').textContent=
+        new Date($('EventDate').value+'T12:00:00').toLocaleDateString('en-PH',
+        {month:'short',day:'numeric',year:'numeric'})+' · '+$('StartTime').value+' · '+$('PartyVenue').value;
+      summary();updateEventPreview();return true;
+    }catch(e){verifiedKey='';venueResult=null;$('locationResult').textContent=e.message;error(e.message);
+      summary();updateEventPreview();return false;
+    }finally{checking=false;$('checkLocation').disabled=false;}
   }
 
   function renderInclusions(restore = false) {
     const pack=selectedPackage();$('packageInclusions').replaceChildren();
-    const eligible=pack?.Inclusions.filter(i=>i.IsRemovable)||[];
-    $('customizePackage').hidden=!eligible.length;
-    for(const inclusion of eligible){
-      const label=document.createElement('label');label.className='cn-check';
-      const input=document.createElement('input');input.type='checkbox';input.name='RemovedInclusionIds';input.value=inclusion.Id;input.checked=restore&&restoredRemoved.has(inclusion.Id);
-      input.addEventListener('change',()=>{if(removed().length>2){input.checked=false;error('You can remove up to two eligible inclusions.');}else error('');summary();});
-      const span=document.createElement('span');span.textContent='Remove '+inclusion.Name;label.append(input,span);$('packageInclusions').append(label);
+    const inclusions=pack?.Inclusions||[];
+    $('customizePackage').hidden=!inclusions.length;
+    for(const inclusion of inclusions){
+      const label=document.createElement('label');label.className='ultra-inclusion-item';
+      const name=document.createElement('span');name.className='ultra-inclusion-name';name.textContent=inclusion.Name;
+      const state=document.createElement('span');state.className='ultra-inclusion-state';
+      if(inclusion.IsRemovable){
+        const toggle=document.createElement('input');toggle.type='checkbox';toggle.className='ultra-inclusion-toggle';
+        toggle.setAttribute('role','switch');toggle.checked=!(restore&&restoredRemoved.has(inclusion.Id));
+        toggle.setAttribute('aria-label','Include '+inclusion.Name);
+        const hidden=document.createElement('input');hidden.type='hidden';hidden.name='RemovedInclusionIds';hidden.value=inclusion.Id;hidden.disabled=toggle.checked;
+        state.textContent=toggle.checked?'Included':'Removed';
+        toggle.addEventListener('change',()=>{
+          hidden.disabled=toggle.checked;
+          if(removed().length>2){toggle.checked=true;hidden.disabled=true;error('You can remove no more than two optional inclusions.');}
+          else error('');
+          state.textContent=toggle.checked?'Included':'Removed';summary();
+        });
+        label.append(toggle,hidden);
+      }else{
+        label.classList.add('ultra-inclusion-locked');
+        const icon=document.createElement('i');icon.className='bi bi-check-circle-fill';icon.setAttribute('aria-hidden','true');
+        state.textContent='Included · required';label.append(icon);
+      }
+      label.append(name,state);$('packageInclusions').append(label);
     }
     summary();
   }
   form.querySelectorAll('[name="ServiceId"]').forEach(r => r.addEventListener('change', () => renderInclusions()));
-  function summary() { const pack = selectedPackage(), discount = removed().length ? 2000 : 0; $('summaryPackage').textContent = pack?.Name || 'Choose a package'; $('summaryBase').textContent = pack ? money(pack.Price) : '—'; $('summaryDiscount').textContent = pack ? money(discount) : '—'; $('summaryTravel').textContent = venueResult ? money(venueResult.travelFee) : 'Check venue first'; const total=pack&&venueResult?money(Math.max(0,pack.Price-discount+venueResult.travelFee)):'—';$('summaryTotal').textContent=total;if($('summaryPeek'))$('summaryPeek').textContent=pack?total:'Choose an experience'; }
-  function eventFields() { const type = $('EventType').value, birthday = type === 'Birthday', bridal = type === 'Bridal Shower'; const flags = {theme: !['','Company Events','School Events'].includes(type), celebrant:birthday || bridal, age:birthday}; for(const [name,visible] of Object.entries(flags)) { const box = form.querySelector(`[data-event-field="${name}"]`); box.hidden = !visible; const input = box.querySelector('input'); input.disabled = !visible; input.required = visible; } }
+  function summary(){
+    const pack=selectedPackage(),discount=removed().length?2000:0;
+    const pending=Boolean(venueResult?.travelFeePending);
+    $('summaryPackage').textContent=pack?.Name||'Choose a package';
+    $('summaryBase').textContent=pack?money(pack.Price):'—';
+    $('summaryDiscount').textContent=pack?money(discount):'—';
+    $('summaryTravel').textContent=venueResult?(pending?'Pending Staff review':money(venueResult.travelFee)):'Check venue first';
+    const subtotal=pack?Math.max(0,pack.Price-discount):null;
+    const total=subtotal!==null&&venueResult
+      ?money(pending?subtotal:Math.max(0,subtotal+Number(venueResult.travelFee||0))):'—';
+    $('summaryTotal').textContent=total;
+    $('summaryTotalLabel').textContent=pending?'Estimated subtotal':'Estimated total';
+    $('summaryTravelPendingNote').hidden=!(pack&&venueResult&&pending);
+    if($('summaryPeek'))$('summaryPeek').textContent=!pack?'Choose an experience':pending?'Travel fee pending':'Estimate ready';
+  }
+
+  // The server sends the same eight-category policy used for validation and normalization.
+  // Hidden inputs keep temporary draft values only in the browser. They are disabled on POST.
+  function eventFields(){
+    const type=$('EventType').value;
+    const rule=eventRules[type]||null;
+    const fields={
+      motif: ['Motif',Boolean(rule?.ShowMotif),false],
+      theme: ['PartyTheme',Boolean(rule?.ShowTheme),false],
+      celebrant: ['CelebrantName',Boolean(rule?.ShowCelebrant),Boolean(rule?.RequireCelebrant)],
+      age: ['Age',Boolean(rule?.ShowAge),Boolean(rule?.RequireAge)]
+    };
+    for(const [name,[id,visible,required]] of Object.entries(fields)){
+      const holder=form.querySelector('[data-event-field="'+name+'"]');
+      const input=$(id);
+      if(!holder||!input)continue;
+      holder.hidden=!visible;
+      input.disabled=!visible;
+      input.required=visible&&required;
+      input.setAttribute('aria-required',String(visible&&required));
+      if(!visible)input.removeAttribute('aria-invalid');
+      input.setCustomValidity('');
+    }
+  }
   $('EventType').addEventListener('change',eventFields);
   function review() {
     const container = $('bookingReview'); container.replaceChildren();
@@ -105,8 +197,8 @@
     const endMinutes=startMinutes+(selectedPackage()?.DurationInHours||0)*60;
     const clock=value=>new Intl.DateTimeFormat('en-PH',{hour:'numeric',minute:'2-digit',timeZone:'UTC'}).format(new Date(Date.UTC(2000,0,1,0,value)));
     const scheduleTime=clock(startMinutes)+'–'+clock(endMinutes)+(endMinutes>=1440?' (next day)':'');
-    const groups = [['Location & date',0,[['Venue',$('PartyVenue').value],['Date',date.toLocaleDateString('en-PH',{year:'numeric',month:'long',day:'numeric'})],['Time',scheduleTime],['Duration',(selectedPackage()?.DurationInHours || 0)+' hours']]],['Package',1,[['Package',selectedPackage()?.Name || ''],['Removed inclusions',selectedPackage()?.Inclusions.filter(i=>removed().includes(i.Id)).map(i=>i.Name).join(', ') || 'None']]],['Event details',2,[['Event',$('EventType').value],['Motif',$('Motif').value],['Guests',$('PaxCount').value],['Contact',$('ContactPerson').value],['Phone',$('ContactNumber').value]]]];
-    for(const [id,label] of [['PartyTheme','Party theme'],['CelebrantName','Celebrant'],['Age','Age']]) if(!$(id).disabled && $(id).value) groups[2][2].push([label,$(id).value]);
+    const groups = [['Location & date',0,[['Venue',$('PartyVenue').value],['Selection method',window.AriesLocation.methodLabel()],['Travel assessment',venueResult?.travelFeePending?'Pending Staff confirmation':'Estimate available'],['Nearby directions',$('VenueDirections').value||'None'],['Date',date.toLocaleDateString('en-PH',{year:'numeric',month:'long',day:'numeric'})],['Time',scheduleTime],['Duration',(selectedPackage()?.DurationInHours || 0)+' hours']]],['Package',1,[['Package',selectedPackage()?.Name || ''],['Package price',money(selectedPackage()?.Price||0)],['Customization discount',money(removed().length?2000:0)],['Removed inclusions',selectedPackage()?.Inclusions.filter(i=>removed().includes(i.Id)).map(i=>i.Name).join(', ') || 'None']]],['Event details',2,[['Event',$('EventType').value],['Guests',$('PaxCount').value],['Contact',$('ContactPerson').value],['Phone',$('ContactNumber').value]]]];
+    for(const [id,label] of [['Motif','Motif'],['PartyTheme','Party theme'],['CelebrantName','Celebrant'],['Age','Age']]) if(!$(id).disabled && $(id).value) groups[2][2].push([label,$(id).value]);
     for(const [title,index,rows] of groups){
       const section=document.createElement('section');section.className='cn-review-block';
       const header=document.createElement('div');header.className='cn-review-heading';
@@ -127,6 +219,21 @@
     } catch(e) { error(e.message); } finally { button.disabled=false;button.replaceChildren(...oldNodes); }
   }));
   form.querySelectorAll('[data-back]').forEach(button=>button.addEventListener('click',()=>{if(window.history.state?.ariesConciergeStep===step&&step>0)window.history.back();else show(step-1,true,'replace');}));
-  form.addEventListener('submit',event=> { if(form.getAttribute('aria-busy')==='true'){event.preventDefault();return;} if(step !== 3 || verifiedKey !== key()) { event.preventDefault(); show(0); error('Check your location and date before submitting.'); return; } for(let i=0;i<panels.length;i++){const invalid=[...panels[i].querySelectorAll('input,select')].find(input=>!input.disabled&&!input.checkValidity());if(invalid){event.preventDefault();show(i);invalid.reportValidity();return;}} window.BookingExperience?.busy(form,event); });
+  form.addEventListener('submit',event=>{
+    if(form.getAttribute('aria-busy')==='true'){event.preventDefault();return;}
+    if(step!==3||verifiedKey!==key()){event.preventDefault();show(0);error('Check your location and date before submitting.');return;}
+    for(let i=0;i<panels.length;i++){
+      const invalid=[...panels[i].querySelectorAll('input,select,textarea')]
+        .find(input=>!input.disabled&&!input.checkValidity());
+      if(invalid){event.preventDefault();show(i);invalid.reportValidity();return;}
+    }
+    if(!termsAccepted){
+      event.preventDefault();
+      if(terms?.showModal){openTerms();return;}
+      error('The Terms and Conditions dialog is unavailable. Please reload and try again.');return;
+    }
+    if($('AcceptTerms').value!=='true'){event.preventDefault();error('You must accept the Terms and Conditions.');return;}
+    window.BookingExperience?.busy(form,event);
+  });
   renderInclusions(true); eventFields(); show(0,false,'replace');
 })();

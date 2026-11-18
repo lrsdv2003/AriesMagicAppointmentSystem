@@ -35,7 +35,9 @@ namespace AriesMagicAppointmentSystem.Models
         ProfileUpdated,
         PasswordChanged,
         ProfilePictureChanged,
-        FeedbackModerated
+        FeedbackModerated,
+        BookingCancelled,
+        BookingCancellationRequested
     }
 
     public class SystemActivity

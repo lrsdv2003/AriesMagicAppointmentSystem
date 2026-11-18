@@ -10,13 +10,22 @@
 <div asp-validation-summary="All" class="text-danger account-errors" role="alert"></div>
 <div class="account-grid">
 <aside class="account-card account-summary">
-<div class="account-avatar" aria-label="Profile avatar">
-@if (Model.HasPhoto) { <img src="@Url.Action("Photo")" alt="" data-avatar-image /> }
-<span hidden="@Model.HasPhoto">@initials</span>
-</div>
+@if(User.IsInRole("Staff")){
+  <button type="button" class="account-avatar staff-round2-avatar-trigger" data-staff-photo-trigger aria-label="Change Staff profile picture">
+  @if (Model.HasPhoto) { <img src="@Url.Action("Photo")" alt="" data-avatar-image /> }
+  <span hidden="@Model.HasPhoto">@initials</span><i class="bi bi-camera staff-round2-photo-indicator" aria-hidden="true"></i>
+  </button>
+  <p class="staff-round2-profile-hint">Select the photo to change it</p>
+}else{
+  <div class="account-avatar" role="img" aria-label="Profile avatar">
+  @if (Model.HasPhoto) { <img src="@Url.Action("Photo")" alt="" data-avatar-image /> }
+  <span hidden="@Model.HasPhoto">@initials</span>
+  </div>
+}
 <h2>@Model.DisplayName</h2>
 <partial name="_DashboardBadge" model="Model.Role" />
-<p class="account-email">@Model.Email</p>
+<p class="account-email"><span class="owner-login-email-label">Login email</span><strong>@Model.Email</strong></p>
+@if(User.IsInRole("Owner")){<p><a asp-controller="OwnerEmail" asp-action="Index" class="btn btn-sm btn-outline-secondary">Manage login email securely</a></p>}
 <form asp-action="UploadPhoto" method="post" enctype="multipart/form-data" data-account-form>
 <label for="profilePhoto" class="form-label">@(Model.HasPhoto ? "Change photo" : "Upload photo")</label>
 <input id="profilePhoto" name="photo" type="file" accept="image/jpeg,image/png,image/webp" class="form-control" aria-describedby="photoHelp photoError" required />
@@ -33,6 +42,13 @@
 <form asp-action="RemovePhoto" method="post" data-account-form class="mt-3">
 <button class="btn btn-outline-secondary" type="submit" data-saving="Removing...">Remove Photo</button>
 </form>
+}
+@if (User.IsInRole("Staff") && !User.IsInRole("Owner") && !User.IsInRole("Admin")) {
+<div class="staff-profile-sidebar-meta" aria-label="Account dates">
+<div><span>Member since</span><strong>@Model.CreatedAt.ToString("MMM d, yyyy")</strong></div>
+<div><span>Last sign-in (UTC)</span><strong>@(Model.LastLoginAt?.ToString("MMM d, yyyy · h:mm tt") ?? "Not recorded")</strong></div>
+</div>
+<button type="button" class="btn btn-outline-secondary staff-profile-signout" data-bs-toggle="modal" data-bs-target="#logoutConfirmModal"><i class="bi bi-box-arrow-right" aria-hidden="true"></i> Sign out</button>
 }
 </aside>
 <div class="account-sections">

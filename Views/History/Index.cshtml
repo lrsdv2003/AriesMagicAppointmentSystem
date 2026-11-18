@@ -7,6 +7,7 @@
 }
 <div class="ui-page history-page">
 <partial name="_HistoryFilters" model="Model" />
+<div data-staff-search-results="history">
 <div class="ui-toolbar">
 <p class="ui-result-count">@Model.TotalCount record@(Model.TotalCount==1?"":"s")</p>
 @if(financial) {
@@ -25,14 +26,14 @@
 } else {
 <div class="ui-table-wrap">
 <table class="ui-table ui-table-responsive"><caption class="visually-hidden">Historical booking records</caption>
-<thead><tr><th scope="col">Booking / Client</th><th scope="col">Event date &amp; time</th><th scope="col">Package</th><th scope="col">@(financial ? "Payment review" : "Venue")</th><th scope="col">Final status</th><th scope="col">Details</th></tr></thead>
+<thead><tr><th scope="col">Booking / Client</th><th scope="col">Event date &amp; time</th><th scope="col">Package</th><th scope="col">Payment status</th><th scope="col">Final status</th><th scope="col">Details</th></tr></thead>
 <tbody>@foreach(var row in Model.Bookings) {
 <tr><td data-label="Booking / Client"><strong>@row.BookingCode</strong><span class="ui-cell-secondary">@row.ClientName</span></td>
 <td data-label="Event"><span>@row.EventDate.ToString("MMM d, yyyy")</span><span class="ui-cell-secondary">@row.StartTime.ToString("h:mm tt") &ndash; @row.EndTime.ToString("h:mm tt")</span></td>
 <td data-label="Package">@row.PackageName</td>
-<td data-label="@(financial?"Payment review":"Venue")">@if(financial){<partial name="_StatusBadge" model="row.PaymentStatus" />}else{@row.Venue}</td>
+<td data-label="Payment status"><partial name="_StatusBadge" model="row.PaymentStatus" /></td>
 <td data-label="Final status"><partial name="_StatusBadge" model="row.BookingStatus" /></td>
-<td data-label="Details"><a asp-action="Details" asp-route-id="@row.Id" class="btn btn-outline-secondary" aria-label="View @row.BookingCode details">Details</a></td></tr>
+<td data-label="Details"><a asp-action="Details" asp-route-id="@row.Id" class="btn btn-outline-primary" aria-label="View @row.BookingCode details">View Details</a></td></tr>
 }</tbody></table></div>
 }
 @if(Model.TotalPages>1) {
@@ -42,4 +43,5 @@
 @if(Model.Filters.Page<Model.TotalPages) { <a class="btn btn-outline-secondary" asp-action="Index" asp-all-route-data="@HistoryPresentation.Routes(Model.Filters,Model.Filters.Page+1)">Next</a> }
 </nav>
 }
+</div>
 </div>

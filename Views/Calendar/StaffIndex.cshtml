@@ -5,7 +5,14 @@
 @{
     Layout = "_DashboardLayout";
     ViewData["Title"] = "Event Calendar";
-    var packageColors = ViewBag.PackageColors as IDictionary<string, string> ?? new Dictionary<string, string>();
+    var useStaffColors = User.IsInRole("Staff") && !User.IsInRole("Owner") && !User.IsInRole("Admin");
+    var originalPackageColors = ViewBag.PackageColors as IDictionary<string, string> ?? new Dictionary<string, string>();
+    var packageColors = originalPackageColors.ToDictionary(item => item.Key, item => useStaffColors
+        ? item.Key.Contains("All In", StringComparison.OrdinalIgnoreCase) ? "gold"
+        : item.Key.Contains("Deluxe", StringComparison.OrdinalIgnoreCase) ? "red"
+        : item.Key.Contains("Premium", StringComparison.OrdinalIgnoreCase) ? "blue"
+        : item.Value
+        : item.Value, StringComparer.OrdinalIgnoreCase);
     string PackageName(Booking b) => !string.IsNullOrWhiteSpace(b.PackageName) ? b.PackageName : b.Service?.Name ?? "Package";
     string PackageKey(string name) => packageColors.TryGetValue(name, out var key) ? key : "pink";
     var now = DateTime.Now;
@@ -18,6 +25,8 @@
         g => new {
             count = g.Count(),
             items = g.Select(b => new {
+                bookingId = b.Id,
+                bookingCode = "BK-" + b.CreatedAt.Year + "-" + b.Id.ToString("D3"),
                 packageName = PackageName(b),
                 key = PackageKey(PackageName(b))
             }).ToArray()
@@ -30,12 +39,8 @@
 @* FullCalendar 6 injects its CSS from the existing pinned JavaScript bundle. *@
 
 <div class="staff-calendar-page">
-    <header class="ui-toolbar staff-calendar-hero">
+    <div class="staff-round1-calendar-layout">
 
-        <a asp-controller="Bookings" asp-action="Index" class="btn btn-outline-primary">
-            <i class="bi bi-journal-check" aria-hidden="true"></i> Booking Requests
-        </a>
-    </header>
     <section class="staff-calendar-panel" aria-labelledby="calendarHeading">
         <div class="staff-calendar-toolbar">
             <div>
@@ -59,7 +64,7 @@
                         <span class="package-dot package-@item.Value"></span><span>@item.Key</span>
                     </button>
                 }
-                <span class="package-legend-blocked"><span class="blocked-legend-mark">×</span> Blocked / Unavailable</span>
+                <span class="package-legend-blocked"><span class="blocked-legend-mark" aria-hidden="true">×</span> @(useStaffColors ? "Unavailable" : "Blocked / Unavailable")</span>
             </div>
         </div>
         <div class="staff-calendar-loading" id="calendarLoading" role="status">
@@ -74,6 +79,9 @@
     </section>
 
     <section class="staff-upcoming-panel" aria-labelledby="upcomingHeading">
+        @if(useStaffColors){
+        <h2 class="staff-final-upcoming-title" id="upcomingHeading">Upcoming Confirmed Bookings</h2>
+        }else{
         <div class="staff-upcoming-heading">
             <div>
                 <h2 id="upcomingHeading">Upcoming Confirmed Bookings</h2>
@@ -84,6 +92,7 @@
                 <div class="am-filter-search"><input id="upcomingSearch" type="search" class="form-control" placeholder="Search booking, client, or venue" /></div><button type="button" class="btn btn-light" data-filter-reset>Reset</button>
             </div>
         </div>
+        }
         @if (!upcoming.Any())
         {
             <div class="staff-upcoming-empty"><i class="bi bi-calendar2-check" aria-hidden="true"></i><span>No upcoming confirmed events.</span></div>
@@ -105,7 +114,7 @@
                             <td><strong>@booking.EventDate.ToString("MMM dd, yyyy")</strong><span>@booking.StartTime.ToString("hh:mm tt")</span></td>
                             <td><span class="package-badge package-@colorKey"><span class="package-dot"></span>@packageName</span></td>
                             <td><strong>@booking.PartyVenue</strong><span>@(booking.DistanceKm.HasValue ? $"{booking.DistanceKm.Value:N1} KM" : "Distance unavailable")</span></td>
-                            <td class="text-end"><a asp-controller="Bookings" asp-action="Details" asp-route-id="@booking.Id" class="btn btn-sm btn-outline-primary">Details</a></td>
+                            <td class="text-end"><a asp-controller="Bookings" asp-action="Details" asp-route-id="@booking.Id" class="btn btn-sm btn-outline-primary">View Details</a></td>
                         </tr>
                     }
                     </tbody>
@@ -126,10 +135,68 @@
                     </article>
                 }
             </div>
-            <div class="staff-upcoming-empty d-none" id="upcomingFilteredEmpty" role="status"><i class="bi bi-search" aria-hidden="true"></i><span>No upcoming bookings match your search.</span></div>
+            <div class="staff-upcoming-empty d-none" id="upcomingFilteredEmpty" role="status"><i class="bi bi-calendar-x" aria-hidden="true"></i><span>No confirmed bookings match the selected package.</span></div>
+            <nav class="staff-round2-calendar-pager" aria-label="Upcoming confirmed booking pages">
+              @if(!useStaffColors){
+              <label for="staffUpcomingPageSize">Rows per page
+                <select id="staffUpcomingPageSize" class="form-select">
+                  <option value="10">10</option><option value="20">20</option><option value="50">50</option>
+                </select>
+              </label>
+              }
+              <span id="staffUpcomingPageInfo" aria-live="polite"></span>
+              <div><button type="button" class="btn btn-outline-secondary" id="staffUpcomingPrev">Previous</button>
+                <button type="button" class="btn btn-primary" id="staffUpcomingNext">Next</button></div>
+            </nav>
         }
     </section>
+    </div>
 </div>
+@if(useStaffColors){
+<div class="modal fade staff-preview-modal staff-final-booking-modal" id="bookingPreviewModal" tabindex="-1" aria-labelledby="bookingPreviewTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div><span class="staff-preview-kicker">Confirmed Event</span><h2 class="modal-title fs-5" id="bookingPreviewTitle">Booking <span id="previewBooking"></span></h2></div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close booking preview"></button>
+            </div>
+            <div class="modal-body">
+                <div id="previewLoading" class="staff-preview-state" role="status"><span class="spinner-border spinner-border-sm"></span> Loading booking details...</div>
+                <div id="previewError" class="staff-preview-state staff-preview-error d-none" role="alert">
+                    <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
+                    <span>Unable to load this booking preview. Please retry.</span>
+                    <button type="button" class="btn btn-sm btn-outline-danger" id="previewRetry">Retry</button>
+                </div>
+                <div id="previewContent" class="d-none">
+                    <p class="staff-final-preview-position" id="previewPosition" aria-live="polite"></p>
+                    <div class="staff-final-preview-group">
+                      <h3><i class="bi bi-calendar-event" aria-hidden="true"></i> Event Schedule</h3>
+                      <dl><div><dt>Date</dt><dd id="previewDate"></dd></div>
+                          <div><dt>Time</dt><dd id="previewTime"></dd></div></dl>
+                    </div>
+                    <div class="staff-final-preview-group">
+                      <h3><i class="bi bi-geo-alt" aria-hidden="true"></i> Event Information</h3>
+                      <dl><div><dt>Package</dt><dd id="previewPackage"></dd></div>
+                          <div><dt>Venue</dt><dd id="previewVenue"></dd></div></dl>
+                    </div>
+                    <div class="staff-final-preview-group">
+                      <h3><i class="bi bi-person-lines-fill" aria-hidden="true"></i> Contact Information</h3>
+                      <dl><div><dt>Contact Person</dt><dd id="previewContactPerson"></dd></div>
+                          <div><dt>Contact Number</dt><dd id="previewContactNumber"></dd></div></dl>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer staff-preview-footer">
+                <div class="staff-preview-browse" id="previewBrowse">
+                    <button type="button" class="btn btn-outline-secondary" id="previewPrevious" aria-label="Previous booking"><i class="bi bi-chevron-left" aria-hidden="true"></i> Previous</button>
+                    <button type="button" class="btn btn-outline-secondary" id="previewNext" aria-label="Next booking">Next <i class="bi bi-chevron-right" aria-hidden="true"></i></button>
+                </div>
+                <a href="#" class="btn btn-primary" id="previewDetails">View Full Details</a>
+            </div>
+        </div>
+    </div>
+</div>
+ }else{
 <div class="modal fade staff-preview-modal" id="bookingPreviewModal" tabindex="-1" aria-labelledby="bookingPreviewTitle" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -169,13 +236,14 @@
         </div>
     </div>
 </div>
+ }
 
 <div class="modal fade staff-blocked-modal" id="blockedDateModal" tabindex="-1" aria-labelledby="blockedDateTitle" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-sm">
         <div class="modal-content">
             <div class="modal-header">
                 <div><span class="staff-preview-kicker">Schedule Notice</span><h2 class="modal-title fs-5" id="blockedDateTitle">Schedule Unavailable</h2></div>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close @(useStaffColors ? "btn-close-white" : "")" data-bs-dismiss="modal" aria-label="Close schedule notice"></button>
             </div>
             <div class="modal-body">
                 <div class="staff-blocked-date" id="blockedDateDisplay"></div>
@@ -186,7 +254,7 @@
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+@if (useStaffColors) {<script src="~/lib/fullcalendar/index.global.min.js" asp-append-version="true"></script>} else {<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>}
 
 @section Scripts {
 <script>
@@ -200,9 +268,11 @@
     let calendar;
     let activePackageFilter = '';
     let selectedDate = null;
+    const staffCalendar = @useStaffColors.ToString().ToLowerInvariant();
     let selectedCell = null;
     let previewItems = [];
     let previewIndex = 0;
+    let previewRequestSerial = 0;
     let applyUpcomingFilters = () => {};
     const formatDateKey = date => {
         const y = date.getFullYear();
@@ -239,8 +309,9 @@
         selectedCell?.classList.add('staff-calendar-selected');
     }
 
-    async function openDatePreview(dateKey, cell) {
+    async function openDatePreview(dateKey, cell, preferredBookingId = null) {
         if (openBlockedDate(dateKey, cell)) return;
+        const requestSerial = ++previewRequestSerial;
         const visibleItems = filteredDayItems(dateKey);
         if (!visibleItems.length) return;
         selectedDate = dateKey;
@@ -255,12 +326,15 @@
         try {
             const response = await fetch(`${previewUrl}?date=${encodeURIComponent(dateKey)}`, { headers: { 'Accept': 'application/json' } });
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            previewItems = await response.json();
+            const returnedItems = await response.json();
+            if (requestSerial !== previewRequestSerial) return;
+            previewItems = returnedItems;
             if (activePackageFilter) {
                 previewItems = previewItems.filter(item => item.packageName === activePackageFilter);
             }
             if (!Array.isArray(previewItems) || previewItems.length === 0) throw new Error('No bookings returned');
-            previewIndex = 0;
+            previewIndex = preferredBookingId == null ? 0
+                : Math.max(0, previewItems.findIndex(item => Number(item.bookingId) === Number(preferredBookingId)));
             renderPreview();
         } catch (error) {
             console.error('Calendar preview failed:', error);
@@ -270,6 +344,8 @@
     }
 
     function renderPreview() {
+        if (!staffCalendar) {
+
         const item = previewItems[previewIndex];
         if (!item) return;
         document.getElementById('previewLoading').classList.add('d-none');
@@ -291,6 +367,29 @@
         details.classList.toggle('disabled', !item.detailsUrl);
         document.getElementById('previewPrevious').disabled = previewIndex === 0;
         document.getElementById('previewNext').disabled = previewIndex >= previewItems.length - 1;
+            } else {
+
+        const item = previewItems[previewIndex];
+        if (!item) return;
+        document.getElementById('previewLoading').classList.add('d-none');
+        document.getElementById('previewError').classList.add('d-none');
+        document.getElementById('previewContent').classList.remove('d-none');
+        document.getElementById('previewPosition').textContent = previewItems.length > 1
+            ? 'Booking ' + (previewIndex + 1) + ' of ' + previewItems.length + ' on this date' : '';
+        document.getElementById('previewBooking').textContent = item.bookingCode || 'Unknown';
+        document.getElementById('previewDate').textContent = item.eventDate || 'Not available';
+        document.getElementById('previewTime').textContent = (item.startTime || '—') + ' – ' + (item.endTime || '—');
+        document.getElementById('previewPackage').textContent = item.packageName || 'Not available';
+        document.getElementById('previewVenue').textContent = item.venue || 'Not provided';
+        document.getElementById('previewContactPerson').textContent = item.contactPerson?.trim() || 'Not provided';
+        document.getElementById('previewContactNumber').textContent = item.contactNumber?.trim() || 'Not provided';
+        document.getElementById('previewBrowse').hidden = previewItems.length <= 1;
+        const details = document.getElementById('previewDetails');
+        details.href = item.detailsUrl || '#';
+        details.classList.toggle('disabled', !item.detailsUrl);
+        document.getElementById('previewPrevious').disabled = previewIndex === 0;
+        document.getElementById('previewNext').disabled = previewIndex >= previewItems.length - 1;
+            }
     }
 
     function renderDaySummary(cell, key) {
@@ -301,9 +400,14 @@
         content.className = 'staff-day-content';
         frame.appendChild(content);
         cell.classList.remove('staff-calendar-has-events', 'staff-calendar-blocked');
-        cell.removeAttribute('role');
-        cell.removeAttribute('aria-label');
-        cell.removeAttribute('tabindex');
+        // Keep FullCalendar's grid semantics; the inner frame is the action.
+        cell.setAttribute('role', 'gridcell');
+        // Its date-only label would omit the added visible booking summary.
+        cell.removeAttribute('aria-labelledby');
+        frame.removeAttribute('role');
+        frame.removeAttribute('aria-label');
+        frame.removeAttribute('aria-description');
+        frame.removeAttribute('tabindex');
 
         const blocked = blockedDateMap[key];
         const visibleItems = filteredDayItems(key);
@@ -347,15 +451,48 @@
             count.appendChild(word);
             box.append(dots, count);
             content.appendChild(box);
+            if (staffCalendar && !blocked) {
+                const links = document.createElement('div');
+                links.className = 'staff-final-day-bookings';
+                visibleItems.slice(0, 2).forEach(item => {
+                    const trigger = document.createElement('button');
+                    trigger.type = 'button';
+                    trigger.className = 'staff-final-day-booking';
+                    trigger.textContent = item.bookingCode;
+                    trigger.setAttribute('aria-label', 'Preview ' + item.bookingCode + ' on ' + displayDate);
+                    trigger.addEventListener('click', event => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        openDatePreview(key, cell, item.bookingId);
+                    });
+                    links.appendChild(trigger);
+                });
+                if (visibleItems.length > 2) {
+                    const more = document.createElement('button');
+                    more.type = 'button';
+                    more.className = 'staff-final-day-more-button';
+                    more.textContent = '+' + (visibleItems.length - 2) + ' more';
+                    more.setAttribute('aria-label', 'Browse all bookings on ' + displayDate);
+                    more.addEventListener('click', event => {
+                        event.preventDefault(); event.stopPropagation();
+                        openDatePreview(key, cell);
+                    });
+                    links.appendChild(more);
+                }
+                content.appendChild(links);
+            }
         }
 
-        if (blocked || visibleItems.length) {
-            cell.tabIndex = 0;
-            cell.setAttribute('role', 'button');
-            const bookingLabel = visibleItems.length
-                ? `${visibleItems.length} confirmed booking${visibleItems.length === 1 ? '' : 's'}`
-                : 'no visible confirmed bookings';
-            cell.setAttribute('aria-label', `${displayDate}: ${blocked ? 'Blocked / unavailable; ' : ''}${bookingLabel}`);
+        if (staffCalendar && visibleItems.length && !blocked) {
+            // The per-booking triggers are the focusable controls. A parent button
+            // here would create inaccessible nested interactive elements.
+            frame.removeAttribute('role');
+            frame.removeAttribute('tabindex');
+            frame.setAttribute('aria-label', displayDate + ': ' + visibleItems.length + ' confirmed bookings');
+        } else if (blocked || visibleItems.length) {
+            frame.tabIndex = 0;
+            frame.setAttribute('role', 'button');
+            frame.setAttribute('aria-description', displayDate);
         }
     }
 
@@ -364,6 +501,7 @@
         info.el.dataset.staffDate = key;
         renderDaySummary(info.el, key);
         info.el.addEventListener('keydown', event => {
+            if (event.target instanceof Element && event.target.closest('.staff-final-day-booking,.staff-final-day-more-button')) return;
             if ((event.key === 'Enter' || event.key === ' ') && (blockedDateMap[key] || filteredDayItems(key).length)) {
                 event.preventDefault();
                 openDatePreview(key, info.el);
@@ -391,7 +529,12 @@
             fixedWeekCount: false,
             showNonCurrentDates: true,
             dayCellDidMount: mountDaySummary,
-            dateClick: info => openDatePreview(info.dateStr, info.dayEl),
+            dateClick: info => {
+                if (info.jsEvent?.target instanceof Element &&
+                    info.jsEvent.target.closest('.staff-final-day-booking,.staff-final-day-more-button')) return;
+                if (!staffCalendar) { openDatePreview(info.dateStr, info.dayEl); return; }
+                openDatePreview(info.dateStr, info.dayEl);
+            },
             datesSet: () => {
                 document.getElementById('calendarTitle').textContent = calendar.view.title;
                 document.getElementById('calendarLoading').classList.add('d-none');
@@ -422,23 +565,73 @@
         });
     }
 
-    function initUpcomingFilters() {
+    function initOwnerUpcomingFilters() {
         const search = document.getElementById('upcomingSearch');
-        const rows = [...document.querySelectorAll('.js-upcoming-row')];
+        const tableRows = [...document.querySelectorAll('#upcomingTable tbody .js-upcoming-row')];
+        const cards = [...document.querySelectorAll('#upcomingCards .js-upcoming-row')];
         const empty = document.getElementById('upcomingFilteredEmpty');
-        applyUpcomingFilters = () => {
+        const pageSelect = document.getElementById('staffUpcomingPageSize');
+        const info = document.getElementById('staffUpcomingPageInfo');
+        const prev = document.getElementById('staffUpcomingPrev');
+        const next = document.getElementById('staffUpcomingNext');
+        let page = 1;
+        const matched = row => {
             const query = (search?.value || '').trim().toLowerCase();
-            let visible = 0;
-            rows.forEach(row => {
-                const matchesSearch = !query || (row.dataset.search || '').toLowerCase().includes(query);
-                const matchesPackage = !activePackageFilter || row.dataset.package === activePackageFilter;
-                const show = matchesSearch && matchesPackage;
-                row.classList.toggle('d-none', !show);
-                if (show) visible++;
-            });
-            empty?.classList.toggle('d-none', visible > 0);
+            return (!query || (row.dataset.search || '').toLowerCase().includes(query))
+                && (!activePackageFilter || row.dataset.package === activePackageFilter);
         };
-        search?.addEventListener('input', applyUpcomingFilters);
+        applyUpcomingFilters = (resetPage = false) => {
+            if (resetPage === true) page = 1;
+            const size = Number(pageSelect?.value) || 10;
+            const matching = tableRows.filter(matched);
+            const count = matching.length;
+            const totalPages = Math.max(1, Math.ceil(count / size));
+            page = Math.max(1, Math.min(page, totalPages));
+            const visible = new Set(matching.slice((page-1)*size,page*size));
+            tableRows.forEach((row,i) => row.classList.toggle('d-none', !visible.has(row)));
+            cards.forEach((card,i) => card.classList.toggle('d-none',
+                !tableRows[i] || !visible.has(tableRows[i])));
+            empty?.classList.toggle('d-none', count > 0);
+            if (info) info.textContent = count + ' matching confirmed bookings · page ' + page + ' of ' + totalPages;
+            if (prev) prev.disabled = page <= 1;
+            if (next) next.disabled = page >= totalPages;
+        };
+        search?.addEventListener('input', () => applyUpcomingFilters(true));
+        pageSelect?.addEventListener('change', () => applyUpcomingFilters(true));
+        prev?.addEventListener('click', () => { page--;applyUpcomingFilters(); });
+        next?.addEventListener('click', () => { page++;applyUpcomingFilters(); });
+        applyUpcomingFilters(true);
+    }
+
+
+    function initUpcomingFilters() {
+        if (!staffCalendar) { initOwnerUpcomingFilters(); return; }
+        const tableRows = [...document.querySelectorAll('#upcomingTable tbody .js-upcoming-row')];
+        const cards = [...document.querySelectorAll('#upcomingCards .js-upcoming-row')];
+        const empty = document.getElementById('upcomingFilteredEmpty');
+        const pager = document.querySelector('.staff-round2-calendar-pager');
+        const info = document.getElementById('staffUpcomingPageInfo');
+        const prev = document.getElementById('staffUpcomingPrev');
+        const next = document.getElementById('staffUpcomingNext');
+        const size = 10;
+        let page = 1;
+        applyUpcomingFilters = (resetPage = false) => {
+            if (resetPage === true) page = 1;
+            const matching = tableRows.filter(row => !activePackageFilter || row.dataset.package === activePackageFilter);
+            const pages = Math.max(1, Math.ceil(matching.length / size));
+            page = Math.max(1, Math.min(page, pages));
+            const visible = new Set(matching.slice((page - 1) * size, page * size));
+            tableRows.forEach(row => row.classList.toggle('d-none', !visible.has(row)));
+            cards.forEach((card,i) => card.classList.toggle('d-none', !tableRows[i] || !visible.has(tableRows[i])));
+            empty?.classList.toggle('d-none', matching.length > 0);
+            if (info) info.textContent = matching.length + ' confirmed bookings · Page ' + page + ' of ' + pages;
+            if (prev) prev.disabled = page <= 1;
+            if (next) next.disabled = page >= pages;
+            if (pager) pager.hidden = matching.length === 0;
+        };
+        prev?.addEventListener('click', () => { page--; applyUpcomingFilters(); });
+        next?.addEventListener('click', () => { page++; applyUpcomingFilters(); });
+        applyUpcomingFilters(true);
     }
 
     function initLegendFilters() {

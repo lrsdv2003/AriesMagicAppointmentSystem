@@ -1,0 +1,297 @@
+/* Staff Round 1 — Client-aligned midnight design, restricted to Staff role. */
+body.internal-ui.staff-dashboard {
+  --sr-bg:#04192d;--sr-panel:#0b2b43;--sr-elevated:#123953;--sr-border:#315c77;
+  --sr-text:#f3f9ff;--sr-muted:#bed2e2;--sr-blue:#167bb8;--sr-blue-hover:#2097d9;
+  --sr-gold:#f5c36b;--sr-red:#c71b48;
+  background:var(--sr-bg)!important;color:var(--sr-text);
+}
+body.internal-ui.staff-dashboard :is(.dashboard-main,.dashboard-content){min-width:0}
+body.internal-ui.staff-dashboard .dashboard-topbar{
+  position:sticky!important;top:0;z-index:1060!important;
+  background:#061d33!important;border-bottom:1px solid #315572!important;
+  min-height:68px;box-shadow:0 5px 22px #00101d55;
+}
+body.internal-ui.staff-dashboard .dashboard-topbar .workspace-brand{min-width:0}
+body.internal-ui.staff-dashboard .dashboard-topbar .workspace-brand img{border-radius:50%;object-fit:cover}
+body.internal-ui.staff-dashboard .dashboard-topbar .dashboard-title{font-weight:700;color:#e6f5ff}
+body.internal-ui.staff-dashboard .topbar-right{display:flex;align-items:center;gap:8px;min-width:0}
+body.internal-ui.staff-dashboard .topbar-right .topbar-icon{
+ display:grid;place-items:center;position:relative;width:40px;height:40px;border-radius:9px;
+ color:#d4e9f7;background:#102f49;border:1px solid #37617b;text-decoration:none;
+}
+body.internal-ui.staff-dashboard .topbar-right .topbar-icon:hover,
+body.internal-ui.staff-dashboard .topbar-right .topbar-icon:focus-visible{color:#fff;background:#18547a;border-color:#5ba2ca}
+body.internal-ui.staff-dashboard .topbar-right :is(.notification-badge,.communication-unread-badge){
+ position:absolute;top:-5px;right:-6px;min-width:17px;height:17px;padding:0 3px;
+ display:grid;place-items:center;border-radius:10px;font-size:10px;font-weight:750;
+ background:#c61f4c;color:#fff;border:2px solid #061d33;
+}
+body.internal-ui.staff-dashboard .topbar-right :is(.notification-badge,.communication-unread-badge)[hidden]{display:none!important}
+body.internal-ui.staff-dashboard .internal-account-menu{min-width:0}
+body.internal-ui.staff-dashboard .account-menu-trigger{
+ display:flex;align-items:center;gap:9px;background:#102f49!important;color:#f3f9ff!important;
+ border:1px solid #39627d!important;border-radius:10px;min-height:43px;padding:4px 10px;
+}
+body.internal-ui.staff-dashboard .account-menu-trigger:focus-visible{outline:3px solid #83c8f8;outline-offset:2px}
+body.internal-ui.staff-dashboard .account-menu-text strong{color:#fff;font-size:12px}
+body.internal-ui.staff-dashboard .account-menu-text small{color:#afcadb}
+body.internal-ui.staff-dashboard .account-header-avatar{border-radius:50%;overflow:hidden;flex-shrink:0}
+body.internal-ui.staff-dashboard .account-header-avatar img{width:100%;height:100%;object-fit:cover}
+body.internal-ui.staff-dashboard .internal-account-menu>.dropdown-menu{
+ background:#092b43!important;border:1px solid #456e8a!important;box-shadow:0 18px 40px #0009;
+ color:#f1f8ff;--bs-dropdown-bg:#092b43;--bs-dropdown-link-color:#f1f8ff;
+ --bs-dropdown-link-hover-bg:#185173;--bs-dropdown-link-hover-color:#fff;
+}
+body.internal-ui.staff-dashboard .internal-account-menu .dropdown-item{color:#f1f8ff!important}
+body.internal-ui.staff-dashboard .internal-account-menu .dropdown-item:is(:hover,:focus-visible){background:#185173!important;color:white!important}
+body.internal-ui.staff-dashboard .internal-account-menu .dropdown-divider{border-color:#416780}
+body.internal-ui.staff-dashboard .dashboard-sidebar{background:#061b30!important;border-right:1px solid #244c67!important}
+body.internal-ui.staff-dashboard .sidebar-link.active{background:#c71b48!important;color:#fff!important;border-color:#e04869!important}
+body.internal-ui.staff-dashboard .dashboard-content{padding:22px clamp(14px,2vw,30px) 30px!important}
+body.internal-ui.staff-dashboard .workspace-page-heading{margin-bottom:12px!important}
+body.internal-ui.staff-dashboard .workspace-page-heading h1{font-size:clamp(20px,2vw,27px)!important;letter-spacing:-.02em}
+
+/* The three live operational counts. */
+body.internal-ui.staff-dashboard .staff-round1-dashboard{display:grid;gap:15px}
+body.internal-ui.staff-dashboard .staff-round1-intro{display:flex;justify-content:space-between;align-items:center;gap:14px}
+body.internal-ui.staff-dashboard .staff-round1-intro h1{font-size:clamp(22px,2.2vw,30px);font-weight:780;color:#f4faff;margin:3px 0 2px}
+body.internal-ui.staff-dashboard .staff-round1-intro p{font-size:13px;color:#b8d2e6;margin:0}
+body.internal-ui.staff-dashboard .staff-round1-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+body.internal-ui.staff-dashboard .staff-round1-metric{
+ display:flex;align-items:center;gap:13px;min-height:108px;padding:15px;
+ background:#0b2d47;border:1px solid #315c79;border-radius:12px;color:#f0f8ff;text-decoration:none;
+ transition:border-color .16s,background .16s;
+}
+body.internal-ui.staff-dashboard .staff-round1-metric:hover,
+body.internal-ui.staff-dashboard .staff-round1-metric:focus-visible{background:#144460;border-color:#5ba2c6;color:#fff}
+body.internal-ui.staff-dashboard .staff-round1-metric>div{min-width:0;flex:1}
+body.internal-ui.staff-dashboard .staff-round1-metric h2{color:#d7eafa;font-size:12px;font-weight:700;line-height:1.35;margin:0 0 4px}
+body.internal-ui.staff-dashboard .staff-round1-metric strong{font-size:27px;font-weight:800;line-height:1.1;display:block;color:#fff;font-variant-numeric:tabular-nums}
+body.internal-ui.staff-dashboard .staff-round1-metric small{display:block;font-size:11px;color:#b4d1e3;margin-top:5px}
+body.internal-ui.staff-dashboard .staff-round1-metric>i{font-size:15px;color:#95b7cb;align-self:center}
+body.internal-ui.staff-dashboard .staff-round1-metric-icon{
+ width:47px;height:47px;border:1px solid #336a88;border-radius:10px;
+ display:grid;place-items:center;flex-shrink:0;font-size:21px;background:#153b56;color:#78c8f6;
+}
+body.internal-ui.staff-dashboard .tone-booking{color:#ff8bb0;background:#4b2542;border-color:#8e4568}
+body.internal-ui.staff-dashboard .tone-reschedule{color:#f4c275;background:#4c3e2b;border-color:#82704b}
+body.internal-ui.staff-dashboard .staff-round1-columns{display:grid;grid-template-columns:minmax(0,1.85fr) minmax(275px,.9fr);align-items:start;gap:14px}
+body.internal-ui.staff-dashboard :is(.staff-round1-panel,.staff-round1-selected-day){
+ border:1px solid #335d78;background:#09283f;border-radius:12px;min-width:0;overflow:hidden;color:#eaf7ff
+}
+body.internal-ui.staff-dashboard .staff-round1-panel{padding:16px}
+body.internal-ui.staff-dashboard .staff-round1-section-head{margin-bottom:12px}
+body.internal-ui.staff-dashboard .staff-round1-section-head h2{display:flex;align-items:center;gap:8px;font-size:18px;font-weight:750;color:#f3f9ff;margin:4px 0}
+body.internal-ui.staff-dashboard .staff-round1-section-head h2 i{color:#e3bc6f}
+body.internal-ui.staff-dashboard .staff-round1-section-head p{font-size:12px;color:#b6cedf;margin:0}
+body.internal-ui.staff-dashboard .staff-round1-tabs{display:flex;align-items:stretch;gap:7px;flex-wrap:wrap;border-bottom:1px solid #315b75;padding-bottom:10px;margin-bottom:12px}
+body.internal-ui.staff-dashboard .staff-round1-tabs button{
+ border:1px solid #365a74;background:#12314a;color:#d3e5f3;padding:9px 12px;
+ border-radius:8px;display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:700;
+}
+body.internal-ui.staff-dashboard .staff-round1-tabs button span{color:#c1d9e9;background:#193f5b;border-radius:5px;padding:2px 6px;font-size:11px}
+body.internal-ui.staff-dashboard .staff-round1-tabs button[aria-selected="true"]{background:#b91942;border-color:#d63b63;color:white}
+body.internal-ui.staff-dashboard .staff-round1-tabs button[aria-selected="true"] span{background:#72203a;color:#fff}
+body.internal-ui.staff-dashboard .staff-round1-tabs button:focus-visible{outline:3px solid #85c7f1;outline-offset:2px}
+body.internal-ui.staff-dashboard .staff-round1-tab-panel[hidden]{display:none!important}
+body.internal-ui.staff-dashboard .staff-round1-task-list{display:grid;gap:8px}
+body.internal-ui.staff-dashboard .staff-round1-task{
+ display:flex;gap:11px;align-items:center;min-width:0;
+ border:1px solid #2c516d;background:#0e2f49;border-radius:9px;padding:11px 12px
+}
+body.internal-ui.staff-dashboard .staff-round1-task-avatar{
+ width:34px;height:34px;display:grid;place-items:center;border-radius:9px;
+ background:#1b4d6b;color:#acdffa;flex-shrink:0
+}
+body.internal-ui.staff-dashboard .staff-round1-task-copy{min-width:0;flex:1}
+body.internal-ui.staff-dashboard .staff-round1-task-copy strong{font-size:12px;color:#fff;display:block;overflow-wrap:anywhere}
+body.internal-ui.staff-dashboard .staff-round1-task-copy p{
+ margin:2px 0;color:#ccdeeb;font-size:12px;line-height:1.5;
+ overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+body.internal-ui.staff-dashboard .staff-round1-task-copy small{display:block;color:#a8c4d7;font-size:10px}
+body.internal-ui.staff-dashboard .staff-round1-new{display:inline-block;margin-left:9px;padding:2px 6px;background:#632037;border-radius:5px;color:#fbb9c8}
+body.internal-ui.staff-dashboard .staff-round1-action{
+ display:inline-flex;justify-content:center;align-items:center;flex-shrink:0;
+ padding:8px 11px;border-radius:7px;border:1px solid #3c9acb;background:#126caa;
+ color:white!important;text-decoration:none;font-size:11px;font-weight:720;
+}
+body.internal-ui.staff-dashboard .staff-round1-action:hover{background:#198bca;border-color:#86d1fa}
+body.internal-ui.staff-dashboard .staff-round1-empty{margin:0;padding:16px;color:#c1d6e7;font-size:13px;background:#12344e;border-radius:9px}
+body.internal-ui.staff-dashboard .staff-round1-event-list{display:grid;gap:7px}
+body.internal-ui.staff-dashboard .staff-round1-event{display:grid;grid-template-columns:46px minmax(0,1fr);gap:10px;padding:10px 0;border-bottom:1px solid #2c5270}
+body.internal-ui.staff-dashboard .staff-round1-event:last-child{border-bottom:0}
+body.internal-ui.staff-dashboard .staff-round1-date{display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:7px;background:#153b57;color:#fff;font-size:10px;line-height:1.35}
+body.internal-ui.staff-dashboard .staff-round1-date strong{font-size:18px;color:#f3c874}
+body.internal-ui.staff-dashboard .staff-round1-event>div{min-width:0;display:grid;gap:2px}
+body.internal-ui.staff-dashboard .staff-round1-booking-code{font-size:12px;color:#f7ca70!important;text-decoration:none;font-weight:780}
+body.internal-ui.staff-dashboard .staff-round1-event>div>strong{font-size:12px;color:#eef6fb}
+body.internal-ui.staff-dashboard .staff-round1-event p{font-size:11px;line-height:1.5;overflow-wrap:anywhere;color:#c4d9e9;margin:1px 0 0}
+body.internal-ui.staff-dashboard .staff-round1-calendar-link{
+ display:flex;gap:10px;align-items:center;justify-content:center;width:100%;
+ margin-top:13px;padding:10px;border-radius:8px;background:#126fae;border:1px solid #3c96c8;
+ color:white!important;font-size:12px;text-decoration:none;font-weight:730
+}
+body.internal-ui.staff-dashboard .staff-round1-calendar-link:hover{background:#1d8ac6}
+
+/* Operational tables, search and filters. Standard functional controls remain wired to their original routes. */
+body.internal-ui.staff-dashboard :is(.staff-booking-page,.staff-reschedule-page,.staff-calendar-page,.history-page){min-width:0}
+body.internal-ui.staff-dashboard :is(.staff-booking-table,.staff-reschedule-table,.ui-table) thead th{
+ background:#153852!important;color:#dbeaf6!important;border-bottom:1px solid #395c75!important;
+ font-size:11px!important;letter-spacing:.01em;
+}
+body.internal-ui.staff-dashboard :is(.staff-booking-table,.staff-reschedule-table,.ui-table) tbody td{
+ padding:11px 12px!important;color:#e0eef8!important;border-bottom:1px solid #274c68!important;
+}
+body.internal-ui.staff-dashboard :is(.staff-booking-table,.staff-reschedule-table,.ui-table) tbody tr:hover{background:#123b56!important}
+body.internal-ui.staff-dashboard :is(.staff-booking-code,.ui-table tbody td:first-child strong){color:#f4c66e!important;white-space:nowrap}
+body.internal-ui.staff-dashboard :is(.staff-booking-actions a.btn-outline-secondary,.staff-reschedule-table a.btn-outline-secondary,.staff-reschedule-card-actions a.btn-outline-secondary,.ui-table tbody td:last-child a.btn-outline-primary){
+ border:1px solid #4aa0d0!important;background:#126fae!important;color:#fff!important;
+ font-weight:750!important;border-radius:7px;min-height:35px;white-space:nowrap
+}
+body.internal-ui.staff-dashboard :is(.staff-booking-actions a.btn-outline-secondary,.staff-reschedule-table a.btn-outline-secondary,.staff-reschedule-card-actions a.btn-outline-secondary,.ui-table tbody td:last-child a.btn-outline-primary):hover{background:#198bc5!important}
+body.internal-ui.staff-dashboard .am-filter-row{gap:9px}
+body.internal-ui.staff-dashboard .am-filter-search{flex:1 1 250px;min-width:0}
+body.internal-ui.staff-dashboard .am-filter-search input{min-height:40px}
+body.internal-ui.staff-dashboard :is(.dropdown-menu,.am-filter-container .dropdown-menu){background:#0b2c45;color:#e7f4ff;border:1px solid #456f89}
+body.internal-ui.staff-dashboard :is(.dropdown-menu,.am-filter-container .dropdown-menu) .form-label,
+body.internal-ui.staff-dashboard :is(.dropdown-menu,.am-filter-container .dropdown-menu) label{color:#d3e8f7}
+body.internal-ui.staff-dashboard .history-page .ui-table td{overflow-wrap:anywhere}
+body.internal-ui.staff-dashboard .history-page .ui-table td:first-child strong{white-space:nowrap}
+body.internal-ui.staff-dashboard .staff-round1-pager{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;border-top:1px solid #315973;padding:12px 15px;background:#0e3048}
+body.internal-ui.staff-dashboard .staff-round1-pager label{font-size:11px;color:#cfdeeb;display:flex;align-items:center;gap:8px}
+body.internal-ui.staff-dashboard .staff-round1-pager select{background:#103c58;border:1px solid #567e96;border-radius:6px;color:#fff;padding:5px}
+body.internal-ui.staff-dashboard .staff-round1-page-controls{display:flex;align-items:center;gap:8px;font-size:11px;color:#bed4e5}
+body.internal-ui.staff-dashboard .staff-round1-page-controls button{background:#15527a;border:1px solid #4889b4;border-radius:6px;color:white;padding:6px 9px}
+body.internal-ui.staff-dashboard .staff-round1-page-controls button:disabled{opacity:.42;cursor:not-allowed}
+
+/* Full-height Staff chat adapted from the Client messaging layout. */
+body.internal-ui.staff-dashboard .comm-page-dashboard.comm-page-staff{width:100%!important;max-width:none!important;padding:0!important;min-width:0}
+body.internal-ui.staff-dashboard .comm-page-staff .comm-workspace{
+ display:grid!important;grid-template-columns:minmax(235px,28%) minmax(0,1fr)!important;
+ min-height:500px!important;height:min(790px,calc(100dvh - 185px))!important;
+ max-height:none!important;border:1px solid #355c75;border-radius:12px;overflow:hidden!important;
+}
+body.internal-ui.staff-dashboard .comm-page-staff .comm-conversation-panel{min-width:0;min-height:0;display:flex;flex-direction:column;background:#0c2a42;border-right:1px solid #365a72}
+body.internal-ui.staff-dashboard .comm-page-staff .comm-chat-panel{min-width:0;min-height:0;display:flex;flex-direction:column;background:#09263e}
+body.internal-ui.staff-dashboard .comm-page-staff .comm-chat-header{flex:0 0 auto;padding:13px 18px;min-height:64px}
+body.internal-ui.staff-dashboard .comm-page-staff .comm-message-history{flex:1 1 auto!important;min-height:0!important;overflow-y:auto;overflow-x:hidden;padding:17px 18px}
+body.internal-ui.staff-dashboard .comm-page-staff .comm-message{width:fit-content!important;max-width:min(80%,650px)!important;margin:0 auto 14px 0!important;align-items:flex-start!important;overflow-wrap:anywhere}
+body.internal-ui.staff-dashboard .comm-page-staff .comm-message.mine{margin:0 0 14px auto!important;align-items:flex-end!important}
+body.internal-ui.staff-dashboard .comm-page-staff .comm-message-meta{max-width:100%;flex-wrap:wrap}
+body.internal-ui.staff-dashboard .comm-page-staff .comm-bubble{max-width:100%;width:fit-content;padding:10px 14px;overflow-wrap:anywhere;white-space:pre-wrap}
+body.internal-ui.staff-dashboard .comm-page-staff .comm-composer{flex:0 0 auto;padding:12px 15px;background:#10334d;border-top:1px solid #3d6781}
+body.internal-ui.staff-dashboard .comm-page-staff :is(.comm-avatar,.comm-sender-avatar,.comm-chat-avatar){overflow:hidden;border-radius:50%}
+body.internal-ui.staff-dashboard .comm-page-staff :is(.comm-avatar,.comm-sender-avatar,.comm-chat-avatar) img{width:100%;height:100%;object-fit:cover}
+body.internal-ui.staff-dashboard .comm-page-staff :is(.comm-avatar,.comm-sender-avatar,.comm-chat-avatar) img[hidden]{display:none!important}
+
+/* Reuse the Client notification structure, but with Staff-specific copy and page context. */
+body.internal-ui.staff-dashboard .hub-heading{display:flex;justify-content:space-between;align-items:center;gap:15px;margin-bottom:18px}
+body.internal-ui.staff-dashboard .hub-heading h1{font-size:24px;color:#f3faff;font-weight:780;margin:4px 0}
+body.internal-ui.staff-dashboard .hub-heading p{color:#bfd6e7;margin:0;font-size:13px}
+body.internal-ui.staff-dashboard .hub-kicker{color:#f0be67;font-size:11px;letter-spacing:.12em;text-transform:uppercase;font-weight:750}
+body.internal-ui.staff-dashboard .hub-notice-group{margin:0 0 19px}
+body.internal-ui.staff-dashboard .hub-notice-group>h2{font-size:12px;font-weight:730;color:#bcd2e2;margin:0 0 9px}
+body.internal-ui.staff-dashboard :is(.hub-card,.hub-notice-list){background:#092b43!important;border:1px solid #335c78!important;border-radius:11px!important;color:#e9f7ff}
+body.internal-ui.staff-dashboard .hub-notice-list{overflow:hidden}
+body.internal-ui.staff-dashboard .notice-row{background:#0b2c43;border-bottom:1px solid #2d536f;padding:16px;display:flex;gap:12px;align-items:flex-start}
+body.internal-ui.staff-dashboard .notice-row:last-child{border-bottom:0}
+body.internal-ui.staff-dashboard .notice-row.notice-unread{background:#123c56;box-shadow:inset 3px 0 #39a5e0}
+body.internal-ui.staff-dashboard .notice-copy{min-width:0;flex:1}
+body.internal-ui.staff-dashboard .notice-copy h2{font-size:14px;color:#f3faff;margin:5px 0;font-weight:720}
+body.internal-ui.staff-dashboard .notice-copy p{color:#c6dbeb;font-size:12px;line-height:1.55;margin:0;overflow-wrap:anywhere}
+body.internal-ui.staff-dashboard .notice-meta{display:flex;flex-wrap:wrap;gap:9px;color:#aac8db;font-size:10px}
+body.internal-ui.staff-dashboard .notice-icon{background:#174965;color:#9bd9ff;border-radius:8px;width:32px;height:32px;flex-shrink:0;display:grid;place-items:center}
+body.internal-ui.staff-dashboard .notice-action{border:1px solid #438fbf;border-radius:7px;background:#155b88;color:#fff;font-size:11px;padding:8px 10px;white-space:nowrap}
+body.internal-ui.staff-dashboard .cn-button{background:#123d59;border:1px solid #4d86a9;border-radius:7px;padding:9px 13px;color:#f3faff;text-decoration:none;display:inline-flex;align-items:center;font-size:12px;font-weight:730}
+body.internal-ui.staff-dashboard .hub-empty{padding:24px}
+body.internal-ui.staff-dashboard .hub-empty h2{font-size:17px;color:#f3faff}
+body.internal-ui.staff-dashboard .hub-empty p{color:#b8d1e2;font-size:13px}
+body.internal-ui.staff-dashboard .hub-empty .cn-button{margin-top:8px}
+
+/* Staff profile from the Client's card-based hierarchy; preserve all current security forms. */
+body.internal-ui.staff-dashboard .account-page{max-width:1250px;margin:0 auto}
+body.internal-ui.staff-dashboard .account-grid{display:grid;grid-template-columns:minmax(230px,.7fr) minmax(0,1.7fr);gap:16px;align-items:start}
+body.internal-ui.staff-dashboard .account-card{background:#0a2a43!important;border:1px solid #315f79!important;border-radius:12px!important;color:#eaf5ff;padding:18px}
+body.internal-ui.staff-dashboard .account-card :is(h2,h3){color:#f4faff}
+body.internal-ui.staff-dashboard .account-card h2{font-size:18px;font-weight:750}
+body.internal-ui.staff-dashboard .account-summary{display:flex;flex-direction:column;align-items:center;text-align:center;gap:5px}
+body.internal-ui.staff-dashboard .account-summary .account-avatar{overflow:hidden;border-radius:50%;border:3px solid #4989ae}
+body.internal-ui.staff-dashboard .account-summary .account-avatar img{width:100%;height:100%;object-fit:cover}
+body.internal-ui.staff-dashboard .staff-round1-avatar-edit{display:flex;align-items:center;justify-content:center;gap:7px;padding:7px 12px;background:#144b71;color:#fff;border:1px solid #579abf;border-radius:8px;margin:7px 0 10px;font-size:12px;font-weight:700}
+body.internal-ui.staff-dashboard .staff-round1-avatar-edit:focus-visible{outline:3px solid #f6c876;outline-offset:2px}
+body.internal-ui.staff-dashboard .account-card :is(.form-control,.form-select){background:#0e3853;border:1px solid #477690;color:#fff;border-radius:7px;min-height:41px}
+body.internal-ui.staff-dashboard .account-card .form-control:focus{outline:2px solid #5bb5ed;outline-offset:2px}
+body.internal-ui.staff-dashboard .account-card :is(.form-label,.account-field label){color:#deeff9;font-size:12px}
+body.internal-ui.staff-dashboard .account-card .form-text{color:#bfd3e4!important}
+body.internal-ui.staff-dashboard .account-card .account-details{color:#d9eaf6}
+body.internal-ui.staff-dashboard .account-card .account-details dt{color:#a6c5d9}
+body.internal-ui.staff-dashboard .account-card .account-details dd{color:#f0f9ff}
+body.internal-ui.staff-dashboard .account-sections{display:grid;gap:15px}
+
+/* Staff monthly calendar + date-specific confirmed bookings */
+body.internal-ui.staff-dashboard .staff-round1-calendar-layout{
+ display:grid;grid-template-columns:minmax(0,1.65fr) minmax(295px,1fr);align-items:start;gap:14px;
+}
+body.internal-ui.staff-dashboard .staff-round1-calendar-layout>.staff-calendar-hero{grid-column:1/-1;min-width:0}
+body.internal-ui.staff-dashboard .staff-round1-calendar-layout>.staff-calendar-panel{grid-column:1;grid-row:2;min-width:0}
+body.internal-ui.staff-dashboard .staff-round1-calendar-layout>.staff-upcoming-panel{grid-column:2;grid-row:2;min-width:0;overflow:hidden}
+body.internal-ui.staff-dashboard .staff-round1-selected-day{padding:12px;margin-bottom:15px}
+body.internal-ui.staff-dashboard .staff-round1-selected-head{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+body.internal-ui.staff-dashboard .staff-round1-selected-head h2{font-size:14px;color:#f7fbff;font-weight:750;margin:0}
+body.internal-ui.staff-dashboard .staff-round1-selected-head span{font-size:11px;color:#f4c977}
+body.internal-ui.staff-dashboard .staff-round1-day-empty{margin:0;padding:10px;background:#113853;border-radius:7px;color:#bdd5e7;font-size:12px}
+body.internal-ui.staff-dashboard [data-staff-day][hidden]{display:none!important}
+body.internal-ui.staff-dashboard .staff-round1-day-event{display:grid;grid-template-columns:1fr auto;gap:4px 10px;align-items:center;padding:11px 5px;border-bottom:1px solid #31546e;min-width:0}
+body.internal-ui.staff-dashboard .staff-round1-day-event:last-child{border-bottom:0}
+body.internal-ui.staff-dashboard .staff-round1-day-event>a:first-child{grid-column:1}
+body.internal-ui.staff-dashboard .staff-round1-day-event>span{grid-column:1;color:#d4e7f3;font-size:12px;overflow-wrap:anywhere}
+body.internal-ui.staff-dashboard .staff-round1-day-event>time{grid-column:2;grid-row:1;color:#f3faff;font-size:11px}
+body.internal-ui.staff-dashboard .staff-round1-day-event>small{grid-column:1;color:#afcbdc;font-size:11px}
+body.internal-ui.staff-dashboard .staff-round1-day-event>.staff-round1-action{grid-column:2;grid-row:2/4}
+body.internal-ui.staff-dashboard .staff-upcoming-panel .staff-upcoming-table-wrap{overflow-x:auto;max-width:100%}
+body.internal-ui.staff-dashboard .staff-upcoming-panel .staff-upcoming-heading h2{font-size:15px!important}
+body.internal-ui.staff-dashboard .staff-upcoming-panel .staff-upcoming-tools{min-width:0}
+body.internal-ui.staff-dashboard .staff-round1-calendar-layout :is(.staff-calendar-panel,.staff-upcoming-panel){margin:0!important}
+body.internal-ui.staff-dashboard .staff-calendar-panel #calendar{min-width:0}
+body.internal-ui.staff-dashboard .staff-upcoming-panel :is(.staff-upcoming-table,.staff-upcoming-cards){font-size:11px}
+
+/* Responsive layout without clipping or fake small-font shrinking. */
+@media(max-width:1200px){
+ body.internal-ui.staff-dashboard .staff-round1-columns{grid-template-columns:minmax(0,1.3fr) minmax(260px,.9fr)}
+ body.internal-ui.staff-dashboard .staff-round1-calendar-layout{grid-template-columns:1fr}
+ body.internal-ui.staff-dashboard .staff-round1-calendar-layout>.staff-calendar-panel{grid-column:1;grid-row:2}
+ body.internal-ui.staff-dashboard .staff-round1-calendar-layout>.staff-upcoming-panel{grid-column:1;grid-row:3}
+}
+@media(max-width:1050px){
+ body.internal-ui.staff-dashboard .staff-round1-columns{grid-template-columns:1fr}
+ body.internal-ui.staff-dashboard .comm-page-staff .comm-workspace{grid-template-columns:minmax(210px,30%) minmax(0,1fr)!important}
+}
+@media(max-width:800px){
+ body.internal-ui.staff-dashboard .staff-round1-metrics{grid-template-columns:1fr}
+ body.internal-ui.staff-dashboard .staff-round1-metric{min-height:85px}
+ body.internal-ui.staff-dashboard .account-grid{grid-template-columns:1fr}
+ body.internal-ui.staff-dashboard .comm-page-staff .comm-workspace{grid-template-columns:1fr!important;min-height:400px;height:calc(100dvh - 150px)!important}
+ body.internal-ui.staff-dashboard .comm-page-staff .comm-conversation-panel{display:flex!important}
+ body.internal-ui.staff-dashboard .comm-page-staff .comm-chat-panel{display:none!important}
+ body.internal-ui.staff-dashboard .comm-page-staff.comm-has-selection .comm-conversation-panel{display:none!important}
+ body.internal-ui.staff-dashboard .comm-page-staff.comm-has-selection .comm-chat-panel{display:flex!important}
+ body.internal-ui.staff-dashboard .comm-page-staff .comm-mobile-back{display:inline-flex!important}
+}
+@media(max-width:600px){
+ body.internal-ui.staff-dashboard .dashboard-content{padding:14px 10px 22px!important}
+ body.internal-ui.staff-dashboard .staff-round1-task{flex-wrap:wrap}
+ body.internal-ui.staff-dashboard .staff-round1-task-copy{flex-basis:calc(100% - 50px)}
+ body.internal-ui.staff-dashboard .staff-round1-task .staff-round1-action{margin-left:45px}
+ body.internal-ui.staff-dashboard .staff-round1-tabs button{flex:1 1 115px;justify-content:space-between}
+ body.internal-ui.staff-dashboard .staff-round1-event{grid-template-columns:44px minmax(0,1fr)}
+ body.internal-ui.staff-dashboard .notice-row{flex-wrap:wrap}
+ body.internal-ui.staff-dashboard .notice-open-form{margin-left:44px}
+ body.internal-ui.staff-dashboard .account-menu-text{display:none}
+ body.internal-ui.staff-dashboard .dashboard-topbar{min-height:60px}
+ body.internal-ui.staff-dashboard .comm-page-staff .comm-workspace{height:calc(100dvh - 125px)!important;min-height:300px!important}
+ body.internal-ui.staff-dashboard .comm-page-staff .comm-message{max-width:93%!important}
+ body.internal-ui.staff-dashboard .staff-round1-day-event{grid-template-columns:minmax(0,1fr) auto}
+}
+\nbody.internal-ui.staff-dashboard .staff-round1-task-avatar{overflow:hidden}body.internal-ui.staff-dashboard .staff-round1-task-avatar>img{display:block;width:100%;height:100%;object-fit:cover;border-radius:inherit}body.internal-ui.staff-dashboard .staff-round1-task-avatar>img[hidden]{display:none!important}
+body.internal-ui.staff-dashboard .staff-reschedule-table{min-width:1020px}body.internal-ui.staff-dashboard .staff-round1-requested-at{display:block;color:#bfd7e8;font-size:11px;margin:3px 0 10px}body.internal-ui.staff-dashboard .staff-round1-table-package{overflow-wrap:anywhere;max-width:165px}

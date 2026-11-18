@@ -30,7 +30,8 @@ try {
     return result;
    });
    assert.deepEqual(issues,[],name+' '+width);
-   assert.equal(await page.$$eval('.sidebar-nav a[href*="Payments"],.sidebar-nav a[href*="Communications"],button[title="Settings"]',els=>els.length),0,'Admin navigation has no financial or duplicate communication shortcuts');
+   assert.equal(await page.$$eval('.sidebar-nav a[href*="Payments"],.sidebar-nav a[href*="Reports"],button[title="Settings"]',els=>els.length),0,'Admin navigation has no Owner financial or duplicate settings shortcuts');
+   assert.equal(await page.$$eval('.sidebar-nav a[href*="Communications"]',els=>els.length),1,'Approved workspace has exactly one authorized Messages destination');
    await page.screenshot({path:path.join(snapshots,'admin-'+name+'-'+width+'.png'),fullPage:true});
    console.log('PASS Admin layout',name,width);
   }

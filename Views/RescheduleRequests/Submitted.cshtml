@@ -1,0 +1,17 @@
+@model AriesMagicAppointmentSystem.Models.RescheduleRequest
+@using AriesMagicAppointmentSystem.Models
+@{ ViewData["Title"]="Reschedule request submitted";ViewData["BookingExperience"]=true; }
+<link rel="stylesheet" href="~/css/client-round2-20261108.css" asp-append-version="true"/>
+<div class="cn-page cn-reschedule-page r2-reschedule-wizard">
+ <header class="cn-page-heading"><div><p class="cn-kicker">Reschedule booking</p><h1>Request submitted.</h1><p>Staff will review your proposed date and time.</p></div></header>
+ <ol class="cr-steps r2-reschedule-steps" aria-label="Reschedule progress"><li class="is-done"><span>New schedule</span></li><li class="is-done"><span>Review</span></li><li class="is-active" aria-current="step"><span>Request submitted</span></li></ol>
+ <section class="cn-panel r2-reschedule-confirmation" role="status"><div class="r2-success-icon"><i class="bi bi-check2-circle" aria-hidden="true"></i></div><span class="r2-success-label">Request RS-@Model.Id.ToString("D3")</span><h2>Your rescheduling request is saved.</h2><p>Request status: <strong>@Model.Status</strong>. Your current booking schedule remains unchanged while Staff reviews the proposed date and time.</p>
+  <dl class="r2-reschedule-review-list">
+    <div><dt>Booking ID</dt><dd>BK-@Model.Booking?.CreatedAt.Year-@Model.BookingId.ToString("D3")</dd></div>
+    <div><dt>Current schedule</dt><dd>@(Model.OriginalDate?.ToString("MMM d, yyyy")??Model.Booking?.EventDate.ToString("MMM d, yyyy")) · @(Model.OriginalStartTime?.ToString("h:mm tt")??Model.Booking?.StartTime.ToString("h:mm tt"))</dd></div>
+    <div><dt>Requested schedule</dt><dd>@Model.RequestedDate.ToString("MMM d, yyyy") · @Model.RequestedStartTime.ToString("h:mm tt")</dd></div>
+    <div><dt>Review status</dt><dd><span class="r2-mini-status r2-mini-warning">@Model.Status</span></dd></div>
+  </dl>
+  <div class="cn-actions"><a asp-controller="Bookings" asp-action="Details" asp-route-id="@Model.BookingId" class="cn-button cn-primary">View booking <i class="bi bi-arrow-right" aria-hidden="true"></i></a><a asp-controller="Bookings" asp-action="MyBookings" class="cn-button cn-secondary">My bookings</a></div>
+ </section>
+</div>

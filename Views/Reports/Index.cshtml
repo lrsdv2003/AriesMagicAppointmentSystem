@@ -1,12 +1,12 @@
 @model AriesMagicAppointmentSystem.ViewModels.ReportDashboardViewModel
 @{
     Layout = "_DashboardLayout";
-    ViewData["Title"] = "Reports & Analytics";
+    ViewData["Title"] = "Financial Summary";
 }
 <div class="owner-reports-page">
     <div class="ui-toolbar page-header owner-page-header">
 
-        <div class="d-flex gap-2 flex-wrap"><a asp-action="ExportCsv" asp-route-startDate="@Model.StartDate?.ToString("yyyy-MM-dd")" asp-route-endDate="@Model.EndDate?.ToString("yyyy-MM-dd")" asp-route-month="@Model.Month" asp-route-year="@Model.Year" asp-route-package="@Model.PackageFilter" asp-route-bookingStatus="@Model.BookingStatusFilter" class="btn btn-outline-success"><i class="bi bi-file-earmark-spreadsheet" aria-hidden="true"></i> Export CSV</a><button type="button" class="btn btn-outline-secondary" onclick="window.print()"><i class="bi bi-printer" aria-hidden="true"></i> Print</button></div>
+        <div class="d-flex gap-2 flex-wrap"><a asp-action="ExportCsv" asp-route-startDate="@Model.StartDate?.ToString("yyyy-MM-dd")" asp-route-endDate="@Model.EndDate?.ToString("yyyy-MM-dd")" asp-route-month="@Model.Month" asp-route-year="@Model.Year" asp-route-package="@Model.PackageFilter" asp-route-bookingStatus="@Model.BookingStatusFilter" class="btn btn-outline-primary"><i class="bi bi-file-earmark-spreadsheet" aria-hidden="true"></i> Export CSV</a><button type="button" class="btn btn-outline-secondary" onclick="window.print()"><i class="bi bi-printer" aria-hidden="true"></i> Print</button></div>
     </div>
     @if(!ViewData.ModelState.IsValid){<div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>}
     <form asp-action="Index" method="get" class="am-filter-bar am-filter-row" aria-label="Report filters">
@@ -27,12 +27,12 @@
     </div>
 </form>
     <section class="owner-report-section" aria-labelledby="financialOverviewTitle">
-        <div class="owner-report-heading"><div><h2 id="financialOverviewTitle">Financial Position of Selected Bookings</h2></div><span class="owner-report-note">All verified payments and completed refunds for selected bookings</span></div>
+        <div class="owner-report-heading"><div><h2 id="financialOverviewTitle">Financial Summary</h2></div><span class="owner-report-note">All verified payments and completed refunds for selected bookings</span></div>
         <div class="owner-report-metrics">
-            <article><span>Booking Value</span><strong>₱@Model.TotalBookingValue.ToString("N2")</strong><small>Excludes cancelled, declined and expired bookings</small></article>
+            <article><span>Total Booking Value</span><strong>₱@Model.TotalBookingValue.ToString("N2")</strong><small>Excludes cancelled, declined and expired bookings</small></article>
             <article class="positive"><span>Collected Revenue</span><strong>₱@Model.TotalCollectedRevenue.ToString("N2")</strong><small>Verified payments received</small></article>
             <article class="warning"><span>Outstanding Balance</span><strong>₱@Model.OutstandingReceivables.ToString("N2")</strong><small>Still owed by clients</small></article>
-            <article class="negative"><span>Refunds</span><strong>₱@Model.RefundsIssued.ToString("N2")</strong><small>Completed refunds only</small></article>
+            <article class="negative"><span>Total Refunds</span><strong>₱@Model.RefundsIssued.ToString("N2")</strong><small>Completed refunds only</small></article>
             <article class="positive"><span>Net Revenue</span><strong>₱@Model.NetCollectedRevenue.ToString("N2")</strong><small>Collected minus refunds</small></article>
             <article><span>Confirmed Bookings</span><strong>@Model.ConfirmedBookings</strong><small>Confirmed events in selection</small></article>
             <article><span>Completed Events</span><strong>@Model.CompletedBookings</strong><small>Finished events</small></article>
@@ -65,8 +65,8 @@
     <section class="owner-report-section" aria-labelledby="recordsTitle">
         <div class="owner-report-heading"><div><h2 id="recordsTitle">Booking Financial Records</h2></div><span class="owner-report-note">Showing @Model.BookingRecords.Count of @Model.TotalBookings records</span></div>
         @if(!Model.BookingRecords.Any()){<div class="owner-empty-state"><i class="bi bi-bar-chart" aria-hidden="true"></i><h2>No report data found for the selected filters.</h2></div>}
-        else{<div class="table-responsive"><table class="table owner-audit-table align-middle"><thead><tr><th scope="col">Booking</th><th scope="col">Client</th><th scope="col">Package</th><th scope="col">Event Date</th><th scope="col">Booking Value</th><th scope="col">Collected</th><th scope="col">Outstanding</th><th scope="col">Status</th></tr></thead><tbody>
-        @foreach(var booking in Model.BookingRecords){Model.BookingFinancials.TryGetValue(booking.Id,out var finance);<tr><td><strong class="owner-booking-code">BK-@booking.CreatedAt.Year-@booking.Id.ToString("D3")</strong></td><td>@(booking.Client?.FullName??"Unknown Client")</td><td>@booking.PackageName</td><td>@booking.EventDate.ToString("MMM dd, yyyy")</td><td>₱@((finance?.BookingTotal??booking.FinalPrice).ToString("N2"))</td><td>₱@((finance?.TotalVerifiedPayments??0m).ToString("N2"))</td><td>₱@((booking.Status is AriesMagicAppointmentSystem.Models.BookingStatus.Cancelled or AriesMagicAppointmentSystem.Models.BookingStatus.Declined or AriesMagicAppointmentSystem.Models.BookingStatus.Expired ? 0m : finance?.RemainingBalance??booking.FinalPrice).ToString("N2"))</td><td><span class="status-badge status-read">@booking.Status</span></td></tr>}
+        else{<div class="table-responsive"><table class="table owner-audit-table align-middle"><thead><tr><th scope="col">Booking</th><th scope="col">Client</th><th scope="col">Package</th><th scope="col">Event Date</th><th scope="col">Booking Value</th><th scope="col">Collected</th><th scope="col">Outstanding</th><th scope="col">Status</th><th scope="col">Action</th></tr></thead><tbody>
+        @foreach(var booking in Model.BookingRecords){Model.BookingFinancials.TryGetValue(booking.Id,out var finance);<tr><td><strong class="owner-booking-code">BK-@booking.CreatedAt.Year-@booking.Id.ToString("D3")</strong></td><td>@(booking.Client?.FullName??"Unknown Client")</td><td>@booking.PackageName</td><td>@booking.EventDate.ToString("MMM dd, yyyy")</td><td>₱@((finance?.BookingTotal??booking.FinalPrice).ToString("N2"))</td><td>₱@((finance?.TotalVerifiedPayments??0m).ToString("N2"))</td><td>₱@((booking.Status is AriesMagicAppointmentSystem.Models.BookingStatus.Cancelled or AriesMagicAppointmentSystem.Models.BookingStatus.Declined or AriesMagicAppointmentSystem.Models.BookingStatus.Expired ? 0m : finance?.RemainingBalance??booking.FinalPrice).ToString("N2"))</td><td><span class="status-badge status-read">@booking.Status</span></td><td><a asp-controller="Bookings" asp-action="Details" asp-route-id="@booking.Id" class="btn btn-sm btn-primary">Details</a></td></tr>}
         </tbody></table></div>}
     </section>
 </div>
@@ -81,13 +81,14 @@
     const packageCounts=@Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.PackageBookingCounts));
     const packageRevenue=@Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.PackageRevenue));
     const paymentCounts=@Html.Raw(System.Text.Json.JsonSerializer.Serialize(new[]{Model.PendingCount,Model.VerifiedCount,Model.RejectedCount,Model.EvidenceRequiredCount}));
+    const packageColors=packageLabels.map(name => /all\s*in/i.test(name)?'#eab308':/deluxe/i.test(name)?'#dc3545':/premium/i.test(name)?'#278be8':'#6b93bd');
     const currency=value=>new Intl.NumberFormat('en-PH',{style:'currency',currency:'PHP',maximumFractionDigits:0}).format(value);
     if(typeof Chart === 'undefined') return;
     const common={responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{usePointStyle:true,boxWidth:8}}}};
     new Chart(document.getElementById('revenueTrendChart'),{type:'line',data:{labels:monthlyLabels,datasets:[{label:'Collected Revenue',data:monthlyRevenue,tension:.35,borderWidth:2,pointRadius:3}]},options:{...common,plugins:{...common.plugins,legend:{display:false},tooltip:{callbacks:{label:c=>currency(c.parsed.y)}}},scales:{y:{beginAtZero:true,ticks:{callback:v=>currency(v)}}}}});
     new Chart(document.getElementById('monthlyBookingsChart'),{type:'bar',data:{labels:monthlyLabels,datasets:[{label:'Bookings',data:monthlyBookings,borderRadius:7}]},options:{...common,plugins:{...common.plugins,legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{precision:0}}}}});
-    const pkg=document.getElementById('packageTrendChart'); if(pkg)new Chart(pkg,{type:'bar',data:{labels:packageLabels,datasets:[{label:'Bookings',data:packageCounts,borderRadius:7}]},options:{...common,indexAxis:'y',plugins:{...common.plugins,legend:{display:false}},scales:{x:{beginAtZero:true,ticks:{precision:0}}}}});
-    const pkgRevenue=document.getElementById('packageRevenueChart'); if(pkgRevenue)new Chart(pkgRevenue,{type:'bar',data:{labels:packageLabels,datasets:[{label:'Net Revenue',data:packageRevenue,borderRadius:7}]},options:{...common,indexAxis:'y',plugins:{...common.plugins,legend:{display:false},tooltip:{callbacks:{label:c=>currency(c.parsed.x)}}},scales:{x:{beginAtZero:true,ticks:{callback:v=>currency(v)}}}}});
+    const pkg=document.getElementById('packageTrendChart'); if(pkg)new Chart(pkg,{type:'bar',data:{labels:packageLabels,datasets:[{label:'Bookings',data:packageCounts,backgroundColor:packageColors,borderRadius:7}]},options:{...common,indexAxis:'y',plugins:{...common.plugins,legend:{display:false}},scales:{x:{beginAtZero:true,ticks:{precision:0}}}}});
+    const pkgRevenue=document.getElementById('packageRevenueChart'); if(pkgRevenue)new Chart(pkgRevenue,{type:'bar',data:{labels:packageLabels,datasets:[{label:'Net Revenue',data:packageRevenue,backgroundColor:packageColors,borderRadius:7}]},options:{...common,indexAxis:'y',plugins:{...common.plugins,legend:{display:false},tooltip:{callbacks:{label:c=>currency(c.parsed.x)}}},scales:{x:{beginAtZero:true,ticks:{callback:v=>currency(v)}}}}});
     new Chart(document.getElementById('paymentStatusChart'),{type:'doughnut',data:{labels:['Awaiting review','Verified','Rejected','Additional evidence'],datasets:[{data:paymentCounts,backgroundColor:['#b45309','#15803d','#b91c1c','#6d28d9'],borderWidth:2}]},options:{...common,cutout:'68%'}});
 })();
 </script>}

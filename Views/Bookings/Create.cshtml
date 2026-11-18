@@ -8,48 +8,110 @@
     var eventTypes = ViewBag.EventTypes as List<string> ?? new();
     var packageData = packages.Select(p => new { p.Id, p.Name, p.Price, p.DurationInHours, Inclusions = p.Inclusions.OrderBy(i => i.Id).Select(i => new { i.Id, i.Name, i.IsRemovable }) });
 }
-<div class="cn-page cn-booking-page">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+<link rel="stylesheet" href="~/css/booking-location.css" asp-append-version="true"/>
+<link rel="stylesheet" href="~/css/client-round2-20261108.css" asp-append-version="true"/><link rel="stylesheet" href="~/css/client-ultra-20261108.css" asp-append-version="true"/><link rel="stylesheet" href="~/css/client-pro-max-20261108.css" asp-append-version="true"/><link rel="stylesheet" href="~/css/client-messaging-final-20261108.css" asp-append-version="true"/><div class="cn-page cn-booking-page r2-booking-wizard">
     <header class="cn-page-heading"><div><p class="cn-kicker">Concierge booking</p><h1>Plan your event.</h1></div><p>Four steps. One thoughtful celebration.</p></header>
 @if (!packages.Any())
 {
-    <section class="cn-empty"><h2>Experiences are being updated</h2><p>Please check back soon or return to your dashboard.</p><a asp-action="Dashboard" class="cn-button cn-secondary">Back to dashboard</a></section>
+    <section class="cn-empty"><h2>Experiences are being updated</h2><p>Please check back soon or return to your dashboard.</p><a asp-action="MyBookings" class="cn-button cn-secondary">My bookings</a></section>
 }
 else
 {
 <noscript><p class="cn-notice">Enable JavaScript to search venues and check availability in this guided form.</p></noscript>
 <form asp-action="SubmitBooking" method="post" id="clientBookingWizard" novalidate data-search-url="@Url.Action("SearchVenue")" data-venue-url="@Url.Action("CheckVenueServiceability")" data-schedule-url="@Url.Action("CheckScheduleAvailability")">
     @Html.AntiForgeryToken()
+    <input type="hidden" name="AcceptedTermsVersion" value="2026-11-08-v3" />
     <div asp-validation-summary="All" class="cn-error-summary" role="alert" tabindex="-1" data-booking-errors></div>
     <div class="cn-progress"><p id="conciergeStep" class="cn-progress-caption">Step 1 of 4 · Location & date</p><ol class="cr-steps" aria-label="Booking progress">
         @foreach (var step in new[] { "Location & Date", "Package", "Event Details", "Review" }) { <li><span>@step</span></li> }
     </ol></div>
     <div class="cn-workspace">
     <aside class="cn-summary-slot">
-        <details class="cn-summary" id="bookingEstimate" open>
-            <summary>Your estimate <span id="summaryPeek">Choose an experience</span><span class="cn-chevron" aria-hidden="true">⌄</span></summary>
+        <section class="cn-summary ultra-event-summary" id="bookingEstimate">
+            <header class="ultra-summary-header"><strong id="r2SummaryTitle">Your event</strong><span id="summaryPeek">Your date and location</span></header>
+            <div id="r2EventPreview" class="r2-event-preview">
+             <dl><div><dt><i class="bi bi-calendar-event" aria-hidden="true"></i> Date</dt><dd id="r2EventDate">Choose an event date</dd></div>
+             <div><dt><i class="bi bi-clock" aria-hidden="true"></i> Time</dt><dd id="r2EventTime">Choose a start time</dd></div>
+             <div><dt><i class="bi bi-geo-alt" aria-hidden="true"></i> Venue</dt><dd id="r2EventVenue">Choose an event venue</dd></div></dl>
+             <p class="r2-event-availability"><i class="bi bi-info-circle" aria-hidden="true"></i><span id="r2EventAvailability">Availability not checked</span></p>
+            </div>
             <div id="summaryContent" class="cn-quote">
                 <p id="summaryPackage" class="cn-quote-title">Choose a package</p>
-                <dl><div><dt>Package price</dt><dd id="summaryBase">—</dd></div><div><dt>Customization discount</dt><dd id="summaryDiscount">—</dd></div><div><dt>Travel fee</dt><dd id="summaryTravel">Check venue first</dd></div><div class="cn-total"><dt>Estimated total</dt><dd id="summaryTotal">—</dd></div></dl>
+                <dl><div><dt>Package price</dt><dd id="summaryBase">—</dd></div><div><dt>Customization discount</dt><dd id="summaryDiscount">—</dd></div><div><dt>Travel fee</dt><dd id="summaryTravel">Check venue first</dd></div><div class="cn-total pro-estimate-total"><dt id="summaryTotalLabel">Estimated total</dt><dd id="summaryTotal">—</dd></div></dl>
+                <p class="pro-estimate-pending" id="summaryTravelPendingNote" hidden>Plus travel fee — Pending Staff review. The final total will be confirmed after location review.</p>
                 <p class="cn-deposit">Minimum downpayment <strong>₱@Model.RequiredDownpayment.ToString("N0")</strong><span>After Staff approval</span></p>
                 <p class="cn-help">Estimate only. Rechecked when you submit.</p>
             </div>
-        </details>
+        </section>
     </aside>
     <div class="cn-task">
     <section class="cn-panel" data-step="0" aria-labelledby="locationTitle">
-        <div class="cn-location-intro"><partial name="_ConciergePhoto"/></div>
-        <div class="cn-panel-heading"><h2 id="locationTitle" tabindex="-1">Where & when?</h2><p>Choose your schedule and find your venue. All fields are required.</p></div>
+
+        <div class="cn-panel-heading"><h2 id="locationTitle" tabindex="-1"><i class="bi bi-geo-alt" aria-hidden="true"></i> Location &amp; Date</h2><p>Choose your schedule and venue. Only the fields marked by your selected method are required.</p></div>
         <fieldset class="cn-fieldset"><legend>Your date & time</legend><div class="cn-fields">
             <div class="cn-field"><label asp-for="EventDate">Event date</label><input asp-for="EventDate" type="date" min="@DateTime.Today.AddDays(3).ToString("yyyy-MM-dd")" class="cn-input" required aria-describedby="dateHelp EventDateError"/><span asp-validation-for="EventDate" id="EventDateError" class="cn-field-error"></span></div>
             <div class="cn-field"><label asp-for="StartTime">Start time</label><input asp-for="StartTime" type="time" class="cn-input" required/><span asp-validation-for="StartTime" id="StartTimeError" class="cn-field-error"></span></div>
         </div><p class="cn-help" id="dateHelp">Please allow at least three days before your event.</p></fieldset>
-        <fieldset class="cn-fieldset"><legend>Your venue</legend><div class="cn-field"><label asp-for="PartyVenue">Venue or complete address</label><div class="cn-search"><input asp-for="PartyVenue" class="cn-input" required autocomplete="off" aria-describedby="venueHelp PartyVenueError" placeholder="Venue, city, or full address"/><button type="button" class="cn-button cn-secondary" id="findVenue">Search</button></div><span asp-validation-for="PartyVenue" id="PartyVenueError" class="cn-field-error"></span><p class="cn-help" id="venueHelp">Search, then select the matching address below.</p><div id="venueResults" class="cn-search-results" role="region" aria-label="Venue search results" aria-live="polite"></div><p id="venueChoice" class="cn-selected-address" hidden></p></div></fieldset>
+        <fieldset class="cn-fieldset cn-location-selector"><legend>Your venue</legend>
+            <input asp-for="VenueSelectionMethod" type="hidden" id="VenueSelectionMethod"/>
+            <input asp-for="VenueLatitude" type="hidden"/>
+            <input asp-for="VenueLongitude" type="hidden"/>
+            <div class="cn-location-methods" role="group" aria-label="How to choose your venue">
+                <button type="button" class="cn-button cn-secondary" data-location-method="Search" aria-pressed="true">Search address</button>
+                <button type="button" class="cn-button cn-secondary" data-location-method="MapPin" aria-pressed="false">Set a map pin</button>
+                <button type="button" class="cn-button cn-secondary" data-location-method="Manual" aria-pressed="false">Enter manually</button>
+            </div>
+            <div class="cn-field" data-location-panel="Search">
+                <label asp-for="PartyVenue">Event venue or full address</label>
+                <div class="cn-search"><input asp-for="PartyVenue" class="cn-input" autocomplete="off" required
+                    aria-describedby="venueHelp PartyVenueError" placeholder="Venue, landmark, street, city or province"/>
+                    <button type="button" class="cn-button cn-secondary" id="findVenue">Search</button></div>
+                <span asp-validation-for="PartyVenue" id="PartyVenueError" class="cn-field-error"></span>
+                <p class="cn-help" id="venueHelp">Search once, choose a result, then confirm or adjust the pin. Some results may show only an approximate area.</p>
+                <div id="venueResults" class="cn-search-results" role="region" aria-label="Venue search results" aria-live="polite"></div>
+                <p id="venueChoice" class="cn-selected-address" hidden></p>
+            </div>
+            <div class="cn-field" data-location-panel="MapPin" hidden>
+                <label for="mapVenueAddress">Event venue or full written address</label>
+                <input id="mapVenueAddress" class="cn-input" maxlength="500"
+                    placeholder="Venue and detailed address for this pin"/>
+                <p class="cn-help">Tap the map to place your pin, or drag it to the exact event entrance. This position is customer-provided and Staff may need to review it.</p>
+            </div>
+            <div class="cn-manual-fields" data-location-panel="Manual" hidden>
+                <p class="cn-help">No map result? Enter enough detail for Staff to find the venue. Postal code and venue name are optional.</p>
+                <div class="cn-fields">
+                    <div class="cn-field"><label asp-for="ManualVenueName">Venue or establishment (optional)</label><input asp-for="ManualVenueName" class="cn-input" maxlength="120"/></div>
+                    <div class="cn-field"><label asp-for="ManualStreet">House/building, street or subdivision</label><input asp-for="ManualStreet" class="cn-input" maxlength="180"/></div>
+                    <div class="cn-field"><label asp-for="ManualBarangay">Barangay</label><input asp-for="ManualBarangay" class="cn-input" maxlength="100"/></div>
+                    <div class="cn-field"><label asp-for="ManualCity">City / municipality</label><input asp-for="ManualCity" class="cn-input" maxlength="100"/></div>
+                    <div class="cn-field"><label asp-for="ManualProvince">Province / Metro Manila</label><input asp-for="ManualProvince" class="cn-input" maxlength="100"/></div>
+                    <div class="cn-field"><label asp-for="ManualPostalCode">Postal code (optional)</label><input asp-for="ManualPostalCode" class="cn-input" maxlength="12"/></div>
+                </div>
+                <p class="cn-help">City and province plus a street/subdivision or barangay are needed. Your request can continue without map coordinates.</p>
+            </div>
+            <div class="cn-field cn-location-directions">
+                <label asp-for="VenueDirections">Nearby landmark or directions (optional)</label>
+                <textarea asp-for="VenueDirections" class="cn-input" rows="2" maxlength="500"
+                    placeholder="Example: entrance beside the barangay hall"></textarea>
+            </div>
+            <div id="venueMapSection" class="cn-location-map-section" hidden>
+                <div id="venuePinMap" class="cn-location-map" role="region" aria-label="Interactive event venue map"></div>
+                <p class="cn-help">Map tiles © OpenStreetMap contributors. Pin positions are customer-provided, not independently verified.</p>
+                <div id="pinCoordinates" class="cn-help" aria-live="polite"></div>
+            </div>
+            <label class="cn-check cn-location-confirm">
+                <input asp-for="CustomerConfirmedLocation" type="checkbox"/>
+                <span>I confirm that this is the event location or address I want Staff to review.</span>
+            </label>
+            <p id="venueSelectionNotice" class="cn-help" role="status" aria-live="polite"></p>
+        </fieldset>
         <div id="locationResult" class="cn-notice" role="status" aria-live="polite">Travel and schedule availability are checked before you continue.</div>
         <div class="cn-actions"><button type="button" class="cn-button cn-primary" id="checkLocation" data-next>Check availability & continue <span aria-hidden="true">→</span></button></div>
     </section>
     <section class="cn-panel" data-step="1" aria-labelledby="packageTitle" hidden>
-        <div class="cn-panel-heading"><h2 id="packageTitle" tabindex="-1">Choose your experience.</h2><p>Pick one package. Explore the details or personalize it after selecting.</p></div>
-        <div class="cn-package-story"><partial name="_ConciergePhoto"/><div><p class="cn-kicker">A glimpse of the stage</p><h3>Make room for a little wonder.</h3><p>A moment from an Aries Magic event. Each package’s published inclusions define what’s included.</p></div></div>
+        <div class="cn-panel-heading"><h2 id="packageTitle" tabindex="-1"><i class="bi bi-stars" aria-hidden="true"></i> Choose your experience.</h2><p>Pick one package. Explore the details or personalize it after selecting.</p></div>
+
         <div id="checkedSchedule" class="cn-context"></div>
         <div class="cn-packages" role="group" aria-labelledby="packageTitle">
         @foreach (var package in packages)
@@ -64,17 +126,17 @@ else
             </article>
         }
         </div>
-        <details id="customizePackage" class="cn-customize" hidden><summary>Personalize this package <span>Optional</span></summary><p id="inclusionHelp">Remove up to two eligible inclusions for a single ₱2,000 discount. Leave everything unchecked to keep the complete package.</p><div id="packageInclusions" aria-describedby="inclusionHelp"></div></details>
+        <section id="customizePackage" class="cn-customize ultra-customize" hidden><h3>Package inclusions</h3><p id="inclusionHelp">All published inclusions are included. Turn off up to two optional items to customize your package. Mandatory items stay included.</p><div id="packageInclusions" aria-describedby="inclusionHelp"></div></section>
         <div class="cn-actions"><button type="button" class="cn-button cn-secondary" data-back>Back</button><button type="button" class="cn-button cn-primary" data-next>Continue <span aria-hidden="true">→</span></button></div>
     </section>
     <section class="cn-panel" data-step="2" aria-labelledby="detailsTitle" hidden>
-        <div class="cn-panel-heading"><h2 id="detailsTitle" tabindex="-1">A few details for your day.</h2><p>All visible fields are required. Your event type determines what we need.</p></div>
+        <div class="cn-panel-heading"><h2 id="detailsTitle" tabindex="-1"><i class="bi bi-clipboard-check" aria-hidden="true"></i> Event details</h2><p>Only details relevant to your event type are shown. Required fields are clearly indicated.</p></div>
         <fieldset class="cn-fieldset"><legend>The celebration</legend><div class="cn-fields">
             <div class="cn-field"><label asp-for="EventType">Event type</label><select asp-for="EventType" class="cn-input" required><option value="">Choose event type</option>@foreach(var type in eventTypes){<option value="@type">@type</option>}</select><span asp-validation-for="EventType" id="EventTypeError" class="cn-field-error"></span></div>
-            <div class="cn-field"><label asp-for="Motif">Motif or color palette</label><input asp-for="Motif" class="cn-input" required/><span asp-validation-for="Motif" id="MotifError" class="cn-field-error"></span></div>
-            <div class="cn-field" data-event-field="theme"><label asp-for="PartyTheme">Party theme</label><input asp-for="PartyTheme" class="cn-input"/><span asp-validation-for="PartyTheme" id="PartyThemeError" class="cn-field-error"></span></div>
+            <div class="cn-field" data-event-field="motif"><label asp-for="Motif">Motif or color palette (optional)</label><input asp-for="Motif" class="cn-input" maxlength="150"/><span asp-validation-for="Motif" id="MotifError" class="cn-field-error"></span></div>
+            <div class="cn-field" data-event-field="theme"><label asp-for="PartyTheme">Party theme (optional)</label><input asp-for="PartyTheme" class="cn-input"/><span asp-validation-for="PartyTheme" id="PartyThemeError" class="cn-field-error"></span></div>
             <div class="cn-field" data-event-field="celebrant"><label asp-for="CelebrantName">Celebrant name</label><input asp-for="CelebrantName" class="cn-input"/><span asp-validation-for="CelebrantName" id="CelebrantNameError" class="cn-field-error"></span></div>
-            <div class="cn-field" data-event-field="age"><label asp-for="Age">Age</label><input asp-for="Age" type="number" min="1" max="120" class="cn-input"/><span asp-validation-for="Age" id="AgeError" class="cn-field-error"></span></div>
+            <div class="cn-field" data-event-field="age"><label asp-for="Age">Celebrant age (optional)</label><input asp-for="Age" type="number" min="1" max="120" class="cn-input"/><span asp-validation-for="Age" id="AgeError" class="cn-field-error"></span></div>
             <div class="cn-field"><label asp-for="PaxCount">Number of guests</label><input asp-for="PaxCount" type="number" min="1" max="10000" class="cn-input" required/><span asp-validation-for="PaxCount" id="PaxCountError" class="cn-field-error"></span></div>
         </div></fieldset>
         <fieldset class="cn-fieldset"><legend>Your point of contact</legend><div class="cn-fields">
@@ -84,11 +146,12 @@ else
         <div class="cn-actions"><button type="button" class="cn-button cn-secondary" data-back>Back</button><button type="button" class="cn-button cn-primary" data-next>Review request <span aria-hidden="true">→</span></button></div>
     </section>
     <section class="cn-panel cn-review" data-step="3" aria-labelledby="reviewTitle" hidden>
-        <div class="cn-panel-heading"><h2 id="reviewTitle" tabindex="-1">Everything in one place.</h2><p>Review your details and estimate. Your request goes to Staff before payment opens.</p></div>
+        <div class="cn-panel-heading"><h2 id="reviewTitle" tabindex="-1"><i class="bi bi-check2-square" aria-hidden="true"></i> Review your booking</h2><p>Review your details and estimate. Your request goes to Staff before payment opens.</p></div>
         <div class="cn-review-caption"><i class="bi bi-calendar2-check" aria-hidden="true"></i><span>Your event details, estimate and agreement. Nothing is confirmed until the existing review and payment process is complete.</span></div>
-        <div class="cn-review-grid"><div id="bookingReview"></div><section id="reviewPricing" aria-label="Estimated pricing"><h3>Estimated pricing</h3></section></div>
-        <div class="cn-agreement"><partial name="_ConciergeTerms"/><label class="cn-check"><input asp-for="AcceptTerms" required aria-describedby="AcceptTermsError"/><span>I have read and agree to the terms.</span></label><span asp-validation-for="AcceptTerms" id="AcceptTermsError" class="cn-field-error"></span></div>
-        <div class="cn-actions"><button type="button" class="cn-button cn-secondary" data-back>Back</button><button type="submit" class="cn-button cn-primary" id="submitBooking">Send booking request <span aria-hidden="true">→</span></button></div>
+        <div class="cn-review-grid ultra-review-grid"><div id="bookingReview"></div><section id="reviewPricing" aria-label="Estimated pricing"><h3>Pricing summary</h3></section></div>
+        <input type="hidden" name="AcceptTerms" id="AcceptTerms" value="false"/>
+        <span asp-validation-for="AcceptTerms" id="AcceptTermsError" class="cn-field-error"></span>
+        <div class="cn-actions"><button type="button" class="cn-button cn-secondary" data-back>Back</button><button type="submit" class="cn-button cn-primary" id="submitBooking">Submit booking <span aria-hidden="true">→</span></button></div>
         <p class="cn-help cn-submit-note">A request does not reserve or confirm the schedule.</p>
     </section>
     <div id="wizardError" class="cn-error-summary" role="alert" tabindex="-1" hidden></div>
@@ -97,7 +160,13 @@ else
 </form>
 <script type="application/json" id="wizardPackages">@Html.Raw(JsonSerializer.Serialize(packageData))</script>
 <script type="application/json" id="wizardRemoved">@Html.Raw(JsonSerializer.Serialize(Model.RemovedInclusionIds))</script>
+<script type="application/json" id="wizardEventRules">@Html.Raw(JsonSerializer.Serialize(eventTypes.ToDictionary(type => type, type => AriesMagicAppointmentSystem.Services.BookingEventDetailsPolicy.For(type))))</script>
 }
-<dialog id="fullBookingTerms" class="cn-terms-dialog" aria-labelledby="fullBookingTermsTitle"><header><h2 id="fullBookingTermsTitle">Full Terms &amp; Conditions</h2><button type="button" data-close-terms aria-label="Close full terms">×</button></header><div class="cn-terms-full-text"><partial name="_BookingTermsText"/></div><button type="button" data-close-terms class="cn-button cn-secondary">Return to booking review</button></dialog>
+<dialog id="fullBookingTerms" class="cn-terms-dialog" aria-labelledby="fullBookingTermsTitle"><header><h2 id="fullBookingTermsTitle">Full Terms &amp; Conditions</h2><button type="button" data-close-terms aria-label="Close full terms">×</button></header><div class="cn-terms-full-text" id="bookingTermsText" tabindex="0" role="region" aria-label="Complete booking Terms and Conditions"><partial name="_BookingTermsText"/></div><label class="cn-check client-terms-consent"><input type="checkbox" id="termsModalConsent"/><span>I have read and agree to the Terms and Conditions for this booking.</span></label><div class="cn-actions"><button type="button" data-close-terms class="cn-button cn-secondary">Cancel</button><button type="button" id="confirmBookingTerms" class="cn-button cn-primary" disabled>Agree and submit booking</button></div></dialog>
 </div>
-@section Scripts { <script src="~/js/booking-experience.js" asp-append-version="true"></script><script src="~/js/client-booking-wizard.js" asp-append-version="true"></script> }
+@section Scripts {
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src="~/js/booking-experience.js" asp-append-version="true"></script>
+    <script src="~/js/booking-location.js" asp-append-version="true"></script>
+    <script src="~/js/client-booking-wizard.js" asp-append-version="true"></script><script src="~/js/client-ultra-20261108.js" asp-append-version="true"></script>
+}

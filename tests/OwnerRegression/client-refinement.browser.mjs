@@ -48,7 +48,7 @@ try {
  await page.$eval('#Email',el=>{el.readOnly=false;el.disabled=true;});
  check((await fieldStyle('#Email')).background!==initial.background,'Disabled control has a distinct surface');
  await page.emulateMediaFeatures([{name:'prefers-color-scheme',value:'dark'}]);
- check((await fieldStyle('#FullName')).background===initial.background,'OS dark mode preserves the deliberate light form theme');
+ check((await fieldStyle('#FullName')).background===initial.background,'OS dark mode preserves the approved form theme');
  await page.emulateMediaFeatures([{name:'prefers-color-scheme',value:'light'}]);
  await go('Account-Register');
  const cdp=await page.createCDPSession();await cdp.send('DOM.enable');
@@ -80,8 +80,8 @@ try {
  await page.evaluate(()=>window.scrollTo(0,700));
  await page.waitForFunction(()=>document.getElementById('siteHeader').classList.contains('cx-scrolled'));
  check(await page.$eval('#siteHeader',el=>Math.abs(el.getBoundingClientRect().top)<1),'Sticky navigation stays aligned after scrolling');
- check(await page.$$eval('.cx-testimonial',els=>els.length)===1,'Empty testimonial showcase remains intentionally contained');
- check((await page.$eval('.cx-testimonials',el=>el.textContent)).includes('No public stories yet'),'Empty testimonial showcase does not fabricate reviews');
+ check(await page.$$eval('.cx-testimonial,.cx-testimonials',els=>els.length)===0,'Approved empty-feedback state omits the testimonial placeholder');
+ check(!!await page.$('.ws-story'),'Authentic brand storytelling preserves the empty-feedback page rhythm');
  await go('Home-Index');await page.click('.magic-account-btn');await page.waitForSelector('.magic-account-menu.show');
  check(await page.$eval('.magic-account-menu',el=>{const r=el.getBoundingClientRect();return r.left>=0&&r.right<=innerWidth;}),'Client account dropdown stays within the viewport');
  check(await page.$eval('.magic-account-menu a[href*="Communications"]',el=>el.textContent.includes('Messages')),'Account navigation offers a direct messaging entry');
@@ -90,7 +90,7 @@ try {
  await page.emulateMediaFeatures([{name:'prefers-reduced-motion',value:'reduce'}]);
  await go('Communications-Index-Client');
  await page.waitForFunction(()=>document.getElementById('commConnectionStatus').textContent==='Messages up to date');
- check(await page.$eval('.comm-send-btn',el=>el.textContent.trim()==='Send'),'Chat has a visible Send action');
+ check(await page.$eval('.comm-send-btn',el=>el.firstChild.textContent.trim()==='Send'&&el.getBoundingClientRect().height>0),'Chat has a visible Send action alongside its decorative arrow');
  const composerStyle=await fieldStyle('#commMessageInput');
  await page.type('#commMessageInput','A mobile draft');await page.keyboard.press('Enter');
  check(sends===0&&await page.$eval('#commMessageInput',el=>el.value.includes('\n')),'Touch keyboard Enter creates a newline instead of accidentally sending');

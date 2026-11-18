@@ -17,11 +17,15 @@ namespace AriesMagicAppointmentSystem.ViewModels
         public decimal FixedDownpaymentAmount { get; set; } = 2000;
 
         [Required]
-        [Range(typeof(decimal), "0.01", "999999999", ErrorMessage = "Enter a valid payment amount.")]
-        [Display(Name = "Payment Amount")]
-        public decimal Amount { get; set; } = 2000;
+        [RegularExpression("^(Minimum|Half|Full)$", ErrorMessage = "Choose one of the available payment options.")]
+        public string PaymentOption { get; set; } = "Minimum";
+        public decimal Amount { get; set; }
+        public List<PaymentOptionViewModel> Options { get; set; } = new();
 
         public string GCashQrPath { get; set; } = "/images/gcash-qr.jpeg";
+
+        [Range(typeof(bool), "true", "true", ErrorMessage = "Confirm that your receipt reflects an actual payment and is subject to Owner verification.")]
+        public bool AcknowledgesPaymentTerms { get; set; }
 
         [Required]
         [Display(Name = "Payment Method")]
@@ -34,3 +38,5 @@ namespace AriesMagicAppointmentSystem.ViewModels
         public List<SelectListItem> Bookings { get; set; } = new();
     }
 }
+
+public sealed record PaymentOptionViewModel(string Key, string Name, decimal Amount, decimal Remaining, string Explanation);

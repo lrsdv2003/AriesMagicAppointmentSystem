@@ -40,7 +40,7 @@ namespace AriesMagicAppointmentSystem.Controllers
 
             var viewModel = new RescheduleRequestCreateViewModel
             {
-                RequestedDate = DateTime.Today,
+                RequestedDate = DateTime.Today.AddDays(3),
                 Bookings = await GetEligibleClientBookingsAsync(appUserId)
             };
 
@@ -82,6 +82,20 @@ namespace AriesMagicAppointmentSystem.Controllers
             if (booking == null)
             {
                 ModelState.AddModelError("", "Invalid booking selected.");
+                model.Bookings = await GetEligibleClientBookingsAsync(appUserId);
+                return View(model);
+            }
+
+            // Round 2: an approved/confirmed booking is not sufficient without
+            // an actually verified payment; enforced again at POST, not only in the selector.
+            var verifiedBooking = booking.Status == BookingStatus.Confirmed
+                && booking.EventDate.Date >= DateTime.Today.AddDays(3)
+                && await _context.Payments.AnyAsync(p => p.BookingId == booking.Id
+                    && p.Status == PaymentStatus.Verified);
+            if (!verifiedBooking)
+            {
+                ModelState.AddModelError("BookingId",
+                    "Only confirmed bookings with an Owner-verified payment and an eligible future event date may be rescheduled.");
                 model.Bookings = await GetEligibleClientBookingsAsync(appUserId);
                 return View(model);
             }
@@ -149,7 +163,20 @@ namespace AriesMagicAppointmentSystem.Controllers
 
             await transaction.CommitAsync();
             TempData["Success"] = "Your reschedule request was submitted successfully. Please wait for Staff review.";
-            return RedirectToAction(nameof(MyRequests));
+            return RedirectToAction(nameof(Submitted), new { id = request.Id });
+        }
+
+        [Authorize(Roles = "Client")]
+        [HttpGet]
+        public async Task<IActionResult> Submitted(int id)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var request = await _context.RescheduleRequests.AsNoTracking()
+                .Include(r => r.Booking).ThenInclude(b => b!.Service)
+                .FirstOrDefaultAsync(r => r.Id == id && r.Booking != null
+                    && r.Booking.ApplicationUserId == userId);
+            if (request == null) return NotFound();
+            return View(request);
         }
 
         [Authorize(Roles = "Client")]
@@ -163,7 +190,10 @@ namespace AriesMagicAppointmentSystem.Controllers
                 .Where(r => r.Booking != null && r.Booking.ApplicationUserId == appUserId)
                 .OrderByDescending(r => r.CreatedAt)
                 .ToListAsync();
-
+            var eligibleBookings = await GetEligibleClientBookingsAsync(appUserId);
+            ViewBag.EligibleRescheduleBookingIds = eligibleBookings
+                .Select(b => int.TryParse(b.Value, out var id) ? id : 0).ToHashSet();
+            ViewBag.EligibleRescheduleOptions = eligibleBookings;
             return View(requests);
         }
 
@@ -172,7 +202,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             string status = RescheduleRequestStatus.Pending,
             string? search = null,
             DateTime? requestedDate = null,
-            string sortBy = "newest")
+            string sortBy = "newest", int page = 1, int pageSize = 10)
         {
             var allowedStatuses = new[]
             {
@@ -202,7 +232,8 @@ namespace AriesMagicAppointmentSystem.Controllers
                 SortBy = string.Equals(sortBy, "oldest", StringComparison.OrdinalIgnoreCase) ? "oldest" : "newest",
                 PendingCount = await baseQuery.CountAsync(r => r.Status == RescheduleRequestStatus.Pending),
                 ApprovedCount = await baseQuery.CountAsync(r => r.Status == RescheduleRequestStatus.Approved),
-                RejectedCount = await baseQuery.CountAsync(r => r.Status == RescheduleRequestStatus.Rejected)
+                RejectedCount = await baseQuery.CountAsync(r => r.Status == RescheduleRequestStatus.Rejected),
+                PageSize = User.IsInRole("Staff") ? 10 : (pageSize is 10 or 20 or 50 ? pageSize : 10)
             };
 
             var query = baseQuery;
@@ -233,7 +264,11 @@ namespace AriesMagicAppointmentSystem.Controllers
                 ? query.OrderBy(r => r.CreatedAt)
                 : query.OrderByDescending(r => r.CreatedAt);
 
-            var requests = await query.ToListAsync();
+            model.TotalCount = await query.CountAsync();
+            model.Page = Math.Min(Math.Max(1, page), Math.Max(1,
+                (int)Math.Ceiling(model.TotalCount / (double)model.PageSize)));
+            var requests = await query.Skip((model.Page - 1) * model.PageSize)
+                .Take(model.PageSize).ToListAsync();
             foreach (var request in requests)
             {
                 var availability = request.Status == RescheduleRequestStatus.Pending
@@ -519,9 +554,10 @@ namespace AriesMagicAppointmentSystem.Controllers
             return await _context.Bookings
                 .Include(b => b.Service)
                 .Where(b => b.ApplicationUserId == appUserId
-                         && (b.Status == BookingStatus.Confirmed
-                             || b.Status == BookingStatus.AwaitingDownpayment
-                             || b.Status == BookingStatus.AwaitingVerification))
+                          && b.Status == BookingStatus.Confirmed
+                          && b.EventDate.Date >= DateTime.Today.AddDays(3)
+                          && b.Payments.Any(p => p.Status == PaymentStatus.Verified)
+                          && !b.RescheduleRequests.Any(r => r.Status == RescheduleRequestStatus.Pending))
                 .Select(b => new SelectListItem
                 {
                     Value = b.Id.ToString(),

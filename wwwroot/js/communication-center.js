@@ -10,6 +10,7 @@
   const status = document.getElementById("commComposerStatus");
   const conversationId = Number(root.dataset.conversationId || 0);
   const messagesUrl = root.dataset.messagesUrl || "/Communications/MessagesSince";
+  const readStatesUrl = root.dataset.readStatesUrl || "/Communications/ReadStates";
   let lastMessageId = Number(root.dataset.lastMessageId || 0);
   let polling = false, sending = false;
   const isClient = root.classList.contains("comm-page-client");
@@ -51,6 +52,23 @@
     const article = document.createElement("article");
     article.className = `comm-message ${message.isMine ? "mine" : "theirs"}`;
     article.dataset.messageId = message.id;
+    if (isClient && !message.isMine) {
+      const avatar = document.createElement("span");
+      avatar.className = "comm-sender-avatar comm-avatar";
+      avatar.setAttribute("aria-hidden", "true");
+      const initials = String(message.senderName || "Team").trim().split(/\s+/).slice(0, 2)
+        .map(part => part[0]?.toUpperCase() || "").join("") || "AM";
+      const fallback = document.createElement("span");
+      fallback.textContent = initials;
+      const url = message.senderAvatarUrl;
+      if (typeof url === "string" && url.startsWith("/Communications/ParticipantAvatar?")) {
+        const photo = document.createElement("img");
+        photo.src = url; photo.alt = ""; photo.loading = "lazy";
+        photo.addEventListener("error", () => { photo.hidden = true; fallback.hidden = false; });
+        fallback.hidden = true; avatar.append(photo);
+      }
+      avatar.append(fallback); article.append(avatar);
+    }
 
     const meta = document.createElement("div");
     meta.className = "comm-message-meta";
@@ -63,7 +81,20 @@
     if (!Number.isNaN(new Date(message.sentAt).getTime())) time.dateTime = new Date(message.sentAt).toISOString();
     meta.append(name, role, time);
     article.append(meta);
-
+    if (Number.isInteger(message.relatedBookingId) && message.relatedBookingId > 0) {
+      const ref = document.createElement("div");
+      ref.className = "comm-booking-context-chip";
+      const label = document.createElement("span");
+      label.textContent = "Regarding booking #" + message.relatedBookingId;
+      ref.append(label);
+      if (message.bookingUrl && message.bookingUrl.startsWith("/") && !message.bookingUrl.startsWith("//")) {
+        const a = document.createElement("a");
+        a.href = message.bookingUrl;
+        a.textContent = "View booking";
+        ref.append(a);
+      }
+      article.append(ref);
+    }
     if (message.messageType === "ActionRequest") {
       const card = document.createElement("div");
       card.className = `comm-action-card ${message.requestStatus === "Completed" ? "completed" : ""}`;
@@ -107,6 +138,29 @@
     lastMessageId = Math.max(lastMessageId, Number(message.id));
   };
 
+  const syncReadStates = async () => {
+    if (!conversationId || document.hidden || !history) return;
+    try {
+      const response = await fetch(readStatesUrl + "?id=" + encodeURIComponent(conversationId), {
+        credentials: "same-origin", headers: { "X-Requested-With": "XMLHttpRequest" }
+      });
+      if (!response.ok || response.redirected) return;
+      const states = await response.json();
+      if (!Array.isArray(states)) return;
+      for (const state of states) {
+        const id = Number(state.id);
+        if (!Number.isSafeInteger(id) || id <= 0) continue;
+        const article = history.querySelector('[data-message-id="' + id + '"]');
+        const indicator = article?.querySelector(".comm-delivery-state");
+        if (!indicator) continue;
+        const icon = indicator.querySelector("i");
+        if (icon) icon.className = state.seen ? "bi bi-check2-all" : "bi bi-check2";
+        indicator.setAttribute("aria-label", state.seen ? "Seen by recipient" : "Sent, awaiting recipient");
+        indicator.lastChild.textContent = state.seen ? " Seen" : " Sent";
+      }
+    } catch { /* Read state should never block message delivery. */ }
+  };
+
   const pollMessages = async () => {
     if (!conversationId || polling || document.hidden) return;
     polling = true;
@@ -126,6 +180,7 @@
         else if (latest) latest.hidden = false;
         window.dispatchEvent(new CustomEvent("aries:communication-updated"));
       }
+      await syncReadStates();
     } catch {
       if (isClient) connectionState(true);
     } finally {
@@ -194,7 +249,7 @@
     const sizeWorkspace = () => {
       const viewport = window.visualViewport;
       const height = (viewport?.height || window.innerHeight) - Math.max(0, workspace.getBoundingClientRect().top - (viewport?.offsetTop || 0)) - 16;
-      root.style.setProperty("--comm-available-height", Math.max(180, Math.min(height, 760)) + "px");
+      root.style.setProperty("--comm-available-height", Math.max(240, Math.min(height, 960)) + "px");
     };
     sizeWorkspace();
     window.addEventListener("resize", sizeWorkspace, {passive:true});

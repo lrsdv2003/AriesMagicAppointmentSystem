@@ -15,6 +15,11 @@ namespace AriesMagicAppointmentSystem.Models
         public int? BookingId { get; set; }
         public Booking? Booking { get; set; }
 
+        // Canonical, one-per-account Client support thread. Legacy booking threads stay readable in storage.
+        [MaxLength(450)]
+        public string? SupportClientId { get; set; }
+        public ApplicationUser? SupportClient { get; set; }
+
         [Required, MaxLength(450)]
         public string CreatedByUserId { get; set; } = string.Empty;
         public ApplicationUser? CreatedByUser { get; set; }

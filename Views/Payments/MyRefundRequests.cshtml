@@ -1,105 +1,32 @@
 @model IEnumerable<AriesMagicAppointmentSystem.Models.RefundRequest>
-
-@{ Layout="_ClientHubLayout";
-    ViewData["Title"] = "My Refund Requests";
-    var requests = Model.ToList();
+@{
+ Layout="_ClientHubLayout";ViewData["Title"]="My Refund Requests";
+ var requests=Model.OrderByDescending(x=>x.RequestedAt).ToList();
+ var canRequest=ViewBag.CanRequestRefund is bool allowed&&allowed;
 }
-
-<div class="client-portal-header">
-    <div>
-        <div class="section-kicker">Client Portal</div>
-        <h1 class="client-portal-title">My Refund Requests</h1>
-        <p class="client-portal-text">Track the status of your submitted refund requests.</p>
-    </div>
-    <div>
-        <a asp-action="RequestRefund" class="btn btn-danger btn-lg">Request Refund</a>
-    </div>
-</div>
-
-@if (TempData["Success"] != null)
+<div class="cn-page client-final-refund-home pro-refund-home">
+<header class="hub-heading"><div><span class="hub-kicker">OWNER-REVIEWED REFUNDS</span><h1>Request refund</h1><p>Submit a request only for an eligible payment. Every request is subject to Owner review.</p></div></header>
+@if(TempData["Success"] is string success){<div class="cn-success" role="status">@success</div>}
+@if(TempData["Error"] is string error){<div class="cn-error-summary" role="alert">@error</div>}
+@if(canRequest)
 {
-    <div class="client-success-banner mb-4">
-        <div class="client-success-icon">✓</div>
-        <div>
-            <div class="client-success-title">Refund Update</div>
-            <div class="client-success-text">@TempData["Success"]</div>
-        </div>
-    </div>
-}
-
-@if (!requests.Any())
-{
-    <div class="empty-state client-empty-state">
-        <h3>No refund requests yet</h3>
-        <p>You have not submitted any refund request.</p>
-        <a asp-action="RequestRefund" class="btn btn-danger mt-2">Request Refund</a>
-    </div>
+ <section class="hub-card pro-refund-action" aria-labelledby="proRefundAvailable">
+  <div class="pro-refund-action-icon"><i class="bi bi-wallet2" aria-hidden="true"></i></div>
+  <div class="pro-refund-action-copy">
+   <h2 id="proRefundAvailable">Eligible payment available</h2>
+   <p>Review the eligible transaction, amount, and GCash destination before sending your request for Owner approval.</p>
+  </div>
+  <a asp-action="RequestRefund" class="cn-button cn-primary">Request refund <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+ </section>
 }
 else
 {
-    <div class="client-booking-grid">
-        @foreach (var item in requests)
-        {
-            var statusLabel = item.Status switch { "UnderReview" => "Awaiting Owner Review", "RefundProcessing" => "Awaiting Owner Final Verification", "Approved" => "Approved - Refund Processing", "Refunded" => "Completed", _ => item.Status };
-            var statusClass = item.Status switch
-            {
-                "Pending" => "status-pending",
-                "UnderReview" => "status-pending",
-                "RefundProcessing" => "status-pending",
-                "Approved" => "status-verified",
-                "Refunded" => "status-completed",
-                "Rejected" => "status-rejected",
-                _ => "status-read"
-            };
-
-            <div class="client-booking-card">
-                <div class="client-booking-top">
-                    <div>
-                        <div class="client-booking-code">Refund Request</div>
-                        <h3 class="client-booking-package">
-                            @(item.Booking?.PackageName ?? item.Booking?.Service?.Name ?? "Booking")
-                        </h3>
-                        <div class="client-booking-created text-muted small">
-                            Requested on @item.RequestedAt.ToString("MMM dd, yyyy hh:mm tt")
-                        </div>
-                    </div>
-
-                    <span class="status-badge @statusClass">@statusLabel</span>
-                </div>
-
-                <div class="client-booking-meta">
-                    <div class="client-booking-meta-box">
-                        <span class="client-booking-meta-label">Refund Amount</span>
-                        <span class="client-booking-meta-value">₱@item.Amount.ToString("N2")</span>
-                    </div>
-
-                    <div class="client-booking-meta-box">
-                        <span class="client-booking-meta-label">GCash Number</span>
-                        <span class="client-booking-meta-value">@item.GCashNumber</span>
-                    </div>
-                </div>
-
-                <div class="payment-proof-preview mt-2">
-                    <img src="@Url.Action("RefundProof", "Payments", new { id = item.Id })" alt="Refund Evidence" class="payment-proof-image" />
-                </div>
-
-                <div class="client-booking-details">
-                    <div class="client-booking-detail-row">
-                        <span>GCash Account Name</span>
-                        <strong>@item.GCashAccountName</strong>
-                    </div>
-
-                    <div class="client-booking-detail-row">
-                        <span>Reason</span>
-                        <strong>@(item.ClientReason ?? "No reason provided")</strong>
-                    </div>
-
-                    <div class="client-booking-detail-row">
-                        <span>Owner Remarks</span>
-                        <strong>@(item.AdminRemarks ?? "No remarks yet")</strong>
-                    </div>
-                </div>
-            </div>
-        }
-    </div>
+ <section class="hub-card hub-empty pro-refund-empty" aria-labelledby="proRefundEmpty">
+  <i class="bi bi-check-circle" aria-hidden="true"></i>
+  <h2 id="proRefundEmpty">No refunds available right now</h2>
+  <p>You currently have no payments eligible for a refund request.</p>
+  <a asp-controller="Bookings" asp-action="MyBookings" class="cn-button cn-primary">View My Bookings <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+ </section>
 }
+<p class="pro-refund-footnote"><i class="bi bi-info-circle" aria-hidden="true"></i> Existing refund requests and Owner decisions remain available in the relevant Booking Details page.</p>
+</div>

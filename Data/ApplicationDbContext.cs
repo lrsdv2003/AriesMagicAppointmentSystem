@@ -15,6 +15,7 @@ namespace AriesMagicAppointmentSystem.Data
         public DbSet<Service> Services { get; set; }
         public DbSet<Booking> Bookings { get; set; }
         public DbSet<Payment> Payments { get; set; }
+        public DbSet<PaymentProofRevision> PaymentProofRevisions { get; set; }
         public DbSet<BookingTimeline> BookingTimelines { get; set; }
         public DbSet<RescheduleRequest> RescheduleRequests { get; set; }
         public DbSet<Notification> Notifications { get; set; }
@@ -64,6 +65,7 @@ namespace AriesMagicAppointmentSystem.Data
                 t.HasCheckConstraint("CK_RefundRequests_ApprovedAmount", "[ApprovedAmount] IS NULL OR ([ApprovedAmount] > 0 AND [ApprovedAmount] <= [Amount])");
             });
             builder.Entity<Payment>().HasOne(p => p.Booking).WithMany(b => b.Payments).HasForeignKey(p => p.BookingId).OnDelete(DeleteBehavior.NoAction);
+            builder.Entity<PaymentProofRevision>().HasOne(r => r.Payment).WithMany(p => p.ProofRevisions).HasForeignKey(r => r.PaymentId).OnDelete(DeleteBehavior.NoAction);
             builder.Entity<RefundRequest>().HasOne(r => r.Booking).WithMany().HasForeignKey(r => r.BookingId).OnDelete(DeleteBehavior.NoAction);
             builder.Entity<Booking>().HasIndex(b => new { b.EventDate, b.StartTime, b.EndTime });
 
@@ -75,6 +77,23 @@ namespace AriesMagicAppointmentSystem.Data
                 .WithMany()
                 .HasForeignKey(n => n.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<Conversation>()
+                .HasIndex(c => c.SupportClientId)
+                .IsUnique()
+                .HasFilter("[SupportClientId] IS NOT NULL");
+
+            builder.Entity<Conversation>()
+                .HasOne(c => c.SupportClient)
+                .WithMany()
+                .HasForeignKey(c => c.SupportClientId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            builder.Entity<Message>()
+                .HasOne(m => m.RelatedBooking)
+                .WithMany()
+                .HasForeignKey(m => m.RelatedBookingId)
+                .OnDelete(DeleteBehavior.NoAction);
 
             builder.Entity<Conversation>()
                 .HasOne(c => c.Booking)
@@ -121,6 +140,8 @@ namespace AriesMagicAppointmentSystem.Data
                 .IsUnique();
 
             builder.Entity<Payment>().Property(p => p.Amount).HasPrecision(18, 2);
+            builder.Entity<Payment>().Property(p => p.ExpectedAmountAtUpload).HasPrecision(18, 2);
+            builder.Entity<OcrVerification>().HasIndex(o => o.ProofSha256);
             builder.Entity<RefundRequest>().Property(r => r.Amount).HasPrecision(18, 2);
             builder.Entity<RefundRequest>().Property(r => r.ApprovedAmount).HasPrecision(18, 2);
             builder.Entity<OcrVerification>().Property(o => o.ExtractedAmount).HasPrecision(18, 2);

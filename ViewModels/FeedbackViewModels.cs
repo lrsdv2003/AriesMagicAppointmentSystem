@@ -12,6 +12,9 @@ public class FeedbackInput
     [StringLength(1500)] public string? Suggestions { get; set; }
     [StringLength(60)] public string? PublicDisplayName { get; set; }
     public bool TextConsent { get; set; }
+    [Required(ErrorMessage="Choose whether to share feedback publicly or keep it private.")]
+    [RegularExpression("^(Public|Private)$",ErrorMessage="Choose one valid sharing preference.")]
+    public string? SharingPreference { get; set; }
     public bool NameConsent { get; set; }
     public bool MediaConsent { get; set; }
     public List<IFormFile> Files { get; set; } = [];

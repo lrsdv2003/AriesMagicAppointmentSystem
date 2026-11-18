@@ -9,6 +9,10 @@ namespace AriesMagicAppointmentSystem.ViewModels
         public string? PaymentStatus { get; set; }
         public DateTime? EventDate { get; set; }
         public int? ServiceId { get; set; }
+        public int Page { get; set; } = 1;
+        public int PageSize { get; set; } = 10;
+        public int TotalCount { get; set; }
+        public int TotalPages => Math.Max(1, (int)Math.Ceiling(TotalCount / (double)PageSize));
         public List<Service> AvailableServices { get; set; } = new();
         public List<BookingManagementRowViewModel> Bookings { get; set; } = new();
     }
@@ -31,5 +35,6 @@ namespace AriesMagicAppointmentSystem.ViewModels
         public string? ServiceZone { get; set; }
         public decimal TravelFee { get; set; }
         public bool RequiresManualReview { get; set; }
+        public string? TravelFeeStatus { get; set; }
     }
 }

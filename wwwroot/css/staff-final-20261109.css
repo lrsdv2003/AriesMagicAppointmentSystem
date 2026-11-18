@@ -1,0 +1,647 @@
+/* Staff Final Round — client-led visual alignment, no business-rule changes.
+   All selectors scoped to the authenticated Staff workspace. */
+body.internal-ui.staff-dashboard{
+ --staff-final-surface:#08273f;
+ --staff-final-surface-2:#0e344f;
+ --staff-final-border:#355d78;
+ --staff-final-muted:#bfd6e6;
+ --staff-final-blue:#1781be;
+ --staff-final-gold:#f7c56c;
+}
+
+/* Shared Staff header remains fixed to the shell's existing sticky behavior. */
+body.internal-ui.staff-dashboard .dashboard-topbar{
+ background:#061f34!important;
+ border-bottom:1px solid #315069!important;
+ box-shadow:0 4px 19px #00142744!important;
+ z-index:1050!important;
+}
+body.internal-ui.staff-dashboard .dashboard-topbar .workspace-brand{min-width:0}
+body.internal-ui.staff-dashboard .dashboard-topbar .topbar-right{align-items:center}
+body.internal-ui.staff-dashboard .dashboard-topbar .topbar-icon:focus-visible,
+body.internal-ui.staff-dashboard .dashboard-topbar .account-menu-trigger:focus-visible{
+ outline:2px solid #85cbf4;outline-offset:3px;
+}
+body.internal-ui.staff-dashboard .internal-account-menu .dropdown-menu{z-index:1090!important;}
+body.internal-ui.staff-dashboard .internal-account-menu .dropdown-item:hover,
+body.internal-ui.staff-dashboard .internal-account-menu .dropdown-item:focus{
+ background:#184965!important;color:#fff!important;
+}
+
+/* Integrated search / Filter / Clear Filters toolbar; the input owns ONE visible border. */
+body.internal-ui.staff-dashboard :is(.staff-booking-page,.staff-reschedule-page,.history-page) .staff-final-filter-toolbar{
+ display:flex!important;align-items:center!important;gap:10px!important;
+ width:100%;min-width:0;flex-wrap:wrap;
+}
+body.internal-ui.staff-dashboard .staff-final-filter-toolbar>.am-filter-row{
+ display:flex!important;flex:1 1 100%;align-items:center;gap:10px!important;
+}
+body.internal-ui.staff-dashboard .staff-final-filter-toolbar .am-filter-search{
+ display:flex;align-items:center;position:relative;min-width:190px;
+ flex:1 1 320px;max-width:none;background:transparent!important;
+ border:0!important;box-shadow:none!important;padding:0!important;
+}
+body.internal-ui.staff-dashboard .staff-final-filter-toolbar .am-filter-search i.bi-search{
+ position:absolute!important;left:13px!important;top:50%!important;
+ transform:translateY(-50%);color:#a8c9df;pointer-events:none;
+ z-index:2;font-size:14px;margin:0!important;
+}
+body.internal-ui.staff-dashboard .staff-final-filter-toolbar .am-filter-search input{
+ display:block;flex:1;width:100%!important;max-width:none!important;
+ min-height:44px!important;height:44px!important;border-radius:9px!important;
+ border:1px solid #3c647e!important;padding:9px 13px 9px 37px!important;
+ background:#09253c!important;color:#f1f8fd!important;
+ box-shadow:none!important;outline:none;font-size:13px!important;
+}
+body.internal-ui.staff-dashboard .staff-final-filter-toolbar .am-filter-search input:focus{
+ border-color:#82cbf4!important;box-shadow:0 0 0 2px #4b9bcd55!important;
+}
+body.internal-ui.staff-dashboard .staff-final-filter-toolbar .dropdown-toggle,
+body.internal-ui.staff-dashboard .staff-final-filter-toolbar .staff-final-clear{
+ min-height:44px!important;height:44px!important;display:inline-flex!important;
+ align-items:center;justify-content:center;gap:7px;white-space:nowrap;
+ font-size:12px;padding:9px 14px!important;border-radius:8px!important;
+}
+body.internal-ui.staff-dashboard .staff-final-filter-toolbar .dropdown{
+ flex:0 0 auto;margin:0!important;
+}
+body.internal-ui.staff-dashboard .staff-final-filter-toolbar .staff-final-clear{
+ flex:0 0 auto;border:1px solid #49718c!important;
+ background:#112f46!important;color:#e4f3fd!important;
+}
+body.internal-ui.staff-dashboard .staff-final-filter-toolbar .staff-final-clear:hover,
+body.internal-ui.staff-dashboard .staff-final-filter-toolbar .staff-final-clear:focus{
+ background:#1b4763!important;color:#fff!important;
+}
+body.internal-ui.staff-dashboard .staff-final-filter-toolbar .dropdown-menu{
+ box-shadow:0 12px 35px #00111ecc!important;z-index:1040;
+}
+body.internal-ui.staff-dashboard .staff-final-filter-toolbar .dropdown-menu .form-select{
+ background-color:#0a2b44!important;color:#f2f8fc!important;
+}
+body.internal-ui.staff-dashboard .staff-final-filter-toolbar .dropdown-menu label{
+ font-size:12px!important;color:#d3e3ef!important;
+}
+body.internal-ui.staff-dashboard .staff-final-filter-toolbar [type="submit"].visually-hidden{
+ position:absolute!important;width:1px!important;min-height:0!important;
+}
+body.internal-ui.staff-dashboard .staff-round2-server-pager{
+ justify-content:flex-end!important;gap:16px!important;min-height:51px;
+}
+body.internal-ui.staff-dashboard .staff-round2-server-pager>span{
+ margin-right:auto;color:#c7dcea;font-size:12px;
+}
+
+/* Compact Booking Requests: quick identification + 1 safe navigation action. */
+body.internal-ui.staff-dashboard .staff-booking-table{
+ table-layout:auto;width:100%;border-collapse:separate;border-spacing:0;
+}
+body.internal-ui.staff-dashboard .staff-booking-table :is(th,td){
+ padding:12px 11px!important;vertical-align:middle!important;
+}
+body.internal-ui.staff-dashboard .staff-booking-table th{
+ white-space:normal;font-weight:700;font-size:11px!important;letter-spacing:.02em;
+}
+body.internal-ui.staff-dashboard .staff-booking-table td{
+ color:#e7f3fa;font-size:12px!important;line-height:1.55;
+}
+body.internal-ui.staff-dashboard .staff-booking-table .staff-booking-code{
+ color:var(--staff-final-gold)!important;font-weight:780;font-size:13px;
+ white-space:nowrap;
+}
+body.internal-ui.staff-dashboard .staff-booking-table td:nth-child(2){
+ min-width:115px;overflow-wrap:anywhere;
+}
+body.internal-ui.staff-dashboard .staff-booking-table td:nth-child(3){
+ min-width:154px;
+}
+body.internal-ui.staff-dashboard .staff-booking-table td:nth-child(4){
+ min-width:200px;width:30%;
+}
+body.internal-ui.staff-dashboard .staff-booking-table .staff-venue-cell{
+ max-width:100%;display:block;overflow-wrap:anywhere;white-space:normal;
+}
+body.internal-ui.staff-dashboard .staff-booking-table .staff-venue-cell strong{
+ display:block;color:#daeefb!important;font-size:12px;font-weight:520;
+ line-height:1.55;white-space:normal;overflow-wrap:anywhere;
+}
+body.internal-ui.staff-dashboard .staff-booking-table td:nth-child(5){
+ min-width:160px;max-width:215px;
+}
+body.internal-ui.staff-dashboard .staff-booking-table td:nth-child(5) .status-badge{
+ display:inline-flex;align-items:center;font-size:10px;
+ line-height:1.4;white-space:normal;max-width:100%;
+ text-align:center;overflow-wrap:anywhere;
+}
+body.internal-ui.staff-dashboard .staff-booking-table td:last-child{
+ min-width:119px;white-space:nowrap;
+}
+body.internal-ui.staff-dashboard .staff-final-details-action{
+ background:#157db9!important;border:1px solid #40a4d7!important;
+ color:#fff!important;display:inline-flex;align-items:center;
+ gap:6px;min-height:35px;padding:7px 10px!important;font-size:11px!important;
+ font-weight:720;border-radius:7px;
+}
+body.internal-ui.staff-dashboard .staff-final-details-action:hover,
+body.internal-ui.staff-dashboard .staff-final-details-action:focus{
+ background:#258ed1!important;outline:2px solid #86cef7;outline-offset:2px;
+}
+
+/* Messaging: latest Client's spacious, two-panel layout, preserving Staff-specific tools. */
+body.internal-ui.staff-dashboard .comm-page-staff{
+ max-width:none!important;width:100%!important;min-width:0!important;
+}
+body.internal-ui.staff-dashboard .comm-page-staff>.comm-page-header{
+ display:flex;justify-content:flex-end;align-items:center;
+ padding:0 0 10px!important;min-height:44px!important;border:0!important;
+ background:transparent!important;margin:0!important;
+}
+body.internal-ui.staff-dashboard .comm-page-staff>.comm-page-header .comm-primary-btn{
+ background:#096a99!important;border-color:#499ecb!important;
+ padding:9px 12px!important;min-height:37px;border-radius:8px!important;
+ font-size:12px;
+}
+body.internal-ui.staff-dashboard .comm-page-staff .comm-workspace{
+ display:grid!important;grid-template-columns:minmax(245px,29%) minmax(0,1fr)!important;
+ height:clamp(560px,calc(100dvh - 164px),960px)!important;
+ min-height:500px!important;width:100%!important;max-width:none!important;
+ overflow:hidden!important;background:#071f33;border:1px solid #31576f;
+ border-radius:12px!important;gap:0!important;
+}
+body.internal-ui.staff-dashboard .comm-page-staff :is(.comm-conversation-panel,.comm-chat-panel){
+ min-width:0!important;min-height:0!important;max-height:none!important;
+}
+body.internal-ui.staff-dashboard .comm-page-staff .comm-conversation-panel{
+ background:#09283f!important;border-right:1px solid #355b75;
+ display:flex;flex-direction:column;overflow:hidden;
+}
+body.internal-ui.staff-dashboard .comm-page-staff .comm-panel-top{
+ padding:13px!important;background:#0b2c45!important;border-bottom:1px solid #355c76;
+}
+body.internal-ui.staff-dashboard .comm-page-staff .comm-panel-title-row{
+ margin-bottom:10px;
+}
+body.internal-ui.staff-dashboard .comm-page-staff .comm-panel-title-row h2{
+ font-size:14px!important;font-weight:760;color:#f0f7fe;
+}
+body.internal-ui.staff-dashboard .staff-final-inbox-search{
+ display:flex;align-items:center;min-height:38px;gap:0;
+ background:#072239;border:1px solid #376382;border-radius:8px;
+ overflow:hidden;margin-bottom:9px;
+}
+body.internal-ui.staff-dashboard .staff-final-inbox-search:focus-within{
+ border-color:#7cccf3;box-shadow:0 0 0 2px #6cbbef55;
+}
+body.internal-ui.staff-dashboard .staff-final-inbox-search .staff-final-conversation-search{
+ flex:1;display:flex;min-width:0;
+}
+body.internal-ui.staff-dashboard .staff-final-inbox-search input{
+ width:100%;min-width:0;min-height:37px;padding:7px 11px!important;
+ border:0!important;box-shadow:none!important;background:transparent!important;
+ color:#f2f9fd!important;outline:none!important;font-size:12px!important;
+}
+body.internal-ui.staff-dashboard .staff-final-inbox-search input::placeholder{color:#a8c6db!important}
+body.internal-ui.staff-dashboard .staff-final-conversation-search-btn{
+ flex:0 0 39px;display:grid;place-items:center;height:38px;background:#124264!important;
+ border:0;border-left:1px solid #355b77;color:#b5dcf5!important;
+}
+body.internal-ui.staff-dashboard .staff-final-conversation-search-btn:hover{background:#1a5780!important}
+body.internal-ui.staff-dashboard .comm-page-staff .comm-filter-strip{
+ display:flex;gap:5px!important;flex-wrap:wrap;align-items:center;padding:0!important;
+}
+body.internal-ui.staff-dashboard .comm-page-staff .comm-filter-strip a{
+ font-size:11px;padding:5px 10px;border-radius:22px;
+}
+body.internal-ui.staff-dashboard .comm-page-staff .comm-conversation-list{
+ flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;
+}
+body.internal-ui.staff-dashboard .comm-page-staff .comm-conversation-item{
+ display:flex;min-width:0;align-items:flex-start;gap:10px;padding:12px 11px!important;
+ border-bottom:1px solid #25455c!important;
+}
+body.internal-ui.staff-dashboard .comm-page-staff .comm-conversation-item.active{
+ background:#17435e!important;box-shadow:inset 3px 0 #63b4e2;
+}
+body.internal-ui.staff-dashboard .comm-page-staff .comm-conversation-item .comm-item-copy{
+ flex:1;min-width:0;
+}
+body.internal-ui.staff-dashboard .comm-page-staff .comm-item-heading{
+ display:flex;justify-content:space-between;align-items:flex-start;gap:6px;
+}
+body.internal-ui.staff-dashboard .comm-page-staff .comm-item-heading strong{
+ font-size:12px!important;overflow-wrap:anywhere;color:#f1f8ff;
+}
+body.internal-ui.staff-dashboard .comm-page-staff .comm-item-heading time{
+ color:#a4c4d9!important;font-size:10px!important;white-space:nowrap;
+}
+body.internal-ui.staff-dashboard .comm-page-staff .comm-item-preview{
+ color:#bed6e6;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%;
+}
+body.internal-ui.staff-dashboard .comm-page-staff :is(.comm-avatar,.comm-avatar-lg,.comm-sender-avatar){
+ border-radius:50%;display:grid;place-items:center;flex:0 0 auto;overflow:hidden;
+}
+body.internal-ui.staff-dashboard .comm-page-staff :is(.comm-avatar,.comm-avatar-lg,.comm-sender-avatar) img{
+ width:100%!important;height:100%!important;object-fit:cover!important;border-radius:inherit;
+}
+body.internal-ui.staff-dashboard .comm-page-staff :is(.comm-avatar,.comm-avatar-lg,.comm-sender-avatar) img[hidden]{
+ display:none!important;
+}
+body.internal-ui.staff-dashboard .comm-page-staff .comm-chat-panel{
+ display:flex!important;flex-direction:column!important;background:#09243b!important;
+ overflow:hidden!important;
+}
+body.internal-ui.staff-dashboard .comm-page-staff .comm-chat-header{
+ flex:0 0 auto!important;display:flex;min-height:68px!important;
+ padding:12px 16px!important;gap:10px;align-items:center;flex-wrap:nowrap;
+ border-bottom:1px solid #365971!important;background:#0a2a41!important;
+}
+body.internal-ui.staff-dashboard .comm-page-staff .comm-chat-title{
+ display:flex;gap:11px;align-items:center;min-width:0;flex:1;
+}
+body.internal-ui.staff-dashboard .comm-page-staff .comm-chat-title>div{min-width:0;max-width:100%}
+body.internal-ui.staff-dashboard .comm-page-staff .comm-chat-title h2{
+ font-size:14px!important;font-weight:760;overflow-wrap:anywhere;
+}
+body.internal-ui.staff-dashboard .comm-page-staff .comm-chat-title p{
+ font-size:11px!important;color:#bcd4e5!important;
+ overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+body.internal-ui.staff-dashboard .comm-page-staff .comm-message-history{
+ flex:1 1 auto!important;min-height:0!important;max-height:none!important;
+ overflow-y:auto!important;overflow-x:hidden!important;
+ padding:17px 18px 18px!important;scrollbar-width:thin;overscroll-behavior:contain;
+}
+body.internal-ui.staff-dashboard .comm-page-staff .comm-message{
+ position:relative!important;display:flex!important;flex-direction:column!important;
+ align-self:flex-start!important;max-width:min(83%,650px)!important;
+ width:fit-content!important;min-width:0!important;margin:0 auto 14px 0!important;
+ align-items:flex-start!important;
+}
+body.internal-ui.staff-dashboard .comm-page-staff .comm-message.mine{
+ align-self:flex-end!important;margin:0 0 14px auto!important;
+ align-items:flex-end!important;
+}
+body.internal-ui.staff-dashboard .comm-page-staff .comm-message.theirs{
+ padding-left:36px!important;
+}
+body.internal-ui.staff-dashboard .comm-page-staff .comm-sender-avatar{
+ position:absolute;left:0;top:15px;width:29px!important;height:29px!important;
+ min-width:29px!important;font-size:10px;
+}
+body.internal-ui.staff-dashboard .comm-page-staff .comm-message-meta{
+ display:flex;gap:6px;flex-wrap:wrap;align-items:center;
+ margin-bottom:5px!important;font-size:10px;overflow-wrap:anywhere;
+}
+body.internal-ui.staff-dashboard .comm-page-staff .comm-message-meta strong{font-size:11px}
+body.internal-ui.staff-dashboard .comm-page-staff .comm-bubble{
+ max-width:100%;min-width:0;overflow-wrap:anywhere;word-break:break-word;
+ background:#15415f!important;color:#f2f8fc!important;
+ border-radius:11px!important;padding:10px 13px!important;
+ font-size:12px;line-height:1.6;
+}
+body.internal-ui.staff-dashboard .comm-page-staff .comm-message.mine .comm-bubble{
+ background:#1a6090!important;color:#fff!important;
+}
+body.internal-ui.staff-dashboard .comm-page-staff .comm-booking-context-chip{
+ max-width:100%;overflow-wrap:anywhere;
+}
+body.internal-ui.staff-dashboard .comm-page-staff .comm-composer{
+ flex:0 0 auto!important;margin-top:auto!important;padding:10px 15px!important;
+ background:#0c2c43!important;border-top:1px solid #365b76!important;
+}
+body.internal-ui.staff-dashboard .comm-page-staff .comm-booking-selector{
+ margin-bottom:8px!important;
+}
+body.internal-ui.staff-dashboard .comm-page-staff .comm-composer-row{display:flex;gap:9px;align-items:flex-end}
+body.internal-ui.staff-dashboard .comm-page-staff .comm-composer-row textarea{
+ flex:1;min-width:0;max-height:130px!important;color:#eef8fd!important;
+ background:#07243b!important;border:1px solid #3c647e!important;
+ padding:10px!important;font-size:12px;
+}
+body.internal-ui.staff-dashboard .comm-page-staff .comm-send-btn{
+ min-height:39px!important;padding:10px 16px!important;
+ background:#167fb8!important;color:#fff!important;border-radius:8px!important;
+}
+body.internal-ui.staff-dashboard .comm-page-staff .comm-send-btn:focus-visible{
+ outline:2px solid #a5e2ff;outline-offset:3px;
+}
+body.internal-ui.staff-dashboard .comm-page-staff .comm-chat-empty{
+ flex:1;display:flex;flex-direction:column;align-items:center;
+ justify-content:center;text-align:center;gap:8px;
+ padding:28px!important;color:#cfdfed;
+}
+body.internal-ui.staff-dashboard .comm-page-staff .comm-chat-empty h2{
+ font-size:17px!important;font-weight:760!important;color:#eff8ff!important;
+}
+body.internal-ui.staff-dashboard .comm-page-staff .comm-chat-empty p{
+ max-width:390px;font-size:12px!important;line-height:1.6!important;color:#bad1e1!important;
+}
+
+/* Calendar notice: real unavailable date and reason with readable contrast. */
+body.internal-ui.staff-dashboard #blockedDateModal .modal-dialog{
+ max-width:min(92vw,405px)!important;
+}
+body.internal-ui.staff-dashboard #blockedDateModal .modal-content{
+ background:#0c2b43!important;border:1px solid #47718d!important;
+ border-radius:13px!important;color:#edf8ff!important;
+ box-shadow:0 24px 70px #000a!important;
+}
+body.internal-ui.staff-dashboard #blockedDateModal .modal-header{
+ padding:17px 19px!important;border-color:#31566f!important;
+ align-items:flex-start!important;
+}
+body.internal-ui.staff-dashboard #blockedDateModal .staff-preview-kicker{
+ color:#bcd3e5!important;text-transform:uppercase;letter-spacing:.1em;
+ font-size:10px;font-weight:720;
+}
+body.internal-ui.staff-dashboard #blockedDateModal .modal-title{
+ font-size:18px!important;font-weight:790!important;color:#fff!important;
+ margin-top:5px;line-height:1.3;
+}
+body.internal-ui.staff-dashboard #blockedDateModal .modal-body{padding:18px 20px 21px!important}
+body.internal-ui.staff-dashboard #blockedDateModal .staff-blocked-date{
+ font-size:16px!important;font-weight:730;color:#fff!important;
+ margin:0 0 16px;padding:11px 13px;border-radius:8px;
+ background:#143f5a;border:1px solid #456d87;
+}
+body.internal-ui.staff-dashboard #blockedDateModal .staff-blocked-label{
+ display:block;color:#ffcb83!important;text-transform:uppercase;
+ letter-spacing:.08em;font-size:10px!important;font-weight:790!important;margin-bottom:7px;
+}
+body.internal-ui.staff-dashboard #blockedDateModal #blockedReasonDisplay{
+ color:#d7e8f4!important;font-size:13px!important;line-height:1.65;overflow-wrap:anywhere;
+}
+body.internal-ui.staff-dashboard #blockedDateModal .btn-close{
+ opacity:1!important;filter:none!important;flex:0 0 auto;
+}
+
+/* Calendar: compact booking-preview card, only requested operational fields. */
+body.internal-ui.staff-dashboard #bookingPreviewModal .modal-dialog{
+ max-width:min(94vw,520px)!important;
+}
+body.internal-ui.staff-dashboard #bookingPreviewModal .modal-content{
+ background:#09283f!important;border:1px solid #456f8a!important;
+ border-radius:13px!important;color:#f1f9ff!important;overflow:hidden;
+ box-shadow:0 24px 70px #000a!important;
+}
+body.internal-ui.staff-dashboard #bookingPreviewModal .modal-header{
+ padding:16px 19px!important;background:#0d324c!important;
+ border-color:#355973!important;align-items:center!important;
+}
+body.internal-ui.staff-dashboard #bookingPreviewModal .staff-preview-kicker{
+ color:#b0d1e6!important;font-size:10px!important;font-weight:750;letter-spacing:.1em;
+}
+body.internal-ui.staff-dashboard #bookingPreviewModal .modal-title{
+ font-weight:790!important;font-size:18px!important;color:#fff!important;
+ overflow-wrap:anywhere;margin-top:4px;
+}
+body.internal-ui.staff-dashboard #bookingPreviewModal #previewBooking{
+ color:#ffd078!important;
+}
+body.internal-ui.staff-dashboard #bookingPreviewModal .modal-body{
+ padding:15px 18px!important;max-height:min(70dvh,650px);overflow-y:auto;
+}
+body.internal-ui.staff-dashboard #bookingPreviewModal .staff-final-preview-position{
+ color:#b8d1e4;font-size:11px;margin:0 0 10px;
+}
+body.internal-ui.staff-dashboard #bookingPreviewModal .staff-final-preview-position:empty{display:none}
+body.internal-ui.staff-dashboard #bookingPreviewModal .staff-final-preview-group{
+ background:#0d334d;border:1px solid #355d78;border-radius:9px;
+ padding:12px 14px;margin-bottom:10px;
+}
+body.internal-ui.staff-dashboard #bookingPreviewModal .staff-final-preview-group:last-child{margin-bottom:0}
+body.internal-ui.staff-dashboard #bookingPreviewModal .staff-final-preview-group h3{
+ font-size:12px!important;font-weight:760!important;color:#e7f7ff!important;
+ display:flex;align-items:center;gap:8px;margin:0 0 12px;
+}
+body.internal-ui.staff-dashboard #bookingPreviewModal .staff-final-preview-group h3 i{
+ color:#8dccf2;
+}
+body.internal-ui.staff-dashboard #bookingPreviewModal .staff-final-preview-group dl{
+ display:grid;gap:10px;margin:0;
+}
+body.internal-ui.staff-dashboard #bookingPreviewModal .staff-final-preview-group dl>div{
+ display:grid;grid-template-columns:112px minmax(0,1fr);
+ gap:12px;align-items:start;
+}
+body.internal-ui.staff-dashboard #bookingPreviewModal .staff-final-preview-group dt{
+ color:#b2d1e4!important;font-size:11px!important;font-weight:600;
+}
+body.internal-ui.staff-dashboard #bookingPreviewModal .staff-final-preview-group dd{
+ color:#fff!important;font-size:12px!important;font-weight:670!important;
+ line-height:1.55;overflow-wrap:anywhere;white-space:normal;margin:0;
+}
+body.internal-ui.staff-dashboard #bookingPreviewModal .modal-footer{
+ display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;
+ gap:8px;padding:12px 18px!important;border-color:#315773!important;
+}
+body.internal-ui.staff-dashboard #bookingPreviewModal .staff-preview-browse{
+ display:flex;align-items:center;gap:8px;
+}
+body.internal-ui.staff-dashboard #bookingPreviewModal .staff-preview-browse[hidden]{
+ display:none!important;
+}
+body.internal-ui.staff-dashboard #bookingPreviewModal .btn{
+ min-height:35px!important;font-size:11px!important;padding:7px 11px!important;border-radius:7px;
+}
+body.internal-ui.staff-dashboard #bookingPreviewModal #previewDetails{
+ background:#167fba!important;color:#fff!important;border-color:#439bc9!important;
+}
+body.internal-ui.staff-dashboard #bookingPreviewModal .staff-preview-state{
+ color:#d9eaf5!important;font-size:12px;min-height:65px;gap:8px;
+}
+body.internal-ui.staff-dashboard #bookingPreviewModal .staff-preview-error{
+ color:#ffd09e!important;
+}
+
+/* Calendar per-booking triggers distinguish bookings without crowding the cell. */
+body.internal-ui.staff-dashboard #calendar .fc-daygrid-day-frame{
+ min-height:82px!important;
+}
+body.internal-ui.staff-dashboard .staff-final-day-bookings{
+ display:grid;gap:3px;margin:3px 4px 4px;
+}
+body.internal-ui.staff-dashboard .staff-final-day-booking{
+ display:block;max-width:100%;width:100%;border:1px solid #396b8c;
+ background:#16405c;color:#fbd08a;cursor:pointer;
+ text-align:left;border-radius:5px;font-size:10px;font-weight:700;
+ padding:3px 5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+body.internal-ui.staff-dashboard .staff-final-day-booking:hover,
+body.internal-ui.staff-dashboard .staff-final-day-booking:focus-visible{
+ outline:2px solid #85ceff;outline-offset:1px;background:#205776;
+}
+body.internal-ui.staff-dashboard .staff-final-day-overflow{
+ color:#b9d6e8;font-size:9px;padding-left:5px;
+}
+body.internal-ui.staff-dashboard .staff-final-upcoming-title{
+ font-size:16px!important;font-weight:790;color:#fff!important;
+ margin:0 0 13px!important;
+}
+body.internal-ui.staff-dashboard .staff-round2-calendar-pager{
+ justify-content:space-between!important;
+}
+body.internal-ui.staff-dashboard .staff-round2-calendar-pager>span{
+ flex:1!important;text-align:left!important;
+}
+
+/* Cohesive, lean package legend; clickable state mirrors true filtering. */
+body.internal-ui.staff-dashboard #calendarPackageChips{
+ display:flex;gap:6px!important;align-items:center;
+ flex-wrap:wrap;min-width:0!important;
+ background:transparent!important;padding:0!important;
+}
+body.internal-ui.staff-dashboard #calendarPackageChips .staff-package-legend-label{
+ margin-right:3px;color:#bcd5e5!important;font-weight:760;
+ letter-spacing:.06em;font-size:10px!important;
+}
+body.internal-ui.staff-dashboard #calendarPackageChips .package-legend-filter{
+ display:inline-flex!important;align-items:center!important;justify-content:center;
+ min-height:30px!important;border-radius:18px!important;gap:6px!important;
+ padding:5px 10px!important;border:1px solid #355b73!important;
+ background:#0a2d44!important;color:#d4e4f0!important;
+ font-size:11px!important;font-weight:650;white-space:nowrap;
+ box-shadow:none!important;
+}
+body.internal-ui.staff-dashboard #calendarPackageChips .package-legend-filter.active{
+ border-color:#72acd3!important;background:#1a4b67!important;
+ color:#fff!important;box-shadow:0 0 0 1px #72acd366!important;
+}
+body.internal-ui.staff-dashboard #calendarPackageChips .package-dot{
+ width:8px!important;height:8px!important;min-width:8px;border-radius:50%;
+}
+body.internal-ui.staff-dashboard #calendarPackageChips .package-legend-filter:focus-visible{
+ outline:2px solid #a2defa;outline-offset:2px;
+}
+body.internal-ui.staff-dashboard #calendarPackageChips .package-legend-blocked{
+ display:inline-flex;align-items:center;min-height:30px;
+ padding:5px 10px!important;gap:5px;
+ color:#d1d9e3!important;border:1px solid #38536a;border-radius:18px;
+ font-size:11px!important;background:#112c40!important;
+}
+body.internal-ui.staff-dashboard #calendarPackageChips .blocked-legend-mark{
+ color:#b3c5d1!important;
+}
+body.internal-ui.staff-dashboard .staff-package-page .staff-package-grid{
+ margin-top:0!important;
+}
+
+@media(max-width:900px){
+ body.internal-ui.staff-dashboard .comm-page-staff .comm-workspace{
+  grid-template-columns:minmax(205px,34%) minmax(0,1fr)!important;
+ }
+ body.internal-ui.staff-dashboard .comm-page-staff .comm-message{
+  max-width:90%!important;
+ }
+ body.internal-ui.staff-dashboard .staff-booking-table-wrap{
+  overflow-x:auto!important;-webkit-overflow-scrolling:touch;
+ }
+}
+@media(max-width:767px){
+ body.internal-ui.staff-dashboard .comm-page-staff .comm-workspace{
+  display:flex!important;flex-direction:column!important;
+  height:clamp(490px,calc(100dvh - 164px),850px)!important;
+  min-height:480px!important;
+ }
+ body.internal-ui.staff-dashboard .comm-page-staff:not(.comm-has-selection) .comm-chat-panel{
+  display:none!important;
+ }
+ body.internal-ui.staff-dashboard .comm-page-staff:not(.comm-has-selection) .comm-conversation-panel{
+  display:flex!important;width:100%;height:100%!important;
+ }
+ body.internal-ui.staff-dashboard .comm-page-staff.comm-has-selection .comm-conversation-panel{
+  display:none!important;
+ }
+ body.internal-ui.staff-dashboard .comm-page-staff.comm-has-selection .comm-chat-panel{
+  display:flex!important;width:100%;height:100%!important;
+ }
+ body.internal-ui.staff-dashboard .comm-page-staff .comm-mobile-back{
+  display:inline-flex!important;align-items:center;justify-content:center;
+  flex:0 0 34px;width:34px;height:34px;color:#f2f8ff!important;
+ }
+ body.internal-ui.staff-dashboard .comm-page-staff.comm-has-selection>.comm-page-header{
+  display:none!important;
+ }
+ body.internal-ui.staff-dashboard .comm-page-staff .comm-chat-header{
+  padding:9px 10px!important;gap:8px!important;
+ }
+ body.internal-ui.staff-dashboard .comm-page-staff .comm-chat-header .comm-secondary-btn{
+  display:none!important;
+ }
+ body.internal-ui.staff-dashboard .comm-page-staff .comm-message-history{
+  padding:12px 10px!important;
+ }
+ body.internal-ui.staff-dashboard .comm-page-staff .comm-message{max-width:94%!important}
+ body.internal-ui.staff-dashboard .staff-final-filter-toolbar .am-filter-search{
+  flex-basis:100%;width:100%;min-width:0;
+ }
+ body.internal-ui.staff-dashboard .staff-final-filter-toolbar .dropdown,
+ body.internal-ui.staff-dashboard .staff-final-filter-toolbar .staff-final-clear{
+  flex:1 1 auto!important;
+ }
+ body.internal-ui.staff-dashboard .staff-final-filter-toolbar .dropdown .dropdown-toggle{
+  width:100%;
+ }
+ body.internal-ui.staff-dashboard .staff-round2-server-pager{justify-content:center!important}
+ body.internal-ui.staff-dashboard .staff-round2-server-pager>span{
+  flex:1 1 100%;margin-right:0;text-align:center;
+ }
+ body.internal-ui.staff-dashboard .staff-round2-calendar-pager{
+  justify-content:center!important;
+ }
+ body.internal-ui.staff-dashboard .staff-round2-calendar-pager>span{
+  text-align:center!important;flex:1 1 100%!important;
+ }
+ body.internal-ui.staff-dashboard #calendar .fc-daygrid-day-frame{
+  min-height:65px!important;
+ }
+ body.internal-ui.staff-dashboard .staff-final-day-booking{
+  font-size:9px;padding:3px 4px;
+ }
+ body.internal-ui.staff-dashboard #bookingPreviewModal .staff-final-preview-group dl>div{
+  grid-template-columns:92px minmax(0,1fr);gap:7px;
+ }
+ body.internal-ui.staff-dashboard #bookingPreviewModal .modal-body{
+  max-height:65dvh;overflow-y:auto;
+ }
+}
+@media(max-width:390px){
+ body.internal-ui.staff-dashboard .staff-final-filter-toolbar{
+  gap:7px!important;
+ }
+ body.internal-ui.staff-dashboard .staff-final-filter-toolbar .dropdown-toggle,
+ body.internal-ui.staff-dashboard .staff-final-filter-toolbar .staff-final-clear{
+  font-size:11px!important;padding:8px 10px!important;
+ }
+ body.internal-ui.staff-dashboard .comm-page-staff .comm-composer{
+  padding:9px!important;
+ }
+ body.internal-ui.staff-dashboard #calendarPackageChips{
+  gap:5px!important;
+ }
+ body.internal-ui.staff-dashboard #calendarPackageChips .package-legend-filter{
+  font-size:10px!important;padding:4px 8px!important;
+ }
+}
+
+/* Keyboard-operable grouped-calendar overflow trigger. */
+body.internal-ui.staff-dashboard .staff-final-day-more-button{
+ background:transparent;border:0;padding:2px 4px;
+ font-size:10px;color:#c5e4f6;text-align:left;cursor:pointer;border-radius:4px;
+}
+body.internal-ui.staff-dashboard .staff-final-day-more-button:hover,
+body.internal-ui.staff-dashboard .staff-final-day-more-button:focus-visible{
+ outline:2px solid #91dafb;outline-offset:1px;background:#1a4e6c;
+}
+/* Required 4.5:1 contrast for non-current calendar dates and preview CTA. */
+body.internal-ui.staff-dashboard #calendar .fc-day-other .fc-daygrid-day-number{
+ color:#b0c6d7!important;
+}
+body.internal-ui.staff-dashboard #bookingPreviewModal #previewDetails{
+ background:#096b9d!important;border-color:#3995c1!important;color:#fff!important;
+}
+/* FullCalendar reduces off-month day-number opacity by default; override the parent
+   opacity so the accessible text color is not faded back below WCAG 4.5:1. */
+body.internal-ui.staff-dashboard #calendar .fc-day-other .fc-daygrid-day-top{
+ opacity:1!important;
+}

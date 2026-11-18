@@ -4,6 +4,8 @@ namespace AriesMagicAppointmentSystem.Models
     {
         public const string BookingCreated = "BookingCreated";
         public const string BookingApproved = "BookingApproved";
+        // UTC marker for the new 24-hour initial payment proof window; legacy records lack this event.
+        public const string PaymentWindowOpened = "PaymentWindowOpened";
         public const string DownpaymentUploaded = "DownpaymentUploaded";
         public const string PaymentVerified = "PaymentVerified";
         public const string BookingConfirmed = "BookingConfirmed";

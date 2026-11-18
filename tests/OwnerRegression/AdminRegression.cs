@@ -26,6 +26,8 @@ static class AdminRegression
         check(!Principal("Admin").CanFollowModuleLink("/Payments/Verify/1"), "Historical Admin notifications cannot link to financial actions");
         check(Principal("Admin").CanFollowModuleLink("/Calendar/Index"), "System coordination links remain available");
         var services = new ServiceCollection().AddLogging().AddAuthorization().AddSingleton(db);
+        services.Configure<PersonnelOptions>(o=>o.AdminMayManageStaff=true);
+        services.AddSingleton<Microsoft.AspNetCore.Mvc.Routing.IUrlHelperFactory,SnapshotUrls>();
         services.AddIdentityCore<ApplicationUser>().AddRoles<IdentityRole>().AddEntityFrameworkStores<ApplicationDbContext>();
         await using var provider = services.BuildServiceProvider();
         var authorization = provider.GetRequiredService<IAuthorizationService>();
@@ -76,6 +78,7 @@ static class AdminRegression
         var sameDay=await (Task<RescheduleAvailabilityViewModel>)method.Invoke(reschedules,[third.Id,date.AddHours(18),date.AddHours(19)])!;
         check(sameDay.IsAvailable,"Rescheduling an existing booking excludes itself from capacity");
         http.User=Principal("Admin");
+        http.RequestServices=provider;
         check(await payments.PaymentProof(thirdPayment.Id) is ForbidResult,"Admin cannot fetch financial proof");
         var refund=await db.RefundRequests.FirstAsync();
         check(await payments.RefundProof(refund.Id) is ForbidResult,"Admin cannot fetch refund proof");
