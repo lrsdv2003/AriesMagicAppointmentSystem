@@ -940,6 +940,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                 .Where(p => lockingPaymentStatuses.Contains(p.Status))
                 .Where(p => p.Booking != null)
                 .Select(p => p.Booking!)
+                .Where(b => b.Status != BookingStatus.Cancelled || b.CancellationSource != BookingCancellationPolicy.OwnerCancellationSource)
                 .ToListAsync();
 
             var unavailableBookingIds = new List<int>();
@@ -997,6 +998,8 @@ namespace AriesMagicAppointmentSystem.Controllers
                              m.Conversation.SupportClientId == booking.ApplicationUserId)));
                 if (User.IsInRole("Owner"))
                 {
+                    ViewBag.CanOwnerCancel = BookingCancellationPolicy.IsOwnerCandidate(booking, FeedbackPolicy.BusinessNow)
+                        && !await BookingCancellationPolicy.HasOwnerCancellationConflictAsync(_context, booking.Id);
                     ViewBag.FinancialSummary = await _financialService.GetSummaryAsync(booking.Id);
                     ViewBag.OwnerRefunds = await _context.RefundRequests.AsNoTracking()
                         .Where(r => r.BookingId == booking.Id)
@@ -1352,6 +1355,93 @@ namespace AriesMagicAppointmentSystem.Controllers
         public IActionResult Create()
         {
             return RedirectToAction(nameof(CreateStepOne));
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "Owner")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CancelAsOwner(int id, string? reason, bool fromDashboard = false)
+        {
+            IActionResult ReturnToBooking() => fromDashboard
+                ? RedirectToAction(nameof(DashboardController.Owner), "Dashboard")
+                : RedirectToAction(nameof(Details), new { id });
+
+            var actorId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(actorId))
+                return Challenge();
+
+            reason = reason?.Trim();
+            if (reason == null || reason.Length is < BookingCancellationPolicy.MinimumReasonLength or > BookingCancellationPolicy.MaximumReasonLength
+                || !reason.Any(char.IsLetterOrDigit))
+            {
+                TempData["Error"] = "Enter a meaningful cancellation reason between 8 and 1,000 characters.";
+                return ReturnToBooking();
+            }
+
+            await using var transaction = await _context.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
+            var booking = await _context.Bookings.Include(b => b.Payments).SingleOrDefaultAsync(b => b.Id == id);
+            if (booking == null)
+                return NotFound();
+            if (!BookingCancellationPolicy.IsOwnerCandidate(booking, FeedbackPolicy.BusinessNow)
+                || await BookingCancellationPolicy.HasOwnerCancellationConflictAsync(_context, booking.Id))
+            {
+                TempData["Error"] = "This booking is no longer eligible for cancellation. Check its schedule, payment, refund, and change requests.";
+                return ReturnToBooking();
+            }
+
+            var staff = await _userManager.GetUsersInRoleAsync("Staff");
+            var cancelledAtUtc = DateTime.UtcNow;
+            if (!BookingCancellationPolicy.IsOwnerCandidate(booking, TimeZoneInfo.ConvertTimeFromUtc(cancelledAtUtc, FeedbackPolicy.BusinessZone)))
+            {
+                TempData["Error"] = "This event has already started. Refresh the booking to see its current status.";
+                return ReturnToBooking();
+            }
+
+            var code = $"BK-{booking.CreatedAt.Year}-{booking.Id:D3}";
+            var previousStatus = booking.Status;
+            var requiresFinancialReview = booking.Payments.Any(p => p.Status == PaymentStatus.Verified);
+            booking.Status = BookingStatus.Cancelled;
+            booking.CancelledAtUtc = cancelledAtUtc;
+            booking.CancelledByUserId = actorId;
+            booking.CancellationActorRole = "Owner";
+            booking.CancellationReason = reason;
+            booking.CancellationSource = BookingCancellationPolicy.OwnerCancellationSource;
+            booking.CancellationPreviousStatus = previousStatus;
+            _context.BookingTimelines.Add(new BookingTimeline
+            {
+                BookingId = id, EventType = TimelineEventType.BookingCancelled, CreatedAt = cancelledAtUtc,
+                Notes = "Cancelled by Owner." + (requiresFinancialReview ? " Verified payments retained. Financial review required." : "")
+            });
+
+            var detailLink = Url.Action(nameof(Details), "Bookings", new { id });
+            var clientId = booking.ApplicationUserId;
+            if (!string.IsNullOrWhiteSpace(clientId))
+                _context.Notifications.Add(new Notification
+                {
+                    UserId = clientId, Title = "Booking cancelled", CreatedAt = cancelledAtUtc, Link = detailLink,
+                    Message = $"The Owner cancelled booking {code}."
+                        + (requiresFinancialReview ? " A financial review is required. Any refund is handled separately. Contact Staff for help." : "")
+                });
+            foreach (var user in staff.Where(user => user.IsActive && user.Id != clientId && user.Id != actorId).DistinctBy(user => user.Id))
+                _context.Notifications.Add(new Notification
+                {
+                    UserId = user.Id, Title = "Confirmed booking cancelled", CreatedAt = cancelledAtUtc, Link = detailLink,
+                    Message = $"The Owner cancelled booking {code}. It was removed from confirmed reservations."
+                });
+
+            await _activityService.LogAsync(SystemActivityType.BookingCancelled, $"Owner cancelled booking {code}.",
+                actorId, User.Identity?.Name, id.ToString(), "Booking",
+                new { BookingId = id, PreviousStatus = previousStatus, NewStatus = booking.Status, Reason = reason,
+                    Source = booking.CancellationSource, AtUtc = cancelledAtUtc, FinancialReviewRequired = requiresFinancialReview });
+            await transaction.CommitAsync();
+
+            var confirmation = requiresFinancialReview
+                ? $"Booking {code} was cancelled. Review its verified payments separately. No refund was approved or issued."
+                : $"Booking {code} was cancelled.";
+            TempData["Success"] = string.IsNullOrWhiteSpace(clientId)
+                ? confirmation + " No Client account is linked. Contact the Client directly."
+                : confirmation;
+            return ReturnToBooking();
         }
 
         private static readonly string[] ClientCancellableStatuses =

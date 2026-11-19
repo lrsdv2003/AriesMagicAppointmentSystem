@@ -83,6 +83,7 @@ internal static class ReleaseIntegrationRunner
         if(args.SequenceEqual(new[]{"--manual-ui-preview"})) { await BookingBrowserFixture.RunAsync(manualPreview:true); return; }
         if(args.SequenceEqual(new[]{"--browser-acceptance-host"})) { await BrowserAcceptanceHost.ExecuteAsync(); return; }
         if(args.SequenceEqual(new[]{"--business-browser-host"})) { await BusinessAcceptanceHost.RunAsync(); return; }
+        if(args.SequenceEqual(new[]{"--final-ui-browser-host"})) { await BusinessAcceptanceHost.RunAsync(finalUi:true); return; }
         if(args.SequenceEqual(new[]{"--independent-findings"})) { await IndependentFindingsReview.RunAsync(); return; }
         if(args.SequenceEqual(new[]{"--reproduce-findings"})) { await IndependentFindingsReview.RunAsync(reproduce:true); return; }
         if(args.SequenceEqual(new[]{"--location-only"})) { await LocationUpgradeTests.RunAsync(); return; }
@@ -406,6 +407,8 @@ internal static class ReleaseIntegrationRunner
             Check(await db.Notifications.AnyAsync(x=>x.UserId==booking.ApplicationUserId),"Client receives persisted workflow notifications");
             await FeedbackFeatureTests.RunAsync(connection,smtp.Port,mapUrl,root,passwords,otherPassword,Check);
             await RecoveryRegressionTests.ChatAsync(connection,Check);
+            using (var anonymousCancellation = factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false }))
+                await OwnerCancellationHttpChecks.RunAsync(owner, staff, client, anonymousCancellation, db, booking, package, Check);
             using(var response=await Post(staff,"/Account/Logout",staffToken)) Check(response.StatusCode==HttpStatusCode.Redirect,"Real logout expires authentication cookie");
             using(var response=await staff.GetAsync("/Dashboard/Staff")) Check(response.StatusCode==HttpStatusCode.Redirect && response.Headers.Location!.ToString().Contains("Login"),"Logged-out cookie cannot reopen protected page");
 

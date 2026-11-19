@@ -1320,6 +1320,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                 .Where(p => lockingPaymentStatuses.Contains(p.Status))
                 .Where(p => p.Booking != null)
                 .Select(p => p.Booking!)
+                .Where(b => b.Status != BookingStatus.Cancelled || b.CancellationSource != BookingCancellationPolicy.OwnerCancellationSource)
                 .ToListAsync();
 
             foreach (var lockedBooking in lockedBookings)

@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using AriesMagicAppointmentSystem.Data;
 using AriesMagicAppointmentSystem.Models;
 using AriesMagicAppointmentSystem.Services;
@@ -15,15 +16,18 @@ using Microsoft.Extensions.Logging;
 internal static class BusinessAcceptanceHost
 {
     static void Check(bool v,string label){if(!v)throw new Exception("FAILED: "+label);Console.WriteLine("BUSINESS_SQL_PASS: "+label);}
-    public static async Task RunAsync()
+    public static async Task RunAsync(bool finalUi = false)
     {
         Environment.SetEnvironmentVariable("BackgroundJobs__Enabled","false");
         Environment.SetEnvironmentVariable("Database__InitializeOnStartup","false");
         var name="AriesBusinessAcceptance_"+Guid.NewGuid().ToString("N");
-        var sql=@"Server=(localdb)\MSSQLLocalDB;Database="+name+";Integrated Security=True;TrustServerCertificate=True";
+        var instance = Environment.GetEnvironmentVariable("ARIES_TEST_LOCALDB_INSTANCE") ?? "MSSQLLocalDB";
+        if (!Regex.IsMatch(instance, "^[A-Za-z][A-Za-z0-9_-]{0,63}$"))
+            throw new InvalidOperationException("Invalid LocalDB test instance.");
+        var sql = $@"Server=(localdb)\{instance};Database={name};Integrated Security=True;TrustServerCertificate=True";
         var privateRoot=Path.Combine(Path.GetTempPath(),name);
         Directory.CreateDirectory(privateRoot);
-        var evidence=Path.Combine(".tmp-owner-build","predefense-business-20261115");
+        var evidence=Path.Combine(".tmp-owner-build",finalUi ? "final-ui-browser" : "predefense-business-20261115");
         Directory.CreateDirectory(evidence);
         var handoff=Path.Combine(evidence,"business-host.json");
         var done=Path.Combine(evidence,"business-done.json");
@@ -106,6 +110,18 @@ internal static class BusinessAcceptanceHost
             Check(File.Exists(done),"browser suite wrote completion state");
             var complete=JsonDocument.Parse(await File.ReadAllTextAsync(done));
             db.ChangeTracker.Clear();
+            if (finalUi)
+            {
+                Check(complete.RootElement.GetProperty("passed").GetBoolean(), "Cross-role UI browser checks passed");
+                var cancellation = await db.Bookings.AsNoTracking().SingleAsync(b => b.Id == cancel.Id);
+                Check(cancellation.Status == BookingStatus.Cancelled
+                    && cancellation.CancellationSource == BookingCancellationPolicy.OwnerCancellationSource
+                    && !cancellation.RefundEligible
+                    && await db.Payments.AnyAsync(p => p.BookingId == cancel.Id && p.Status == PaymentStatus.Verified)
+                    && !await db.RefundRequests.AnyAsync(r => r.BookingId == cancel.Id),
+                    "Browser cancellation persisted in SQL with its verified payment and no refund");
+                return;
+            }
             var all=await db.Bookings.AsNoTracking().Where(b=>new[]{decline.Id,reschedule.Id,cancel.Id,overdue.Id,competing.Id}.Contains(b.Id)).ToListAsync();
             var recap=new{
                 browserPassed=complete.RootElement.GetProperty("passed").GetBoolean(),

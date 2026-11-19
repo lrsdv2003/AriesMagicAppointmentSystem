@@ -5,7 +5,7 @@
  var canRequest=ViewBag.CanRequestRefund is bool allowed&&allowed;
 }
 <div class="cn-page client-final-refund-home pro-refund-home">
-<header class="hub-heading"><div><span class="hub-kicker">OWNER-REVIEWED REFUNDS</span><h1>Request refund</h1><p>Submit a request only for an eligible payment. Every request is subject to Owner review.</p></div></header>
+
 @if(TempData["Success"] is string success){<div class="cn-success" role="status">@success</div>}
 @if(TempData["Error"] is string error){<div class="cn-error-summary" role="alert">@error</div>}
 @if(canRequest)
@@ -28,5 +28,5 @@ else
   <a asp-controller="Bookings" asp-action="MyBookings" class="cn-button cn-primary">View My Bookings <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
  </section>
 }
-<p class="pro-refund-footnote"><i class="bi bi-info-circle" aria-hidden="true"></i> Existing refund requests and Owner decisions remain available in the relevant Booking Details page.</p>
+
 </div>

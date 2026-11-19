@@ -4,7 +4,6 @@
     var unread = notices.Count(n => !n.IsRead);
     var isOwner = User.IsInRole("Owner");
     var isStaff = User.IsInRole("Staff") && !isOwner;
-    var kicker = isOwner ? "Financial & account updates" : isStaff ? "Staff operations" : "Booking & account updates";
     var emptyCopy = isOwner
         ? "Payment, refund and account updates will appear here."
         : isStaff ? "New booking requests, reschedules and Client messages will appear here."
@@ -13,11 +12,9 @@
     var emptyAction = isOwner ? "Owner" : isStaff ? "Index" : "MyBookings";
     var emptyLabel = isOwner ? "Owner Dashboard" : isStaff ? "Booking Requests" : "My bookings";
 }
-<section class="aries-notifications" aria-labelledby="ariesNotificationsTitle">
+<section class="aries-notifications" aria-label="Notifications">
     <header class="hub-heading aries-notifications-heading">
         <div>
-            <span class="hub-kicker">@kicker</span>
-            <h1 id="ariesNotificationsTitle">Notifications</h1>
             <p><strong>@unread unread</strong> <span aria-hidden="true">&middot;</span> @notices.Count total updates, newest first.</p>
         </div>
         @if (unread > 0)

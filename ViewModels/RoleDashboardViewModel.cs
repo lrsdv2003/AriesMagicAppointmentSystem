@@ -56,6 +56,7 @@ namespace AriesMagicAppointmentSystem.ViewModels
         public int TotalUsers { get; set; }
 
         public List<Booking> UpcomingEvents { get; set; } = new();
+        public HashSet<int> OwnerCancellableBookingIds { get; } = new();
         public List<Booking> RecentBookings { get; set; } = new();
         public List<Booking> RecentBookingRequests { get; set; } = new();
         public List<Payment> RecentPaymentsToVerify { get; set; } = new();

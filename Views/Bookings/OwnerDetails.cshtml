@@ -25,6 +25,16 @@
     {
         <div class="alert alert-success" role="status">@bookingSuccess</div>
     }
+    @if (Model.Status == BookingStatus.Cancelled && Model.CancellationSource == BookingCancellationPolicy.OwnerCancellationSource)
+    {
+        <section class="alert alert-warning">
+            <p class="mb-0"><strong>Cancellation reason</strong> @Model.CancellationReason</p>
+            @if (Model.Payments.Any(p => p.Status == PaymentStatus.Verified))
+            {
+                <p class="mb-0">Verified payments remain on this cancelled booking. Review the financial consequences separately.</p>
+            }
+        </section>
+    }
     <div class="owner-booking-detail-layout">
         <div class="owner-booking-detail-main" aria-label="Booking information and available actions">
             <partial name="_StaffBookingDetailsSections" model="Model" />
@@ -48,6 +58,10 @@
             }
             <div class="owner-booking-detail-actions" aria-label="Booking actions">
                 <div class="owner-action-buttons">
+                    @if (User.IsInRole("Owner") && ViewBag.CanOwnerCancel is true)
+                    {
+                        <partial name="_OwnerCancelBooking" model="Model" />
+                    }
                     @if (canProposeConfirmedChange)
                     {
                         <a asp-controller="BookingChanges" asp-action="Edit" asp-route-id="@Model.Id"

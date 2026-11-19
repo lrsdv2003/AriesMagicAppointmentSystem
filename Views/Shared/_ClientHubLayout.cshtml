@@ -31,13 +31,12 @@
 <dialog id="hubDrawer" class="hub-drawer" aria-labelledby="hubDrawerTitle"><div class="hub-drawer-heading"><h2 id="hubDrawerTitle">Your workspace</h2><button type="button" data-hub-close aria-label="Close navigation">×</button></div><partial name="_ClientHubNavigation"/></dialog>
 <div class="hub-stage">
 <header class="hub-topbar aries-staff-header" aria-label="Client workspace header">
- <a class="workspace-brand" asp-controller="Home" asp-action="Index">
+ <a class="workspace-brand" asp-controller="Home" asp-action="Index" aria-label="Aries d’ Magic Artist home">
   <img src="~/images/client/wonder-studio/brand-original.jpeg" width="48" height="48" alt="" />
-  <span><strong>Aries d' Magic Artist</strong><small>The Wonder Studio</small></span>
  </a>
  <div class="hub-topbar-start">
   <button id="hubMenu" class="hub-topbar-menu" type="button" aria-controls="hubDrawer" aria-haspopup="dialog" aria-expanded="false" hidden><i class="bi bi-list" aria-hidden="true"></i><span class="visually-hidden">Open navigation</span></button>
-  <div class="hub-topbar-heading staff-round2-header-identity"><small>Aries d' Magic Artist <span aria-hidden="true">&middot;</span> Client workspace</small><strong>@(ViewData["Title"] ?? "My bookings")</strong></div>
+  <div class="hub-topbar-heading staff-round2-header-identity"><strong>@(ViewData["Title"] ?? "My bookings")</strong></div>
  </div>
  <div class="hub-topbar-actions">
   <a asp-controller="Communications" asp-action="Index" asp-route-view="inbox" class="hub-topbar-icon aries-header-message-link" aria-label="Open messages" title="Messages"><i class="bi bi-chat-dots" aria-hidden="true"></i><span class="hub-count communication-unread-badge" hidden aria-label="Unread messages">0</span></a>

@@ -5,7 +5,7 @@
  var eligible=ViewBag.EligibleRescheduleOptions as List<SelectListItem>??new();
 }
 <div class="cn-page client-round2-action-page">
- <header class="hub-heading"><div><span class="hub-kicker">Change your event schedule</span><h1>Request rescheduling.</h1><p>Submit a new schedule for a confirmed booking with verified payment. Track its review in My Bookings.</p></div></header>
+
  @if(TempData["Success"] is string success){<div class="cn-success" role="status"><strong>Request submitted.</strong> @success <a asp-controller="Bookings" asp-action="MyBookings">Review your booking</a></div>}
  @if(TempData["Error"] is string error){<div class="cn-error-summary" role="alert">@error</div>}
  @if(eligible.Any()){
@@ -20,5 +20,5 @@
   </section>}
  else{
   <section class="hub-card r2-empty-action" role="status"><i class="bi bi-calendar-x" aria-hidden="true"></i><h2>No bookings available for rescheduling</h2><p>You currently have no verified bookings eligible for rescheduling. Open My Bookings to see your booking details or an existing pending request.</p><a asp-controller="Bookings" asp-action="MyBookings" class="cn-button cn-primary">View my bookings <i class="bi bi-arrow-right" aria-hidden="true"></i></a></section>}
- <p class="r2-action-footnote"><i class="bi bi-info-circle" aria-hidden="true"></i> Your existing event schedule remains unchanged until Staff approves a request.</p>
+
 </div>

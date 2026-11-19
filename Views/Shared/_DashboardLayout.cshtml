@@ -78,14 +78,12 @@
 <a class="ui-skip-link" href="#mainContent">Skip to content</a>
 <div class="dashboard-shell">
     <header class="dashboard-topbar @(role == "Owner" ? "aries-staff-header" : "")">
-        <a class="workspace-brand" asp-controller="Home" asp-action="Index">
+        <a class="workspace-brand" asp-controller="Home" asp-action="Index" aria-label="Aries d’ Magic Artist home">
             <img src="~/images/client/wonder-studio/brand-original.jpeg" width="48" height="48" alt="" />
-            <span><strong>Aries d’ Magic Artist</strong><small>The Wonder Studio</small></span>
         </a>
         <div class="topbar-left">
             <button type="button" class="btn btn-outline-secondary ui-menu-toggle" data-bs-toggle="offcanvas" data-bs-target="#internalSidebar" aria-controls="internalSidebar" aria-expanded="false" aria-label="Open navigation"><i class="bi bi-list" aria-hidden="true"></i></button>
-            @if(role=="Staff"){<span class="staff-round2-header-identity"><small>Aries d' Magic Artist <span aria-hidden="true">&middot;</span> Staff workspace</small><strong>@ViewData["Title"]</strong></span>}
-            else{<span class="staff-round2-header-identity"><small>Aries d' Magic Artist <span aria-hidden="true">&middot;</span> Owner workspace</small><strong>@ViewData["Title"]</strong></span>}
+            <span class="staff-round2-header-identity"><strong>@ViewData["Title"]</strong></span>
         </div>
         <div class="topbar-right">
             <a asp-controller="Communications" asp-action="Index" class="topbar-icon topbar-message-link" aria-label="Messages, @unreadMessageCount unread conversations"><i class="bi bi-chat-dots" aria-hidden="true"></i><span class="communication-unread-badge" @(unreadMessageCount == 0 ? "hidden" : null)>@(unreadMessageCount > 99 ? "99+" : unreadMessageCount)</span></a>
@@ -94,10 +92,10 @@
         </div>
     </header>
     <aside class="dashboard-sidebar offcanvas-lg offcanvas-start" tabindex="-1" id="internalSidebar" aria-labelledby="sidebarTitle">
-        <div class="sidebar-brand"><span id="sidebarTitle">@role workspace</span><button type="button" class="btn-close btn-close-white d-lg-none" data-bs-dismiss="offcanvas" data-bs-target="#internalSidebar" aria-label="Close navigation"></button></div>
+        <div class="sidebar-brand d-lg-none"><span id="sidebarTitle" class="visually-hidden">@role navigation</span><button type="button" class="btn-close btn-close-white d-lg-none" data-bs-dismiss="offcanvas" data-bs-target="#internalSidebar" aria-label="Close navigation"></button></div>
         <nav class="sidebar-nav" aria-label="@role workspace navigation">
             @foreach(var group in navigation.GroupBy(n => n.Group)) {
-                <div class="workspace-nav-group"><p>@group.Key</p>
+                <div class="workspace-nav-group">
                 @foreach(var item in group) {
                     var active = IsActive(item.Controller, item.Action);
                     <a asp-controller="@item.Controller" asp-action="@item.Action" class="sidebar-link @(active ? "active" : "")" aria-current="@(active ? "page" : null)"><i class="bi @item.Icon" aria-hidden="true"></i><span>@item.Label</span>
@@ -109,12 +107,12 @@
             }
             @if(role!="Staff" && role!="Owner"){<button class="sidebar-link workspace-signout" type="button" data-bs-toggle="modal" data-bs-target="#logoutConfirmModal"><i class="bi bi-box-arrow-right" aria-hidden="true"></i>Sign out</button>}
         </nav>
-        <footer class="workspace-sidebar-footer"><span>The Wonder Studio</span><p>Thoughtful details. Better events.</p></footer>
     </aside>
     <main class="dashboard-main">
         <section class="dashboard-content" id="mainContent" tabindex="-1" aria-label="@ViewData["Title"]">
-            @if(ViewData["HideWorkspaceHeading"] is not true && currentController != "Dashboard" && currentController != "Communications" && currentController != "InternalProfile" && !(role == "Staff" && new[]{"Bookings","Calendar","RescheduleRequests","Services","History","Notifications"}.Contains(currentController))){
-                <header class="workspace-page-heading"><span class="dash-eyebrow">@role workspace</span><h1>@ViewData["Title"]</h1></header>
+            @if(ViewData["HideWorkspaceHeading"] is not true && currentController != "Dashboard" && currentController != "Communications" && currentController != "InternalProfile" && currentController != "Notifications"
+                && !(currentController == "Services" && currentAction == "Index") && !(role == "Staff" && new[]{"Bookings","Calendar","RescheduleRequests","Services","History","Notifications"}.Contains(currentController))){
+                <header class="workspace-page-heading"><h1>@ViewData["Title"]</h1></header>
             }
             @RenderBody()
         </section>

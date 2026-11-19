@@ -5,7 +5,7 @@
  var payable=ViewBag.PayableBookingOptions as List<SelectListItem>??new();
 }
 <div class="cn-page cn-payment-page client-round2-action-page">
- <header class="hub-heading"><div><span class="hub-kicker">Payment submission</span><h1>Upload a payment.</h1><p>Pay for an eligible booking and submit your successful receipt for Owner verification. Track payment status in My Bookings.</p></div></header>
+
  @if(TempData["Success"] is string success){<div class="cn-success" role="status"><strong>Receipt submitted.</strong> @success <a asp-controller="Bookings" asp-action="MyBookings">Track this in My Bookings</a></div>}
  @if(TempData["Error"] is string error){<div class="cn-error-summary" role="alert">@error</div>}
  @if(payable.Any()){
@@ -20,5 +20,5 @@
  </section>}
  else{
  <section class="hub-card r2-empty-action" role="status"><i class="bi bi-check2-circle" aria-hidden="true"></i><h2>No payments needed right now</h2><p>You currently have no bookings requiring payment submission. View My Bookings to check booking statuses, previous receipts and verified balances.</p><a asp-controller="Bookings" asp-action="MyBookings" class="cn-button cn-primary">View my bookings <i class="bi bi-arrow-right" aria-hidden="true"></i></a></section>}
- <p class="r2-action-footnote"><i class="bi bi-shield-check" aria-hidden="true"></i> Payments and receipts remain available in each booking’s details. Only verified payments reduce your balance.</p>
+
 </div>

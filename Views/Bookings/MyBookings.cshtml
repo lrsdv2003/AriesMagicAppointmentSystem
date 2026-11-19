@@ -10,7 +10,6 @@
  var paymentDeadlines=ViewBag.PaymentDeadlines as Dictionary<int,DateTime>??new();
 }
 <header class="hub-heading">
- <div><span class="hub-kicker">All your events in one place</span><h1>My bookings</h1><p>Manage event schedules, track verified payments, review requests, and see the next action for each booking.</p></div>
  <a asp-action="CreateStepOne" class="cn-button cn-primary"><i class="bi bi-calendar-plus" aria-hidden="true"></i> Plan an event</a>
 </header>
 @if(TempData["Success"] is string success){<div class="cn-success" role="status"><strong>Booking update:</strong> @success</div>}

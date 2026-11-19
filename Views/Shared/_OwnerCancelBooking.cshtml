@@ -1,0 +1,42 @@
+@model Booking
+@using AriesMagicAppointmentSystem.Services
+@{
+    var modalId = $"ownerCancelBooking-{Model.Id}";
+    var reasonId = $"{modalId}-reason";
+    var titleId = $"{modalId}-title";
+    var noteId = $"{modalId}-note";
+    var code = $"BK-{Model.CreatedAt.Year}-{Model.Id:D3}";
+}
+<button type="button" class="btn btn-sm btn-outline-danger owner-cancel-booking"
+        data-bs-toggle="modal" data-bs-target="#@modalId" aria-label="Cancel Booking @code">
+    Cancel Booking
+</button>
+<div class="modal fade" id="@modalId" tabindex="-1" aria-labelledby="@titleId" aria-describedby="@noteId" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+            <form asp-controller="Bookings" asp-action="CancelAsOwner" method="post" class="modal-content" data-owner-cancellation>
+                <input type="hidden" name="id" value="@Model.Id" />
+                <input type="hidden" name="fromDashboard" value="@((ViewData["OwnerCancellationFromDashboard"] is true).ToString().ToLowerInvariant())" />
+                <div class="modal-header">
+                    <h2 class="modal-title fs-5" id="@titleId">Cancel Booking</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <dl class="row mb-3">
+                        <dt class="col-sm-4">Booking ID</dt><dd class="col-sm-8">@code</dd>
+                        <dt class="col-sm-4">Client</dt><dd class="col-sm-8">@(Model.Client?.FullName ?? Model.ContactPerson)</dd>
+                        <dt class="col-sm-4">Package</dt><dd class="col-sm-8">@Model.PackageName</dd>
+                        <dt class="col-sm-4">Event starts</dt><dd class="col-sm-8">@Model.StartTime.ToString("MMM d, yyyy 'at' h:mm tt") Philippine time</dd>
+                        <dt class="col-sm-4">Current status</dt><dd class="col-sm-8">@Model.Status</dd>
+                    </dl>
+                    <p id="@noteId" class="alert alert-warning">This changes the booking to Cancelled and releases its reservation. Verified payments stay on record for separate financial review.</p>
+                    <label class="form-label" for="@reasonId">Cancellation reason</label>
+                    <textarea class="form-control" id="@reasonId" name="reason" rows="3" required
+                              minlength="@BookingCancellationPolicy.MinimumReasonLength" maxlength="@BookingCancellationPolicy.MaximumReasonLength"></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Keep Booking</button>
+                    <button type="submit" class="btn btn-danger">Confirm Cancellation</button>
+                </div>
+            </form>
+    </div>
+</div>

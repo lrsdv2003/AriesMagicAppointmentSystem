@@ -221,6 +221,7 @@ public class DashboardController : Controller
     public async Task<IActionResult> Owner()
     {
         var model = await StartAsync("Owner");
+        model.AsOf = FeedbackPolicy.BusinessNow;
         await LoadAsync(model, "schedule refresh", async () => { await _historyService.ArchiveDueBookingsAsync(); });
         await LoadAsync(model, "queues", async () =>
         {
@@ -266,6 +267,15 @@ public class DashboardController : Controller
                 .Select(d => new DashboardTrendPoint(d.ToString("MMM yyyy"), volume.FirstOrDefault(v => v.Year == d.Year && v.Month == d.Month)?.Count ?? 0)).ToList();
         });
         await LoadScheduleAsync(model);
+        await LoadAsync(model, "cancellation eligibility", async () =>
+        {
+            foreach (var booking in model.TodayEvents.Concat(model.UpcomingEvents))
+            {
+                if (BookingCancellationPolicy.IsOwnerCandidate(booking, FeedbackPolicy.BusinessNow)
+                    && !await BookingCancellationPolicy.HasOwnerCancellationConflictAsync(_context, booking.Id))
+                    model.OwnerCancellableBookingIds.Add(booking.Id);
+            }
+        });
         await LoadActivityAsync(model, [SystemActivityType.PaymentVerified, SystemActivityType.PaymentRejected,
             SystemActivityType.RefundProcessed, SystemActivityType.RefundApproved, SystemActivityType.RefundRejected,
             SystemActivityType.ServiceUpdated, SystemActivityType.CalendarModified, SystemActivityType.RescheduleApproved]);

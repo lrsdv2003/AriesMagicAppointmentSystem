@@ -19,10 +19,13 @@
     var canPay = VenueLocationPolicy.CanOpenPayment(Model.TravelFeeStatus) && !scheduleUnavailable && finance != null && finance.RemainingBalance > 0 && !finance.HasPendingVerification && !finance.HasAdditionalEvidenceRequired && new[] { BookingStatus.AwaitingDownpayment, BookingStatus.Confirmed, BookingStatus.Completed }.Contains(Model.Status);
 }
 <div class="cn-page">
-<header class="cn-page-heading"><div><p class="cn-kicker">BK-@Model.CreatedAt.Year-@Model.Id.ToString("D3")</p><h1>@(Model.Status == BookingStatus.Confirmed ? "Your event is confirmed." : "Your booking.")</h1></div><a asp-action="MyBookings" class="cn-text-link">All bookings</a></header>
+<header class="cn-page-heading"><div><h1>BK-@Model.CreatedAt.Year-@Model.Id.ToString("D3")</h1></div><a asp-action="MyBookings" class="cn-text-link">All bookings</a></header>
 @if(TempData["Error"] is string changeError){<div class="cn-notice" role="alert">@changeError</div>}
 @if(TempData["Success"] is string changeSuccess){<div class="cn-notice" role="status">@changeSuccess</div>}
-<div class="cn-next-step" role="status">@(scheduleUnavailable ? "This time is no longer available. Request another schedule or message Staff before making a payment." : ClientBookingPresentation.NextAction(Model,finance))</div>
+@if (scheduleUnavailable || Model.Status != BookingStatus.Pending)
+{
+    <div class="cn-next-step" role="status">@(scheduleUnavailable ? "This time is no longer available. Request another schedule or message Staff before making a payment." : ClientBookingPresentation.NextAction(Model,finance))</div>
+}
 @if(Model.Status==BookingStatus.AwaitingDownpayment && paymentDeadline.HasValue){
 <div class="ultra-payment-deadline" role="status"><strong>Initial payment proof deadline:</strong> @AriesMagicAppointmentSystem.Services.InitialPaymentWindowPolicy.FormatManila(paymentDeadline.Value) <span>Submit a valid receipt before the deadline. Owner verification can follow afterward.</span></div>
 }

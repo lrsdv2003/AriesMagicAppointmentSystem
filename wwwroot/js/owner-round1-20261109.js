@@ -1,5 +1,21 @@
 /* Owner Round 1: accessible financial request tabs and personnel table search. */
 (() => {
+  const cancellationForms = document.querySelectorAll('[data-owner-cancellation]');
+  cancellationForms.forEach(form => {
+    const confirm = form.querySelector('button[type="submit"]');
+    form.addEventListener('submit', event => {
+      if (form.getAttribute('aria-busy') === 'true') {
+        event.preventDefault();
+        return;
+      }
+      form.setAttribute('aria-busy', 'true');
+      confirm.disabled = true;
+    });
+    window.addEventListener('pageshow', () => {
+      form.removeAttribute('aria-busy');
+      confirm.disabled = false;
+    });
+  });
   const root = document.querySelector('.owner-round1-dashboard');
   if (root) {
     const tabs = [...root.querySelectorAll('[data-owner-tab]')];

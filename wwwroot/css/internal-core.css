@@ -9679,17 +9679,10 @@ body.internal-ui .dashboard-content:has(> .unified-profile) {
 }
 .unified-profile *, .unified-profile *::before, .unified-profile *::after {box-sizing:border-box}
 .unified-profile .up-header {
-  display:flex;justify-content:space-between;align-items:center;gap:14px;
+  display:flex;justify-content:flex-end;align-items:center;gap:14px;
   flex-wrap:wrap;margin:0 0 12px;padding:2px 0 12px;
   border-bottom:1px solid var(--up-border);
 }
-.unified-profile .up-header h1 {
-  font-weight:700;line-height:1.2;
-  font-family:var(--app-font,inherit);
-  font-size:clamp(22px,2vw,27px);
-  color:var(--up-text);margin:0 0 4px;
-}
-.unified-profile .up-header p {margin:0;color:var(--up-muted);font-size:12px}
 .unified-profile .up-header form {margin:0}
 .unified-profile .up-grid {
   display:grid;grid-template-columns:minmax(235px,28%) minmax(0,1fr);

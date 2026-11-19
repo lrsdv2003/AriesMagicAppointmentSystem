@@ -1784,20 +1784,11 @@ body.internal-ui.staff-dashboard .sidebar-brand>span {
   letter-spacing:.1em;
 }
 body.internal-ui.staff-dashboard .sidebar-nav {
-  gap:17px!important;
+  gap:10px!important;
 }
 body.internal-ui.staff-dashboard .workspace-nav-group {
   gap:5px;
-  margin-bottom:18px;
-}
-body.internal-ui.staff-dashboard .workspace-nav-group>p {
-  margin:0 8px 8px!important;
-  padding:0!important;
-  color:#a8c1d6!important;
-  font-size:10px;
-  letter-spacing:.1em;
-  font-weight:700;
-  text-transform:uppercase;
+  margin-bottom:0;
 }
 body.internal-ui.staff-dashboard .sidebar-link {
   display:flex;

@@ -3,8 +3,17 @@
 @{
     Layout = "_DashboardLayout";
     ViewData["Title"] = "Owner Dashboard";
+    ViewData["OwnerCancellationFromDashboard"] = true;
 }
 <div class="role-workspace owner-round1-dashboard staff-round1-dashboard" data-role="Owner">
+    @if (TempData["Error"] is string cancellationError)
+    {
+        <div class="alert alert-danger" role="alert">@cancellationError</div>
+    }
+    @if (TempData["Success"] is string cancellationSuccess)
+    {
+        <div class="alert alert-success" role="status">@cancellationSuccess</div>
+    }
     <section class="owner-round3-metrics staff-round1-metrics" aria-label="Authoritative financial summary">
         @if(Model.UnavailableSections.Contains("financial overview")) {
             <div class="owner-dashboard-unavailable staff-round1-panel"><p class="dash-empty">Financial metrics unavailable. No estimated totals are shown.</p></div>
@@ -93,6 +102,10 @@
                                 <a asp-controller="Bookings" asp-action="Details" asp-route-id="@booking.Id" class="owner-booking-code">BK-@booking.CreatedAt.Year-@booking.Id.ToString("D3")</a>
                                 <strong><time datetime="@booking.StartTime.ToString("O")">@booking.EventDate.ToString("MMM d, yyyy") · @booking.StartTime.ToString("h:mm tt") – @booking.EndTime.ToString("h:mm tt")</time></strong>
                                 <p title="@booking.PartyVenue">@(string.IsNullOrWhiteSpace(booking.PartyVenue) ? "Venue not recorded" : booking.PartyVenue)</p>
+                                @if (User.IsInRole("Owner") && Model.OwnerCancellableBookingIds.Contains(booking.Id))
+                                {
+                                    <partial name="_OwnerCancelBooking" model="booking" />
+                                }
                             </div>
                         </li>
                     }

@@ -179,20 +179,11 @@ body.internal-ui.owner-dashboard .sidebar-brand>span {
   letter-spacing:.1em;
 }
 body.internal-ui.owner-dashboard .sidebar-nav {
-  gap:17px!important;
+  gap:10px!important;
 }
 body.internal-ui.owner-dashboard .workspace-nav-group {
   gap:5px;
-  margin-bottom:18px;
-}
-body.internal-ui.owner-dashboard .workspace-nav-group>p {
-  margin:0 8px 8px!important;
-  padding:0!important;
-  color:#a8c1d6!important;
-  font-size:10px;
-  letter-spacing:.1em;
-  font-weight:700;
-  text-transform:uppercase;
+  margin-bottom:0;
 }
 body.internal-ui.owner-dashboard .sidebar-link {
   display:flex;
@@ -1566,6 +1557,12 @@ body.internal-ui.owner-dashboard .owner-round3-upcoming .owner-round3-event time
 body.internal-ui.owner-dashboard .owner-round3-upcoming .owner-round3-event p{
  margin:1px 0 0;font-size:11px;line-height:1.5;
  color:#c4d9e9;overflow-wrap:anywhere
+}
+body.internal-ui.owner-dashboard .owner-round3-upcoming .owner-cancel-booking{
+ justify-self:start;margin-top:4px;color:#ffb8bd;border-color:#d78289
+}
+body.internal-ui.owner-dashboard .owner-round3-upcoming .owner-cancel-booking:is(:hover,:focus-visible){
+ color:#fff;background:#943c49;border-color:#ffb8bd
 }
 body.internal-ui.owner-dashboard .owner-dashboard-unavailable{
  grid-column:1/-1;min-width:0;padding:16px;
