@@ -43,33 +43,53 @@ async function layout(page, role, width) {
   const dimensions = await page.evaluate(() => ({width: innerWidth, content: document.documentElement.scrollWidth}));
   check(dimensions.content <= dimensions.width + 1, role + ' has no horizontal overflow at ' + width + 'px');
 }
-async function brandHeader(page, role) {
+async function brandHeader(page, role, expectedPage) {
   await page.waitForFunction(() => document.querySelector('header .workspace-brand img')?.naturalWidth > 0);
   const state = await page.$eval('header .workspace-brand-title', title => {
     const header = title.closest('header');
     const home = title.closest('a');
+    const lockup = home.getBoundingClientRect();
     const logo = home.querySelector('img').getBoundingClientRect();
     const range = document.createRange();
     range.selectNodeContents(title);
     const brand = range.getBoundingClientRect();
-    const pageTitle = home.nextElementSibling.getBoundingClientRect();
+    const copy = title.parentElement.getBoundingClientRect();
+    const studioTitle = home.querySelector('.workspace-brand-subtitle');
+    const studio = studioTitle.getBoundingClientRect();
+    const path = home.nextElementSibling;
+    const breadcrumb = path.getBoundingClientRect();
     const bounds = header.getBoundingClientRect();
     const controls = header.querySelector('.topbar-right,.hub-topbar-actions').getBoundingClientRect();
     return {
       title: title.textContent.trim(),
       besideLogo: logo.width > 0 && brand.left >= logo.right
-        && Math.abs(logo.top + logo.bottom - brand.top - brand.bottom) < 8,
+        && Math.abs(logo.top + logo.bottom - copy.top - copy.bottom) < 8,
       fits: brand.width > 0 && brand.height > 0 && logo.left >= bounds.left
-        && brand.right <= controls.left + 1 && brand.top >= bounds.top && brand.bottom <= bounds.bottom
-        && (brand.right <= pageTitle.left + 1 || brand.bottom <= pageTitle.top + 1),
+        && studio.left >= logo.right && studio.top >= brand.bottom - 1 && studio.height > 0
+        && Math.max(copy.right, breadcrumb.right) <= controls.left + 1
+        && Math.max(copy.bottom, breadcrumb.bottom) <= bounds.bottom + 1
+        && (innerWidth < 992 ? lockup.bottom <= breadcrumb.top + 1
+          : breadcrumb.left >= lockup.right + 24 && breadcrumb.height < 20
+            && Math.abs(lockup.top + lockup.bottom - breadcrumb.top - breadcrumb.bottom) < 8),
       count: header.querySelectorAll('.workspace-brand').length,
-      home: home.classList.contains('workspace-brand') && new URL(home.href).pathname === '/'
+      home: home.classList.contains('workspace-brand') && new URL(home.href).pathname === '/',
+      subtitle: studioTitle.textContent.trim(),
+      subtitleUppercase: getComputedStyle(studioTitle).textTransform === 'uppercase',
+      crumb: path.textContent.replace(/\s+/g, ' ').trim(),
+      page: path.querySelector('[aria-current="page"]').textContent.trim()
     };
   });
-  check(state.title === "Aries D'Magic Artist" && state.besideLogo && state.fits && state.count === 1 && state.home,
-    role + ' shows the full brand title beside one logo in the Home link ' + JSON.stringify(state));
-  const brand = await page.$('header .workspace-brand');
-  await brand.screenshot({path: path.join(evidence, `brand-${role.toLowerCase().replaceAll(' ', '-')}.png`)});
+  const header = await page.$('header:has(.workspace-brand)');
+  const clip = await header.boundingBox();
+  await page.screenshot({
+    path: path.join(evidence, `brand-${role.toLowerCase().replaceAll(' ', '-')}.png`),
+    clip: {...clip, width: Math.min(667, clip.width)}
+  });
+  const workspaceRole = role.split(' ')[0];
+  check(state.title === 'Aries d’ Magic Artist' && state.besideLogo && state.fits && state.count === 1 && state.home
+    && state.subtitle === 'The Wonder Studio' && state.subtitleUppercase
+    && state.page === expectedPage && state.crumb === `${workspaceRole} workspace / ${expectedPage}`,
+    role + ' shows the reference branding and workspace breadcrumb ' + JSON.stringify(state));
 }
 
 try {
@@ -83,11 +103,11 @@ try {
   check(!(await client.$('.hub-sidebar .brand-copy,.hub-sidebar .hub-nav-caption,.hub-rail-footer,.hub-topbar-heading small')), 'Client shell has no redundant captions');
   check(await client.$$eval('.hub-topbar .workspace-brand img', images => images.length === 1)
     && !(await client.$('.hub-sidebar img,#hubDrawer img,#hubFallback img')), 'Client logo appears only in the header');
-  await brandHeader(client, 'Client desktop');
+  await brandHeader(client, 'Client desktop', 'My bookings');
   await client.setViewport({width: 768, height: 850});
-  await brandHeader(client, 'Client tablet');
+  await brandHeader(client, 'Client tablet', 'My bookings');
   await client.setViewport({width: 320, height: 850});
-  await brandHeader(client, 'Client 320px');
+  await brandHeader(client, 'Client 320px', 'My bookings');
   await layout(client, 'Client', 360);
   await client.click('#hubMenu');
   await client.waitForSelector('#hubDrawer[open]');
@@ -112,11 +132,11 @@ try {
     await visit(page, dashboard);
     check(!(await page.$('.workspace-sidebar-footer,.workspace-nav-group>p,.staff-round2-header-identity small')), role + ' shell removes duplicate group and branding captions');
     check(await page.$$eval('.sidebar-nav a', links => links.length >= 6), role + ' retains its workspace routes');
-    await brandHeader(page, role + ' desktop');
+    await brandHeader(page, role + ' desktop', role + ' Dashboard');
     await page.setViewport({width: 768, height: 850});
-    await brandHeader(page, role + ' tablet');
+    await brandHeader(page, role + ' tablet', role + ' Dashboard');
     await page.setViewport({width: 320, height: 850});
-    await brandHeader(page, role + ' 320px');
+    await brandHeader(page, role + ' 320px', role + ' Dashboard');
     await layout(page, role, 360);
     await visit(page, dashboard);
     const menuState = await page.$eval('.ui-menu-toggle', button => {
@@ -142,6 +162,8 @@ try {
   }
   await visit(owner, '/Services');
   check(await owner.$('.staff-package-grid') && !(await owner.$('main .workspace-page-heading')), 'Owner Packages keeps cards without a duplicate page heading');
+  await visit(owner, '/Calendar');
+  await brandHeader(owner, 'Owner calendar', 'Event Calendar');
 
   await visit(staff, '/Bookings/Details/' + bookingId);
   await visit(client, '/Bookings/Details/' + bookingId);

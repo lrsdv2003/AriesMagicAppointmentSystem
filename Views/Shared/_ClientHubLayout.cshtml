@@ -34,8 +34,7 @@
  <div class="hub-topbar-start">
   <button id="hubMenu" class="hub-topbar-menu" type="button" aria-controls="hubDrawer" aria-haspopup="dialog" aria-expanded="false" hidden><i class="bi bi-list" aria-hidden="true"></i><span class="visually-hidden">Open navigation</span></button>
   <div class="hub-topbar-heading staff-round2-header-identity">
-   <partial name="_WorkspaceBrand" />
-   <strong>@(ViewData["Title"] ?? "My bookings")</strong>
+   <partial name="_WorkspaceHeader" model='@("Client")' />
   </div>
  </div>
  <div class="hub-topbar-actions">

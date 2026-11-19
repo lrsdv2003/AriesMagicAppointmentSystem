@@ -8095,19 +8095,17 @@ body .aries-notifications.aries-notifications :is(.cn-button,.notice-action):foc
   }
 }
 
-/* STAFF HEADER VISUAL STANDARD - Owner and Client.
-   Staff header remains unchanged and is the reference. Keep role-specific
-   destinations, unread counters, dropdown handlers and navigation systems. */
+/* Shared workspace header with the original brand treatment. */
 :is(body.client-hub .hub-topbar.aries-staff-header,
-    body.internal-ui.owner-dashboard .dashboard-topbar.aries-staff-header) {
+    body.internal-ui.midnight-workspace .dashboard-shell > .dashboard-topbar) {
   display:flex!important;
   align-items:center!important;
   justify-content:space-between!important;
   flex-wrap:nowrap!important;
   gap:20px!important;
   min-height:76px!important;
-  padding:11px clamp(15px,2.8vw,40px)!important;
-  background:linear-gradient(112deg,#061d31 0%,#09263d 100%)!important;
+  padding:11px 24px!important;
+  background:#05172a!important;
   border-bottom:1px solid #31506a!important;
   box-shadow:0 8px 22px rgba(0,17,30,.24)!important;
   z-index:1050!important;
@@ -8128,7 +8126,7 @@ body :is(.hub-topbar.aries-staff-header,.internal-ui.midnight-workspace .dashboa
   --workspace-logo-size:46px;
   display:flex!important;
   align-items:center;
-  gap:10px!important;
+  gap:12px!important;
   flex:0 0 auto!important;
   width:auto!important;
   min-width:0!important;
@@ -8145,25 +8143,68 @@ body :is(.hub-topbar.aries-staff-header,.internal-ui.midnight-workspace .dashboa
   border-radius:50%;
   border:1px solid #8f6a35;
 }
-:is(.hub-topbar,.dashboard-topbar) .workspace-brand-title {
+:is(.hub-topbar,.dashboard-topbar) .workspace-brand-copy {
   min-width:0;
-  font-size:clamp(.75rem,1.25vw,.9375rem);
-  font-weight:650;
-  line-height:1.25;
   overflow-wrap:anywhere;
 }
-@media(min-width:768px) {
+:is(.hub-topbar,.dashboard-topbar) .workspace-brand-title {
+  display:block;
+  font-size:15px;
+  font-weight:600;
+  line-height:1.25;
+}
+:is(.hub-topbar,.dashboard-topbar) .workspace-brand-subtitle {
+  display:block;
+  margin-top:4px;
+  color:#b5c8d9;
+  font-size:9px;
+  letter-spacing:.16em;
+  line-height:1.3;
+  text-transform:uppercase;
+}
+:is(.hub-topbar,.dashboard-topbar) .workspace-header-path {
+  min-width:0;
+  color:#a4bacd;
+  font-size:13px;
+  font-weight:600;
+  line-height:1.35;
+  overflow-wrap:anywhere;
+}
+.workspace-header-separator{margin-inline:6px}
+@media(min-width:992px) {
   body :is(.hub-topbar.aries-staff-header,.internal-ui.midnight-workspace .dashboard-topbar) :is(.hub-topbar-start,.topbar-left) > .staff-round2-header-identity {
     display:flex!important;
     align-items:center;
-    gap:24px!important;
+    gap:28px!important;
   }
+  body :is(.hub-topbar.aries-staff-header,.internal-ui.midnight-workspace .dashboard-topbar) .staff-round2-header-identity > .workspace-brand {
+    flex:0 0 206px!important;
+  }
+  :is(.hub-topbar,.dashboard-topbar) .workspace-header-path{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+}
+@media(max-width:991px) {
+  body.internal-ui.midnight-workspace:is(.staff-dashboard,.owner-dashboard) .dashboard-shell {
+    grid-template-rows:auto minmax(0,1fr);
+  }
+  body :is(.hub-topbar.aries-staff-header,.internal-ui.midnight-workspace .dashboard-topbar) :is(.hub-topbar-start,.topbar-left) > .staff-round2-header-identity {
+    display:grid!important;
+    gap:3px!important;
+  }
+  body :is(.hub-topbar.aries-staff-header,.internal-ui.midnight-workspace .dashboard-topbar) .staff-round2-header-identity > .workspace-brand {
+    --workspace-logo-size:34px;
+    gap:8px!important;
+  }
+  :is(.hub-topbar,.dashboard-topbar) .workspace-header-path{font-size:12px}
 }
 @media(max-width:767px) {
   body :is(.hub-topbar.aries-staff-header,.internal-ui.midnight-workspace .dashboard-topbar) .staff-round2-header-identity > .workspace-brand {
     --workspace-logo-size:30px;
     gap:6px!important;
   }
+  :is(.hub-topbar,.dashboard-topbar) .workspace-brand-title{font-size:12px}
+  :is(.hub-topbar,.dashboard-topbar) .workspace-brand-subtitle{margin-top:2px;font-size:8px;letter-spacing:.1em}
+  :is(.hub-topbar,.dashboard-topbar) .workspace-header-path{font-size:11px}
+  .workspace-header-separator{margin-inline:3px}
 }
 :is(body.client-hub .hub-topbar.aries-staff-header,
     body.internal-ui.owner-dashboard .dashboard-topbar.aries-staff-header) :is(.hub-topbar-start,.topbar-left) {
@@ -8184,36 +8225,8 @@ body :is(.hub-topbar.aries-staff-header,.internal-ui.midnight-workspace .dashboa
 }
 :is(body.client-hub .hub-topbar.aries-staff-header,
     body.internal-ui.owner-dashboard .dashboard-topbar.aries-staff-header) .staff-round2-header-identity {
-  display:grid!important;
-  gap:3px!important;
   min-width:0!important;
   max-width:min(100%,540px)!important;
-}
-:is(body.client-hub .hub-topbar.aries-staff-header,
-    body.internal-ui.owner-dashboard .dashboard-topbar.aries-staff-header) .staff-round2-header-identity small {
-  display:block!important;
-  color:#a8c5d9!important;
-  font-size:11px!important;
-  font-weight:400!important;
-  line-height:1.4!important;
-  letter-spacing:.045em!important;
-  text-transform:none!important;
-  white-space:nowrap!important;
-  overflow:hidden!important;
-  text-overflow:ellipsis!important;
-  margin:0!important;
-}
-:is(body.client-hub .hub-topbar.aries-staff-header,
-    body.internal-ui.owner-dashboard .dashboard-topbar.aries-staff-header) .staff-round2-header-identity strong {
-  display:block!important;
-  color:#f5faff!important;
-  font-size:clamp(16px,1.5vw,21px)!important;
-  font-weight:750!important;
-  line-height:1.3!important;
-  text-transform:capitalize!important;
-  white-space:nowrap!important;
-  overflow:hidden!important;
-  text-overflow:ellipsis!important;
 }
 :is(body.client-hub .hub-topbar.aries-staff-header,
     body.internal-ui.owner-dashboard .dashboard-topbar.aries-staff-header) :is(.hub-topbar-icon,.topbar-icon) {
@@ -8342,7 +8355,7 @@ body.client-hub .hub-topbar.aries-staff-header .hub-account-name small {
     width:100%!important;
   }
   :is(body.client-hub .hub-topbar.aries-staff-header,
-      body.internal-ui.owner-dashboard .dashboard-topbar.aries-staff-header) {
+      body.internal-ui.midnight-workspace .dashboard-shell > .dashboard-topbar) {
     min-height:66px!important;
     padding:9px 18px!important;
     gap:12px!important;
@@ -8365,22 +8378,13 @@ body.client-hub .hub-topbar.aries-staff-header .hub-account-name small {
 }
 @media(max-width:600px) {
   :is(body.client-hub .hub-topbar.aries-staff-header,
-      body.internal-ui.owner-dashboard .dashboard-topbar.aries-staff-header) {
+      body.internal-ui.midnight-workspace .dashboard-shell > .dashboard-topbar) {
     padding:7px 10px!important;
     gap:8px!important;
   }
   :is(body.client-hub .hub-topbar.aries-staff-header,
       body.internal-ui.owner-dashboard .dashboard-topbar.aries-staff-header) :is(.hub-topbar-start,.topbar-left,.hub-topbar-actions,.topbar-right) {
     gap:5px!important;
-  }
-  :is(body.client-hub .hub-topbar.aries-staff-header,
-      body.internal-ui.owner-dashboard .dashboard-topbar.aries-staff-header) .staff-round2-header-identity small {
-    display:none!important;
-  }
-  :is(body.client-hub .hub-topbar.aries-staff-header,
-      body.internal-ui.owner-dashboard .dashboard-topbar.aries-staff-header) .staff-round2-header-identity strong {
-    font-size:15px!important;
-    max-width:145px!important;
   }
   :is(body.client-hub .hub-topbar.aries-staff-header,
       body.internal-ui.owner-dashboard .dashboard-topbar.aries-staff-header) :is(.hub-topbar-icon,.topbar-icon) {

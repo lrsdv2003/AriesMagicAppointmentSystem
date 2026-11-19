@@ -1,0 +1,16 @@
+@model string
+@{
+    var title = ViewData["Title"]?.ToString() ?? (Model == "Client" ? "My bookings" : $"{Model} Dashboard");
+}
+<a class="workspace-brand" asp-controller="Home" asp-action="Index" aria-label="Aries d’ Magic Artist home">
+    <img src="~/images/client/wonder-studio/brand-original.jpeg" width="48" height="48" alt="" />
+    <div class="workspace-brand-copy">
+        <span class="workspace-brand-title">Aries d’ Magic Artist</span>
+        <span class="workspace-brand-subtitle">The Wonder Studio</span>
+    </div>
+</a>
+<div class="workspace-header-path">
+    <span>@Model workspace</span>
+    <span class="workspace-header-separator" aria-hidden="true">/</span>
+    <span aria-current="page">@title</span>
+</div>
