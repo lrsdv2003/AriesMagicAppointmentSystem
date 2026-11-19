@@ -17,6 +17,11 @@ function fixture() {
  check(!!d.querySelector('.owner-history-workspace'),'Owner History snapshot has new dedicated workspace');
  check(!!d.querySelector('[data-owner-history-refresh]'),'Refresh button remains actionable');
  check(!d.querySelector('#historyExport'),'Retired Export menu absent');
+ check(!d.querySelector('.owner-history-archives'),'Owner History no longer exposes the Archives action');
+ check(!!d.querySelector('.owner-history-table-frame.owner-verification-table-frame'),
+       'Owner History shares the Payment Verification table frame');
+ check(!!d.querySelector('.owner-history-table.owner-audit-table'),
+       'Owner History uses the shared Owner payment audit table styling');
  return dom;
 }
 {
