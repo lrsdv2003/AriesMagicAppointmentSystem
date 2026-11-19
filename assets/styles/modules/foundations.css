@@ -8546,19 +8546,6 @@ body.client-body .aries-client-round3-toolbar>#clientBookingRefresh{grid-column:
  body.internal-ui.staff-dashboard .dashboard-topbar .topbar-right{flex:0 0 auto}
 }
 
-/* Owner Packages reuses the Staff package-card presentation and 3-column grid. */
-body.internal-ui.owner-dashboard .staff-package-page .staff-package-grid{
- display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;
- gap:13px!important;align-items:stretch!important
-}
-body.internal-ui.owner-dashboard .staff-package-grid .staff-package-card{min-width:0}
-@media(max-width:1140px){
- body.internal-ui.owner-dashboard .staff-package-page .staff-package-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
-}
-@media(max-width:750px){
- body.internal-ui.owner-dashboard .staff-package-page .staff-package-grid{grid-template-columns:minmax(0,1fr)!important}
-}
-
 /* ========== CANONICAL: app-ui.css ========== */
 /* Shared application components. Role layouts control density, not semantics. */
 :root {

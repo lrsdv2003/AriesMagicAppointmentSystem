@@ -1376,6 +1376,22 @@ body.internal-ui.owner-dashboard .calendar-limit-modal :is(input,button):focus-v
  body.internal-ui.owner-dashboard .calendar-limit-modal .modal-dialog{margin:12px;max-width:none}
 }
 
+
+/* Owner retains management controls inside the shared Staff-style cards.
+   View Details stays the primary full-width action; Edit/Archive share a row. */
+body.internal-ui.owner-dashboard .staff-package-page .staff-package-actions{
+ display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.5rem
+}
+body.internal-ui.owner-dashboard .staff-package-page .staff-package-actions>.btn{
+ width:100%;min-width:0
+}
+body.internal-ui.owner-dashboard .staff-package-page .staff-package-actions>.btn:first-child{
+ grid-column:1/-1
+}
+@media(max-width:420px){
+ body.internal-ui.owner-dashboard .staff-package-page .staff-package-actions{grid-template-columns:minmax(0,1fr)}
+}
+
 /* ========== ORIGINAL: personnel.css ========== */
 /* Owner Personnel Accounts: shared five-row table, compact toolbar, isolated Staff access workflow. */
 body.internal-ui.owner-dashboard .dashboard-content:has(>.owner-personnel-workspace,>.owner-personnel-access-page){
@@ -1656,17 +1672,4 @@ body.client-body .aries-client-round3-toolbar>#clientBookingRefresh{grid-column:
  body.internal-ui.staff-dashboard .dashboard-topbar .staff-round2-header-identity{min-width:0;max-width:min(100%,175px)}
  body.internal-ui.staff-dashboard .dashboard-topbar .staff-round2-header-identity :is(small,strong){overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
  body.internal-ui.staff-dashboard .dashboard-topbar .topbar-right{flex:0 0 auto}
-}
-
-/* Owner Packages reuses the Staff package-card presentation and 3-column grid. */
-body.internal-ui.owner-dashboard .staff-package-page .staff-package-grid{
- display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;
- gap:13px!important;align-items:stretch!important
-}
-body.internal-ui.owner-dashboard .staff-package-grid .staff-package-card{min-width:0}
-@media(max-width:1140px){
- body.internal-ui.owner-dashboard .staff-package-page .staff-package-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
-}
-@media(max-width:750px){
- body.internal-ui.owner-dashboard .staff-package-page .staff-package-grid{grid-template-columns:minmax(0,1fr)!important}
 }
