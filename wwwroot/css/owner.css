@@ -39,7 +39,6 @@
 .owner-round1-request-row strong {font-size:.9rem;overflow-wrap:anywhere}
 .owner-round1-request-row .owner-booking-code {color:#f9c23c}
 .owner-round1-indicator {display:inline-block!important;border-radius:16px;padding:5px 8px;background:#403719;color:#ffda6b!important;max-width:max-content}
-.owner-round1-view-all {display:block;text-align:right;margin-top:16px;font-weight:600;color:#6bb6ff}
 .owner-round1-metrics {display:grid;gap:12px}
 .owner-round1-metric {display:flex;gap:14px;align-items:center;padding:18px;min-width:0}
 .owner-round1-metric>div {display:grid;gap:5px;min-width:0}
@@ -1390,6 +1389,228 @@ body.internal-ui.owner-dashboard .staff-package-page .staff-package-actions>.btn
 }
 @media(max-width:420px){
  body.internal-ui.owner-dashboard .staff-package-page .staff-package-actions{grid-template-columns:minmax(0,1fr)}
+}
+
+/* Owner Dashboard / Staff Dashboard design parity.
+   Same visual language, distinct role-authorized queues and financial facts.
+   Scoped to the Owner home page; no Staff-wide stylesheet is loaded by Owner. */
+body.internal-ui.owner-dashboard .owner-round1-dashboard{
+ width:100%;max-width:none;min-width:0;padding:0;display:grid;gap:14px
+}
+body.internal-ui.owner-dashboard .owner-round3-metrics{
+ display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:0;min-width:0
+}
+body.internal-ui.owner-dashboard .owner-round3-metric{
+ display:flex;align-items:center;gap:13px;min-width:0;min-height:108px;
+ padding:15px;background:#0b2d47;border:1px solid #315c79;
+ border-radius:12px;color:#f0f8ff;box-shadow:none
+}
+body.internal-ui.owner-dashboard .owner-round3-metric>div{
+ min-width:0;flex:1;display:flex;flex-direction:column;gap:0
+}
+body.internal-ui.owner-dashboard .owner-round3-metric h2{
+ font-size:12px;font-weight:700;line-height:1.35;margin:0 0 4px;color:#d7eafa
+}
+body.internal-ui.owner-dashboard .owner-round3-metric strong{
+ display:block;font-size:27px;font-weight:800;line-height:1.1;letter-spacing:0;
+ color:#fff;font-variant-numeric:tabular-nums;overflow-wrap:anywhere
+}
+body.internal-ui.owner-dashboard .owner-round3-metric-icon{
+ display:grid;place-items:center;flex:0 0 47px;width:47px;height:47px;
+ border:1px solid #336a88;border-radius:10px;
+ background:#153b56;color:#78c8f6;font-size:21px
+}
+body.internal-ui.owner-dashboard .owner-round3-outstanding .owner-round3-metric-icon{
+ background:#4b2542;border-color:#8e4568;color:#ff8bb0
+}
+body.internal-ui.owner-dashboard .owner-round3-value .owner-round3-metric-icon{
+ background:#4c3e2b;border-color:#82704b;color:#f4c275
+}
+body.internal-ui.owner-dashboard .owner-round3-grid{
+ display:grid;grid-template-columns:minmax(0,1.85fr) minmax(275px,.9fr);
+ gap:14px;align-items:start;min-width:0
+}
+body.internal-ui.owner-dashboard .owner-round1-requests,
+body.internal-ui.owner-dashboard .owner-round3-upcoming{
+ min-width:0;padding:16px;background:#09283f;border:1px solid #335d78;
+ border-radius:12px;color:#eaf7ff;box-shadow:none
+}
+body.internal-ui.owner-dashboard .owner-round1-requests .dash-section-heading,
+body.internal-ui.owner-dashboard .owner-round3-upcoming .dash-section-heading{
+ margin:0 0 12px
+}
+body.internal-ui.owner-dashboard .owner-round1-requests .dash-section-heading h2,
+body.internal-ui.owner-dashboard .owner-round3-upcoming .dash-section-heading h2{
+ display:flex;align-items:center;gap:8px;font-size:18px;font-weight:750;
+ color:#f3f9ff;margin:4px 0
+}
+body.internal-ui.owner-dashboard .owner-round1-requests .dash-section-heading h2 i,
+body.internal-ui.owner-dashboard .owner-round3-upcoming .dash-section-heading h2 i{
+ color:#e3bc6f
+}
+body.internal-ui.owner-dashboard .owner-round1-requests{
+ display:flex;flex-direction:column;height:auto;min-height:0;max-height:none;overflow:visible
+}
+body.internal-ui.owner-dashboard .owner-round1-tabs{
+ display:flex;align-items:stretch;gap:7px;flex-wrap:wrap;
+ border-bottom:1px solid #315b75;padding:0 0 10px;margin:0 0 12px
+}
+body.internal-ui.owner-dashboard .owner-round1-tabs .owner-round1-tab{
+ display:inline-flex;align-items:center;gap:8px;min-height:38px;
+ padding:9px 12px;border:1px solid #365a74;border-radius:8px;
+ background:#12314a;color:#d3e5f3;font-size:12px;font-weight:700
+}
+body.internal-ui.owner-dashboard .owner-round1-tab span{
+ padding:2px 6px;border-radius:5px;font-size:11px;
+ background:#193f5b;color:#c1d9e9
+}
+body.internal-ui.owner-dashboard .owner-round1-tabs .owner-round1-tab[aria-selected="true"]{
+ background:#b91942;border-color:#d63b63;color:#fff
+}
+body.internal-ui.owner-dashboard .owner-round1-tabs .owner-round1-tab[aria-selected="true"] span{
+ background:#72203a;color:#fff
+}
+body.internal-ui.owner-dashboard .owner-round1-tabs .owner-round1-tab:focus-visible{
+ outline:3px solid #85c7f1;outline-offset:2px
+}
+body.internal-ui.owner-dashboard .owner-round1-tabpanel[hidden]{display:none!important}
+body.internal-ui.owner-dashboard .owner-round1-tabpanel{
+ flex:0 0 auto;min-height:0;max-height:none;overflow:visible
+}
+body.internal-ui.owner-dashboard .owner-round1-request-list{
+ display:grid;gap:8px;align-content:start
+}
+body.internal-ui.owner-dashboard .owner-round3-grid .owner-round1-request-row{
+ display:flex;grid-template-columns:none;align-items:center;gap:11px;
+ min-width:0;padding:11px 12px;
+ border:1px solid #2c516d;background:#0e2f49;border-radius:9px
+}
+body.internal-ui.owner-dashboard .owner-round1-request-row .staff-round1-task-avatar{
+ flex:0 0 34px;width:34px;height:34px;display:grid;place-items:center;
+ border-radius:9px;background:#1b4d6b;color:#acdffa;font-size:16px
+}
+body.internal-ui.owner-dashboard .owner-round1-request-row .owner-dashboard-request-copy{
+ display:flex;flex:1;flex-direction:column;align-items:flex-start;gap:4px;min-width:0
+}
+body.internal-ui.owner-dashboard .owner-round1-request-row .owner-dashboard-request-copy>.owner-booking-code{
+ display:block;font-size:12px;font-weight:780;color:#f7ca70;line-height:1.4
+}
+body.internal-ui.owner-dashboard .owner-round1-request-row .owner-dashboard-request-copy>p{
+ margin:0;color:#ccdeeb;font-size:12px;line-height:1.5;
+ overflow-wrap:anywhere;white-space:normal
+}
+body.internal-ui.owner-dashboard .owner-round1-request-row .owner-dashboard-request-facts{
+ display:flex;gap:7px 15px;align-items:flex-start;flex-wrap:wrap;min-width:0
+}
+body.internal-ui.owner-dashboard .owner-round1-request-row .owner-dashboard-request-facts>span{
+ display:flex;flex-direction:column;gap:2px;min-width:0;overflow-wrap:anywhere
+}
+body.internal-ui.owner-dashboard .owner-round1-request-row .owner-dashboard-request-facts small{
+ display:block;font-size:10px;color:#a8c4d7;line-height:1.35
+}
+body.internal-ui.owner-dashboard .owner-round1-request-row .owner-dashboard-request-facts :is(strong,time){
+ display:block;font-size:12px;color:#eef6fb;font-weight:700;line-height:1.4
+}
+body.internal-ui.owner-dashboard .owner-round1-request-row .owner-round1-indicator{
+ display:inline-flex;align-items:center;max-width:100%;
+ padding:3px 7px;border-radius:5px;font-size:10px;line-height:1.4;
+ background:#403719;color:#ffda6b!important;white-space:normal;overflow-wrap:anywhere
+}
+body.internal-ui.owner-dashboard .owner-round1-request-row .staff-round1-action{
+ display:inline-flex;flex:0 0 auto;justify-content:center;align-items:center;
+ min-height:40px;min-width:66px;padding:8px 11px;
+ border:1px solid #3c9acb;border-radius:7px;background:#126caa;
+ font-size:11px;font-weight:720;color:#fff!important;text-decoration:none
+}
+body.internal-ui.owner-dashboard .owner-round1-request-row .staff-round1-action:hover,
+body.internal-ui.owner-dashboard .owner-round1-request-row .staff-round1-action:focus-visible{
+ background:#198bca;border-color:#86d1fa
+}
+body.internal-ui.owner-dashboard .owner-round1-dashboard .dash-empty{
+ margin:0;padding:16px;background:#12344e;border-radius:9px;
+ font-size:13px;line-height:1.5;color:#c1d6e7
+}
+body.internal-ui.owner-dashboard .owner-round3-upcoming{
+ display:flex;flex-direction:column;min-height:560px;height:560px;max-height:560px;
+ overflow:hidden
+}
+body.internal-ui.owner-dashboard .owner-round3-upcoming .owner-round3-event-list{
+ display:grid;align-content:start;flex:1 1 auto;min-height:0;
+ gap:7px;margin:0;padding:0;list-style:none;
+ overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin
+}
+body.internal-ui.owner-dashboard .owner-round3-upcoming .owner-round3-event{
+ display:grid;grid-template-columns:46px minmax(0,1fr);align-items:start;
+ gap:10px;padding:10px 0;border-bottom:1px solid #2c5270;min-width:0
+}
+body.internal-ui.owner-dashboard .owner-round3-upcoming .owner-round3-event:last-child{
+ border-bottom:0;padding-bottom:10px
+}
+body.internal-ui.owner-dashboard .owner-round3-upcoming .owner-round3-event-icon{
+ width:32px;height:32px;display:grid;place-items:center;
+ background:#1b4d6b;color:#acdffa;border-radius:9px;font-size:18px
+}
+body.internal-ui.owner-dashboard .owner-round3-upcoming .owner-round3-event>div{
+ display:grid;gap:2px;min-width:0
+}
+body.internal-ui.owner-dashboard .owner-round3-upcoming .owner-round3-event a{
+ font-size:12px;font-weight:780;color:#f7ca70!important;overflow-wrap:anywhere
+}
+body.internal-ui.owner-dashboard .owner-round3-upcoming .owner-round3-event strong{
+ display:block;font-size:12px;font-weight:700;color:#eef6fb;overflow-wrap:anywhere
+}
+body.internal-ui.owner-dashboard .owner-round3-upcoming .owner-round3-event time{
+ font-size:12px;color:#eef6fb
+}
+body.internal-ui.owner-dashboard .owner-round3-upcoming .owner-round3-event p{
+ margin:1px 0 0;font-size:11px;line-height:1.5;
+ color:#c4d9e9;overflow-wrap:anywhere
+}
+body.internal-ui.owner-dashboard .owner-dashboard-unavailable{
+ grid-column:1/-1;min-width:0;padding:16px;
+ background:#09283f;border:1px solid #335d78;border-radius:12px
+}
+@media(max-width:1200px){
+ body.internal-ui.owner-dashboard .owner-round3-grid{
+  grid-template-columns:minmax(0,1.3fr) minmax(260px,.9fr)
+ }
+}
+@media(max-width:1050px){
+ body.internal-ui.owner-dashboard .owner-round3-grid{grid-template-columns:minmax(0,1fr)}
+}
+@media(max-width:767px){
+ body.internal-ui.owner-dashboard .owner-round3-upcoming{
+  height:410px;min-height:410px;max-height:410px
+ }
+ body.internal-ui.owner-dashboard .owner-round1-requests .owner-round1-tabs{
+  display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  width:100%;gap:6px;flex-wrap:initial!important
+ }
+ body.internal-ui.owner-dashboard .owner-round1-requests .owner-round1-tabs .owner-round1-tab{
+  display:flex!important;min-width:0!important;width:100%!important;max-width:100%!important;
+  flex:initial!important;justify-content:center!important;
+  text-align:center;white-space:normal!important;overflow-wrap:anywhere;
+  padding:8px 6px!important;font-size:11px!important
+ }
+}
+@media(max-width:800px){
+ body.internal-ui.owner-dashboard .owner-round3-metrics{grid-template-columns:minmax(0,1fr)}
+ body.internal-ui.owner-dashboard .owner-round3-metric{min-height:85px}
+}
+@media(max-width:600px){
+ body.internal-ui.owner-dashboard .owner-round3-grid .owner-round1-request-row{
+  display:grid;grid-template-columns:34px minmax(0,1fr);
+  gap:9px 11px;align-items:center
+ }
+ body.internal-ui.owner-dashboard .owner-round1-request-row .staff-round1-action{
+  grid-column:2;justify-self:start;max-width:100%;
+  white-space:normal;text-align:center
+ }
+}
+@media(max-width:420px){
+ body.internal-ui.owner-dashboard .owner-round1-tabs .owner-round1-tab{
+  flex:1 1 145px;justify-content:center
+ }
 }
 
 /* ========== ORIGINAL: personnel.css ========== */
