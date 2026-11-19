@@ -28,7 +28,7 @@ else
 <div data-staff-search-results="history" id="historyResults">
     <div class="staff-data-table-frame @(financial ? "owner-history-table-frame owner-verification-table-frame" : "staff-history-table-frame")"
          data-staff-table-capacity="5">
-        @if (financial) { @:<div class="dashboard-panel owner-table-panel staff-data-table-panel"> }
+        <div class="@(financial ? "dashboard-panel owner-table-panel staff-data-table-panel" : "staff-history-table-content")">
         <div class="ui-table-wrap staff-data-table-scroll" tabindex="0" role="region"
              aria-label="Historical booking records; scroll horizontally to view all columns">
             <table class="ui-table staff-data-table @(financial ? "owner-history-table table owner-audit-table align-middle" : "staff-history-table")">
@@ -123,7 +123,7 @@ else
                 </tbody>
             </table>
         </div>
-        @if (financial) { @:</div> }
+        </div>
         <partial name="_QueuePagination" model="historyPager" />
     </div>
 </div>
