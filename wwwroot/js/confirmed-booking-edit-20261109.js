@@ -37,6 +37,20 @@
       if(error.name!=="AbortError")results.textContent="Lookup unavailable. Enter a verified venue map pin below.";
     }
   }
+  // Prevent repeated proposals while an authenticated POST is in flight.
+  // Native form validation still runs; the server rechecks the quote and eligibility.
+  const form=document.getElementById("confirmedChangeForm");
+  form?.addEventListener("submit",event=>{
+    if(!form.checkValidity())return;
+    if(form.dataset.submitting==="true"){event.preventDefault();return;}
+    form.dataset.submitting="true";
+    form.setAttribute("aria-busy","true");
+    const submit=form.querySelector(".confirmed-change-submit");
+    if(submit){
+      submit.disabled=true;
+      submit.textContent=submit.dataset.loadingText||"Sending...";
+    }
+  });
   action.addEventListener("click",search);
   input.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();search();}});
 })();

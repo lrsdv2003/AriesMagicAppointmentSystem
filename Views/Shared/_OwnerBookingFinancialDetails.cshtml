@@ -3,9 +3,8 @@
 @using AriesMagicAppointmentSystem.ViewModels
 @{
     var summary = ViewBag.FinancialSummary as BookingFinancialSummaryViewModel;
-    var refunds = ViewBag.OwnerRefunds as IEnumerable<RefundRequest> ?? Array.Empty<RefundRequest>();
 }
-<section class="dashboard-panel owner-booking-financial-details" aria-labelledby="ownerBookingFinancialHeading">
+<section class="dashboard-panel owner-booking-financial-details owner-booking-detail-section" aria-labelledby="ownerBookingFinancialHeading">
     <div class="dash-section-heading"><h2 id="ownerBookingFinancialHeading"><i class="bi bi-receipt" aria-hidden="true"></i> Booking Financial Details</h2></div>
     @if(summary == null){<p class="dash-empty">Financial summary is not available. No amounts are estimated.</p>}
     else {
@@ -22,7 +21,7 @@
     else {
         <div class="table-responsive" role="region" tabindex="0" aria-label="Owner payment transaction history">
             <table class="table owner-audit-table align-middle">
-                <thead><tr><th scope="col">Submitted</th><th scope="col">Method / Reference</th><th scope="col">Claimed / Expected</th><th scope="col">OCR Detected</th><th scope="col">Owner Verified</th><th scope="col">Status / Reviewer</th><th scope="col">Proof</th></tr></thead>
+                <thead><tr><th scope="col">Submitted</th><th scope="col">Method / Reference</th><th scope="col">Claimed / Expected</th><th scope="col">OCR Detected</th><th scope="col">Owner Verified</th><th scope="col">Status / Reviewer</th></tr></thead>
                 <tbody>
                 @foreach(var payment in Model.Payments.OrderByDescending(x => x.UploadedAt)){
                     var ocr = payment.OcrVerifications.Where(x => x.VerificationPurpose == OcrVerificationPurposes.PaymentProof).OrderByDescending(x => x.ProcessedAt).FirstOrDefault();
@@ -32,21 +31,12 @@
                         <td>&#8369;@((payment.ExpectedAmountAtUpload ?? payment.Amount).ToString("N2"))<small class="owner-cell-subtext">Client submission amount</small></td>
                         <td>@(ocr?.ExtractedAmount.HasValue == true ? $"₱{ocr.ExtractedAmount.Value:N2}" : "Not detected")<small class="owner-cell-subtext">@(ocr?.VerificationResult ?? "Manual review required")</small></td>
                         <td>@(payment.Status == PaymentStatus.Verified ? $"₱{payment.Amount:N2}" : "Not verified")<small class="owner-cell-subtext">@(payment.VerifiedAt?.ToString("MMM d, yyyy") ?? "—")</small></td>
-                        <td><span class="status-badge @(payment.Status == PaymentStatus.Verified ? "status-verified" : payment.Status == PaymentStatus.Rejected ? "status-rejected" : "status-pending")">@payment.Status</span><small class="owner-cell-subtext">@(payment.VerifiedByUserName ?? "—")</small>@if(!string.IsNullOrWhiteSpace(payment.RejectionReason)){<small class="owner-cell-subtext">Reason: @payment.RejectionReason</small>}</td>
-                        <td><a class="btn btn-sm btn-primary" asp-controller="Payments" asp-action="Verify" asp-route-id="@payment.Id">Review details</a><a class="btn btn-sm btn-outline-secondary mt-1" asp-controller="Payments" asp-action="PaymentProof" asp-route-id="@payment.Id">View proof</a></td>
+                        <td><span class="status-badge @(payment.Status == PaymentStatus.Verified ? "status-verified" : payment.Status == PaymentStatus.Rejected ? "status-rejected" : "status-pending")">@payment.Status</span><small class="owner-cell-subtext">@(payment.VerifiedByUserName ?? "—")</small>@if(!string.IsNullOrWhiteSpace(payment.RejectionReason)){<small class="owner-cell-subtext">Reason: @payment.RejectionReason</small>}<a asp-controller="Payments" asp-action="Verify" asp-route-id="@payment.Id" class="owner-booking-payment-review-link">Review details</a></td>
+
                     </tr>
                 }
                 </tbody>
             </table>
         </div>
-    }
-    <h3>Refund History</h3>
-    @if(!refunds.Any()){<p class="dash-empty">No refund requests recorded for this booking.</p>}
-    else {
-        <div class="table-responsive"><table class="table owner-audit-table align-middle"><thead><tr><th scope="col">Requested</th><th scope="col">Amount</th><th scope="col">Status</th><th scope="col">Completed</th><th scope="col">Action</th></tr></thead><tbody>
-        @foreach(var refund in refunds.OrderByDescending(x => x.RequestedAt)){
-            <tr><td>@refund.RequestedAt.ToString("MMM d, yyyy")</td><td>&#8369;@refund.Amount.ToString("N2")</td><td>@refund.Status</td><td>@(refund.RefundCompletedAt?.ToString("MMM d, yyyy") ?? "Not completed")</td><td><a asp-controller="Payments" asp-action="RefundReview" asp-route-id="@refund.Id" class="btn btn-sm btn-primary">Review</a></td></tr>
-        }
-        </tbody></table></div>
     }
 </section>

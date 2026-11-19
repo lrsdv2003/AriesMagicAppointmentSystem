@@ -23,10 +23,12 @@ static class ThreeRoleRetirementTests
   using var ownerHttp=await Login(owner.Email!,password);
   var staff=await users.FindByEmailAsync("staff@example.test")??throw new Exception("Staff fixture unavailable");
   var package=new Service{Name="Retirement HTTP package",Price=10000,DurationInHours=3,Inclusions=[new(){Name="Synthetic approved inclusion",DeductionAmount=0,IsRemovable=false}]};db.Services.Add(package);await db.SaveChangesAsync();
-  foreach(var route in new[]{"/Personnel","/Services","/Services/Create","/Services/Edit/"+package.Id,"/Calendar/Settings","/TrashHistory","/SystemActivity","/Dashboard/Owner","/Personnel/EditStaff/"+staff.Id}){
+  foreach(var route in new[]{"/Personnel","/Services","/Services/Create","/Services/Edit/"+package.Id,"/Calendar/Settings","/TrashHistory","/SystemActivity","/Dashboard/Owner"}){
    using var response=await ownerHttp.GetAsync(route);var html=await response.Content.ReadAsStringAsync();check(response.StatusCode==HttpStatusCode.OK&&!html.Contains("/Dashboard/Admin")&&!html.Contains("value=\"Admin\""),"Owner migrated HTTP page and retired navigation: "+route.Split('?')[0]);
   }
-  foreach(var route in new[]{"/Dashboard/Admin","/UserManagement","/UserManagement/Details/anything"}){using var response=await ownerHttp.GetAsync(route);check(response.StatusCode==HttpStatusCode.NotFound,"Retired route absent: "+route);}
+  foreach(var route in new[]{"/Dashboard/Admin","/UserManagement","/UserManagement/Details/anything","/Personnel/EditStaff/"+staff.Id}){using var response=await ownerHttp.GetAsync(route);check(response.StatusCode==HttpStatusCode.NotFound,"Retired route absent: "+route);}
+  using(var retiredPost=await ownerHttp.PostAsync("/Personnel/EditStaff",new FormUrlEncodedContent([])))
+     check(retiredPost.StatusCode==HttpStatusCode.NotFound,"Retired Staff edit POST is unavailable even with direct route access");
   var oldPrincipal=await services.GetRequiredService<IUserClaimsPrincipalFactory<ApplicationUser>>().CreateAsync(legacy);
   var cookieOptions=factory.Services.GetRequiredService<IOptionsMonitor<CookieAuthenticationOptions>>().Get(IdentityConstants.ApplicationScheme);
   var ticket=new AuthenticationTicket(oldPrincipal,new AuthenticationProperties{IssuedUtc=DateTimeOffset.UtcNow,ExpiresUtc=DateTimeOffset.UtcNow.AddMinutes(15)},IdentityConstants.ApplicationScheme);
@@ -46,7 +48,7 @@ static class ThreeRoleRetirementTests
   check((await users.CreateAsync(clientUser,password)).Succeeded&&(await users.AddToRoleAsync(clientUser,"Client")).Succeeded,"Create isolated Client for administration denial matrix");
   using var clientHttp=await Login(clientUser.Email!,password);
   foreach(var route in new[]{"/Personnel","/Services/Create","/Calendar/Settings","/TrashHistory","/SystemActivity"}){using var r=await clientHttp.GetAsync(route);check(r.StatusCode==HttpStatusCode.Redirect&&r.Headers.Location!.OriginalString.Contains("AccessDenied"),"Client cannot access Owner administration: "+route);}
-  foreach(var route in new[]{"/Calendar/BlockDateAjax","/Calendar/UnblockDateAjax","/Services/Archive/"+package.Id,"/Personnel/EditStaff"}){using var r=await ownerHttp.PostAsync(route,new FormUrlEncodedContent([]));check(r.StatusCode==HttpStatusCode.BadRequest,"Migrated Owner POST retains anti-forgery: "+route);}
+  foreach(var route in new[]{"/Calendar/BlockDateAjax","/Calendar/UnblockDateAjax","/Services/Archive/"+package.Id}){using var r=await ownerHttp.PostAsync(route,new FormUrlEncodedContent([]));check(r.StatusCode==HttpStatusCode.BadRequest,"Migrated Owner POST retains anti-forgery: "+route);}
   var protectedDate=DateTime.Today.AddDays(372);db.BlockedDates.Add(new(){Date=protectedDate,Reason="Synthetic audited restriction"});await db.SaveChangesAsync();
   var protectedBlock=await db.BlockedDates.AsNoTracking().SingleAsync(x=>x.Date==protectedDate);
   var failedCalendar=new AriesMagicAppointmentSystem.Controllers.CalendarController(db,null!,new FailingAudit(db,SystemActivityType.CalendarModified)){ControllerContext=new(){HttpContext=new Microsoft.AspNetCore.Http.DefaultHttpContext{User=new System.Security.Claims.ClaimsPrincipal(new System.Security.Claims.ClaimsIdentity([new(System.Security.Claims.ClaimTypes.NameIdentifier,owner.Id),new(System.Security.Claims.ClaimTypes.Role,"Owner")],"Fixture"))}}};

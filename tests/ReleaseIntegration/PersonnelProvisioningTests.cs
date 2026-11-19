@@ -91,15 +91,21 @@ static class PersonnelProvisioningTests
             var login=await client.GetStringAsync("/Account/Login");
             using var loginResponse=await client.PostAsync("/Account/Login",new FormUrlEncodedContent(new Dictionary<string,string>{{"__RequestVerificationToken",Token(login)},{"Email",owner.Email!},{"Password",password}}));
             Check(loginResponse.StatusCode==HttpStatusCode.Redirect,"Owner real Identity login succeeds");
-            var personnel=await client.GetStringAsync("/Personnel");Check(personnel.Contains("Personnel accounts"),"Owner management page renders using current dashboard");
-            Check(personnel.Contains("This invitation has been revoked. It cannot be used to enroll."),"Revoked invitation has explanatory text rather than a misleading action selector");
+            var personnel=await client.GetStringAsync("/Personnel");
+            Check(personnel.Contains("data-personnel-filters") && personnel.Contains("staff-data-table-frame"),
+                "Owner management page renders the active-only Personnel workspace");
+            Check(!personnel.Contains("revoke@example.test") && !personnel.Contains("Account management audit"),
+                "Revoked invitation and removed audit panel are absent from active Personnel list");
+            var accessPage=await client.GetStringAsync("/Personnel/Access");
+            Check(accessPage.Contains("Manage Staff Access") && accessPage.Contains("/Personnel/Manage"),
+                "Separate Owner Staff access lifecycle view retains authorized actions");
             await File.WriteAllTextAsync(".tmp-owner-build/personnel-owner.synthetic.html",personnel);
             async Task<HttpResponseMessage> Post(HttpClient http,string path,string token,params (string,string)[] fields)=>await http.PostAsync(path,new FormUrlEncodedContent(fields.Select(x=>new KeyValuePair<string,string>(x.Item1,x.Item2)).Append(new("__RequestVerificationToken",token))));
             using(var noCsrf=await client.PostAsync("/Personnel/Invite",new FormUrlEncodedContent(new Dictionary<string,string>{{"Role","Staff"}})))Check(noCsrf.StatusCode==HttpStatusCode.BadRequest,"Personnel invitation POST requires anti-forgery");
             using(var refused=await Post(client,"/Personnel/Manage",Token(personnel),("id",revoked.UserId),("operation","RevokeSessions")))Check(refused.StatusCode==HttpStatusCode.Redirect&&!refused.Headers.Location!.OriginalString.Contains("AccessDenied"),"Revoked invitation action does not send Owner to Access Denied");
-            var revokedFeedback=await client.GetStringAsync("/Personnel");Check(revokedFeedback.Contains("no active personnel role or pending invitation"),"Revoked invitation action returns helpful inline feedback");
+            var revokedFeedback=await client.GetStringAsync("/Personnel/Access");Check(revokedFeedback.Contains("no active personnel role or pending invitation"),"Revoked invitation action returns helpful feedback in Staff Access workflow");
             using(var self=await Post(client,"/Personnel/Manage",Token(personnel),("id",owner.Id),("operation","RevokeSessions")))Check(self.StatusCode==HttpStatusCode.Redirect&&!self.Headers.Location!.OriginalString.Contains("AccessDenied"),"Self-management is refused without misleading Access Denied redirect");
-            var selfFeedback=await client.GetStringAsync("/Personnel");Check(selfFeedback.Contains("cannot change your own personnel access"),"Self-management gives an explicit explanation");
+            var selfFeedback=await client.GetStringAsync("/Personnel/Access");Check(selfFeedback.Contains("cannot change your own personnel access"),"Self-management gives an explicit explanation");
             using(var duplicate=await Post(client,"/Personnel/Invite",Token(personnel),("Email","staff@example.test"),("FullName","Existing Staff"),("Role","Staff")))Check(duplicate.StatusCode==HttpStatusCode.Redirect,"Existing email invitation request is handled safely");
             var duplicateFeedback=await client.GetStringAsync("/Personnel");Check(duplicateFeedback.Contains("email is already registered"),"Duplicate email shows clear action without promoting existing user");
             options.PublicOrigin="http://untrusted.example.test";

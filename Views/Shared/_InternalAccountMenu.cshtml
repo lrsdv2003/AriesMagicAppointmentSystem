@@ -17,7 +17,6 @@
 @if(role=="Staff"){<li><span class="staff-round2-signed-in">Signed in as @name</span></li>}
 <li><a class="dropdown-item" asp-controller="InternalProfile" asp-action="Index"><i class="bi bi-person-circle" aria-hidden="true"></i> My profile</a></li>
 @if(role=="Owner"){<li class="d-md-none"><a class="dropdown-item" asp-controller="Communications" asp-action="Index"><i class="bi bi-chat-dots" aria-hidden="true"></i> Messages</a></li>}
-@if(role != "Staff"){<li><a class="dropdown-item" asp-controller="InternalProfile" asp-action="Index" asp-fragment="security">Account Security</a></li>}
 <li><hr class="dropdown-divider" /></li>
 <li><button class="dropdown-item" type="button" data-bs-toggle="modal" data-bs-target="#logoutConfirmModal"><i class="bi bi-box-arrow-right" aria-hidden="true"></i> Sign out</button></li>
 </ul>

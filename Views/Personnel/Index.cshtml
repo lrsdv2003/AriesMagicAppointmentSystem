@@ -1,26 +1,174 @@
 @model AriesMagicAppointmentSystem.Controllers.PersonnelPage
-@{Layout="_DashboardLayout";ViewData["Title"]="Personnel Accounts";}
-<div class="admin-console personnel-console">
-<header class="admin-heading"><p>Invite authorized colleagues. Every new account must verify enrollment and choose its own password.</p></header>
-@if(TempData["ErrorMessage"] is string error){<p class="alert alert-danger" role="alert">@error</p>}
-@if(TempData["SuccessMessage"] is string success){<p class="alert alert-success" role="status">@success</p>}
-<section class="dash-panel owner-personnel-invite" aria-labelledby="personnelInviteTitle">
-<div class="owner-invite-intro"><i class="bi bi-person-plus" aria-hidden="true"></i><h2 id="personnelInviteTitle">Invite a colleague</h2><p>Send secure enrollment for an authorized Staff account.</p></div>
-<form asp-action="Invite" method="post" class="owner-invite-form">
-<div><label for="personName">Full name</label><input id="personName" name="FullName" class="form-control" required maxlength="100" autocomplete="name" /></div>
-<div><label for="personEmail">Approved email</label><input id="personEmail" name="Email" class="form-control" type="email" required maxlength="254" autocomplete="email" /></div>
-<div class="owner-invite-wide"><label for="personRole">Role</label><select id="personRole" name="Role" class="form-select" aria-describedby="personnelEnrollmentHelp"><option value="Staff">Staff</option></select></div>
-<p id="personnelEnrollmentHelp">No password is assigned here. Enrollment links expire and can be used once. Accounts remain inactive until enrollment succeeds.</p><button class="btn btn-primary" type="submit"><i class="bi bi-send" aria-hidden="true"></i> Send invitation</button>
-</form></section>
-<section class="dash-panel"><h2>Authorized personnel and accounts</h2>
-<form method="get" class="owner-account-filters"><div><label for="ownerPersonnelSearch">Name or email</label><input class="form-control" type="search" id="ownerPersonnelSearch" name="search" placeholder="Search by name or email" autocomplete="off" value="@Model.Search" maxlength="100" /></div><div><label for="accountRole">Role</label><select class="form-select" name="roleFilter" id="accountRole"><option value="">All roles</option>@foreach(var role in new[]{"Owner","Staff","Client","Legacy internal"}){<option value="@role" selected="@(role==Model.RoleFilter)">@role</option>}</select></div><div><label for="accountStatus">Status</label><select class="form-select" name="statusFilter" id="accountStatus"><option value="">All statuses</option>@foreach(var status in new[]{"Active","Disabled","Locked","Unverified","Pending","Revoked","Retired access"}){<option value="@status" selected="@(status==Model.StatusFilter)">@status</option>}</select></div><button class="btn btn-primary">Apply filters</button><a class="btn btn-outline-secondary" asp-action="Index">Clear</a></form><div class="table-responsive" tabindex="0" role="region" aria-label="Personnel account actions; scroll horizontally on smaller screens"><table class="table" id="ownerPersonnelTable"><caption>Personnel access and enrollment status</caption><thead><tr><th scope="col">Name / Email</th><th scope="col">Role</th><th scope="col">Status</th><th scope="col">Invitation Date</th><th scope="col">Actions</th></tr></thead><tbody>
-@foreach(var person in Model.Accounts){<tr><td>@person.FullName<br/>@person.Email</td><td><span class="status-badge">@person.Role</span></td><td><span class="status-badge">@person.Status</span></td><td><span class="owner-invitation-label">Invitation date</span>@if(person.InvitedAtUtc.HasValue){<time datetime="@person.InvitedAtUtc.Value.ToString("yyyy-MM-ddTHH:mm:ssZ")">@person.InvitedAtUtc.Value.ToString("MMM d, yyyy HH:mm") UTC</time>}else{<span>Not recorded</span>}</td><td>
-@if(person.Role=="Staff"&&person.Status.StartsWith("Pending")){<form asp-action="Resend" method="post"><input type="hidden" name="id" value="@person.Id"/><button class="btn btn-outline-secondary" type="submit">Resend invitation</button></form>}
-@if(person.Role!="Staff"){<p class="text-muted">Read-only account. Owner access and historical identities are protected.</p>}
-else if(person.Status.StartsWith("Revoked")){<p class="text-muted">This invitation has been revoked. It cannot be used to enroll.</p>}
-else {<a asp-action="EditStaff" asp-route-id="@person.Id" class="btn btn-outline-secondary">Edit Staff profile</a><form asp-action="Manage" method="post" data-personnel-confirm><input type="hidden" name="id" value="@person.Id"/><label for="action-@person.Id">Action for @person.FullName</label><select class="form-select" name="operation" id="action-@person.Id"><option value="RevokeSessions">Revoke sessions</option><option value="Deactivate">Deactivate</option><option value="Reactivate">Reactivate</option>@if(person.Role=="Staff"&&person.Status.StartsWith("Pending")){<option value="Revoke">Revoke invitation</option>}</select>
+@{
+    Layout = "_DashboardLayout";
+    ViewData["Title"] = "Personnel Accounts";
+    ViewData["HideWorkspaceHeading"] = true;
+    var pagination = Model.Pagination;
+}
+<div class="admin-console personnel-console owner-personnel-workspace" data-personnel-workspace>
+    @if (TempData["ErrorMessage"] is string error)
+    {
+        <div class="alert alert-danger" role="alert">@error</div>
+    }
+    @if (TempData["SuccessMessage"] is string success)
+    {
+        <div class="alert alert-success" role="status">@success</div>
+    }
 
-<button class="btn btn-outline-secondary" type="submit">Apply account action</button></form>}</td></tr>}
-</tbody></table></div><p id="ownerPersonnelSearchResult" class="owner-financial-caption" role="status" aria-live="polite"></p>@if(Model.Accounts.Count==0){<p>No accounts match the selected filters.</p>}</section>
-@if(Model.Owner){<section class="dash-panel"><h2>Account management audit</h2><p>Latest 50 account events. Identifiers let the operator reconcile each event with the authorized account record.</p><ul>@foreach(var item in Model.Audit){<li><time>@item.CreatedAt.ToString("yyyy-MM-dd HH:mm") UTC</time> — @item.Description<br/>Actor: @item.PerformedByUserId · Account: @item.AffectedRecordId</li>}</ul></section>}
+    <div class="owner-personnel-toolbar">
+        <form method="get" asp-action="Index" class="owner-account-filters" id="ownerPersonnelFilters"
+              data-personnel-filters aria-label="Account search and role filtering">
+            <div class="owner-personnel-search-control">
+                <label for="ownerPersonnelSearch">Search accounts</label>
+                <div class="owner-personnel-search-box">
+                    <i class="bi bi-search" aria-hidden="true"></i>
+                    <input type="search" class="form-control" id="ownerPersonnelSearch"
+                           name="search" value="@Model.Search"
+                           placeholder="Search name or email" maxlength="100" autocomplete="off" />
+                </div>
+            </div>
+            <div class="owner-personnel-role-control">
+                <label for="accountRole">Role</label>
+                <select name="roleFilter" id="accountRole" class="form-select" data-personnel-role>
+                    <option value="" selected="@(string.IsNullOrEmpty(Model.RoleFilter))">All Roles</option>
+                    @foreach (var role in new[] { "Owner", "Staff", "Client" })
+                    {
+                        <option value="@role" selected="@(role == Model.RoleFilter)">@role</option>
+                    }
+                </select>
+            </div>
+        </form>
+        <div class="owner-personnel-toolbar-actions">
+            <a class="btn btn-outline-secondary owner-personnel-refresh"
+               asp-action="Index" asp-all-route-data="pagination.Routes()"
+               data-personnel-refresh aria-label="Refresh personnel accounts"
+               title="Refresh personnel accounts"><i class="bi bi-arrow-clockwise" aria-hidden="true"></i></a>
+            <a asp-action="Access" class="btn btn-outline-secondary owner-personnel-access-link">
+                <i class="bi bi-person-gear" aria-hidden="true"></i> Manage Staff Access
+            </a>
+            <button type="button" class="btn btn-primary owner-personnel-invite-button"
+                    data-bs-toggle="modal" data-bs-target="#ownerPersonnelInviteModal">
+                <i class="bi bi-person-plus" aria-hidden="true"></i> Invite Staff
+            </button>
+        </div>
+    </div>
+
+    <div class="staff-data-table-frame owner-personnel-table-frame" data-staff-table-capacity="5">
+        <div class="dashboard-panel owner-table-panel staff-data-table-panel">
+            <div class="table-responsive staff-data-table-scroll" tabindex="0" role="region"
+                 aria-label="Active verified personnel accounts; scroll horizontally to view all columns">
+                <table class="table staff-data-table owner-personnel-table align-middle" id="ownerPersonnelTable">
+                    <colgroup>
+                        <col class="owner-personnel-col-name" />
+                        <col class="owner-personnel-col-email" />
+                        <col class="owner-personnel-col-role" />
+                        <col class="owner-personnel-col-status" />
+                        <col class="owner-personnel-col-date" />
+                    </colgroup>
+                    <thead>
+                        <tr>
+                            <th scope="col">Name</th>
+                            <th scope="col">Email</th>
+                            <th scope="col">Role</th>
+                            <th scope="col">Status</th>
+                            <th scope="col">Invitation Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    @if (!Model.Accounts.Any())
+                    {
+                        <tr class="staff-data-table-empty-row">
+                            <td colspan="5">
+                                <div class="staff-data-table-empty" role="status">
+                                    <i class="bi bi-people" aria-hidden="true"></i>
+                                    @if (!Model.HasEligibleAccounts)
+                                    {
+                                        <strong>No accounts found</strong>
+                                        <p>There are no active, verified accounts to display.</p>
+                                    }
+                                    else if (!Model.HasAccountsInSelectedRole && !string.IsNullOrEmpty(Model.RoleFilter))
+                                    {
+                                        <strong>No accounts in this role</strong>
+                                        <p>There are no matching accounts for the selected role.</p>
+                                    }
+                                    else
+                                    {
+                                        <strong>No matching accounts</strong>
+                                        <p>Try adjusting your search.</p>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var person in Model.Accounts)
+                        {
+                            <tr>
+                                <td><strong class="owner-personnel-name">@person.FullName</strong></td>
+                                <td><span class="owner-personnel-email">@person.Email</span></td>
+                                <td><span class="status-badge owner-personnel-role-badge">@person.Role</span></td>
+                                <td><span class="status-badge @(person.Status == "Locked" ? "status-pending" : "status-completed")">@person.Status</span></td>
+                                <td>
+                                    @if (person.InvitedAtUtc.HasValue)
+                                    {
+                                        <time datetime="@person.InvitedAtUtc.Value.ToString("yyyy-MM-ddTHH:mm:ssZ")">
+                                            @person.InvitedAtUtc.Value.ToString("MMM d, yyyy") <span>UTC</span>
+                                        </time>
+                                    }
+                                    else
+                                    {
+                                        <span class="owner-personnel-date-empty">Not recorded</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <partial name="_QueuePagination" model="pagination" />
+    </div>
+    <p class="visually-hidden" id="ownerPersonnelSearchResult" role="status" aria-live="polite">
+        @pagination.TotalCount matching active, verified accounts.
+    </p>
 </div>
+
+<div class="modal fade owner-personnel-invite-modal" id="ownerPersonnelInviteModal" tabindex="-1"
+     aria-labelledby="ownerPersonnelInviteTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form asp-action="Invite" method="post" class="owner-personnel-invite-form">
+                @Html.AntiForgeryToken()
+                <div class="modal-header">
+                    <h2 class="modal-title fs-5" id="ownerPersonnelInviteTitle">Invite Staff</h2>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                            aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div>
+                        <label for="personName">Full name</label>
+                        <input id="personName" name="FullName" class="form-control" required
+                               maxlength="100" autocomplete="name" />
+                    </div>
+                    <div>
+                        <label for="personEmail">Approved email</label>
+                        <input id="personEmail" name="Email" class="form-control" type="email"
+                               required maxlength="254" autocomplete="email" />
+                    </div>
+                    <input type="hidden" name="Role" value="Staff" />
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button class="btn btn-primary" type="submit">
+                        <i class="bi bi-send" aria-hidden="true"></i> Send invitation
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@section Scripts {
+    <script src="~/js/personnel-accounts.js" asp-append-version="true"></script>
+}

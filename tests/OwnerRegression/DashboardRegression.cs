@@ -95,7 +95,7 @@ static class DashboardRegression
         check(ownerModel.PendingPayments==await db.Payments.CountAsync(p=>p.Status==PaymentStatus.Pending),"Payment priority matches verification queue");
         check(ownerModel.VerifiedPaymentCount==await db.Payments.CountAsync(p=>p.Status==PaymentStatus.Verified),"Owner workspace verified-record metric excludes pending payments");
         check(ownerModel.WorkspaceMetrics.Single(m=>m.Label=="Verified receipts").Value=="₱"+report.TotalCollectedRevenue.ToString("N2"),"Owner headline collections reconcile to the authoritative financial report");
-        check(ownerModel.RecentPaymentsToVerify.Count<=4 && ownerModel.RecentRefundRequests.Count<=4,"Financial queue previews stay compact");
+        check(ownerModel.RecentPaymentsToVerify.Count<=5 && ownerModel.RecentRefundRequests.Count<=5,"Financial queue previews stay compact");
         check(ownerModel.BookingTrend.Count==6,"Business trend includes six event months");
         var failed=(RoleDashboardViewModel)((ViewResult)await Controller("Owner",owner.Id,new FailingDashboardFinance(finance)).Owner()).Model!;
         check(failed.UnavailableSections.SetEquals(new[]{"financial overview"}) && failed.QuickActions.Count>0 && failed.PendingPayments==ownerModel.PendingPayments,"Financial widget failure preserves queues and navigation without fake zero totals");

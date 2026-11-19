@@ -6,7 +6,6 @@ namespace AriesMagicAppointmentSystem.ViewModels
     {
         public List<ConversationListItemViewModel> Conversations { get; set; } = new();
         public ConversationDetailViewModel? SelectedConversation { get; set; }
-        public List<CommunicationUserOptionViewModel> InternalUsers { get; set; } = new();
         public string Filter { get; set; } = "all";
         public string Search { get; set; } = string.Empty;
         public bool IsInternalUser { get; set; }
@@ -92,10 +91,4 @@ namespace AriesMagicAppointmentSystem.ViewModels
         public int? RelatedBookingId { get; set; }
     }
 
-    public class CommunicationUserOptionViewModel
-    {
-        public string UserId { get; set; } = string.Empty;
-        public string Name { get; set; } = string.Empty;
-        public string Role { get; set; } = string.Empty;
-    }
 }

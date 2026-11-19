@@ -1,0 +1,73 @@
+@model AriesMagicAppointmentSystem.Models.Booking
+@using AriesMagicAppointmentSystem.Models
+@using AriesMagicAppointmentSystem.Services
+@{
+    Layout = "_DashboardLayout";
+    var bookingCode = $"BK-{Model.CreatedAt.Year}-{Model.Id:D3}";
+    ViewData["Title"] = bookingCode;
+    ViewData["HideWorkspaceHeading"] = true;
+    ViewData["OwnerBookingBackController"] = "Bookings";
+    ViewData["OwnerBookingBackAction"] = "Index";
+    ViewData["OwnerBookingBackLabel"] = "Back to Bookings";
+    var pendingChange = ViewBag.PendingConfirmedChange as ConfirmedBookingChangeProposal;
+    var canProposeConfirmedChange = User.IsInRole("Owner") && pendingChange == null
+        && ConfirmedBookingChangePolicy.MayStart(Model,
+            TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, FeedbackPolicy.BusinessZone))
+        && !(ViewBag.OwnerRefunds is IEnumerable<RefundRequest> refunds && refunds.Any());
+}
+<div class="owner-booking-detail-page owner-booking-confirmed-detail" data-owner-booking-variant="confirmed">
+    <partial name="_OwnerBookingDetailHeader" model="bookingCode" />
+    @if (TempData["Error"] is string bookingError)
+    {
+        <div class="alert alert-danger" role="alert">@bookingError</div>
+    }
+    @if (TempData["Success"] is string bookingSuccess)
+    {
+        <div class="alert alert-success" role="status">@bookingSuccess</div>
+    }
+    <div class="owner-booking-detail-layout">
+        <div class="owner-booking-detail-main" aria-label="Booking information and available actions">
+            <partial name="_StaffBookingDetailsSections" model="Model" />
+            <partial name="_OwnerBookingFinancialDetails" model="Model" />
+            @if (!string.IsNullOrWhiteSpace(Model.InternalNotes))
+            {
+                <details class="owner-booking-private-notes">
+                    <summary>Internal Notes</summary>
+                    <pre>@Model.InternalNotes</pre>
+                </details>
+            }
+            @if (pendingChange != null)
+            {
+                <section class="dashboard-panel owner-booking-detail-section" aria-labelledby="pendingChangeHeading">
+                    <h2 id="pendingChangeHeading">Awaiting Client approval</h2>
+                    <p>Proposed package: @pendingChange.NewPackageName</p>
+                    <p>Proposed venue: @pendingChange.NewVenue</p>
+                    <p>Proposed balance: &#8369;@pendingChange.NewRemainingBalance.ToString("N2")</p>
+                    <p>Verified payment records remain unchanged until the Client accepts the revision.</p>
+                </section>
+            }
+            <div class="owner-booking-detail-actions" aria-label="Booking actions">
+                <div class="owner-action-buttons">
+                    @if (canProposeConfirmedChange)
+                    {
+                        <a asp-controller="BookingChanges" asp-action="Edit" asp-route-id="@Model.Id"
+                           class="btn btn-primary"><i class="bi bi-pencil-square" aria-hidden="true"></i> Edit Booking Venue / Package</a>
+                    }
+                    <a asp-controller="Bookings" asp-action="AddNote" asp-route-id="@Model.Id"
+                       class="btn btn-outline-secondary"><i class="bi bi-journal-plus" aria-hidden="true"></i> Add Internal Note</a>
+                    @if (!string.IsNullOrWhiteSpace(Model.ApplicationUserId))
+                    {
+                        <form asp-controller="Communications" asp-action="StartBookingConversation" method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="bookingId" value="@Model.Id" />
+                            <button type="submit" class="btn btn-primary"><i class="bi bi-chat-dots" aria-hidden="true"></i> Booking Conversation</button>
+                        </form>
+                    }
+                </div>
+            </div>
+        </div>
+        <aside class="owner-booking-detail-timeline" aria-label="Booking activity history">
+            <partial name="_BookingTimeline" model="Model" />
+        </aside>
+    </div>
+</div>

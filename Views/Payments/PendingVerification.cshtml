@@ -3,30 +3,23 @@
 @{
     Layout = "_DashboardLayout";
     ViewData["Title"] = "Payment Verification";
+    ViewData["HideWorkspaceHeading"] = true;
     var payments = Model.ToList();
     var isOwner = User.IsInRole("Owner");
     var pagination = ViewData["QueuePage"] as AriesMagicAppointmentSystem.ViewModels.QueuePaginationViewModel
         ?? new(payments.Count, 1, 5, "PendingVerification", new() { ["filter"] = "awaiting" }) {
             AwaitingReviewCount = payments.Count(x => x.Status == PaymentStatus.Pending) };
-    string OcrClass(string? result) => result switch {
-        OcrVerificationResults.LikelyMatch => "ocr-likely", OcrVerificationResults.PartialMatch => "ocr-partial",
-        OcrVerificationResults.MismatchDetected => "ocr-mismatch", OcrVerificationResults.OcrFailed => "ocr-failed", _ => "ocr-manual" };
-    string OcrLabel(string? result) => result switch { OcrVerificationResults.MismatchDetected => "Receipt Details Conflict", OcrVerificationResults.OcrFailed => "OCR Unclear", OcrVerificationResults.PartialMatch => "Needs Manual Review", OcrVerificationResults.LikelyMatch => "Needs Manual Review", _ => "Needs Manual Review" };
     string StatusClass(string status) => status switch {
         PaymentStatus.Verified => "status-verified", PaymentStatus.Rejected => "status-rejected", _ => "status-pending" };
     string StatusLabel(string status) => status switch {
         PaymentStatus.Pending => "AWAITING REVIEW", PaymentStatus.AdditionalEvidenceRequired => "ADDITIONAL EVIDENCE REQUIRED",
         PaymentStatus.Verified => "VERIFIED", PaymentStatus.Rejected => "REJECTED", _ => status.ToUpperInvariant() };
 }
-<div class="owner-financial-page">
+<div class="owner-financial-page owner-payment-verification">
 
     @if(TempData["Success"]!=null){<div class="alert alert-success" role="status">@TempData["Success"]</div>}
     @if(TempData["Error"]!=null){<div class="alert alert-danger" role="alert">@TempData["Error"]</div>}
-    <div class="owner-summary-row" aria-label="Payment verification summary">
-        <div><span>Matching Records</span><strong>@pagination.TotalCount</strong></div>
-        <div><span>Awaiting Review</span><strong>@pagination.AwaitingReviewCount</strong></div>
-        <div><span>OCR Attention</span><strong>@pagination.OcrAttentionCount</strong></div>
-    </div>
+
     <form method="get" class="am-filter-bar am-filter-row aries-round3-toolbar" data-aries-round3-filter="true" aria-label="Payment verification filters">
         <div class="am-filter-search"><i class="bi bi-search" aria-hidden="true"></i><input type="search" name="q" value="@ViewBag.Search" placeholder="Search booking or client" aria-label="Search payment verification queue" /></div>
         <div class="dropdown">
@@ -35,44 +28,96 @@
                 <label class="form-label" for="PendingVerificationfilter">Verification Status</label><select id="PendingVerificationfilter" name="filter" class="form-select mb-3"><option value="awaiting" selected="@(ViewBag.Filter == "awaiting")">Awaiting Owner Verification</option><option value="verified" selected="@(ViewBag.Filter == "verified")">Verified</option><option value="rejected" selected="@(ViewBag.Filter == "rejected")">Rejected</option><option value="evidence" selected="@(ViewBag.Filter == "evidence")">Additional Evidence</option><option value="mismatch" selected="@(ViewBag.Filter == "mismatch")">OCR Mismatch</option><option value="ocrfailed" selected="@(ViewBag.Filter == "ocrfailed")">OCR Failed</option></select>
                 <label class="form-label" for="PendingVerificationpaymentMethod">Payment Method</label><select id="PendingVerificationpaymentMethod" name="paymentMethod" class="form-select mb-3"><option value="">All methods</option><option selected="@(ViewBag.PaymentMethod == "GCash")">GCash</option><option selected="@(ViewBag.PaymentMethod == "Maya")">Maya</option><option selected="@(ViewBag.PaymentMethod == "Bank Transfer")">Bank Transfer</option><option selected="@(ViewBag.PaymentMethod == "Online Banking")">Online Banking</option></select>
                 <label class="form-label" for="PendingVerificationdate">Submitted Date</label><input id="PendingVerificationdate" type="date" name="date" value="@ViewBag.Date" class="form-control mb-3" />
-                <label class="form-label" for="round3Sort_Payments">Submission order</label>
-                <select class="form-select mb-3" id="round3Sort_Payments" name="sortBy">
-                    <option value="newest" selected="@((string?)ViewBag.SortBy != "oldest")">Newest to Oldest</option>
-                    <option value="oldest" selected="@((string?)ViewBag.SortBy == "oldest")">Oldest to Newest</option>
-                </select>
                 <a asp-action="PendingVerification" class="btn btn-outline-secondary btn-sm">Reset filters</a>
             </div>
         </div>
+        <div class="owner-verification-sort">
+            <label for="round3Sort_Payments">Sort by</label>
+            <select class="form-select" id="round3Sort_Payments" name="sortBy" data-owner-verification-sort aria-label="Sort payments by submission date">
+                <option value="newest" selected="@((string?)ViewBag.SortBy != "oldest")">Newest to Oldest</option>
+                <option value="oldest" selected="@((string?)ViewBag.SortBy == "oldest")">Oldest to Newest</option>
+            </select>
+        </div>
         <button class="visually-hidden" type="submit">Search</button>
-        <a class="btn btn-outline-secondary" asp-action="PendingVerification" asp-all-route-data="pagination.Routes()" data-queue-refresh><i class="bi bi-arrow-clockwise" aria-hidden="true"></i> Refresh</a>
+        <a class="btn btn-outline-secondary owner-verification-refresh" asp-action="PendingVerification" asp-all-route-data="pagination.Routes()" data-queue-refresh aria-label="Refresh payment verification records" title="Refresh payment verification records"><i class="bi bi-arrow-clockwise" aria-hidden="true"></i></a>
     </form>
-    <div class="dashboard-panel owner-table-panel">
-        @if (!payments.Any())
-        {
-            <div class="owner-empty-state"><i class="bi bi-shield-check" aria-hidden="true"></i><h2>No payments are currently waiting for verification.</h2><p>Try another filter or search term if you are reviewing history.</p></div>
-        }
-        else
-        {
-            <div class="table-responsive" tabindex="0" role="region" aria-label="Payment records; scroll horizontally for all columns"><table class="table owner-audit-table align-middle">
-                <thead><tr><th scope="col">Booking ID</th><th scope="col">Client</th><th scope="col">Claimed Amount</th><th scope="col">Submission Date</th><th scope="col">Payment Proof</th><th scope="col">Review Indicator</th><th scope="col">Status</th><th scope="col" class="text-end">Action</th></tr></thead>
-                <tbody>
-                @foreach (var item in payments)
-                {
-                    var ocr = item.OcrVerifications.Where(o => o.VerificationPurpose == OcrVerificationPurposes.PaymentProof).OrderByDescending(o => o.ProcessedAt).ThenByDescending(o => o.Id).FirstOrDefault();
-                    var packageName = item.Booking?.PackageName ?? item.Booking?.Service?.Name ?? "Package";
-                    <tr>
-                        <td><strong class="owner-booking-code">BK-@item.Booking?.CreatedAt.Year-@item.BookingId.ToString("D3")</strong><span class="owner-cell-subtext">@packageName</span></td>
-                        <td><strong>@(item.Booking?.Client?.FullName ?? "Unknown client")</strong></td>
-                        <td><strong>Claimed: ₱@((item.ExpectedAmountAtUpload??item.Amount).ToString("N2"))</strong>@if(ocr?.ExtractedAmount.HasValue==true){<span class="owner-cell-subtext">Detected: ₱@ocr.ExtractedAmount.Value.ToString("N2")</span>}</td>
-                        <td>@item.UploadedAt.ToString("MMM d, yyyy")<small class="owner-cell-subtext">@item.UploadedAt.ToString("h:mm tt")</small></td><td><button type="button" class="owner-proof-button js-proof-preview" data-proof-src="@Url.Action("PaymentProof","Payments",new{id=item.Id})" data-proof-title="Payment proof for BK-@item.BookingId" aria-label="Enlarge payment proof"><img src="@Url.Action("PaymentProof","Payments",new{id=item.Id})" class="owner-proof-thumb" alt="Payment proof thumbnail" /></button></td>
-                        <td><span class="ocr-badge @OcrClass(ocr?.VerificationResult)">@OcrLabel(ocr?.VerificationResult)</span>@if(ocr?.IsDuplicateReference==true||ocr?.IsDuplicateImage==true){<span class="owner-attention-note"><i class="bi bi-exclamation-triangle" aria-hidden="true"></i> Possible duplicate proof</span>}</td>
-                        <td><span class="status-badge @StatusClass(item.Status)">@StatusLabel(item.Status)</span></td>
-                        <td class="text-end"><a asp-action="Verify" asp-route-id="@item.Id" class="btn btn-sm btn-primary">@(isOwner ? "Review" : "View")</a></td>
-                    </tr>
-                }
-                </tbody>
-            </table></div>
-        }
+    <div class="staff-data-table-frame owner-verification-table-frame" data-staff-table-capacity="5">
+        <div class="dashboard-panel owner-table-panel staff-data-table-panel">
+            <div class="table-responsive staff-data-table-scroll" tabindex="0" role="region" aria-label="Payment records; scroll horizontally for all columns">
+                <table class="table owner-audit-table staff-data-table align-middle">
+                    <colgroup>
+                        <col class="owner-verification-col-booking" />
+                        <col class="owner-verification-col-client" />
+                        <col class="owner-verification-col-amount" />
+                        <col class="owner-verification-col-date" />
+                        <col class="owner-verification-col-proof" />
+                        <col class="owner-verification-col-status" />
+                        <col class="owner-verification-col-action" />
+                    </colgroup>
+                    <thead>
+                        <tr>
+                            <th scope="col">Booking ID</th>
+                            <th scope="col">Client</th>
+                            <th scope="col">Claimed Amount</th>
+                            <th scope="col">Submission Date</th>
+                            <th scope="col">Payment Proof</th>
+                            <th scope="col">Status</th>
+                            <th scope="col" class="text-end">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    @if (!payments.Any())
+                    {
+                        <tr class="staff-data-table-empty-row">
+                            <td colspan="7">
+                                <div class="staff-data-table-empty" role="status">
+                                    <i class="bi bi-inbox" aria-hidden="true"></i>
+                                    @if (ViewBag.HasOtherPayments == true)
+                                    {
+                                        <strong>No matching payments</strong>
+                                        <p>Try adjusting your search or filters.</p>
+                                        <a asp-action="PendingVerification" class="staff-data-table-reset">Clear filters</a>
+                                    }
+                                    else
+                                    {
+                                        <strong>No payment records</strong>
+                                        <p>There are no payment submissions to review.</p>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var item in payments)
+                        {
+                            var ocr = item.OcrVerifications
+                                .Where(o => o.VerificationPurpose == OcrVerificationPurposes.PaymentProof)
+                                .OrderByDescending(o => o.ProcessedAt).ThenByDescending(o => o.Id).FirstOrDefault();
+                            <tr>
+                                <td><strong class="owner-booking-code">BK-@item.Booking?.CreatedAt.Year-@item.BookingId.ToString("D3")</strong></td>
+                                <td><strong>@(item.Booking?.Client?.FullName ?? "Unknown client")</strong></td>
+                                <td><strong>&#8369;@((item.ExpectedAmountAtUpload ?? item.Amount).ToString("N2"))</strong>
+                                    @if(ocr?.ExtractedAmount.HasValue == true)
+                                    {
+                                        <span class="owner-cell-subtext">Detected: &#8369;@ocr.ExtractedAmount.Value.ToString("N2")</span>
+                                    }
+                                </td>
+                                <td>@item.UploadedAt.ToString("MMM d, yyyy")<small class="owner-cell-subtext">@item.UploadedAt.ToString("h:mm tt")</small></td>
+                                <td>
+                                    <button type="button" class="owner-proof-button js-proof-preview" data-proof-src="@Url.Action("PaymentProof","Payments",new{id=item.Id})" data-proof-title="Payment proof for BK-@item.BookingId" aria-label="Enlarge payment proof">
+                                        <img src="@Url.Action("PaymentProof","Payments",new{id=item.Id})" class="owner-proof-thumb" alt="Payment proof thumbnail" />
+                                    </button>
+                                </td>
+                                <td><span class="status-badge @StatusClass(item.Status)">@StatusLabel(item.Status)</span></td>
+                                <td class="text-end"><a asp-action="Verify" asp-route-id="@item.Id" class="btn btn-sm btn-primary">@(isOwner ? "Review" : "View")</a></td>
+                            </tr>
+                        }
+                    }
+                    </tbody>
+                </table>
+            </div>
+        </div>
         <partial name="_QueuePagination" model="pagination" />
     </div>
 </div>

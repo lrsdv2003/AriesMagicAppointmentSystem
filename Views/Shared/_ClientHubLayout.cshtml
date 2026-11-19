@@ -30,18 +30,22 @@
 <details class="hub-fallback" id="hubFallback"><summary>Your workspace</summary><partial name="_ClientHubNavigation"/></details>
 <dialog id="hubDrawer" class="hub-drawer" aria-labelledby="hubDrawerTitle"><div class="hub-drawer-heading"><h2 id="hubDrawerTitle">Your workspace</h2><button type="button" data-hub-close aria-label="Close navigation">×</button></div><partial name="_ClientHubNavigation"/></dialog>
 <div class="hub-stage">
-<header class="hub-topbar" aria-label="Client workspace header">
+<header class="hub-topbar aries-staff-header" aria-label="Client workspace header">
+ <a class="workspace-brand" asp-controller="Home" asp-action="Index">
+  <img src="~/images/client/wonder-studio/brand-original.jpeg" width="48" height="48" alt="" />
+  <span><strong>Aries d' Magic Artist</strong><small>The Wonder Studio</small></span>
+ </a>
  <div class="hub-topbar-start">
   <button id="hubMenu" class="hub-topbar-menu" type="button" aria-controls="hubDrawer" aria-haspopup="dialog" aria-expanded="false" hidden><i class="bi bi-list" aria-hidden="true"></i><span class="visually-hidden">Open navigation</span></button>
-  <div class="hub-topbar-heading"><small>Aries d’ Magic Artist · Client workspace</small><strong>@(ViewData["Title"] ?? "My bookings")</strong></div>
+  <div class="hub-topbar-heading staff-round2-header-identity"><small>Aries d' Magic Artist <span aria-hidden="true">&middot;</span> Client workspace</small><strong>@(ViewData["Title"] ?? "My bookings")</strong></div>
  </div>
  <div class="hub-topbar-actions">
-  <a asp-controller="Communications" asp-action="Index" asp-route-view="inbox" class="hub-topbar-icon" aria-label="Open messages" title="Messages"><i class="bi bi-chat-dots" aria-hidden="true"></i><span class="hub-count communication-unread-badge" hidden aria-label="Unread messages">0</span></a>
+  <a asp-controller="Communications" asp-action="Index" asp-route-view="inbox" class="hub-topbar-icon aries-header-message-link" aria-label="Open messages" title="Messages"><i class="bi bi-chat-dots" aria-hidden="true"></i><span class="hub-count communication-unread-badge" hidden aria-label="Unread messages">0</span></a>
   <a asp-controller="Notifications" asp-action="Index" class="hub-topbar-icon" aria-label="Notifications (@hubUnread unread)" title="Notifications"><i class="bi bi-bell" aria-hidden="true"></i>@if(hubUnread>0){<span class="hub-topbar-counter">@(hubUnread>99?"99+":hubUnread.ToString())</span>}</a>
   <div class="dropdown hub-account">
    <button type="button" class="hub-account-toggle" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Account menu for @hubName">
-    <span class="hub-account-photo">@if(!string.IsNullOrWhiteSpace(hubAccount?.ProfilePicturePath)){<img src="@hubAccount.ProfilePicturePath" alt="" width="38" height="38"/>}else{<span aria-hidden="true">@hubInitials</span>}</span>
-    <span class="hub-account-name">@hubName</span><i class="bi bi-chevron-down" aria-hidden="true"></i>
+    <span class="hub-account-photo">@if(!string.IsNullOrWhiteSpace(hubAccount?.ProfilePicturePath)){<img src="@(hubAccount.ProfilePicturePath.StartsWith("/private-profiles/", StringComparison.Ordinal) ? Url.Action("Photo", "Profile") : hubAccount.ProfilePicturePath)" alt="" width="38" height="38"/>}else{<span aria-hidden="true">@hubInitials</span>}</span>
+    <span class="hub-account-name"><strong>@hubName</strong><small>Client</small></span><i class="bi bi-chevron-down" aria-hidden="true"></i>
    </button>
    <div class="dropdown-menu dropdown-menu-end hub-account-dropdown">
     <span class="dropdown-header">Signed in as @hubName</span>

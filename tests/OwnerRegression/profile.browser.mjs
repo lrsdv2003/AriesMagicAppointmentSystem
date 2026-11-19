@@ -17,7 +17,7 @@ const go=async name=>{current=name;await page.goto('http://owner.test/fixture/'+
 try{
  for(const width of (process.env.SKIP_LAYOUT ? [] : [1440,1024,768,390])){
   await page.setViewport({width,height:900});
-  for(const name of ['InternalProfile-Index','InternalProfile-Index-Staff']){
+  for(const name of ['InternalProfile-Index','InternalProfile-Password','InternalProfile-Index-Staff','Profile-Index']){
    await go(name);
    const issues=await page.evaluate(()=>{
     const result=[];
@@ -32,12 +32,17 @@ try{
     return result;
    });
    assert.deepEqual(issues,[],name+' '+width);
-   if(name.startsWith('Internal')){
-    assert.equal(await page.$$eval('.account-page input[name]',els=>els.filter(e=>/^(Id|Role|Email|IsActive|EmailConfirmed)$/.test(e.name)).length),0);
-    if(width===390)assert.equal(await page.$eval('.account-grid',e=>getComputedStyle(e).gridTemplateColumns.split(' ').length),1);
-   }else if(width===390){
-    const rects=await page.$$eval('.am-filter-field',els=>els.map(e=>e.getBoundingClientRect().width));
-    assert(rects.every(w=>w>250),'Filters fill mobile width');
+   const role=await page.$eval('.unified-profile',e=>e.dataset.role);
+   const hasSecurity=await page.$('.up-security')!==null;
+   if(name==='InternalProfile-Index'){
+     assert.equal(role,'Owner');assert.equal(hasSecurity,false);
+     assert(await page.$('a[href="/InternalProfile/Password"]'));
+   }else if(name==='InternalProfile-Password'){
+     assert.equal(role,'Owner');assert.equal(hasSecurity,false);
+     assert(await page.$('form[action="/InternalProfile/ChangePassword"]'));
+   }else {
+     assert.equal(hasSecurity,true);
+     assert(await page.$('form[action$="/ChangePassword"]'));
    }
    await page.screenshot({path:path.join(snapshots,'profile-'+name+'-'+width+'.png'),fullPage:true});
    console.log('PASS profile/filter responsive',name,width);
@@ -47,10 +52,12 @@ try{
  await go('InternalProfile-Index');
  await page.click('#accountMenu');
  assert(await page.$('.dropdown-menu.show a[href="/InternalProfile/Index"]'));
- assert(await page.$('.dropdown-menu.show a[href$="#security"]'));
+ assert.equal(await page.$('.dropdown-menu.show a[href$="#security"]'),null);
+ assert(await page.$('a[href="/InternalProfile/Password"]'));
  await page.keyboard.press('Escape');
  await page.focus('#Personal_FullName');
  assert.equal(await page.$eval('#Personal_FullName',e=>getComputedStyle(e).outlineStyle),'solid');
+ await go('InternalProfile-Password');
  for(const id of ['Password_CurrentPassword','Password_NewPassword','Password_ConfirmPassword']){
   await page.click('[data-toggle-password="'+id+'"]');
   assert.equal(await page.$eval('#'+id,e=>e.type),'text');
@@ -59,9 +66,10 @@ try{
  }
  await page.type('#Password_CurrentPassword','somepassword');
  await page.click('[data-toggle-password="Password_CurrentPassword"]');
- await page.click('#security button[type=reset]');
+ await page.click('form[action="/InternalProfile/ChangePassword"] button[type=reset]');
  assert.equal(await page.$eval('#Password_CurrentPassword',e=>e.value),'');
  assert.equal(await page.$eval('#Password_CurrentPassword',e=>e.type),'password');
+ await go('InternalProfile-Index');
  const photo=path.join(snapshots,'fixture-photo.png');
  await fs.writeFile(photo,Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=','base64'));
  await (await page.$('#profilePhoto')).uploadFile(photo);

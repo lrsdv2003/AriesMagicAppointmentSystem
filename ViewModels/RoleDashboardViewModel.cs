@@ -15,6 +15,7 @@ namespace AriesMagicAppointmentSystem.ViewModels
         public List<WorkspaceConversation> RecentConversations { get; set; } = new();
         public List<StaffClientConversation> RecentClientConversations { get; set; } = new();
         public int UnreadClientConversations { get; set; }
+        public int TotalClientConversations { get; set; }
         public List<Booking> CalendarPreview { get; set; } = new();
         public int ConfirmedThisWeek { get; set; }
         public int VerifiedPaymentCount { get; set; }

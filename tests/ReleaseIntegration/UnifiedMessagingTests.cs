@@ -44,7 +44,10 @@ internal static class UnifiedMessagingTests
     public static async Task RunAsync()
     {
         var dbName = "AriesUnifiedMessagingSynthetic_" + Guid.NewGuid().ToString("N");
-        var connection = $"Server=localhost;Database={dbName};Integrated Security=True;Encrypt=True;TrustServerCertificate=True";
+        var instance = Environment.GetEnvironmentVariable("ARIES_TEST_LOCALDB_INSTANCE") ?? "MSSQLLocalDB";
+        if (!System.Text.RegularExpressions.Regex.IsMatch(instance, "^[A-Za-z][A-Za-z0-9_-]{0,63}$"))
+            throw new InvalidOperationException("Test SQL instance is invalid");
+        var connection = $@"Server=(localdb)\{instance};Database={dbName};Integrated Security=True;TrustServerCertificate=True";
         var options = new DbContextOptionsBuilder<ApplicationDbContext>().UseSqlServer(connection).Options;
         await using var db = new ApplicationDbContext(options);
         try
@@ -57,11 +60,10 @@ internal static class UnifiedMessagingTests
             var client = new ApplicationUser { Id=Guid.NewGuid().ToString("N"),UserName="client-a@example.test",Email="client-a@example.test",FullName="Synthetic Client A" };
             var second = new ApplicationUser { Id=Guid.NewGuid().ToString("N"),UserName="client-b@example.test",Email="client-b@example.test",FullName="Synthetic Client B" };
             var staff = new ApplicationUser { Id=Guid.NewGuid().ToString("N"),UserName="staff@example.test",Email="staff@example.test",FullName="Synthetic Staff" };
-            var admin = new ApplicationUser { Id=Guid.NewGuid().ToString("N"),UserName="admin@example.test",Email="admin@example.test",FullName="Synthetic Admin" };
             var owner = new ApplicationUser { Id=Guid.NewGuid().ToString("N"),UserName="owner@example.test",Email="owner@example.test",FullName="Synthetic Owner" };
-            db.Users.AddRange(client,second,staff,admin,owner);
-            foreach(var role in new[]{"Client","Staff","Admin","Owner"}) db.Roles.Add(new IdentityRole { Id=role,Name=role,NormalizedName=role.ToUpperInvariant() });
-            foreach(var (user,role) in new[] { (client,"Client"),(second,"Client"),(staff,"Staff"),(admin,"Admin"),(owner,"Owner") })
+            db.Users.AddRange(client,second,staff,owner);
+            foreach(var role in new[]{"Client","Staff","Owner"}) db.Roles.Add(new IdentityRole { Id=role,Name=role,NormalizedName=role.ToUpperInvariant() });
+            foreach(var (user,role) in new[] { (client,"Client"),(second,"Client"),(staff,"Staff"),(owner,"Owner") })
                 db.UserRoles.Add(new IdentityUserRole<string>{UserId=user.Id,RoleId=role});
             var legacy = new User {FullName="Synthetic Booking Owner",Email="legacy@example.test",PasswordHash="synthetic",Role="Client"};
             var service = new Service {Name="Synthetic Magic",Price=8500m,DurationInHours=2};
@@ -92,8 +94,32 @@ internal static class UnifiedMessagingTests
 
             var stored=await db.Conversations.Include(c=>c.Participants).SingleAsync(c=>c.Id==canonicalId);
             Verify(stored.SupportClientId==client.Id && stored.BookingId==null,"support conversation owned by stable Client identity, not booking");
-            Verify(stored.Participants.Any(p=>p.UserId==client.Id) && stored.Participants.Any(p=>p.UserId==staff.Id) && stored.Participants.Any(p=>p.UserId==admin.Id),"Client, Staff and Admin are authorized participants");
+            Verify(stored.Participants.Any(p=>p.UserId==client.Id) && stored.Participants.Any(p=>p.UserId==staff.Id),"Client and Staff are authorized participants");
             Verify(!stored.Participants.Any(p=>p.UserId==owner.Id),"Owner not granted generalized Client support access without an authorized booking interaction");
+            Verify(typeof(CommunicationsController).GetMethod("CreateInternal") == null,
+                "manual New Conversation backend action is retired, not hidden by CSS");
+            var outsiderSummary = await As(db,second,"Client").ConversationSummaries() as JsonResult;
+            using (var document = JsonDocument.Parse(JsonSerializer.Serialize(outsiderSummary!.Value)))
+                Verify(document.RootElement.GetProperty("items").GetArrayLength()==0,
+                    "unauthorized Client gets no other participant's conversation in sidebar updates");
+            var supportSummary = await clientActions.ConversationSummaries() as JsonResult;
+            using (var document = JsonDocument.Parse(JsonSerializer.Serialize(supportSummary!.Value)))
+                Verify(document.RootElement.GetProperty("items").GetArrayLength()==1,
+                    "authorized Client summary includes canonical support conversation");
+            Verify(await db.Conversations.CountAsync()==1,
+                "sidebar refresh never creates a conversation");
+            var ownerActions=As(db,owner,"Owner");
+            var ownerSummaryBefore=await ownerActions.ConversationSummaries() as JsonResult;
+            using (var document = JsonDocument.Parse(JsonSerializer.Serialize(ownerSummaryBefore!.Value)))
+                Verify(document.RootElement.GetProperty("items").GetArrayLength()==0,
+                    "Owner cannot see a Client conversation before explicitly authorized booking contact");
+            var ownerLink=await ownerActions.StartBookingConversation(b1.Id) as RedirectToActionResult;
+            Verify(ownerLink?.RouteValues?["id"] is int ownerConversationId && ownerConversationId==canonicalId,
+                "Owner booking communication provisions membership in existing support conversation");
+            var ownerSummary=await ownerActions.ConversationSummaries() as JsonResult;
+            using (var document = JsonDocument.Parse(JsonSerializer.Serialize(ownerSummary!.Value)))
+                Verify(document.RootElement.GetProperty("items").GetArrayLength()==1,
+                    "authorized Owner now sees the same canonical conversation");
 
             var firstSend=await clientActions.SendMessage(canonicalId,"Regarding the premium event.",relatedBookingId:b1.Id);
             var secondSend=await clientActions.SendMessage(canonicalId,"And the deluxe event.",relatedBookingId:b2.Id);

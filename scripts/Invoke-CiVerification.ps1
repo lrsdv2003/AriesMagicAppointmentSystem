@@ -31,6 +31,24 @@ try {
         & dotnet @arguments
         if ($LASTEXITCODE) { throw "Isolated $suite checks failed." }
     }
+    & dotnet tests/ReleaseIntegration/bin/Release/net10.0/ReleaseIntegration.dll --staff-priority-only
+    if ($LASTEXITCODE) { throw 'Isolated Staff Priority count, 5-item preview, navigation and role checks failed.' }
+    & dotnet tests/ReleaseIntegration/bin/Release/net10.0/ReleaseIntegration.dll --staff-bookings-table-only
+    if ($LASTEXITCODE) { throw 'Isolated Staff Bookings table, sort, search, paging and access checks failed.' }
+    & dotnet tests/ReleaseIntegration/bin/Release/net10.0/ReleaseIntegration.dll --staff-unified-booking-details-only
+    if ($LASTEXITCODE) { throw 'Unified pending and confirmed Staff Booking Details checks failed.' }
+    & dotnet tests/ReleaseIntegration/bin/Release/net10.0/ReleaseIntegration.dll --staff-calendar-table-only
+    if ($LASTEXITCODE) { throw 'Isolated Staff Calendar upcoming table, date ordering, access and navigation checks failed.' }
+    & dotnet tests/ReleaseIntegration/bin/Release/net10.0/ReleaseIntegration.dll --staff-reschedules-table-only
+    if ($LASTEXITCODE) { throw 'Isolated Staff Reschedules table, date presentation, filtering, paging and role checks failed.' }
+    & dotnet tests/ReleaseIntegration/bin/Release/net10.0/ReleaseIntegration.dll --staff-history-table-only
+    if ($LASTEXITCODE) { throw 'Isolated Staff History five-row table, refresh, search, paging and access checks failed.' }
+    & dotnet tests/ReleaseIntegration/bin/Release/net10.0/ReleaseIntegration.dll --unified-messaging-only
+    if ($LASTEXITCODE) { throw 'Three-role canonical messaging workflow checks failed.' }
+    & dotnet tests/ReleaseIntegration/bin/Release/net10.0/ReleaseIntegration.dll --unified-messaging-redesign-only
+    if ($LASTEXITCODE) { throw 'Unified Messaging layout, permissions and manual-conversation retirement checks failed.' }
+    & dotnet tests/ReleaseIntegration/bin/Release/net10.0/ReleaseIntegration.dll --unified-profile-only
+    if ($LASTEXITCODE) { throw 'Unified Client/Staff/Owner Profile data, photo, password and sign-out checks failed.' }
     & dotnet tests/ReleaseIntegration/bin/Release/net10.0/ReleaseIntegration.dll --personnel-only
     if ($LASTEXITCODE) { throw 'Three-role personnel, legacy-session and Identity enrollment checks failed.' }
     & dotnet tests/ReleaseIntegration/bin/Release/net10.0/ReleaseIntegration.dll --personnel-operator-only

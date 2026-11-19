@@ -1,88 +1,10 @@
-@model AriesMagicAppointmentSystem.ViewModels.ProfileViewModel
-@using System.Security.Claims
-@using Microsoft.EntityFrameworkCore
-@inject AriesMagicAppointmentSystem.Data.ApplicationDbContext ProfileDb
-@inject Microsoft.Extensions.Options.IOptions<Microsoft.AspNetCore.Identity.IdentityOptions> IdentitySettings
+@model AriesMagicAppointmentSystem.ViewModels.InternalProfileViewModel
 @{
- Layout="_ClientHubLayout";ViewData["Title"]="Profile";
- var edit=ViewBag.EditModel as AriesMagicAppointmentSystem.ViewModels.EditProfileViewModel??new(){FullName=Model.FullName,Email=Model.Email,PhoneNumber=Model.PhoneNumber};
- var initials=string.Concat((Model.FullName??"").Split(' ',StringSplitOptions.RemoveEmptyEntries).Take(2).Select(s=>char.ToUpperInvariant(s[0])));if(initials.Length==0)initials="AM";
- var uid=User.FindFirstValue(ClaimTypes.NameIdentifier);var verified=!string.IsNullOrEmpty(uid)&&await ProfileDb.Users.AsNoTracking().AnyAsync(u=>u.Id==uid&&u.EmailConfirmed);
- var passwordLength=Math.Max(12,IdentitySettings.Value.Password.RequiredLength);
+    Layout = "_ClientHubLayout";
+    ViewData["Title"] = "My Profile";
 }
-<header class="hub-heading"><div><span class="hub-kicker">Your account</span><h1>Personal details.</h1><p>Keep the details used for your bookings up to date.</p></div><a asp-controller="Home" asp-action="Index" class="cn-button cn-secondary"><i class="bi bi-box-arrow-up-right" aria-hidden="true"></i> Visit website</a></header>
-@if(TempData["Success"] is string success){<div class="cn-success" role="status">@success</div>}
-@if(TempData["Error"] is string error){<div class="cn-error-summary" role="alert" tabindex="-1">@error</div>}
-<div class="hub-profile-layout">
-<section class="hub-card hub-personal"><div class="hub-section-heading"><h2>Personal and contact information</h2></div>
-<form asp-action="Edit" method="post" id="hubProfileForm">@Html.AntiForgeryToken()<div class="cn-field"><label for="profileFullName">Full name</label><input id="profileFullName" name="FullName" value="@edit.FullName" class="cn-input" required minlength="2" maxlength="100" autocomplete="name"/></div><div class="cn-field"><label for="profileEmail">Email address</label><input id="profileEmail" name="Email" value="@edit.Email" type="email" class="cn-input" autocomplete="email" aria-describedby="profileEmailHelp"/><p id="profileEmailHelp" class="cn-help">Changing your email requires re-verification.</p></div><div class="cn-field"><label for="profilePhoneNumber">Phone number</label><input id="profilePhoneNumber" name="PhoneNumber" value="@edit.PhoneNumber" type="tel" class="cn-input" pattern="^09\d{9}$" autocomplete="tel-national" aria-describedby="profilePhoneHelp"/><p id="profilePhoneHelp" class="cn-help">11 digits, starting with 09.</p></div><div class="cn-actions"><button type="submit" class="cn-button cn-primary">Save personal details</button></div></form></section>
-<aside class="hub-profile-side"><section class="hub-card hub-profile-photo"><button type="button" class="hub-avatar client-photo-trigger" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Open profile photo actions">@if(!string.IsNullOrWhiteSpace(Model.ProfilePicturePath)){<img src="@Model.ProfilePicturePath" alt="Your current profile photo" width="88" height="88"/>}else{<span aria-hidden="true">@initials</span>}<span class="client-photo-edit"><i class="bi bi-camera" aria-hidden="true"></i></span></button><div class="dropdown-menu client-photo-menu"><button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#photoModal">@(string.IsNullOrWhiteSpace(Model.ProfilePicturePath)?"Add a photo":"Change photo")</button>@if(!string.IsNullOrWhiteSpace(Model.ProfilePicturePath)){<form asp-action="RemovePhoto" method="post" onsubmit="return confirm('Remove your profile photo?')">@Html.AntiForgeryToken()<button class="dropdown-item" type="submit">Remove photo</button></form>}</div><h2>@Model.FullName</h2><p class="hub-help">Member since @Model.CreatedAt.ToString("MMMM yyyy")</p></section>
-<section class="hub-card hub-security"><h2>Account security</h2><p><strong>Email</strong><span>@(verified?"Verified":"Check your email verification")</span></p><p><strong>Password</strong><span>Your password stays private</span></p><button type="button" class="cn-edit" data-bs-toggle="modal" data-bs-target="#passwordModal">Change password</button><p class="cn-help">Last login: @(Model.LastLoginAt?.ToString("MMM d, yyyy · h:mm tt")??"Not recorded")</p></section></aside>
-</div>
-<!-- Photo Modal -->
-<div class="modal fade" id="photoModal" aria-labelledby="photoModalTitle" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <form asp-action="UploadPhoto" method="post" enctype="multipart/form-data" id="photoForm">
-                @Html.AntiForgeryToken()
-                <div class="modal-header">
-                    <h5 id="photoModalTitle" class="modal-title"><i class="bi bi-camera me-2" aria-hidden="true"></i>Update Profile Photo</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="profile-upload-area" id="uploadArea">
-                        <img id="photoPreview" class="d-none profile-photo-preview" alt="Preview" />
-                        <div id="uploadPlaceholder" class="profile-photo-placeholder">
-                            <i class="bi bi-cloud-arrow-up" aria-hidden="true"></i>
-                            <span>Choose a profile picture</span>
-                        </div>
-                    </div>
-                    <label class="form-label" for="profileImage">Profile photo</label>
-                    <input type="file" name="profileImage" id="profileImage" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" class="form-control mt-3" required />
-                    <p id="profilePhotoError" class="text-danger mt-2" role="alert" hidden></p>
-                    
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary" id="photoSubmit">Save Photo</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<!-- Password Modal -->
-<div class="modal fade" id="passwordModal" aria-labelledby="passwordModalTitle" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <form asp-action="ChangePassword" method="post">
-                @Html.AntiForgeryToken()
-                <div class="modal-header">
-                    <h5 id="passwordModalTitle" class="modal-title"><i class="bi bi-key me-2" aria-hidden="true"></i>Change Password</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body"><p id="passwordHelp" class="form-text">Use at least @passwordLength characters. Your current password is required.</p>
-                    <div class="mb-3">
-                        <label class="form-label" for="profileCurrentPassword">Current password <span class="text-danger">*</span></label>
-                        <input id="profileCurrentPassword" name="CurrentPassword" autocomplete="current-password" type="password" class="form-control" required />
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label" for="profileNewPassword">New password <span class="text-danger">*</span></label>
-                        <input id="profileNewPassword" name="NewPassword" autocomplete="new-password" type="password" class="form-control" required minlength="@passwordLength" maxlength="100" aria-describedby="passwordHelp" />
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label" for="profileConfirmPassword">Confirm new password <span class="text-danger">*</span></label>
-                        <input id="profileConfirmPassword" name="ConfirmPassword" autocomplete="new-password" type="password" class="form-control" required />
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Update Password</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-
-@section Scripts {<partial name="_ValidationScriptsPartial"/><script src="~/js/client-profile.js" asp-append-version="true"></script>}
+<partial name="_UnifiedProfilePage" model="Model" />
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/internal-profile.js" asp-append-version="true"></script>
+}

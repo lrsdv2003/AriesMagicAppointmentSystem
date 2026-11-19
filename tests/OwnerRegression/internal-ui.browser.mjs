@@ -76,6 +76,6 @@ try{
  assert.equal(lastNavigation.searchParams.get('Year'),'2026');
  assert.equal(lastNavigation.searchParams.get('PaymentStatus'),'Verified');
  await go('History-Index-Staff');assert.equal(await page.$('#historyPayment'),null);
- await page.click('#accountMenu');assert(await page.$('.dropdown-menu.show a[href$="#security"]'));
+ await page.click('#accountMenu');assert.equal(await page.$('.dropdown-menu.show a[href$="#security"]'),null);
  console.log('PASS mobile navigation focus, fixed header, History filters and shared account menu');
 }finally{await browser.close();}

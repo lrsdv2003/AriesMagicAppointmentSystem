@@ -97,6 +97,8 @@ try
     await InterfaceRegression.RunAsync(db, Check);
     await ThreeRoleSecurityRegression.RunAsync(db, Check);
     await OwnerTransferRegression.RunAsync(db,Check);
+    await OwnerBusinessActivityRegression.RunAsync(db,Check);
+    await OwnerArchivesRegression.RunAsync(db,Check);
     var dashboards = await DashboardRegression.RunAsync(db, Check);
     await ProfileRegression.RunAsync(db, Check);
     await HistoryRegression.RunAsync(db, Check);
@@ -114,6 +116,7 @@ try
     }
     await PaymentProofStorageRegression.RunAsync(db, Check);
     await OwnerRound2Regression.RunAsync(db, Check);
+    await CalendarDateLimitRegression.RunAsync(db, Check);
     Console.WriteLine("SUCCESS: " + checks + " Owner regression checks passed.");
 }
 finally

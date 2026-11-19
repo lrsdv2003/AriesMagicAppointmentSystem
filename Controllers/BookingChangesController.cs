@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AriesMagicAppointmentSystem.Controllers;
 
-/// <summary>Confirmed booking changes require Staff proposal and Client acceptance.
+/// <summary>Confirmed booking changes require an authorized Owner/Staff proposal and Client acceptance.
 /// Append-only timeline entries store pending revisions and resolutions without schema changes.</summary>
 [Authorize]
 public sealed partial class BookingChangesController : Controller
@@ -41,7 +41,7 @@ public sealed partial class BookingChangesController : Controller
         return RedirectToAction("Details","Bookings",new{id});
     }
 
-    [HttpGet,Authorize(Roles="Staff")]
+    [HttpGet,Authorize(Roles="Staff,Owner")]
     public async Task<IActionResult> Edit(int id)
     {
         var booking=await LoadAsync(id);
@@ -64,7 +64,7 @@ public sealed partial class BookingChangesController : Controller
         });
     }
 
-    [HttpGet,Authorize(Roles="Staff")]
+    [HttpGet,Authorize(Roles="Staff,Owner")]
     public async Task<IActionResult> VenueSuggestions(string? q,CancellationToken cancellationToken)
     {
         var search=q?.Trim();
@@ -76,11 +76,11 @@ public sealed partial class BookingChangesController : Controller
             .Take(6).Select(m=>new {name=m.DisplayName,latitude=m.Latitude,longitude=m.Longitude}));
     }
 
-    [HttpPost,Authorize(Roles="Staff"),ValidateAntiForgeryToken]
+    [HttpPost,Authorize(Roles="Staff,Owner"),ValidateAntiForgeryToken]
     public async Task<IActionResult> Propose(ConfirmedBookingChangeInput input)
     {
         var id=input.BookingId;
-        if(!ModelState.IsValid)return Deny(id,"Provide a valid package, full address and reason of at least 10 characters.");
+        if(!ModelState.IsValid)return Deny(id,"Provide a valid package selection and full venue address.");
         var venue=input.Venue.Trim();
         await using var tx=await _db.Database.BeginTransactionAsync(IsolationLevel.Serializable);
         var booking=await LoadAsync(id);
@@ -140,7 +140,7 @@ public sealed partial class BookingChangesController : Controller
         var proposal=new ConfirmedBookingChangeProposal {
             Token=Guid.NewGuid(),BookingId=id,ProposedAtUtc=DateTime.UtcNow,
             ProposedByUserId=User.FindFirstValue(ClaimTypes.NameIdentifier)??"",
-            Reason=input.Reason.Trim(),
+            Reason=string.Empty, // Historic proposal Reasons remain readable; new form no longer collects one.
             OriginalServiceId=booking.ServiceId,OriginalPackageName=booking.PackageName,
             OriginalVenue=booking.PartyVenue,OriginalBasePrice=booking.BasePrice,
             OriginalFinalPrice=booking.FinalPrice,OriginalTravelFee=booking.TravelFee,
@@ -165,7 +165,7 @@ public sealed partial class BookingChangesController : Controller
         });
         _db.Notifications.Add(new Notification {
             UserId=booking.ApplicationUserId!,Title="Review your confirmed booking change",
-            Message=$"Staff proposed updated event terms for BK-{booking.CreatedAt.Year}-{id:D3}. Your booking remains unchanged until you approve.",
+            Message=$"{(User.IsInRole("Owner") ? "Owner" : "Staff")} proposed updated event terms for BK-{booking.CreatedAt.Year}-{id:D3}. Your booking remains unchanged until you approve.",
             Link=$"/Bookings/Details/{id}",CreatedAt=DateTime.Now
         });
         await _db.SaveChangesAsync();

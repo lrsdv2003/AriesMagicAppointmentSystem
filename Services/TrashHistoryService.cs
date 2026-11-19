@@ -105,6 +105,8 @@ namespace AriesMagicAppointmentSystem.Services
                 EventType = b.EventType,
                 PackageName = b.PackageName,
                 EventDate = b.EventDate,
+                StartTime = b.StartTime.TimeOfDay,
+                EndTime = b.EndTime.TimeOfDay,
                 Reason = b.TrashReason ?? TrashReason.InvalidBookingRequest,
                 ReasonNotes = b.TrashNotes,
                 PaymentStatus = b.Payments.Any()
@@ -124,14 +126,9 @@ namespace AriesMagicAppointmentSystem.Services
                 .OrderByDescending(a => a.CreatedAt).ToListAsync();
             foreach (var row in rows)
                 row.ArchivedBy = archiveLogs.FirstOrDefault(a => a.AffectedRecordId == row.Id.ToString())?.PerformedByUserName ?? "Not recorded";
-            var archivedPackages = await _context.Services.AsNoTracking().Where(s => s.IsArchived).OrderBy(s => s.Name).ToListAsync();
-            var packageLogs = await _context.SystemActivities.AsNoTracking()
-                .Where(a => a.Type == SystemActivityType.ServiceArchived).OrderByDescending(a => a.CreatedAt).ToListAsync();
             return new TrashHistoryIndexViewModel
             {
                 Filters = filters,
-                ArchivedPackages = archivedPackages,
-                PackageArchives = packageLogs.GroupBy(a => a.AffectedRecordId ?? "").ToDictionary(g => g.Key, g => g.First()),
                 Bookings = rows,
                 TotalCount = totalCount,
                 TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize),

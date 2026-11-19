@@ -1,9 +1,16 @@
 @model AriesMagicAppointmentSystem.ViewModels.SystemActivityIndexViewModel
 @using AriesMagicAppointmentSystem.Models
 @using AriesMagicAppointmentSystem.ViewModels
-@{ Layout = "_DashboardLayout"; ViewData["Title"] = "Business Activity"; }
-<div class="admin-console">
-<header class="admin-heading"><div><p>Dates and times are UTC.</p></div></header>
+@{
+    Layout = "_DashboardLayout";
+    ViewData["Title"] = "Business Activity";
+    ViewData["HideWorkspaceHeading"] = true;
+    var filtered = !string.IsNullOrWhiteSpace(Model.SearchFilter) ||
+                   Model.TypeFilter.HasValue ||
+                   Model.FromDateFilter.HasValue || Model.ToDateFilter.HasValue;
+}
+<div class="owner-activity-page">
+<div class="owner-activity-toolbar">
 <div class="am-filter-container">
     <form method="get" asp-action="Index" class="am-filter-bar aries-round3-toolbar" data-aries-round3-filter="true">
         <div class="am-filter-row">
@@ -84,21 +91,79 @@
         </div>
     </form>
 </div>
+</div>
 
-
-<div class="admin-table-wrap"><table class="admin-table"><thead><tr><th scope="col">User</th><th scope="col">Role at time</th><th scope="col">Activity</th><th scope="col">Module</th><th scope="col">Target</th><th scope="col">Date &amp; time</th><th scope="col">Result</th></tr></thead><tbody>
-@foreach(var activity in Model.Activities) {
-<tr>
-<td data-label="User">@(activity.PerformedByUserName ?? "Not recorded")</td>
-<td data-label="Role at time"><span class="admin-badge">@BusinessActivityPresentation.ActorRole(activity)</span></td>
-<td data-label="Activity"><div><strong>@BusinessActivityPresentation.Label(activity.Type)</strong><details><summary>View Details</summary><p>@activity.Description</p></details></div></td>
-<td data-label="Module"><span class="admin-badge">@BusinessActivityPresentation.Category(activity.Type)</span></td>
-<td data-label="Target">@(activity.AffectedRecordType == null ? "Not recorded" : BusinessActivityPresentation.Label(activity.AffectedRecordType) + " #" + activity.AffectedRecordId)</td>
-<td data-label="Date & time"><time datetime="@activity.CreatedAt.ToString("O")">@activity.CreatedAt.ToString("MMM d, yyyy h:mm tt")</time></td>
-<td data-label="Result"><span class="admin-badge @(BusinessActivityPresentation.Result(activity.Type) == "Success" ? "admin-state-success" : "admin-state-neutral")">@BusinessActivityPresentation.Result(activity.Type)</span></td>
-</tr>
-}
-</tbody></table>@if(!Model.Activities.Any()) { <p class="admin-empty">No business activity found for the selected filters.</p> }</div>
+<div class="staff-data-table-frame owner-activity-table-frame" data-staff-table-capacity="5">
+    <div class="staff-data-table-scroll" tabindex="0" role="region"
+         aria-label="Business activity records; scroll horizontally to view all columns">
+        <table class="staff-data-table owner-activity-table">
+            <caption class="visually-hidden">Recorded business activities</caption>
+            <colgroup>
+                <col class="owner-activity-col-user" />
+                <col class="owner-activity-col-role" />
+                <col class="owner-activity-col-activity" />
+                <col class="owner-activity-col-module" />
+                <col class="owner-activity-col-time" />
+                <col class="owner-activity-col-result" />
+            </colgroup>
+            <thead>
+                <tr>
+                    <th scope="col">User</th>
+                    <th scope="col">Role at time</th>
+                    <th scope="col">Activity</th>
+                    <th scope="col">Module</th>
+                    <th scope="col">Date &amp; time (UTC)</th>
+                    <th scope="col">Result</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Model.Activities.Any())
+                {
+                    <tr class="staff-data-table-empty-row">
+                        <td colspan="6">
+                            <div class="staff-data-table-empty" role="status">
+                                <i class="bi bi-inbox" aria-hidden="true"></i>
+                                @if (filtered)
+                                {
+                                    <strong>No matching activity</strong>
+                                    <p>Try adjusting your search or filters.</p>
+                                    <a asp-action="Index" class="staff-data-table-reset">Clear filters</a>
+                                }
+                                else
+                                {
+                                    <strong>No business activity</strong>
+                                    <p>No activity records are available.</p>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var activity in Model.Activities)
+                    {
+                        <tr>
+                            <td data-label="User">@(!string.IsNullOrWhiteSpace(activity.PerformedByUserName) ? activity.PerformedByUserName : "Not recorded")</td>
+                            <td data-label="Role at time"><span class="owner-activity-badge">@BusinessActivityPresentation.ActorRole(activity)</span></td>
+                            <td data-label="Activity">
+                                <strong class="owner-activity-type">@BusinessActivityPresentation.Label(activity.Type)</strong>
+                                <span class="owner-activity-description">@activity.Description</span>
+                            </td>
+                            <td data-label="Module"><span class="owner-activity-badge">@BusinessActivityPresentation.Category(activity.Type)</span></td>
+                            <td data-label="Date &amp; time (UTC)">
+                                <time datetime="@(DateTime.SpecifyKind(activity.CreatedAt, DateTimeKind.Utc).ToString("O"))">@activity.CreatedAt.ToString("MMM d, yyyy h:mm tt")</time>
+                            </td>
+                            <td data-label="Result">
+                                <span class="owner-activity-badge @(BusinessActivityPresentation.Result(activity.Type) == "Success" ? "owner-activity-success" : "owner-activity-neutral")">
+                                    @BusinessActivityPresentation.Result(activity.Type)
+                                </span>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
         @{
             var activityPager = new AriesMagicAppointmentSystem.ViewModels.QueuePaginationViewModel(
                 Model.TotalCount, Model.Page, 5, "Index", new Dictionary<string,string> {
@@ -110,6 +175,5 @@
                 });
         }
         <partial name="_QueuePagination" model="activityPager" />
-
-<p class="admin-note">@Model.TotalCount recorded activities. Historical roles are shown only when recorded.</p>
+</div>
 </div>

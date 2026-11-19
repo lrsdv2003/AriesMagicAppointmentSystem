@@ -77,15 +77,15 @@
 <body class="internal-ui dashboard-body midnight-workspace @(role.ToLowerInvariant())-dashboard">
 <a class="ui-skip-link" href="#mainContent">Skip to content</a>
 <div class="dashboard-shell">
-    <header class="dashboard-topbar">
+    <header class="dashboard-topbar @(role == "Owner" ? "aries-staff-header" : "")">
         <a class="workspace-brand" asp-controller="Home" asp-action="Index">
             <img src="~/images/client/wonder-studio/brand-original.jpeg" width="48" height="48" alt="" />
             <span><strong>Aries d’ Magic Artist</strong><small>The Wonder Studio</small></span>
         </a>
         <div class="topbar-left">
             <button type="button" class="btn btn-outline-secondary ui-menu-toggle" data-bs-toggle="offcanvas" data-bs-target="#internalSidebar" aria-controls="internalSidebar" aria-expanded="false" aria-label="Open navigation"><i class="bi bi-list" aria-hidden="true"></i></button>
-            @if(role=="Staff"){<span class="staff-round2-header-identity"><small>Aries d' Magic Artist · Staff workspace</small><strong>@ViewData["Title"]</strong></span>}
-            else{<span class="dashboard-title">@role workspace <span class="workspace-breadcrumb">/ @ViewData["Title"]</span></span>}
+            @if(role=="Staff"){<span class="staff-round2-header-identity"><small>Aries d' Magic Artist <span aria-hidden="true">&middot;</span> Staff workspace</small><strong>@ViewData["Title"]</strong></span>}
+            else{<span class="staff-round2-header-identity"><small>Aries d' Magic Artist <span aria-hidden="true">&middot;</span> Owner workspace</small><strong>@ViewData["Title"]</strong></span>}
         </div>
         <div class="topbar-right">
             <a asp-controller="Communications" asp-action="Index" class="topbar-icon topbar-message-link" aria-label="Messages, @unreadMessageCount unread conversations"><i class="bi bi-chat-dots" aria-hidden="true"></i><span class="communication-unread-badge" @(unreadMessageCount == 0 ? "hidden" : null)>@(unreadMessageCount > 99 ? "99+" : unreadMessageCount)</span></a>
@@ -113,7 +113,7 @@
     </aside>
     <main class="dashboard-main">
         <section class="dashboard-content" id="mainContent" tabindex="-1" aria-label="@ViewData["Title"]">
-            @if(currentController != "Dashboard" && !(role == "Staff" && new[]{"Bookings","Calendar","RescheduleRequests","Services","History","Notifications"}.Contains(currentController))){
+            @if(ViewData["HideWorkspaceHeading"] is not true && currentController != "Dashboard" && currentController != "Communications" && currentController != "InternalProfile" && !(role == "Staff" && new[]{"Bookings","Calendar","RescheduleRequests","Services","History","Notifications"}.Contains(currentController))){
                 <header class="workspace-page-heading"><span class="dash-eyebrow">@role workspace</span><h1>@ViewData["Title"]</h1></header>
             }
             @RenderBody()

@@ -97,6 +97,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             pageSize = 5; // Round 3 fixed page size, unrelated filters remain database-backed.
             page = Math.Max(1, page);
             int totalCount;
+            var staffHasAnyRequests = false;
             List<Booking> bookings;
             if (isStaff)
             {
@@ -133,6 +134,12 @@ namespace AriesMagicAppointmentSystem.Controllers
                     }
                 }
                 totalCount = await bookingsQuery.CountAsync();
+                if (totalCount == 0 && !string.IsNullOrWhiteSpace(search))
+                {
+                    // Only perform this extra existence query for an empty Staff search.
+                    staffHasAnyRequests = await _context.Bookings.AsNoTracking()
+                        .AnyAsync(b => b.Status == BookingStatus.Pending);
+                }
                 var totalPages = Math.Max(1, (int)Math.Ceiling(totalCount / (double)pageSize));
                 page = Math.Min(page, totalPages);
                 bookings = await (sortBy == "oldest"
@@ -195,6 +202,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                 Page = page,
                 PageSize = pageSize,
                 TotalCount = totalCount,
+                StaffHasAnyRequests = staffHasAnyRequests,
                 BookingStatus = bookingStatus ?? "All",
                 PaymentStatus = paymentStatus ?? "All",
                 EventDate = eventDate,
@@ -789,7 +797,7 @@ namespace AriesMagicAppointmentSystem.Controllers
 
             if (await HasReachedDailyConfirmedLimit(model.EventDate))
             {
-                ModelState.AddModelError("", "This date already has the maximum of 3 confirmed bookings.");
+                ModelState.AddModelError("", "This date has reached its daily confirmed-booking limit.");
                 return await ClientWizardViewAsync(model);
             }
 
@@ -994,7 +1002,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                         .Where(r => r.BookingId == booking.Id)
                         .OrderByDescending(r => r.RequestedAt).ToListAsync();
                 }
-                return View("StaffDetails", booking);
+                return User.IsInRole("Owner") ? View("OwnerDetails", booking) : View("StaffDetails", booking);
             }
 
             ViewBag.IsScheduleUnavailable = (await GetUnavailableBookingIdsAsync(new[] { booking })).Contains(booking.Id);
@@ -1650,7 +1658,7 @@ namespace AriesMagicAppointmentSystem.Controllers
 
         private async Task<bool> HasReachedDailyConfirmedLimit(DateTime eventDate)
         {
-            var maxPerDay = BookingRules.MaximumDailyBookings;
+            var maxPerDay = await DateBookingCapacity.EffectiveLimitAsync(_context, eventDate);
 
             var confirmedCount = await _context.Bookings
                 .CountAsync(b => b.Status == BookingStatus.Confirmed
@@ -1666,6 +1674,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                 .ToListAsync();
 
             var defaultMax = BookingRules.MaximumDailyBookings;
+            var dateOverrides = DateBookingCapacity.Overrides(await _context.DateBookingLimits.AsNoTracking().ToListAsync());
 
             var confirmedCounts = await _context.Bookings
                 .Where(b => b.Status == BookingStatus.Confirmed)
@@ -1680,7 +1689,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             var fullDates = confirmedCounts
                 .Where(x =>
                 {
-                    var limit = defaultMax;
+                    var limit = dateOverrides.GetValueOrDefault(x.Date.Date, defaultMax);
                     return x.Count >= limit;
                 })
                 .Select(x => x.Date)
@@ -1702,7 +1711,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             var isBlocked = blockedEntry != null;
             var blockReason = blockedEntry?.Reason;
 
-            var maxPerDay = BookingRules.MaximumDailyBookings;
+            var maxPerDay = await DateBookingCapacity.EffectiveLimitAsync(_context, date);
 
             var confirmedCount = await _context.Bookings
                 .CountAsync(b => b.Status == BookingStatus.Confirmed && b.EventDate.Date == date.Date);

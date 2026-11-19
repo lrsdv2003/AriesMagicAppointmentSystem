@@ -54,8 +54,6 @@
 .owner-dashboard .owner-report-metrics {display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
 .owner-dashboard .owner-report-metrics>article {min-width:0;overflow-wrap:anywhere}
 .owner-dashboard .owner-report-metrics strong {font-size:clamp(1.1rem,1.7vw,1.5rem)}
-.owner-personnel-search {margin:12px 0;max-width:360px}
-.owner-personnel-search label {display:block;margin-bottom:5px}
 @media(max-width:1100px){.owner-round1-grid{grid-template-columns:1fr}.owner-round1-metrics{grid-template-columns:repeat(3,minmax(0,1fr))}.owner-round1-metric{align-items:flex-start}.owner-dashboard .owner-report-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:760px){.owner-round1-requests{padding:13px}.owner-round1-request-row{grid-template-columns:repeat(2,minmax(0,1fr))}.owner-round1-request-row .btn{justify-self:start}.owner-round1-metrics{grid-template-columns:1fr}.owner-dashboard .owner-report-metrics{grid-template-columns:1fr}}
 @media(max-width:440px){.owner-round1-request-row{grid-template-columns:1fr}.owner-round1-tabs{flex-direction:column}.owner-round1-tab{text-align:left}}
@@ -68,11 +66,6 @@
 .owner-booking-financial-metrics dt {font-size:.82rem;color:#b0c4d9;font-weight:500}
 .owner-booking-financial-metrics dd {font-size:1.15rem;font-weight:700;margin:6px 0 0;overflow-wrap:anywhere}
 .owner-financial-caption {color:#aabfd4;font-size:.86rem}
-.owner-dashboard .owner-personnel-search input {background:#0a233d;color:#e9f1fc;border-color:#38536d}
-.owner-dashboard .personnel-console .dash-panel {padding:20px;margin-bottom:14px}
-.owner-dashboard .personnel-console form[method="post"] {row-gap:10px}
-.owner-dashboard .personnel-console label {color:#dbe7f6;font-weight:500}
-.owner-dashboard .personnel-console input,.owner-dashboard .personnel-console select {min-height:42px}
 .owner-dashboard .owner-financial-page .am-filter-bar,.owner-dashboard .owner-reports-page .am-filter-bar {border-radius:10px}
 .owner-dashboard .owner-report-section .owner-chart-card {min-width:0}
 .owner-dashboard .owner-report-section .owner-chart-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
@@ -81,24 +74,13 @@
 @media(max-width:900px){.owner-booking-financial-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:650px){.owner-dashboard .owner-report-section .owner-chart-grid{grid-template-columns:1fr}.owner-booking-financial-metrics{grid-template-columns:1fr}}
 
-/* Invitation structure follows the shared workspace forms; no new account actions. */
-.owner-dashboard .owner-personnel-invite {display:grid;grid-template-columns:minmax(160px,.7fr) minmax(0,2.3fr);gap:24px}
-.owner-invite-intro {padding:12px;border-right:1px solid #294861}
-.owner-invite-intro>i {font-size:2rem;color:#72bdff}
-.owner-invite-intro h2 {margin:12px 0;font-size:1.15rem}
-.owner-invite-intro p,.owner-invite-form p {color:#bacce0;font-size:.9rem;line-height:1.6}
-.owner-invite-form {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:start}
-.owner-invite-form label {display:block;margin-bottom:6px}
-.owner-invite-wide {grid-column:1/-1}
-.owner-invite-form .btn {align-self:center;justify-self:end}
-.owner-dashboard .owner-round1-helper a {text-decoration:underline;text-underline-offset:3px}
-.owner-round1-tabpanel:focus-visible {outline:2px solid #69b2ff;outline-offset:4px}
-@media(max-width:760px){.owner-dashboard .owner-personnel-invite{grid-template-columns:1fr}.owner-invite-intro{border-right:0;border-bottom:1px solid #294861;padding:0 0 12px}.owner-invite-form{grid-template-columns:1fr}.owner-invite-form .btn{justify-self:stretch}}
 
-.internal-ui.owner-dashboard .personnel-console .btn-primary {background:#1375d5;border-color:#1375d5;color:#fff}
 
 body.internal-ui.midnight-workspace.owner-dashboard .btn-primary {background:#1375d5!important;border-color:#1375d5!important;color:#fff!important}
 body.internal-ui.midnight-workspace.owner-dashboard .btn-primary:hover {background:#0d60b2!important;border-color:#0d60b2!important}
+
+.owner-dashboard .owner-round1-helper a {text-decoration:underline;text-underline-offset:3px}
+.owner-round1-tabpanel:focus-visible {outline:2px solid #69b2ff;outline-offset:4px}
 
 .owner-dashboard .staff-calendar-error {background:#34242a;color:#ffccd3;border:1px solid #aa6574}
 .owner-dashboard #calendarRetry {color:#ffccd3;border-color:#d798a5}
@@ -111,16 +93,7 @@ body.internal-ui.midnight-workspace.owner-dashboard .btn-primary:hover {backgrou
 .owner-dashboard .hub-card {background:#0a233c;border:1px solid #27445e;border-radius:12px;padding:16px}
 .owner-dashboard .cn-button {display:inline-block;border:1px solid #6386aa;border-radius:8px;padding:10px 14px;background:#0a233c;color:#eaf1fb}
 
-@media(max-width:760px){
-.owner-dashboard #ownerPersonnelTable{min-width:0}
-.owner-dashboard #ownerPersonnelTable thead{display:none}
-.owner-dashboard #ownerPersonnelTable tr{display:block;border-bottom:1px solid #294861;padding:12px 0}
-.owner-dashboard #ownerPersonnelTable td{display:block;min-width:0!important;width:auto;border:0;padding:6px 0}
-.owner-dashboard #ownerPersonnelTable td:last-child form{padding:12px;background:#0e2b47;border-radius:8px}
-}
 
-/* Consolidated personnel filters follow the existing Owner workspace. */
-.owner-account-filters{display:flex;align-items:end;gap:.8rem;flex-wrap:wrap;margin:1rem 0 1.5rem}.owner-account-filters>div{flex:1 1 10rem}.owner-staff-profile{max-width:48rem}.owner-staff-profile form>div{margin-top:1rem}@media(max-width:575px){.owner-account-filters{display:grid;grid-template-columns:1fr}.owner-account-filters>div{min-width:0}}
 
 
 /* =====================================================================
@@ -147,15 +120,12 @@ body.internal-ui.midnight-workspace.owner-dashboard .owner-booking-code {color:#
 .owner-dashboard .owner-report-actions {display:flex;gap:8px;flex-wrap:wrap}
 .owner-dashboard .owner-filter-summary {display:flex;align-items:center;gap:8px}
 .owner-dashboard .owner-operational-charts {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:16px}
-.owner-dashboard .owner-invitation-label {display:none}
-.owner-dashboard .personnel-console .owner-account-filters {display:grid;grid-template-columns:minmax(0,2fr) repeat(2,minmax(0,1fr)) auto auto;align-items:end;gap:12px}
 .owner-dashboard .staff-calendar-nav {flex-wrap:wrap;justify-content:flex-end}
 @media(max-width:1199px){.owner-dashboard .owner-report-section .owner-chart-grid{grid-template-columns:1fr}.owner-dashboard .staff-calendar-toolbar{flex-wrap:wrap}}
 @media(max-width:991px){.owner-dashboard .owner-report-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:1100px){.owner-dashboard .personnel-console .owner-account-filters{grid-template-columns:repeat(2,minmax(0,1fr))}.owner-dashboard .owner-account-filters>div:first-child{grid-column:1/-1}}
-@media(max-width:760px){.owner-dashboard .owner-invitation-label{display:block;color:#b8cbe0;font-size:.8rem}.owner-dashboard .owner-operational-charts{grid-template-columns:1fr}}
+@media(max-width:1100px){}
+@media(max-width:760px){.owner-dashboard .owner-operational-charts{grid-template-columns:1fr}}
 @media(max-width:575px){.owner-dashboard .owner-queue-pagination{padding:12px;gap:12px}.owner-dashboard .owner-queue-pagination nav{width:100%;gap:4px}.owner-dashboard .owner-queue-current{padding:4px;font-size:.8rem}.owner-dashboard .owner-report-metrics{grid-template-columns:1fr}.owner-dashboard .staff-calendar-nav{justify-content:flex-start}.owner-dashboard .staff-calendar-nav>a{flex-basis:100%}}
-@media(max-width:575px){.owner-dashboard .personnel-console .owner-account-filters{grid-template-columns:1fr}}
 
 
 /* =====================================================================
@@ -1188,6 +1158,224 @@ body.internal-ui.owner-dashboard .owner-round3-upcoming {
   }
 }
 
+/* Owner-specific parity with the Staff Priority Workspace and Upcoming Events. */
+body.internal-ui.owner-dashboard .owner-round1-dashboard{max-width:none;width:100%;padding:0;min-width:0}
+body.internal-ui.owner-dashboard .owner-round3-metric{padding:16px;min-height:108px;gap:13px}
+body.internal-ui.owner-dashboard .owner-round3-metric>div{gap:8px}
+body.internal-ui.owner-dashboard .owner-round3-metric>div>span{font-size:1rem;font-weight:700;line-height:1.3;color:#e2eff9}
+body.internal-ui.owner-dashboard .owner-round3-metric strong{font-size:clamp(1.25rem,2vw,1.75rem);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+body.internal-ui.owner-dashboard .owner-round1-requests,body.internal-ui.owner-dashboard .owner-round3-upcoming{padding:16px;min-width:0}
+body.internal-ui.owner-dashboard .owner-round1-requests .dash-section-heading,body.internal-ui.owner-dashboard .owner-round3-upcoming .dash-section-heading{margin-bottom:12px}
+body.internal-ui.owner-dashboard .owner-round1-requests .dash-section-heading h2,body.internal-ui.owner-dashboard .owner-round3-upcoming .dash-section-heading h2{font-size:18px;font-weight:750;color:#f3f9ff;margin:4px 0}
+body.internal-ui.owner-dashboard .owner-round1-tabs{display:flex;align-items:stretch;gap:7px;flex-wrap:wrap;border-bottom:1px solid #315b75;padding-bottom:10px;margin-bottom:12px}
+body.internal-ui.owner-dashboard .owner-round1-tabs .owner-round1-tab{display:inline-flex;align-items:center;gap:8px;padding:9px 12px;border:1px solid #365a74;background:#12314a;color:#d3e5f3;border-radius:8px;font-size:12px;font-weight:700;min-height:38px}
+body.internal-ui.owner-dashboard .owner-round1-tab span{color:#c1d9e9;background:#193f5b;border-radius:5px;padding:2px 6px;font-size:11px}
+body.internal-ui.owner-dashboard .owner-round1-tabs .owner-round1-tab[aria-selected="true"]{background:#b91942;border-color:#d63b63;color:white}
+body.internal-ui.owner-dashboard .owner-round1-tabs .owner-round1-tab[aria-selected="true"] span{background:#72203a;color:#fff}
+body.internal-ui.owner-dashboard .owner-round1-tab:focus-visible{outline:3px solid #85c7f1;outline-offset:2px}
+body.internal-ui.owner-dashboard .owner-round1-request-list{display:grid;gap:8px}
+body.internal-ui.owner-dashboard .owner-round3-grid .owner-round1-request-row{border:1px solid #2c516d;background:#0e2f49;border-radius:9px;padding:11px 12px;gap:10px}
+body.internal-ui.owner-dashboard .owner-round3-grid .owner-round1-request-row .btn{min-height:35px;border-radius:7px}
+body.internal-ui.owner-dashboard .owner-round3-upcoming .owner-round3-event-list{display:grid;gap:7px}
+body.internal-ui.owner-dashboard .owner-round3-upcoming .owner-round3-event{display:grid;grid-template-columns:46px minmax(0,1fr);gap:10px;padding:10px 0;border-bottom:1px solid #2c5270}
+body.internal-ui.owner-dashboard .owner-round3-upcoming .owner-round3-event:last-child{border-bottom:0}
+body.internal-ui.owner-dashboard .owner-round3-upcoming .owner-round3-event-icon{width:46px;height:46px;display:grid;place-items:center;background:#1b4d6b;color:#acdffa;border-radius:9px}
+body.internal-ui.owner-dashboard .owner-round3-upcoming .owner-round3-event>div{min-width:0;display:grid;gap:3px}
+body.internal-ui.owner-dashboard .owner-round3-upcoming .owner-round3-event a{font-size:12px;font-weight:780}
+body.internal-ui.owner-dashboard .owner-round3-upcoming .owner-round3-event time{font-size:12px;color:#eef6fb}
+body.internal-ui.owner-dashboard .owner-round3-upcoming .owner-round3-event>div>span{font-size:11px;color:#c4d9e9;line-height:1.5}
+@media(max-width:740px){body.internal-ui.owner-dashboard .owner-round1-tabs{flex-direction:row}body.internal-ui.owner-dashboard .owner-round1-tab{flex:1 1 145px;justify-content:center}body.internal-ui.owner-dashboard .owner-round3-upcoming .owner-round3-event{grid-template-columns:38px minmax(0,1fr)}body.internal-ui.owner-dashboard .owner-round3-upcoming .owner-round3-event-icon{width:38px;height:38px}}
+
+
+/* Owner Payment Verification: reuses the opt-in Staff five-row table foundation. */
+body.internal-ui.owner-dashboard .dashboard-content:has(> .owner-payment-verification){
+  padding:10px clamp(10px,1.2vw,16px) 16px;
+}
+body.internal-ui.owner-dashboard .owner-payment-verification{
+  width:100%;max-width:none;min-width:0;margin:0;padding:0;gap:10px;
+}
+body.internal-ui.owner-dashboard .owner-payment-verification .aries-round3-toolbar{
+  display:flex;align-items:center;flex-wrap:wrap;gap:8px;
+  margin:0;padding:0;background:transparent;border:0;border-radius:0;box-shadow:none;
+}
+body.internal-ui.owner-dashboard .owner-payment-verification .am-filter-search{
+  position:relative;flex:1 1 290px;min-width:min(260px,100%);margin:0;
+}
+body.internal-ui.owner-dashboard .owner-payment-verification .am-filter-search input{
+  height:40px;min-height:40px;width:100%;margin:0;box-sizing:border-box;
+}
+body.internal-ui.owner-dashboard .owner-payment-verification .dropdown>.btn{
+  height:40px;min-height:40px;display:inline-flex;align-items:center;gap:6px;
+}
+body.internal-ui.owner-dashboard .owner-payment-verification .owner-verification-sort{
+  display:flex;align-items:center;gap:8px;flex:0 1 auto;min-width:0;
+}
+body.internal-ui.owner-dashboard .owner-verification-sort label{
+  margin:0;color:#c8ddee;font-size:12px;white-space:nowrap;
+}
+body.internal-ui.owner-dashboard .owner-verification-sort select{
+  width:175px;max-width:100%;height:40px;min-height:40px;
+  padding:7px 29px 7px 10px;font-size:12px;border-radius:8px;
+}
+body.internal-ui.owner-dashboard .owner-payment-verification .owner-verification-refresh{
+  display:inline-grid;place-items:center;flex:0 0 40px;
+  width:40px;height:40px;min-width:40px;min-height:40px;
+  padding:0;border-radius:8px;line-height:1;
+}
+body.internal-ui.owner-dashboard .owner-verification-refresh.is-loading i{animation:owner-payment-refresh-spin 1s linear infinite}
+@keyframes owner-payment-refresh-spin{to{transform:rotate(360deg)}}
+body.internal-ui.owner-dashboard .owner-verification-refresh:focus-visible{
+  outline:3px solid #85c7f1;outline-offset:2px;
+}
+body.internal-ui.owner-dashboard .owner-verification-table-frame{
+  --staff-list-header:48px;--staff-list-row:78px;--staff-list-five-rows:390px;
+}
+body.internal-ui.owner-dashboard .owner-verification-table-frame .staff-data-table{
+  min-width:980px!important;
+}
+body.internal-ui.owner-dashboard .owner-verification-table-frame col.owner-verification-col-booking{width:13%}
+body.internal-ui.owner-dashboard .owner-verification-table-frame col.owner-verification-col-client{width:17%}
+body.internal-ui.owner-dashboard .owner-verification-table-frame col.owner-verification-col-amount{width:19%}
+body.internal-ui.owner-dashboard .owner-verification-table-frame col.owner-verification-col-date{width:16%}
+body.internal-ui.owner-dashboard .owner-verification-table-frame col.owner-verification-col-proof{width:11%}
+body.internal-ui.owner-dashboard .owner-verification-table-frame col.owner-verification-col-status{width:14%}
+body.internal-ui.owner-dashboard .owner-verification-table-frame col.owner-verification-col-action{width:10%}
+body.internal-ui.owner-dashboard .owner-verification-table-frame .owner-booking-code{white-space:nowrap}
+body.internal-ui.owner-dashboard .owner-verification-table-frame .owner-proof-thumb{
+  width:65px;max-width:65px;height:45px;max-height:45px;object-fit:contain;
+}
+body.internal-ui.owner-dashboard .owner-verification-table-frame .owner-cell-subtext{
+  display:block;margin-top:3px;
+}
+body.internal-ui.owner-dashboard .owner-verification-table-frame .status-badge{
+  white-space:normal;text-align:center;max-width:100%;overflow-wrap:break-word;
+}
+body.internal-ui.owner-dashboard .owner-verification-table-frame .staff-data-table-empty{
+  min-height:var(--staff-list-five-rows);
+}
+@media(max-width:740px){
+  body.internal-ui.owner-dashboard .owner-payment-verification .am-filter-search{flex-basis:100%}
+  body.internal-ui.owner-dashboard .owner-verification-sort{flex:1 1 180px}
+  body.internal-ui.owner-dashboard .owner-verification-sort select{width:100%}
+}
+
+/* Payment queue keeps its table and pager anchored at all supported widths. */
+body.internal-ui.owner-dashboard .owner-verification-table-frame .staff-data-table-empty-row{
+  height:var(--staff-list-five-rows)!important;
+}
+body.internal-ui.owner-dashboard .owner-verification-table-frame .staff-data-table-empty-row>td{
+  height:var(--staff-list-five-rows)!important;
+}
+body.internal-ui.owner-dashboard .owner-verification-table-frame .staff-data-table-empty{
+  box-sizing:border-box;
+  height:calc(var(--staff-list-five-rows) - 1px)!important;
+  min-height:0!important;
+  max-height:calc(var(--staff-list-five-rows) - 1px);
+}
+@media(max-width:740px){
+  body.internal-ui.owner-dashboard .owner-verification-table-frame>.aries-five-pager .aries-five-total{
+    flex:1 1 110px;
+    flex-basis:auto!important;
+    min-width:0;
+    text-align:left!important;
+    font-size:11px;
+  }
+  body.internal-ui.owner-dashboard .owner-verification-table-frame>.aries-five-pager .aries-five-actions{
+    flex:0 0 auto;
+    gap:6px;
+  }
+  body.internal-ui.owner-dashboard .owner-verification-table-frame>.aries-five-pager .aries-five-page{
+    font-size:11px;
+  }
+}
+
+
+/* A zero-record table keeps the exact five-row shell without clipping actual records. */
+body.internal-ui.owner-dashboard .owner-verification-table-frame .staff-data-table-scroll:has(.staff-data-table-empty-row){
+  height:calc(var(--staff-list-header) + var(--staff-list-five-rows));
+  min-height:calc(var(--staff-list-header) + var(--staff-list-five-rows));
+  max-height:calc(var(--staff-list-header) + var(--staff-list-five-rows));
+  overflow-y:hidden!important;
+}
+
+/* Narrow layouts need a small allowance for multi-line financial status cells. */
+@media(max-width:1200px){
+  body.internal-ui.owner-dashboard .owner-verification-table-frame{
+    --staff-list-five-rows:404px;
+  }
+}
+
+
+/* Refund Requests shares the Owner Payment Verification layout and Staff table foundation. */
+body.internal-ui.owner-dashboard .owner-verification-table-frame.owner-refund-table-frame .staff-data-table{
+  min-width:900px!important;
+}
+body.internal-ui.owner-dashboard .owner-refund-table-frame col.owner-refund-col-booking{width:14%}
+body.internal-ui.owner-dashboard .owner-refund-table-frame col.owner-refund-col-client{width:18%}
+body.internal-ui.owner-dashboard .owner-refund-table-frame col.owner-refund-col-amount{width:18%}
+body.internal-ui.owner-dashboard .owner-refund-table-frame col.owner-refund-col-proof{width:14%}
+body.internal-ui.owner-dashboard .owner-refund-table-frame col.owner-refund-col-status{width:24%}
+body.internal-ui.owner-dashboard .owner-refund-table-frame col.owner-refund-col-action{width:12%}
+body.internal-ui.owner-dashboard .owner-refund-table-frame .owner-proof-button{max-width:100%}
+
+
+/* Owner Calendar Settings: compact date-specific capacity and blocked-date management. */
+body.internal-ui.owner-dashboard .dashboard-content:has(>.calendar-settings-page){padding:12px clamp(10px,1.4vw,20px) 20px}
+body.internal-ui.owner-dashboard .calendar-settings-page{max-width:none;width:100%;display:grid;gap:12px;color:#e4edf6}
+body.internal-ui.owner-dashboard .calendar-settings-toolbar{display:flex;justify-content:flex-end;align-items:center}
+body.internal-ui.owner-dashboard .calendar-settings-panel{padding:16px;border:1px solid #315069;border-radius:10px;background:#09293f;min-width:0}
+body.internal-ui.owner-dashboard .calendar-settings-panel>h2,
+body.internal-ui.owner-dashboard .calendar-settings-section-heading h2{font-size:16px;font-weight:750;color:#f1f8ff;margin:0 0 12px}
+body.internal-ui.owner-dashboard .calendar-settings-section-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+body.internal-ui.owner-dashboard .calendar-settings-section-heading h2{margin:0}
+body.internal-ui.owner-dashboard .calendar-settings-section-heading>span{font-size:12px;color:#abc7dd}
+body.internal-ui.owner-dashboard .calendar-capacity-overview{display:flex;gap:18px 28px;flex-wrap:wrap;justify-content:space-between;align-items:end}
+body.internal-ui.owner-dashboard .calendar-capacity-overview>div:first-child{display:grid;gap:5px}
+body.internal-ui.owner-dashboard .calendar-capacity-overview>div:first-child span,
+body.internal-ui.owner-dashboard .calendar-capacity-add>label{color:#bdd6e7;font-size:12px}
+body.internal-ui.owner-dashboard .calendar-capacity-overview>div:first-child strong{font-size:24px;color:#f5faff}
+body.internal-ui.owner-dashboard .calendar-capacity-add{min-width:250px;display:grid;gap:6px}
+body.internal-ui.owner-dashboard .calendar-capacity-add>label{margin:0}
+body.internal-ui.owner-dashboard .calendar-capacity-add-controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+body.internal-ui.owner-dashboard .calendar-capacity-add-controls input{width:180px;min-width:150px}
+body.internal-ui.owner-dashboard .calendar-capacity-add-controls button{min-height:40px}
+body.internal-ui.owner-dashboard .calendar-limit-launch-feedback:empty{display:none}
+body.internal-ui.owner-dashboard .calendar-limit-launch-feedback{margin:8px 0 0;color:#f9b6c6;font-size:12px}
+body.internal-ui.owner-dashboard .calendar-settings-table-wrap{margin:0;border:1px solid #31526c;border-radius:8px;background:#0e3048;overflow-x:auto}
+body.internal-ui.owner-dashboard .calendar-settings-table{min-width:650px;width:100%;table-layout:auto;background:transparent}
+body.internal-ui.owner-dashboard .calendar-settings-table thead tr th{padding:11px 13px;background:#173d59;color:#d9eaf7;font-size:12px;white-space:nowrap}
+body.internal-ui.owner-dashboard .calendar-settings-table tbody tr td{padding:11px 13px;vertical-align:middle;border-color:#31526c;color:#e1eff9}
+body.internal-ui.owner-dashboard .calendar-settings-table :is(th,td):last-child{text-align:right}
+body.internal-ui.owner-dashboard .calendar-settings-table td form{display:inline-flex;align-items:center;gap:8px;flex-wrap:wrap}
+body.internal-ui.owner-dashboard .calendar-settings-table td .admin-form-feedback{margin:0}
+body.internal-ui.owner-dashboard .calendar-settings-table td small{font-size:11px;color:#ffcaab}
+body.internal-ui.owner-dashboard .calendar-settings-table .btn{min-height:34px;padding:6px 13px;border-radius:7px}
+body.internal-ui.owner-dashboard .calendar-date-readonly{font-size:12px;color:#abc0d1}
+body.internal-ui.owner-dashboard .calendar-settings-empty-row td{text-align:center!important;padding:28px 14px!important;color:#bad5e8}
+body.internal-ui.owner-dashboard .calendar-settings-empty-row p{margin:4px 0 0;font-size:12px;color:#a8c5d8}
+body.internal-ui.owner-dashboard .calendar-limit-modal .modal-dialog{max-width:440px}
+body.internal-ui.owner-dashboard .calendar-limit-modal .modal-content{border:1px solid #436079;border-radius:12px;background:#0d2c43;color:#edf5fc}
+body.internal-ui.owner-dashboard .calendar-limit-modal .modal-header,
+body.internal-ui.owner-dashboard .calendar-limit-modal .modal-footer{border-color:#355672;padding:14px 18px}
+body.internal-ui.owner-dashboard .calendar-limit-modal .modal-body{padding:18px;display:grid;gap:8px}
+body.internal-ui.owner-dashboard .calendar-limit-modal .calendar-limit-summary{display:grid;grid-template-columns:1fr auto;gap:9px;align-items:center;padding:12px;margin:0 0 8px;background:#173b55;border-radius:8px}
+body.internal-ui.owner-dashboard .calendar-limit-modal .calendar-limit-summary span{font-size:12px;color:#c4dcec}
+body.internal-ui.owner-dashboard .calendar-limit-modal .calendar-limit-summary strong{font-size:13px;font-weight:700;text-align:right}
+body.internal-ui.owner-dashboard .calendar-limit-modal .form-label{margin:0;font-weight:700;font-size:13px}
+body.internal-ui.owner-dashboard .calendar-limit-modal .form-control{min-height:43px}
+body.internal-ui.owner-dashboard .calendar-limit-modal #calendarLimitValidation:empty{display:none}
+body.internal-ui.owner-dashboard .calendar-limit-modal #calendarLimitValidation{margin:0;color:#ffc0c7;font-size:12px}
+body.internal-ui.owner-dashboard .calendar-limit-modal .calendar-limit-blocked{margin:4px 0 0;color:#f8d29f;font-size:12px}
+body.internal-ui.owner-dashboard .calendar-limit-modal :is(input,button):focus-visible{outline:3px solid #8acaff;outline-offset:2px}
+@media(max-width:700px){
+ body.internal-ui.owner-dashboard .calendar-settings-panel{padding:12px}
+ body.internal-ui.owner-dashboard .calendar-capacity-overview{display:grid;gap:14px}
+ body.internal-ui.owner-dashboard .calendar-capacity-add-controls input{flex:1 1 145px;min-width:0}
+ body.internal-ui.owner-dashboard .calendar-capacity-add-controls button{flex:1 1 130px}
+ body.internal-ui.owner-dashboard .calendar-settings-table{min-width:620px}
+ body.internal-ui.owner-dashboard .calendar-limit-modal .modal-dialog{margin:12px;max-width:none}
+}
+
 /* ========== CANONICAL: owner-interface.css ========== */
 /* Owner workspace — financial oversight, audit readability, and shared operational UI */
 .owner-financial-page,.owner-reports-page{display:flex;flex-direction:column;gap:1rem;color:#0f172a}.owner-page-header{margin-bottom:0;align-items:flex-start}.owner-page-header h1{margin:.1rem 0 .25rem;font-size:1.65rem;font-weight:800;letter-spacing:-.025em}.owner-eyebrow,.owner-section-kicker{display:block;color:#6d28d9;font-size:.7rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase}.owner-summary-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.75rem}.owner-summary-row>div{padding:.85rem 1rem;border:1px solid #e2e8f0;border-radius:14px;background:#fff}.owner-summary-row span{display:block;color:#64748b;font-size:.72rem;font-weight:700}.owner-summary-row strong{display:block;margin-top:.15rem;font-size:1.35rem;color:#0f172a}.owner-filter-card{display:flex;align-items:center;gap:.65rem;padding:.75rem;border:1px solid #e2e8f0;border-radius:16px;background:#fff;box-shadow:0 4px 16px rgba(15,23,42,.04)}.owner-filter-search{display:flex;align-items:center;gap:.5rem;flex:1;min-width:220px;padding:0 .85rem;border:1px solid #dbe3ee;border-radius:999px;background:#fff}.owner-filter-search i{color:#94a3b8}.owner-filter-search input{width:100%;min-height:40px;border:0;outline:0;background:transparent;color:#0f172a}.owner-filter-trigger,.owner-search-btn{min-height:42px;border-radius:999px;padding-inline:1rem}.owner-filter-menu{width:320px;border:0;border-radius:16px;box-shadow:0 18px 50px rgba(15,23,42,.16)}.owner-filter-menu .form-label,.owner-report-range label{display:block;margin-bottom:.3rem;color:#64748b;font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em}.owner-filter-menu .form-control,.owner-filter-menu .form-select,.owner-report-range .form-control{min-height:42px;border-radius:10px}.owner-table-panel{padding:0;overflow:hidden}.owner-audit-table{margin:0;min-width:920px}.owner-audit-table thead th{padding:.78rem .85rem;background:#f8fafc;color:#64748b;font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.045em;border-bottom:1px solid #e2e8f0;white-space:nowrap}.owner-audit-table tbody td{padding:.82rem .85rem;border-color:#edf2f7;color:#334155;font-size:.82rem;vertical-align:middle}.owner-audit-table tbody tr:hover{background:#fbfdff}.owner-booking-code{display:block;color:#0f172a;font-weight:800}.owner-cell-subtext{display:block;margin-top:.14rem;color:#64748b;font-size:.72rem}.owner-attention-note{display:block;margin-top:.3rem;color:#b91c1c;font-size:.7rem;font-weight:700}.owner-proof-button,.owner-proof-large{border:0;background:transparent;padding:0;cursor:zoom-in}.owner-proof-button:focus-visible,.owner-proof-large:focus-visible,.owner-financial-page .btn:focus-visible,.owner-reports-page .btn:focus-visible{outline:3px solid rgba(37,99,235,.22);outline-offset:2px}.owner-proof-thumb{width:74px;height:54px;object-fit:cover;border:1px solid #dbe3ee;border-radius:9px;background:#f8fafc}.owner-proof-modal .modal-content,.owner-decision-modal .modal-content{border:0;border-radius:18px;overflow:hidden;box-shadow:0 28px 80px rgba(15,23,42,.24)}.owner-proof-modal .modal-body{display:flex;justify-content:center;padding:1rem;background:#f8fafc;max-height:78vh;overflow:auto}.owner-proof-modal .modal-body img{max-width:100%;max-height:72vh;object-fit:contain;border-radius:10px}.owner-empty-state{padding:3rem 1rem;text-align:center}.owner-empty-state i{display:block;margin-bottom:.75rem;font-size:1.8rem;color:#7c3aed}.owner-empty-state h2{margin:0 0 .35rem;font-size:1rem}.owner-empty-state p{margin:0;color:#64748b}.owner-review-layout{display:grid;grid-template-columns:minmax(300px,.85fr) minmax(0,1.4fr);gap:1rem;align-items:start}.owner-proof-panel,.owner-review-card,.owner-assessment-card,.owner-action-bar,.owner-report-section{border:1px solid #e2e8f0;border-radius:16px;background:#fff;box-shadow:0 4px 16px rgba(15,23,42,.035)}.owner-proof-panel,.owner-review-card,.owner-report-section{padding:1rem}.owner-proof-panel{position:sticky;top:86px}.owner-section-heading,.owner-report-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:.8rem;margin-bottom:.85rem}.owner-section-heading h2,.owner-report-heading h2{margin:.08rem 0 0;font-size:1rem;font-weight:800}.owner-proof-large{display:flex;width:100%;min-height:330px;align-items:center;justify-content:center;border:1px solid #e2e8f0;border-radius:13px;background:#f8fafc;overflow:hidden}.owner-proof-large img{display:block;max-width:100%;max-height:62vh;object-fit:contain}.owner-proof-compact{min-height:220px}.owner-proof-help{margin:.65rem 0 0;color:#64748b;font-size:.75rem;text-align:center}.owner-review-stack{display:flex;flex-direction:column;gap:1rem}.owner-detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.6rem;margin:0}.owner-detail-grid>div{padding:.7rem .75rem;border:1px solid #edf2f7;border-radius:11px;background:#fbfdff}.owner-detail-grid .owner-detail-wide{grid-column:1/-1}.owner-detail-grid dt{margin-bottom:.2rem;color:#64748b;font-size:.69rem;font-weight:800;text-transform:uppercase;letter-spacing:.04em}.owner-detail-grid dd{margin:0;color:#0f172a;font-size:.82rem;font-weight:700;overflow-wrap:anywhere}.owner-financial-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.6rem}.owner-financial-grid>div{padding:.75rem;border:1px solid #e2e8f0;border-radius:11px;background:#f8fafc}.owner-financial-grid span{display:block;color:#64748b;font-size:.7rem;font-weight:700}.owner-financial-grid strong{display:block;margin-top:.15rem;color:#0f172a;font-size:1rem}.owner-impact-highlight{grid-column:1/-1;border-color:#c4b5fd!important;background:#faf8ff!important}.owner-impact-highlight strong{color:#6d28d9;font-size:1.2rem}.owner-warning-box,.owner-success-state{display:flex;align-items:flex-start;gap:.65rem;margin-top:.75rem;padding:.8rem;border-radius:11px}.owner-warning-box{border:1px solid #fecaca;background:#fff7f7;color:#991b1b}.owner-warning-box span,.owner-success-state span{display:block;margin-top:.1rem;font-size:.78rem}.owner-success-state{border:1px solid #bbf7d0;background:#f0fdf4;color:#166534}.owner-empty-inline,.owner-card-note{color:#64748b;font-size:.78rem}.owner-raw-details{margin-top:.75rem}.owner-raw-details summary{cursor:pointer;color:#475569;font-size:.76rem;font-weight:700}.owner-raw-details pre{margin:.5rem 0 0;padding:.75rem;max-height:180px;overflow:auto;border-radius:10px;background:#0f172a;color:#e2e8f0;font-size:.7rem;white-space:pre-wrap}.owner-compare-table{margin:0}.owner-compare-table th{color:#64748b;font-size:.7rem;text-transform:uppercase}.owner-compare-table td{font-size:.8rem}.owner-compare-result{font-weight:800}.owner-assessment-card{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;padding:1rem;border-color:#ddd6fe;background:#faf8ff}.owner-assessment-card h2{margin:.1rem 0 .2rem;font-size:1.05rem}.owner-assessment-card p{margin:0;color:#475569;font-size:.78rem;white-space:pre-line}.owner-assessment-card>i{font-size:1.5rem;color:#7c3aed}.owner-action-bar{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:.9rem 1rem;position:sticky;bottom:.75rem;z-index:20;box-shadow:0 12px 32px rgba(15,23,42,.12)}.owner-action-bar>div:first-child span{display:block;color:#64748b;font-size:.75rem}.owner-action-buttons{display:flex;gap:.5rem;flex-wrap:wrap;justify-content:flex-end}.owner-action-buttons .btn,.owner-decision-modal .modal-footer .btn{min-height:42px;border-radius:10px;padding:.5rem .9rem;font-size:.82rem;font-weight:700}.owner-confirm-impact{display:flex;justify-content:space-between;align-items:center;gap:1rem;padding:.75rem;border:1px solid #ddd6fe;border-radius:11px;background:#faf8ff}.owner-confirm-impact span{color:#64748b;font-size:.75rem}.owner-confirm-impact strong{color:#6d28d9}.owner-refund-confirm-grid{display:grid;grid-template-columns:minmax(240px,.8fr) 1fr;gap:1rem}.owner-proof-upload{display:flex;align-items:end;gap:.75rem;margin-top:1rem}.owner-proof-upload>div{flex:1}.owner-report-filter{justify-content:space-between}.owner-report-range{display:flex;gap:.65rem;flex:1}.owner-report-range>div{min-width:180px}.owner-report-heading{margin-bottom:1rem}.owner-report-note{color:#64748b;font-size:.72rem;font-weight:700}.owner-report-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.75rem}.owner-report-metrics article{min-height:118px;padding:.9rem;border:1px solid #e2e8f0;border-radius:13px;background:#fbfdff}.owner-report-metrics span{display:block;color:#64748b;font-size:.72rem;font-weight:700}.owner-report-metrics strong{display:block;margin:.35rem 0 .2rem;font-size:1.18rem;color:#0f172a}.owner-report-metrics small{color:#94a3b8;font-size:.68rem}.owner-report-metrics .positive{border-color:#bbf7d0;background:#f7fff9}.owner-report-metrics .warning{border-color:#fde68a;background:#fffdf5}.owner-report-metrics .negative{border-color:#fecaca;background:#fffafa}.owner-chart-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.8rem}.owner-chart-card{padding:.9rem;border:1px solid #e2e8f0;border-radius:13px;background:#fbfdff}.owner-chart-card h3{margin:0;font-size:.9rem}.owner-chart-card p{margin:.15rem 0 .65rem;color:#64748b;font-size:.72rem}.owner-chart-frame{height:250px}.owner-chart-frame-donut{max-width:280px;margin:auto}.owner-chart-empty{display:flex;align-items:center;justify-content:center;height:250px;color:#64748b;text-align:center}.owner-performance-row{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:.65rem}.owner-performance-row>div{padding:.75rem;border:1px solid #e2e8f0;border-radius:11px;background:#f8fafc}.owner-performance-row span{display:block;color:#64748b;font-size:.68rem}.owner-performance-row strong{display:block;margin-top:.15rem;color:#0f172a}.owner-dashboard .staff-package-hero{align-items:center}.owner-dashboard .staff-package-actions{align-items:center}.owner-dashboard .staff-package-actions .btn{min-height:40px}.owner-dashboard .comm-page-staff .comm-workspace{grid-template-columns:minmax(270px,340px) minmax(0,1fr)}
@@ -1247,16 +1435,1018 @@ body.internal-ui.owner-dashboard .owner-round3-upcoming {
 .owner-review-page .owner-payment-compare td:nth-child(2),.owner-review-page .owner-payment-compare td:nth-child(3){white-space:nowrap}
 .owner-review-page .owner-payment-compare td:last-child{min-width:12rem}
 
+/* Owner History final refinement: reuse shared five-record table; export retired. */
+body.internal-ui.owner-dashboard .dashboard-content:has(>.owner-history-workspace){
+ padding:10px clamp(10px,1.2vw,18px) 18px;
+}
+body.internal-ui.owner-dashboard .owner-history-workspace{
+ display:grid;grid-template-columns:minmax(0,1fr);gap:10px;width:100%;max-width:none;min-width:0;margin:0;color:#deecf7;
+}
+body.internal-ui.owner-dashboard .owner-history-workspace #historyResults{
+ width:100%;min-width:0;max-width:100%;overflow:visible;
+}
+body.internal-ui.owner-dashboard .owner-history-toolbar{
+ display:flex;align-items:end;gap:8px;flex-wrap:wrap;justify-content:space-between;
+ min-width:0;width:100%;
+}
+body.internal-ui.owner-dashboard .owner-history-toolbar .staff-final-filter-toolbar{
+ flex:1 1 610px;width:auto;max-width:none;min-width:0;margin:0;align-self:stretch;
+}
+body.internal-ui.owner-dashboard .owner-history-toolbar .am-filter-row{
+ display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-width:0;
+}
+body.internal-ui.owner-dashboard .owner-history-toolbar .am-filter-search{
+ flex:1 1 220px;min-width:180px;
+}
+body.internal-ui.owner-dashboard .owner-history-toolbar .am-filter-search input{
+ width:100%;min-height:40px;height:40px;font-size:13px;
+}
+body.internal-ui.owner-dashboard .owner-history-toolbar .dropdown-toggle{
+ min-height:40px;height:40px;white-space:nowrap;font-size:12px;
+}
+body.internal-ui.owner-dashboard .owner-history-toolbar .owner-history-refresh{
+ width:40px;min-width:40px;max-width:40px;height:40px;min-height:40px;
+ display:inline-flex;align-items:center;justify-content:center;flex:none;
+ padding:0;border-radius:8px;font-size:16px;
+}
+body.internal-ui.owner-dashboard .owner-history-toolbar .owner-history-refresh.is-loading i{
+ animation:owner-history-refresh-spin 1s linear infinite;
+}
+@keyframes owner-history-refresh-spin{to{transform:rotate(360deg)}}
+body.internal-ui.owner-dashboard .owner-history-toolbar .owner-history-refresh:focus-visible,
+body.internal-ui.owner-dashboard .owner-history-toolbar .owner-history-archives:focus-visible{
+ outline:3px solid #9bd2f5;outline-offset:2px;
+}
+body.internal-ui.owner-dashboard .owner-history-toolbar .owner-history-refresh[aria-disabled="true"]{
+ opacity:.7;cursor:progress;
+}
+body.internal-ui.owner-dashboard .owner-history-toolbar .owner-history-archives{
+ min-height:40px;height:40px;padding:8px 12px;
+ display:inline-flex;align-items:center;justify-content:center;gap:7px;
+ font-size:12px;line-height:1.2;white-space:nowrap;border-radius:8px;
+}
+body.internal-ui.owner-dashboard .owner-history-refresh-feedback{
+ padding:8px 12px;margin:0;font-size:12px;color:#c8e8f7;
+ border:1px solid #345a77;border-radius:7px;background:#133b56;
+}
+body.internal-ui.owner-dashboard .owner-history-refresh-feedback.is-error{
+ color:#ffd0db;border-color:#945168;background:#3b2737;
+}
+body.internal-ui.owner-dashboard .owner-history-refresh-feedback[hidden]{display:none}
+body.internal-ui.owner-dashboard .owner-history-table-frame{
+ --staff-list-header:48px;--staff-list-row:80px;--staff-list-five-rows:410px;
+ width:100%;min-width:0;max-width:none;border-radius:0;
+}
+body.internal-ui.owner-dashboard .owner-history-table-frame .staff-data-table-scroll{
+ box-sizing:border-box;min-height:458px;height:458px;
+ max-width:100%;overflow-x:auto!important;overflow-y:auto;
+ border:0;border-radius:0;margin:0;
+}
+body.internal-ui.owner-dashboard .owner-history-table-frame .owner-history-table{
+ min-width:970px!important;width:100%!important;
+ table-layout:fixed!important;border-collapse:collapse!important;
+ border-spacing:0!important;margin:0!important;border-radius:0!important;
+}
+body.internal-ui.owner-dashboard .owner-history-table-frame .owner-history-table col.owner-history-col-booking{width:20%}
+body.internal-ui.owner-dashboard .owner-history-table-frame .owner-history-table col.owner-history-col-event{width:22%}
+body.internal-ui.owner-dashboard .owner-history-table-frame .owner-history-table col.owner-history-col-package{width:19%}
+body.internal-ui.owner-dashboard .owner-history-table-frame .owner-history-table col.owner-history-col-payment{width:15%}
+body.internal-ui.owner-dashboard .owner-history-table-frame .owner-history-table col.owner-history-col-status{width:12%}
+body.internal-ui.owner-dashboard .owner-history-table-frame .owner-history-table col.owner-history-col-actions{width:12%}
+body.internal-ui.owner-dashboard .owner-history-table-frame .owner-history-table :is(th,td){
+ padding:10px 12px!important;box-sizing:border-box;
+ vertical-align:middle!important;border-radius:0!important;
+ text-align:left;overflow-wrap:anywhere;
+}
+body.internal-ui.owner-dashboard .owner-history-table-frame .owner-history-table thead th{
+ white-space:nowrap!important;height:48px;
+}
+body.internal-ui.owner-dashboard .owner-history-table-frame .owner-history-table tbody tr:not(.staff-data-table-empty-row){
+ height:80px;
+}
+body.internal-ui.owner-dashboard .owner-history-table-frame .owner-history-table tbody td{
+ height:80px;
+}
+body.internal-ui.owner-dashboard .owner-history-table-frame .owner-history-table th:last-child,
+body.internal-ui.owner-dashboard .owner-history-table-frame .owner-history-table td:last-child{
+ text-align:right!important;
+}
+body.internal-ui.owner-dashboard .owner-history-table-frame .owner-history-table td:first-child strong{
+ display:block;color:#f1f8ff;font-size:13px;white-space:nowrap;
+}
+body.internal-ui.owner-dashboard .owner-history-table-frame .owner-history-table .ui-cell-secondary{
+ display:block;color:#afc8db;font-size:12px;margin-top:4px;
+}
+body.internal-ui.owner-dashboard .owner-history-table-frame .owner-history-table td:last-child .btn{
+ display:inline-flex;align-items:center;justify-content:center;
+ min-height:36px;font-size:12px;white-space:nowrap;
+}
+body.internal-ui.owner-dashboard .owner-history-table-frame .owner-history-table .staff-data-table-empty{
+ min-height:410px;
+}
+body.internal-ui.owner-dashboard .owner-history-table-frame .owner-history-table tbody tr.staff-data-table-empty-row>td{
+ height:410px!important;padding:0!important;text-align:center!important;
+}
+body.internal-ui.owner-dashboard .owner-history-table-frame>.aries-five-pager{
+ min-height:50px!important;max-height:50px!important;height:50px;
+ border-radius:0!important;
+}
+@media(max-width:760px){
+ body.internal-ui.owner-dashboard .owner-history-toolbar .staff-final-filter-toolbar{flex:1 1 100%}
+ body.internal-ui.owner-dashboard .owner-history-toolbar .owner-history-archives{margin-left:auto}
+ body.internal-ui.owner-dashboard .owner-history-table-frame>.aries-five-pager{
+  gap:6px!important;flex-wrap:nowrap;
+ }
+ body.internal-ui.owner-dashboard .owner-history-table-frame>.aries-five-pager .aries-five-total{font-size:11px;min-width:0;flex:1 1 auto;flex-basis:auto!important;text-align:left!important;line-height:1.25}
+ body.internal-ui.owner-dashboard .owner-history-table-frame>.aries-five-pager .aries-five-actions{gap:3px;flex:0 0 auto}
+ body.internal-ui.owner-dashboard .owner-history-table-frame>.aries-five-pager .aries-five-page{font-size:11px}
+}
+@media(max-width:430px){
+ body.internal-ui.owner-dashboard .owner-history-table-frame>.aries-five-pager{
+  flex-wrap:nowrap!important;gap:4px!important;padding:4px 6px!important;justify-content:space-between!important;
+ }
+ body.internal-ui.owner-dashboard .owner-history-table-frame>.aries-five-pager .aries-five-total{
+  flex:0 1 90px!important;flex-basis:90px!important;max-width:90px!important;
+  min-width:0!important;font-size:10px!important;line-height:1.15!important;white-space:normal;
+ }
+ body.internal-ui.owner-dashboard .owner-history-table-frame>.aries-five-pager .aries-five-actions{
+  flex:0 0 auto!important;gap:2px!important;
+ }
+ body.internal-ui.owner-dashboard .owner-history-table-frame>.aries-five-pager .aries-five-page{
+  font-size:10px!important;min-width:0!important;
+ }
+ body.internal-ui.owner-dashboard .owner-history-toolbar .am-filter-search{flex-basis:100%}
+ body.internal-ui.owner-dashboard .owner-history-toolbar .owner-history-archives{flex:1 1 100%;margin:0}
+}
+
+/* Owner Business Activity — shared Staff five-row table, audit fields unchanged. */
+body.internal-ui.owner-dashboard .dashboard-content:has(> .owner-activity-page) {
+  padding:10px clamp(10px,1.2vw,18px) 18px;
+}
+body.internal-ui.owner-dashboard .owner-activity-page {
+  display:grid;grid-template-columns:minmax(0,1fr);gap:10px;
+  width:100%;max-width:none;min-width:0;margin:0;
+}
+body.internal-ui.owner-dashboard .owner-activity-toolbar,
+body.internal-ui.owner-dashboard .owner-activity-toolbar .am-filter-container {
+  min-width:0;max-width:none;width:100%;margin:0;
+}
+body.internal-ui.owner-dashboard .owner-activity-toolbar .aries-round3-toolbar {
+  margin:0!important;padding:8px 10px!important;
+  min-width:0;width:100%;max-width:none;
+  background:#0b2741;border:1px solid #315973;
+  border-radius:9px!important;
+}
+body.internal-ui.owner-dashboard .owner-activity-toolbar .am-filter-row {
+  min-width:0;width:100%;gap:8px;
+}
+body.internal-ui.owner-dashboard .owner-activity-toolbar .am-filter-search {
+  min-width:180px;flex:1 1 260px;
+}
+body.internal-ui.owner-dashboard .owner-activity-toolbar .am-filter-search input {
+  min-height:40px;height:40px;font-size:13px;
+}
+body.internal-ui.owner-dashboard .owner-activity-toolbar .dropdown-toggle,
+body.internal-ui.owner-dashboard .owner-activity-toolbar .aries-round3-refresh {
+  height:40px;min-height:40px;font-size:12px;
+}
+body.internal-ui.owner-dashboard .owner-activity-table-frame {
+  --staff-list-header:48px;
+  --staff-list-row:78px;
+  --staff-list-five-rows:390px;
+  width:100%;max-width:100%;min-width:0;border-radius:0;
+}
+body.internal-ui.owner-dashboard .owner-activity-table-frame .staff-data-table-scroll {
+  box-sizing:border-box;min-height:438px;height:438px;
+  max-width:100%;overflow-x:auto!important;overflow-y:auto;
+  border-radius:0;margin:0;
+}
+body.internal-ui.owner-dashboard .owner-activity-table-frame .owner-activity-table {
+  width:100%!important;min-width:1050px!important;
+  border-collapse:collapse!important;border-spacing:0!important;
+  table-layout:fixed!important;border-radius:0!important;
+}
+body.internal-ui.owner-dashboard .owner-activity-table col.owner-activity-col-user{width:16%}
+body.internal-ui.owner-dashboard .owner-activity-table col.owner-activity-col-role{width:12%}
+body.internal-ui.owner-dashboard .owner-activity-table col.owner-activity-col-activity{width:30%}
+body.internal-ui.owner-dashboard .owner-activity-table col.owner-activity-col-module{width:12%}
+body.internal-ui.owner-dashboard .owner-activity-table col.owner-activity-col-time{width:20%}
+body.internal-ui.owner-dashboard .owner-activity-table col.owner-activity-col-result{width:10%}
+body.internal-ui.owner-dashboard .owner-activity-table :is(thead th,tbody td) {
+  border-radius:0!important;text-align:left;vertical-align:middle;
+  overflow-wrap:anywhere;
+}
+body.internal-ui.owner-dashboard .owner-activity-table thead th {
+  white-space:nowrap!important;font-size:12px;
+}
+body.internal-ui.owner-dashboard .owner-activity-table tbody tr:not(.staff-data-table-empty-row) {
+  min-height:78px;
+}
+body.internal-ui.owner-dashboard .owner-activity-table tbody td {
+  font-size:12px;line-height:1.35;
+}
+body.internal-ui.owner-dashboard .owner-activity-table .owner-activity-type {
+  display:block;font-size:12px;color:#f0f8ff;font-weight:750;
+}
+body.internal-ui.owner-dashboard .owner-activity-table .owner-activity-description {
+  display:block;margin-top:4px;font-size:12px;color:#bad2e1;
+  white-space:pre-line;overflow-wrap:anywhere;word-break:break-word;
+}
+body.internal-ui.owner-dashboard .owner-activity-table .owner-activity-badge {
+  display:inline-flex;align-items:center;min-height:25px;
+  padding:3px 8px;border:1px solid #416982;border-radius:7px;
+  font-size:11px;color:#d9ebf8;background:#153a53;
+  white-space:normal;
+}
+body.internal-ui.owner-dashboard .owner-activity-table .owner-activity-badge.owner-activity-success {
+  color:#c8f6e0;border-color:#3a7773;background:#154b50;
+}
+body.internal-ui.owner-dashboard .owner-activity-table .owner-activity-badge.owner-activity-neutral {
+  color:#f4d6d9;border-color:#81546b;background:#493246;
+}
+body.internal-ui.owner-dashboard .owner-activity-table time {
+  white-space:nowrap;font-size:12px;color:#cce1ef;font-variant-numeric:tabular-nums;
+}
+body.internal-ui.owner-dashboard .owner-activity-table-frame .staff-data-table-empty {
+  min-height:390px;
+}
+body.internal-ui.owner-dashboard .owner-activity-table-frame .staff-data-table-empty-row>td {
+  height:390px;padding:0!important;text-align:center!important;
+}
+body.internal-ui.owner-dashboard .owner-activity-table-frame>.aries-five-pager {
+  height:50px;max-height:50px;min-height:50px!important;
+  border-radius:0!important;flex-wrap:nowrap!important;
+}
+body.internal-ui.owner-dashboard .owner-activity-table-frame>.aries-five-pager .aries-five-total {
+  flex:1 1 auto;min-width:0;line-height:1.2;
+}
+body.internal-ui.owner-dashboard .owner-activity-table-frame>.aries-five-pager .aries-five-actions {
+  flex:0 0 auto;gap:5px;
+}
+@media(max-width:760px){
+ body.internal-ui.owner-dashboard .owner-activity-toolbar .am-filter-search{flex-basis:100%;min-width:0}
+ body.internal-ui.owner-dashboard .owner-activity-table-frame>.aries-five-pager {
+   gap:4px!important;padding:4px 6px!important;justify-content:space-between!important;
+ }
+ body.internal-ui.owner-dashboard .owner-activity-table-frame>.aries-five-pager .aries-five-total {
+   flex:0 1 90px!important;flex-basis:90px!important;max-width:90px!important;
+   min-width:0!important;white-space:normal;font-size:10px;line-height:1.15;
+ }
+ body.internal-ui.owner-dashboard .owner-activity-table-frame>.aries-five-pager .aries-five-actions {
+   gap:2px!important;flex:0 0 auto!important;
+ }
+ body.internal-ui.owner-dashboard .owner-activity-table-frame>.aries-five-pager .aries-five-page {
+   font-size:10px;white-space:nowrap;
+ }
+}
+
+/* Owner Archives: shared five-row Staff table with read-only five-column presentation. */
+body.internal-ui.owner-dashboard .dashboard-content:has(>.owner-archives-page){
+  padding:10px clamp(10px,1.2vw,18px) 18px;
+}
+body.internal-ui.owner-dashboard .owner-archives-page{
+  display:grid;grid-template-columns:minmax(0,1fr);gap:10px;
+  width:100%;max-width:none;min-width:0;margin:0;
+}
+body.internal-ui.owner-dashboard .owner-archives-toolbar,
+body.internal-ui.owner-dashboard #ownerArchivesResults{
+  min-width:0;max-width:100%;width:100%;margin:0;
+}
+body.internal-ui.owner-dashboard .owner-archives-toolbar .aries-round3-toolbar{
+  margin:0!important;padding:8px 10px!important;
+  min-width:0;width:100%;max-width:none;
+  background:#0b2741;border:1px solid #315973;border-radius:9px!important;
+}
+body.internal-ui.owner-dashboard .owner-archives-toolbar .am-filter-row{
+  min-width:0;width:100%;gap:8px;
+}
+body.internal-ui.owner-dashboard .owner-archives-toolbar .am-filter-search{
+  min-width:180px;flex:1 1 260px;
+}
+body.internal-ui.owner-dashboard .owner-archives-toolbar .am-filter-search input{
+  min-height:40px;height:40px;font-size:13px;
+}
+body.internal-ui.owner-dashboard .owner-archives-toolbar .dropdown-toggle{
+  height:40px;min-height:40px;font-size:12px;
+}
+body.internal-ui.owner-dashboard .owner-archives-toolbar .aries-round3-refresh{
+  width:40px;min-width:40px;max-width:40px;height:40px;min-height:40px;
+  padding:0;display:inline-flex;align-items:center;justify-content:center;
+  flex:0 0 auto;gap:0;font-size:16px;border-radius:8px!important;
+}
+body.internal-ui.owner-dashboard .owner-archives-toolbar .aries-round3-refresh.is-loading i{
+  animation:owner-archives-refresh-spin 1s linear infinite;
+}
+@keyframes owner-archives-refresh-spin{to{transform:rotate(360deg)}}
+body.internal-ui.owner-dashboard .owner-archives-toolbar .aries-round3-refresh[aria-disabled="true"]{
+  opacity:.7;cursor:progress;
+}
+body.internal-ui.owner-dashboard .owner-archives-refresh-feedback{
+  margin:0;padding:8px 12px;color:#cbe4f5;font-size:12px;
+  border:1px solid #315973;border-radius:7px;background:#123a54;
+}
+body.internal-ui.owner-dashboard .owner-archives-refresh-feedback.is-error{
+  background:#3a2537;color:#ffd1da;border-color:#92506a;
+}
+body.internal-ui.owner-dashboard .owner-archives-refresh-feedback[hidden]{display:none}
+body.internal-ui.owner-dashboard .owner-archives-table-frame{
+  --staff-list-header:48px;
+  --staff-list-row:78px;
+  --staff-list-five-rows:390px;
+  width:100%;max-width:100%;min-width:0;border-radius:0;
+}
+body.internal-ui.owner-dashboard .owner-archives-table-frame .staff-data-table-scroll{
+  box-sizing:border-box;min-height:438px;height:438px;
+  max-width:100%;overflow-x:auto!important;overflow-y:auto;
+  border:0;border-radius:0;margin:0;
+}
+body.internal-ui.owner-dashboard .owner-archives-table-frame .owner-archives-table{
+  width:100%!important;min-width:1030px!important;
+  table-layout:fixed!important;border-collapse:collapse!important;
+  border-spacing:0!important;border-radius:0!important;margin:0!important;
+}
+body.internal-ui.owner-dashboard .owner-archives-table col.owner-archives-col-id{width:17%}
+body.internal-ui.owner-dashboard .owner-archives-table col.owner-archives-col-client{width:24%}
+body.internal-ui.owner-dashboard .owner-archives-table col.owner-archives-col-event{width:26%}
+body.internal-ui.owner-dashboard .owner-archives-table col.owner-archives-col-archive{width:18%}
+body.internal-ui.owner-dashboard .owner-archives-table col.owner-archives-col-status{width:15%}
+body.internal-ui.owner-dashboard .owner-archives-table :is(thead th,tbody td){
+  border-radius:0!important;vertical-align:middle;
+  overflow-wrap:anywhere;font-size:12px;
+}
+body.internal-ui.owner-dashboard .owner-archives-table thead th{
+  height:48px;white-space:nowrap!important;
+}
+body.internal-ui.owner-dashboard .owner-archives-table tbody tr:not(.staff-data-table-empty-row){
+  height:78px;
+}
+body.internal-ui.owner-dashboard .owner-archives-table tbody td{
+  height:78px;
+}
+body.internal-ui.owner-dashboard .owner-archives-table .owner-archives-code{
+  color:#f1f9ff;font-weight:700;white-space:nowrap;
+}
+body.internal-ui.owner-dashboard .owner-archives-table .owner-archives-cell-secondary{
+  display:block;color:#b8d1e0;font-size:12px;margin-top:4px;
+}
+body.internal-ui.owner-dashboard .owner-archives-table time{
+  font-size:12px;font-variant-numeric:tabular-nums;white-space:nowrap;
+}
+body.internal-ui.owner-dashboard .owner-archives-table .owner-archives-status{
+  display:inline-flex;align-items:center;justify-content:center;
+  padding:4px 8px;min-height:28px;border:1px solid #426a84;
+  border-radius:7px;background:#153a53;color:#e2f1fa;
+  font-size:11px;white-space:normal;
+}
+body.internal-ui.owner-dashboard .owner-archives-table-frame .staff-data-table-empty{
+  min-height:390px;
+}
+body.internal-ui.owner-dashboard .owner-archives-table-frame .staff-data-table-empty-row>td{
+  height:390px!important;padding:0!important;text-align:center!important;
+}
+body.internal-ui.owner-dashboard .owner-archives-table-frame>.aries-five-pager{
+  height:50px;min-height:50px!important;max-height:50px;
+  border-radius:0!important;flex-wrap:nowrap!important;
+}
+body.internal-ui.owner-dashboard .owner-archives-table-frame>.aries-five-pager .aries-five-total{
+  min-width:0;flex:1 1 auto;line-height:1.2;
+}
+body.internal-ui.owner-dashboard .owner-archives-table-frame>.aries-five-pager .aries-five-actions{
+  flex:0 0 auto;gap:5px;
+}
+@media(max-width:760px){
+ body.internal-ui.owner-dashboard .owner-archives-toolbar .am-filter-search{
+  min-width:0;flex-basis:100%;
+ }
+ body.internal-ui.owner-dashboard .owner-archives-table-frame>.aries-five-pager{
+  gap:4px!important;padding:4px 6px!important;justify-content:space-between!important;
+ }
+ body.internal-ui.owner-dashboard .owner-archives-table-frame>.aries-five-pager .aries-five-total{
+  flex:0 1 90px!important;flex-basis:90px!important;max-width:90px!important;
+  min-width:0!important;white-space:normal;font-size:10px;line-height:1.15;
+ }
+ body.internal-ui.owner-dashboard .owner-archives-table-frame>.aries-five-pager .aries-five-actions{
+  gap:2px!important;flex:0 0 auto!important;
+ }
+ body.internal-ui.owner-dashboard .owner-archives-table-frame>.aries-five-pager .aries-five-page{
+  font-size:10px;white-space:nowrap;
+ }
+}
+
+/* Owner Financial Summary — standardize only the booking-record table.
+   Totals, charts, export and calculation services remain untouched. */
+body.internal-ui.owner-dashboard .dashboard-content:has(>.owner-reports-page) {
+  padding:10px clamp(10px,1.2vw,18px) 18px;
+}
+body.internal-ui.owner-dashboard .owner-reports-page {
+  display:grid;
+  grid-template-columns:minmax(0,1fr);
+  gap:12px;
+  width:100%;
+  max-width:none;
+  min-width:0;
+  margin:0;
+}
+body.internal-ui.owner-dashboard .owner-reports-page> :is(.owner-report-toolbar,.owner-report-section) {
+  min-width:0;
+  max-width:100%;
+}
+body.internal-ui.owner-dashboard .owner-reports-page .owner-report-toolbar {
+  justify-content:space-between;
+  gap:8px;
+}
+body.internal-ui.owner-dashboard .owner-reports-page .owner-report-toolbar .am-filter-bar {
+  min-width:0;
+  max-width:none;
+  margin:0;
+}
+body.internal-ui.owner-dashboard .owner-reports-page .owner-report-records-section {
+  display:grid;
+  grid-template-columns:minmax(0,1fr);
+  gap:10px;
+  padding:0!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+}
+body.internal-ui.owner-dashboard .owner-reports-page .owner-report-records-heading {
+  margin:0;
+  align-items:center;
+  flex-wrap:wrap;
+}
+body.internal-ui.owner-dashboard .owner-reports-page .owner-report-records-heading span {
+  color:#b7ccdd;
+  font-size:12px;
+  white-space:nowrap;
+}
+body.internal-ui.owner-dashboard .owner-report-records-section>.aries-round3-toolbar {
+  min-width:0;
+  width:100%;
+  max-width:100%;
+  margin:0;
+  padding:8px 10px;
+  gap:8px;
+  background:#0b2741;
+  border:1px solid #315973;
+  border-radius:9px;
+}
+body.internal-ui.owner-dashboard .owner-report-records-section>.aries-round3-toolbar .am-filter-search {
+  min-width:180px;
+  flex:1 1 260px;
+}
+body.internal-ui.owner-dashboard .owner-report-records-section>.aries-round3-toolbar .am-filter-search input {
+  height:40px;
+  min-height:40px;
+  font-size:13px;
+}
+body.internal-ui.owner-dashboard .owner-report-records-section>.aries-round3-toolbar :is(.dropdown-toggle,.aries-round3-refresh) {
+  min-height:40px;
+  height:40px;
+  font-size:12px;
+}
+body.internal-ui.owner-dashboard .owner-financial-records-frame {
+  --staff-list-header:48px;
+  --staff-list-row:78px;
+  --staff-list-five-rows:390px;
+  max-width:100%;
+  min-width:0;
+  width:100%;
+  border-radius:0;
+}
+body.internal-ui.owner-dashboard .owner-financial-records-frame .owner-financial-records-scroll {
+  box-sizing:border-box;
+  width:100%;
+  max-width:100%;
+  height:438px;
+  min-height:438px;
+  overflow-x:auto;
+  overflow-y:auto;
+  border-radius:0;
+}
+body.internal-ui.owner-dashboard .owner-reports-page .owner-financial-records-frame .owner-financial-records-table {
+  width:100%;
+  min-width:1580px!important;
+  table-layout:fixed;
+  border-collapse:collapse;
+  border-spacing:0;
+  margin:0;
+  border-radius:0;
+  color:#e0eef8;
+}
+body.internal-ui.owner-dashboard .owner-financial-records-table col.owner-financial-col-booking {width:12%}
+body.internal-ui.owner-dashboard .owner-financial-records-table col.owner-financial-col-client {width:14%}
+body.internal-ui.owner-dashboard .owner-financial-records-table col.owner-financial-col-package {width:13%}
+body.internal-ui.owner-dashboard .owner-financial-records-table col.owner-financial-col-date {width:10%}
+body.internal-ui.owner-dashboard .owner-financial-records-table col.owner-financial-col-value {width:12%}
+body.internal-ui.owner-dashboard .owner-financial-records-table col.owner-financial-col-collected {width:11%}
+body.internal-ui.owner-dashboard .owner-financial-records-table col.owner-financial-col-outstanding {width:13%}
+body.internal-ui.owner-dashboard .owner-financial-records-table col.owner-financial-col-status {width:8%}
+body.internal-ui.owner-dashboard .owner-financial-records-table col.owner-financial-col-action {width:7%}
+body.internal-ui.owner-dashboard .owner-financial-records-frame .owner-financial-records-table :is(th,td) {
+  border-radius:0;
+  vertical-align:middle;
+  line-height:1.35;
+  box-sizing:border-box;
+  overflow-wrap:anywhere;
+  color:#e0eef8;
+}
+body.internal-ui.owner-dashboard .owner-financial-records-frame .owner-financial-records-table thead th {
+  white-space:nowrap;
+  font-size:12px;
+  height:48px;
+}
+body.internal-ui.owner-dashboard .owner-financial-records-frame .owner-financial-records-table tbody tr:not(.staff-data-table-empty-row) {
+  height:78px;
+}
+body.internal-ui.owner-dashboard .owner-financial-records-frame .owner-financial-records-table tbody td {
+  font-size:12px;
+  height:78px;
+}
+body.internal-ui.owner-dashboard .owner-financial-records-frame .owner-financial-records-table :is(th,td).owner-financial-amount {
+  font-variant-numeric:tabular-nums lining-nums;
+  text-align:right;
+  white-space:nowrap;
+  overflow-wrap:normal;
+}
+body.internal-ui.owner-dashboard .owner-financial-records-frame .owner-financial-records-table :is(th,td):last-child {
+  text-align:right;
+}
+body.internal-ui.owner-dashboard .owner-financial-records-frame .owner-financial-records-table :is(.owner-booking-code,.status-badge) {
+  white-space:nowrap;
+}
+body.internal-ui.owner-dashboard .owner-financial-records-frame .owner-financial-records-table .owner-booking-code {
+  font-weight:700;
+  color:#ffda6a;
+}
+body.internal-ui.owner-dashboard .owner-financial-records-frame .owner-financial-records-table .btn {
+  min-height:36px;
+  padding:7px 10px;
+  font-size:12px;
+  white-space:nowrap;
+}
+body.internal-ui.owner-dashboard .owner-financial-records-frame .staff-data-table-empty {
+  min-height:390px;
+}
+body.internal-ui.owner-dashboard .owner-financial-records-frame .staff-data-table-empty-row>td {
+  height:390px;
+  padding:0;
+  text-align:center;
+}
+body.internal-ui.owner-dashboard .owner-financial-records-frame>.aries-five-pager {
+  min-height:50px;
+  max-height:50px;
+  height:50px;
+  border-radius:0!important;
+  flex-wrap:nowrap!important;
+}
+body.internal-ui.owner-dashboard .owner-financial-records-frame>.aries-five-pager .aries-five-total {
+  min-width:0;
+  flex:1 1 auto;
+  line-height:1.2;
+}
+body.internal-ui.owner-dashboard .owner-financial-records-frame>.aries-five-pager .aries-five-actions {
+  flex:0 0 auto;
+  gap:5px;
+}
+@media(max-width:760px) {
+  body.internal-ui.owner-dashboard .owner-report-records-section>.aries-round3-toolbar .am-filter-search {
+    min-width:0;
+    flex-basis:100%;
+  }
+  body.internal-ui.owner-dashboard .owner-financial-records-frame>.aries-five-pager {
+    padding:4px 6px!important;
+    gap:4px!important;
+    justify-content:space-between!important;
+    flex-wrap:nowrap!important;
+  }
+  body.internal-ui.owner-dashboard .owner-financial-records-frame>.aries-five-pager .aries-five-total {
+    min-width:0;
+    flex:0 1 90px;
+    flex-basis:90px!important;
+    max-width:90px!important;
+    white-space:normal;
+    line-height:1.15;
+    font-size:10px;
+  }
+  body.internal-ui.owner-dashboard .owner-financial-records-frame>.aries-five-pager .aries-five-actions {
+    flex:0 0 auto!important;
+    gap:2px!important;
+  }
+  body.internal-ui.owner-dashboard .owner-financial-records-frame>.aries-five-pager .aries-five-page {
+    font-size:10px;
+    white-space:nowrap;
+  }
+}
+@media print {
+  body.internal-ui.owner-dashboard .owner-financial-records-frame .owner-financial-records-scroll {
+    height:auto;
+    max-height:none;
+    overflow:visible;
+  }
+}
+
+/* Unified Owner Booking Details — dedicated Owner-only presentation shared by
+   the payment review and read-only booking details. Staff/Client CSS is unchanged. */
+body.internal-ui.owner-dashboard .dashboard-content:has(>.owner-booking-detail-page){
+  padding:10px clamp(10px,1.2vw,18px) 18px;
+}
+body.internal-ui.owner-dashboard .owner-booking-detail-page{
+  width:100%;max-width:none;min-width:0;margin:0;display:grid;gap:12px;color:#eaf3fc;
+}
+body.internal-ui.owner-dashboard .owner-booking-detail-header{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  min-width:0;margin:0;padding:0 0 11px;border-bottom:1px solid #2c506a;
+}
+body.internal-ui.owner-dashboard .owner-booking-detail-header h1{
+  font-size:clamp(21px,2.4vw,26px);line-height:1.2;font-weight:800;
+  color:#f9fcff;letter-spacing:.01em;white-space:normal;overflow-wrap:anywhere;
+  min-width:0;margin:0;
+}
+body.internal-ui.owner-dashboard .owner-booking-detail-header .btn{
+  min-height:40px;flex:0 0 auto;font-size:12px;
+}
+body.internal-ui.owner-dashboard .owner-booking-detail-layout{
+  display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,320px);
+  gap:13px;width:100%;min-width:0;align-items:start;
+}
+body.internal-ui.owner-dashboard .owner-booking-detail-main,
+body.internal-ui.owner-dashboard .owner-booking-detail-timeline{
+  min-width:0;max-width:100%;
+}
+body.internal-ui.owner-dashboard .owner-booking-detail-main{
+  display:grid;grid-template-columns:minmax(0,1fr);gap:12px;
+}
+body.internal-ui.owner-dashboard .owner-booking-detail-main .staff-unified-section-stack{
+  display:grid;grid-template-columns:minmax(0,1fr);gap:12px;
+  min-width:0;width:100%;margin:0;
+}
+body.internal-ui.owner-dashboard .owner-booking-detail-main :is(.staff-detail-section,.owner-review-card,.owner-booking-detail-section){
+  margin:0;min-width:0;max-width:100%;padding:14px;
+  background:#0b2942;border:1px solid #35546c;border-radius:10px;
+  box-shadow:none;overflow-wrap:anywhere;
+}
+body.internal-ui.owner-dashboard .owner-booking-detail-main :is(.staff-detail-section,.owner-review-card,.owner-booking-detail-section)>h2,
+body.internal-ui.owner-dashboard .owner-booking-detail-main .owner-section-heading h2,
+body.internal-ui.owner-dashboard .owner-booking-detail-main .owner-booking-financial-details .dash-section-heading h2{
+  font-size:15px;font-weight:750;line-height:1.35;color:#f5faff;
+  margin:0;padding:0;display:flex;align-items:center;gap:9px;
+}
+body.internal-ui.owner-dashboard .owner-booking-detail-main :is(.staff-detail-section,.owner-review-card,.owner-booking-detail-section)>h2{
+  padding-bottom:10px;border-bottom:1px solid #2c4d65;margin-bottom:6px;
+}
+body.internal-ui.owner-dashboard .owner-booking-detail-main .owner-section-heading,
+body.internal-ui.owner-dashboard .owner-booking-detail-main .owner-booking-financial-details .dash-section-heading{
+  padding-bottom:10px;border-bottom:1px solid #2c4d65;margin:0 0 10px;
+}
+body.internal-ui.owner-dashboard .owner-booking-detail-main .staff-detail-section h2 i,
+body.internal-ui.owner-dashboard .owner-booking-detail-main .owner-booking-financial-details .dash-section-heading i{
+  color:#f0c978;
+}
+body.internal-ui.owner-dashboard .owner-booking-detail-main .staff-detail-list{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+  column-gap:17px;row-gap:0;min-width:0;width:100%;
+}
+body.internal-ui.owner-dashboard .owner-booking-detail-main .staff-detail-list>div{
+  min-width:0;max-width:100%;border:0;border-bottom:1px solid #274a62;
+  border-radius:0;background:transparent;padding:10px 0;overflow-wrap:anywhere;
+}
+body.internal-ui.owner-dashboard .owner-booking-detail-main .staff-detail-list>div.staff-detail-span-2{
+  grid-column:1/-1;
+}
+body.internal-ui.owner-dashboard .owner-booking-detail-main .staff-detail-list span{
+  display:block;color:#a9c5d9;font-size:11px;font-weight:650;
+  margin:0 0 4px;letter-spacing:0;text-transform:none;
+}
+body.internal-ui.owner-dashboard .owner-booking-detail-main .staff-detail-list strong{
+  display:block;color:#f0f7fd;font-size:12px;font-weight:650;line-height:1.55;
+  white-space:normal;overflow-wrap:anywhere;word-break:break-word;
+}
+body.internal-ui.owner-dashboard .owner-booking-detail-main .booking-venue-overview,
+body.internal-ui.owner-dashboard .owner-booking-detail-main .booking-venue-metrics{
+  min-width:0;max-width:100%;
+}
+body.internal-ui.owner-dashboard .owner-booking-detail-main .booking-venue-metrics{
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;
+}
+body.internal-ui.owner-dashboard .owner-booking-detail-main .booking-venue-metrics>div{
+  min-width:0;overflow-wrap:anywhere;
+}
+body.internal-ui.owner-dashboard .owner-booking-detail-main .staff-note-block{
+  min-width:0;padding:9px 11px;background:#112f49;border:1px solid #355670;
+  color:#e5f4ff;border-radius:8px;white-space:pre-wrap;overflow-wrap:anywhere;
+}
+body.internal-ui.owner-dashboard .owner-booking-detail-timeline .aries-timeline{
+  width:100%;max-width:100%;min-width:0;margin:0;padding:14px;
+  border:1px solid #315973;border-radius:10px;
+}
+body.internal-ui.owner-dashboard .owner-booking-detail-timeline .aries-timeline-head{
+  padding-bottom:10px;gap:8px;
+}
+body.internal-ui.owner-dashboard .owner-booking-detail-timeline .aries-timeline-head h2{
+  font-size:15px;line-height:1.35;overflow-wrap:anywhere;
+}
+body.internal-ui.owner-dashboard .owner-booking-detail-timeline .aries-timeline-head p{
+  font-size:11px;line-height:1.45;
+}
+body.internal-ui.owner-dashboard .owner-booking-detail-timeline .aries-timeline-status{
+  display:none;
+}
+body.internal-ui.owner-dashboard .owner-booking-detail-timeline .aries-timeline-list{
+  min-width:0;margin:12px 0 0;padding:0 0 0 15px;
+}
+body.internal-ui.owner-dashboard .owner-booking-detail-timeline .aries-timeline-list li{
+  min-width:0;padding:0 0 14px 16px;
+}
+body.internal-ui.owner-dashboard .owner-booking-detail-timeline .aries-timeline-entry{
+  display:grid;grid-template-columns:minmax(0,1fr);gap:4px;
+  min-width:0;overflow-wrap:anywhere;
+}
+body.internal-ui.owner-dashboard .owner-booking-detail-timeline .aries-timeline-entry :is(strong,time){
+  display:block;min-width:0;overflow-wrap:anywhere;white-space:normal;
+  font-size:12px;line-height:1.45;
+}
+body.internal-ui.owner-dashboard .owner-booking-detail-main .owner-detail-grid,
+body.internal-ui.owner-dashboard .owner-booking-detail-main .owner-financial-grid{
+  grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;
+}
+body.internal-ui.owner-dashboard .owner-booking-detail-main .owner-detail-grid>div,
+body.internal-ui.owner-dashboard .owner-booking-detail-main .owner-financial-grid>div{
+  min-width:0;overflow-wrap:anywhere;box-shadow:none;
+}
+body.internal-ui.owner-dashboard .owner-booking-detail-main .owner-booking-proof-inline{
+  margin-top:14px;border-top:1px solid #294d66;padding-top:13px;
+  width:100%;min-width:0;
+}
+body.internal-ui.owner-dashboard .owner-booking-detail-main .owner-booking-proof-inline .owner-section-heading{
+  flex-wrap:wrap;gap:8px;
+}
+body.internal-ui.owner-dashboard .owner-booking-detail-main .owner-booking-proof-inline .owner-proof-large{
+  min-height:180px;max-height:260px;width:100%;
+}
+body.internal-ui.owner-dashboard .owner-booking-detail-main .owner-booking-proof-inline .owner-proof-large img{
+  max-height:245px;
+}
+body.internal-ui.owner-dashboard .owner-booking-detail-main .owner-payment-compare{
+  min-width:540px;
+}
+body.internal-ui.owner-dashboard .owner-booking-detail-main .owner-payment-compare :is(th,td){
+  font-size:12px;vertical-align:top;overflow-wrap:anywhere;
+}
+body.internal-ui.owner-dashboard .owner-booking-detail-main .owner-assessment-card{
+  margin-top:12px;padding:12px;border-radius:8px;
+  background:#15344e;border-color:#44637a;box-shadow:none;
+}
+body.internal-ui.owner-dashboard .owner-booking-detail-main .owner-assessment-card h2{
+  font-size:13px;color:#f5faff;
+}
+body.internal-ui.owner-dashboard .owner-booking-detail-main .owner-warning-box{
+  margin-top:10px;
+}
+body.internal-ui.owner-dashboard .owner-booking-detail-main .owner-action-bar,
+body.internal-ui.owner-dashboard .owner-booking-detail-main .owner-booking-detail-actions{
+  position:static;bottom:auto;min-width:0;margin:0;box-shadow:none;
+  padding:11px 13px;background:#0b2942;border:1px solid #35546c;
+  border-radius:10px;display:flex;justify-content:flex-end;align-items:center;
+}
+body.internal-ui.owner-dashboard .owner-booking-detail-main .owner-action-buttons{
+  display:flex;align-items:center;justify-content:flex-end;
+  flex-wrap:wrap;gap:8px;
+}
+body.internal-ui.owner-dashboard .owner-booking-detail-main .owner-action-buttons .btn{
+  min-height:42px;width:auto;
+}
+body.internal-ui.owner-dashboard .owner-booking-detail-main .owner-booking-financial-details{
+  width:100%;max-width:100%;min-width:0;position:static;
+}
+body.internal-ui.owner-dashboard .owner-booking-detail-main .owner-booking-financial-metrics{
+  margin:8px 0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:9px;
+}
+body.internal-ui.owner-dashboard .owner-booking-detail-main .owner-booking-financial-metrics>div{
+  min-width:0;overflow-wrap:anywhere;
+}
+body.internal-ui.owner-dashboard .owner-booking-detail-main .owner-booking-financial-details .table-responsive{
+  min-width:0;max-width:100%;overflow-x:auto;
+}
+body.internal-ui.owner-dashboard .owner-booking-detail-main .owner-booking-financial-details table{
+  min-width:800px;
+}
+body.internal-ui.owner-dashboard .owner-booking-detail-main .owner-booking-financial-details .owner-booking-payment-review-link{
+  display:block;margin-top:7px;font-size:12px;white-space:nowrap;
+}
+body.internal-ui.owner-dashboard .owner-booking-detail-main .owner-booking-financial-details :is(dd,td,.owner-cell-subtext){
+  overflow-wrap:anywhere;
+}
+@media(max-width:1100px){
+ body.internal-ui.owner-dashboard .owner-booking-detail-layout{
+   grid-template-columns:minmax(0,1fr);
+ }
+ body.internal-ui.owner-dashboard .owner-booking-detail-timeline{
+   grid-column:1;width:100%;
+ }
+}
+@media(max-width:620px){
+ body.internal-ui.owner-dashboard .owner-booking-detail-header{
+   align-items:flex-start;flex-wrap:wrap;
+ }
+ body.internal-ui.owner-dashboard .owner-booking-detail-header .btn{
+   max-width:100%;
+ }
+ body.internal-ui.owner-dashboard .owner-booking-detail-main .staff-detail-list,
+ body.internal-ui.owner-dashboard .owner-booking-detail-main .owner-detail-grid,
+ body.internal-ui.owner-dashboard .owner-booking-detail-main .owner-financial-grid,
+ body.internal-ui.owner-dashboard .owner-booking-detail-main .owner-booking-financial-metrics{
+   grid-template-columns:minmax(0,1fr);
+ }
+ body.internal-ui.owner-dashboard .owner-booking-detail-main .booking-venue-metrics{
+   grid-template-columns:minmax(0,1fr);
+ }
+ body.internal-ui.owner-dashboard .owner-booking-detail-main .owner-action-buttons{
+   width:100%;justify-content:stretch;
+ }
+ body.internal-ui.owner-dashboard .owner-booking-detail-main .owner-action-buttons .btn{
+   flex:1 1 160px;
+ }
+}
+
+body.internal-ui.owner-dashboard .owner-booking-detail-main .owner-booking-private-notes{min-width:0;border:1px solid #35546c;border-radius:10px;background:#0b2942;padding:10px 14px;color:#e5f4ff}
+body.internal-ui.owner-dashboard .owner-booking-detail-main .owner-booking-private-notes summary{cursor:pointer;font-size:13px;font-weight:700}
+body.internal-ui.owner-dashboard .owner-booking-detail-main .owner-booking-private-notes pre{margin:10px 0 0;white-space:pre-wrap;overflow-wrap:anywhere;color:#eaf3fc;font:inherit;font-size:12px}
+
+/* Owner Confirmed Booking revision: compact layout, shared dashboard tokens. */
+body.internal-ui.owner-dashboard .dashboard-content:has(>.owner-confirmed-change-page){padding:10px clamp(10px,1.2vw,18px) 18px}
+body.internal-ui.owner-dashboard .owner-confirmed-change-page{width:100%;min-width:0;max-width:none;margin:0;gap:12px}
+body.internal-ui.owner-dashboard .owner-confirmed-change-page .confirmed-change-heading{min-width:0;margin:0;padding:0 0 11px;border-bottom:1px solid #2c506a}
+body.internal-ui.owner-dashboard .owner-confirmed-change-page .confirmed-change-heading h1{font-size:clamp(21px,2.4vw,26px);font-weight:800;overflow-wrap:anywhere;min-width:0;margin:0;line-height:1.2}
+body.internal-ui.owner-dashboard .owner-confirmed-change-page .confirmed-change-layout{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(270px,.85fr);gap:12px;min-width:0;width:100%}
+body.internal-ui.owner-dashboard .owner-confirmed-change-page .confirmed-change-card{min-width:0;max-width:100%;padding:15px;border:1px solid #35546c;border-radius:10px;background:#0b2942}
+body.internal-ui.owner-dashboard .owner-confirmed-change-page .confirmed-change-card h2{font-size:15px;line-height:1.35;margin:0 0 12px;padding:0 0 10px;border-bottom:1px solid #2c4d65}
+body.internal-ui.owner-dashboard .owner-confirmed-change-page .confirmed-change-field{margin:0 0 12px;gap:5px;min-width:0}
+body.internal-ui.owner-dashboard .owner-confirmed-change-page .confirmed-change-coordinates{min-width:0;margin:0 0 12px;padding:10px 12px}
+body.internal-ui.owner-dashboard .owner-confirmed-change-page .confirmed-change-coordinates p{margin:6px 0;font-size:12px}
+body.internal-ui.owner-dashboard .owner-confirmed-change-page .confirmed-change-field small{line-height:1.45;overflow-wrap:anywhere}
+body.internal-ui.owner-dashboard .owner-confirmed-change-page :is(.confirmed-change-search,.confirmed-change-coordinate-row){min-width:0}
+body.internal-ui.owner-dashboard .owner-confirmed-change-page .confirmed-change-search input{min-width:0;max-width:100%}
+body.internal-ui.owner-dashboard .owner-confirmed-change-page .confirmed-change-summary dl{margin:0;gap:8px}
+body.internal-ui.owner-dashboard .owner-confirmed-change-page .confirmed-change-summary dl>div{min-width:0;grid-template-columns:105px minmax(0,1fr);gap:8px;overflow-wrap:anywhere}
+body.internal-ui.owner-dashboard .owner-confirmed-change-page .confirmed-change-summary dd{overflow-wrap:anywhere;word-break:break-word}
+body.internal-ui.owner-dashboard .owner-confirmed-change-page .confirmed-change-actions{margin-top:4px}
+body.internal-ui.owner-dashboard .owner-confirmed-change-page .confirmed-change-submit{min-height:42px;padding:9px 14px}
+@media(max-width:1100px){
+ body.internal-ui.owner-dashboard .owner-confirmed-change-page .confirmed-change-layout{grid-template-columns:minmax(0,1fr)}
+}
+@media(max-width:570px){
+ body.internal-ui.owner-dashboard .owner-confirmed-change-page .confirmed-change-card{padding:12px}
+ body.internal-ui.owner-dashboard .owner-confirmed-change-page .confirmed-change-summary dl>div{grid-template-columns:90px minmax(0,1fr)}
+ body.internal-ui.owner-dashboard .owner-confirmed-change-page .confirmed-change-actions .btn{width:100%}
+ body.internal-ui.owner-dashboard .owner-confirmed-change-page .confirmed-change-heading{flex-wrap:wrap}
+}
+
 /* ========== CANONICAL: personnel.css ========== */
-/* Scoped to the new personnel screen; shared Phase 8 tokens/layout remain unchanged. */
-.personnel-console .dash-panel + .dash-panel{margin-top:16px}
-.personnel-console form{display:grid;gap:8px}
-.personnel-console .table-responsive{max-width:100%;overflow-x:auto}
-.personnel-console table{min-width:704px}
-.personnel-console td:first-child{min-width:160px;overflow-wrap:anywhere}
-.personnel-console td:last-child{min-width:240px}
-.personnel-console li{overflow-wrap:anywhere;margin-block:8px}
-.personnel-console .table-responsive:focus-visible{outline:2px solid var(--workspace-gold);outline-offset:3px}
+/* Owner Personnel Accounts: shared five-row table, compact toolbar, isolated Staff access workflow. */
+body.internal-ui.owner-dashboard .dashboard-content:has(>.owner-personnel-workspace,>.owner-personnel-access-page){
+ padding:10px clamp(10px,1.2vw,18px) 18px;
+}
+body.internal-ui.owner-dashboard .owner-personnel-workspace,
+body.internal-ui.owner-dashboard .owner-personnel-access-page{
+ width:100%;max-width:none;min-width:0;margin:0;color:#dcebf7;
+}
+body.internal-ui.owner-dashboard .owner-personnel-workspace{display:grid;gap:10px}
+body.internal-ui.owner-dashboard .owner-personnel-toolbar{
+ display:flex;flex-wrap:wrap;gap:10px;align-items:end;justify-content:space-between;min-width:0;
+}
+body.internal-ui.owner-dashboard .owner-personnel-workspace .owner-account-filters{
+ margin:0;display:flex;align-items:end;flex:1 1 380px;gap:8px;flex-wrap:wrap;min-width:0;
+}
+body.internal-ui.owner-dashboard .owner-personnel-workspace .owner-account-filters>div:first-child{
+ flex:1 1 250px;min-width:170px;grid-column:auto;
+}
+body.internal-ui.owner-dashboard .owner-personnel-workspace .owner-account-filters>div:nth-child(2){
+ flex:0 1 166px;min-width:138px;
+}
+body.internal-ui.owner-dashboard .owner-personnel-workspace .owner-account-filters label{
+ display:block;margin:0 0 5px;font-size:12px;font-weight:650;color:#c6ddea;
+}
+body.internal-ui.owner-dashboard .owner-personnel-workspace .owner-personnel-search-box{position:relative}
+body.internal-ui.owner-dashboard .owner-personnel-workspace .owner-personnel-search-box>i{
+ position:absolute;left:13px;top:50%;transform:translateY(-50%);color:#b8d3e5;pointer-events:none;
+}
+body.internal-ui.owner-dashboard .owner-personnel-workspace .owner-personnel-search-box input{padding-left:37px}
+body.internal-ui.owner-dashboard .owner-personnel-workspace .owner-account-filters :is(input,select){
+ width:100%;min-height:40px;height:40px;border-radius:8px;font-size:13px;
+}
+body.internal-ui.owner-dashboard .owner-personnel-toolbar-actions{
+ display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap;min-width:0;
+}
+body.internal-ui.owner-dashboard .owner-personnel-toolbar-actions .btn{
+ min-height:40px;height:40px;padding:8px 12px;display:inline-flex;gap:7px;align-items:center;justify-content:center;
+ font-size:12px;line-height:1.2;border-radius:8px;white-space:nowrap;
+}
+body.internal-ui.owner-dashboard .owner-personnel-toolbar-actions .owner-personnel-refresh{
+ width:40px;min-width:40px;padding:0;flex:none;
+}
+body.internal-ui.owner-dashboard .owner-personnel-refresh.is-loading>i{animation:personnel-refresh-spin 1s linear infinite}
+@keyframes personnel-refresh-spin{to{transform:rotate(360deg)}}
+body.internal-ui.owner-dashboard .owner-personnel-toolbar-actions .btn:focus-visible{
+ outline:3px solid #8dc8f5;outline-offset:2px;
+}
+body.internal-ui.owner-dashboard .owner-personnel-table-frame{--staff-list-header:48px;--staff-list-row:80px;--staff-list-five-rows:410px}
+body.internal-ui.owner-dashboard .owner-personnel-table-frame .staff-data-table-scroll:has(.staff-data-table-empty-row){
+ height:458px;min-height:458px;max-height:458px;overflow-y:hidden!important;
+}
+body.internal-ui.owner-dashboard .owner-personnel-table-frame .staff-data-table{min-width:800px!important}
+body.internal-ui.owner-dashboard .owner-personnel-table-frame col.owner-personnel-col-name{width:23%}
+body.internal-ui.owner-dashboard .owner-personnel-table-frame col.owner-personnel-col-email{width:30%}
+body.internal-ui.owner-dashboard .owner-personnel-table-frame col.owner-personnel-col-role{width:13%}
+body.internal-ui.owner-dashboard .owner-personnel-table-frame col.owner-personnel-col-status{width:13%}
+body.internal-ui.owner-dashboard .owner-personnel-table-frame col.owner-personnel-col-date{width:21%}
+body.internal-ui.owner-dashboard .owner-personnel-table-frame .staff-data-table thead th,
+body.internal-ui.owner-dashboard .owner-personnel-table-frame .staff-data-table tbody td{
+ border-radius:0;text-align:left;
+}
+body.internal-ui.owner-dashboard .owner-personnel-table-frame .staff-data-table thead th:last-child,
+body.internal-ui.owner-dashboard .owner-personnel-table-frame .staff-data-table tbody td:last-child{text-align:right}
+body.internal-ui.owner-dashboard .owner-personnel-table-frame .owner-personnel-name{
+ color:#f0f8ff;font-size:13px;font-weight:750;overflow-wrap:anywhere;
+}
+body.internal-ui.owner-dashboard .owner-personnel-table-frame .owner-personnel-email{
+ color:#d4e6f4;font-size:12px;overflow-wrap:anywhere;
+}
+body.internal-ui.owner-dashboard .owner-personnel-table-frame .owner-personnel-role-badge{white-space:nowrap}
+body.internal-ui.owner-dashboard .owner-personnel-table-frame time,
+body.internal-ui.owner-dashboard .owner-personnel-table-frame .owner-personnel-date-empty{
+ color:#c3d8e8;font-size:12px;
+}
+body.internal-ui.owner-dashboard .owner-personnel-table-frame time span{font-size:10px}
+body.internal-ui.owner-dashboard .owner-personnel-table-frame :is(.staff-data-table-frame,.staff-data-table-panel,.staff-data-table-scroll,.staff-data-table,.aries-five-pager){border-radius:0}
+body.internal-ui.owner-dashboard .owner-personnel-table-frame>.aries-five-pager{min-height:50px;max-height:50px}
+body.internal-ui.owner-dashboard .owner-personnel-invite-modal .modal-dialog{max-width:465px}
+body.internal-ui.owner-dashboard .owner-personnel-invite-modal .modal-content{
+ background:#0d2b43;color:#eef7ff;border:1px solid #3f637c;border-radius:12px;
+}
+body.internal-ui.owner-dashboard .owner-personnel-invite-modal .modal-header,
+body.internal-ui.owner-dashboard .owner-personnel-invite-modal .modal-footer{
+ border-color:#315771;padding:14px 18px;
+}
+body.internal-ui.owner-dashboard .owner-personnel-invite-modal .modal-body{
+ display:grid;gap:14px;padding:18px;
+}
+body.internal-ui.owner-dashboard .owner-personnel-invite-form .modal-body>div{display:grid;gap:5px}
+body.internal-ui.owner-dashboard .owner-personnel-invite-form label{color:#cce2f0;font-size:12px;font-weight:680}
+body.internal-ui.owner-dashboard .owner-personnel-invite-form input{min-height:42px}
+body.internal-ui.owner-dashboard .owner-personnel-invite-form :is(input,button):focus-visible{
+ outline:3px solid #8dc8f5;outline-offset:2px;
+}
+body.internal-ui.owner-dashboard .owner-personnel-access-page{display:grid;gap:12px}
+body.internal-ui.owner-dashboard .owner-personnel-access-toolbar{
+ display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+}
+body.internal-ui.owner-dashboard .owner-personnel-access-toolbar h1{
+ color:#f3f9ff;font-size:17px;font-weight:750;margin:0;
+}
+body.internal-ui.owner-dashboard .owner-personnel-access-toolbar .btn{min-height:40px;display:inline-flex;gap:7px;align-items:center}
+body.internal-ui.owner-dashboard .owner-personnel-access-panel{
+ border:1px solid #345a74;background:#09283f;min-width:0;
+}
+body.internal-ui.owner-dashboard .owner-personnel-access-panel .table-responsive{overflow-x:auto}
+body.internal-ui.owner-dashboard .owner-personnel-access-table{min-width:760px;margin:0;background:transparent}
+body.internal-ui.owner-dashboard .owner-personnel-access-table th{
+ background:#153852;color:#d9eaf7;padding:12px;border-bottom:1px solid #365976;
+}
+body.internal-ui.owner-dashboard .owner-personnel-access-table td{
+ background:transparent;color:#dcebf7;padding:12px;border-bottom:1px solid #294c67;vertical-align:middle;
+}
+body.internal-ui.owner-dashboard .owner-personnel-access-table td:first-child{min-width:0}
+body.internal-ui.owner-dashboard .owner-personnel-access-table td:last-child{min-width:0}
+body.internal-ui.owner-dashboard .owner-personnel-access-email{
+ display:block;font-size:12px;color:#abcadf;margin-top:5px;overflow-wrap:anywhere;
+}
+body.internal-ui.owner-dashboard .owner-personnel-access-actions{
+ display:flex;justify-content:flex-end;align-items:center;gap:7px;flex-wrap:wrap;
+}
+body.internal-ui.owner-dashboard .owner-personnel-access-actions form{
+ display:inline-flex;gap:0;min-width:0;margin:0;padding:0;background:transparent;
+}
+body.internal-ui.owner-dashboard .owner-personnel-access-actions .btn{
+ min-height:36px;border-radius:7px;padding:7px 10px;display:inline-flex;align-items:center;gap:6px;
+ white-space:nowrap;font-size:12px;
+}
+@media(max-width:740px){
+ body.internal-ui.owner-dashboard .owner-personnel-workspace .owner-account-filters{flex-basis:100%}
+ body.internal-ui.owner-dashboard .owner-personnel-workspace .owner-account-filters>div:nth-child(2){flex:1 1 146px}
+ body.internal-ui.owner-dashboard .owner-personnel-toolbar-actions{justify-content:flex-start}
+ body.internal-ui.owner-dashboard .owner-personnel-table-frame>.aries-five-pager .aries-five-total{
+  flex:1 1 auto;min-width:0;flex-basis:auto!important;text-align:left!important;font-size:11px;
+ }
+ body.internal-ui.owner-dashboard .owner-personnel-table-frame>.aries-five-pager .aries-five-actions{gap:5px;flex:0 0 auto}
+ body.internal-ui.owner-dashboard .owner-personnel-table-frame>.aries-five-pager .aries-five-page{font-size:11px}
+}
+@media(max-width:440px){
+ body.internal-ui.owner-dashboard .owner-personnel-toolbar-actions .owner-personnel-access-link{flex:1 1 190px}
+ body.internal-ui.owner-dashboard .owner-personnel-toolbar-actions .owner-personnel-invite-button{flex:1 1 130px}
+ body.internal-ui.owner-dashboard .owner-personnel-invite-modal .modal-dialog{margin:12px;max-width:none}
+}
 
 /* Part 3 shared profile and messaging: more useful content width, unchanged forms/actions. */
 body.internal-ui.owner-dashboard .dashboard-content:has(.account-page,.comm-page-dashboard){

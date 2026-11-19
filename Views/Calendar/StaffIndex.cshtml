@@ -5,13 +5,11 @@
 @{
     Layout = "_DashboardLayout";
     ViewData["Title"] = "Event Calendar";
-    var useStaffColors = User.IsInRole("Staff") && !User.IsInRole("Owner");
+    // Owner-only Calendar Settings remains role-restricted; the view is shared.
     var originalPackageColors = ViewBag.PackageColors as IDictionary<string, string> ?? new Dictionary<string, string>();
-    var packageColors = originalPackageColors.ToDictionary(item => item.Key, item => useStaffColors
-        ? item.Key.Contains("All In", StringComparison.OrdinalIgnoreCase) ? "gold"
+    var packageColors = originalPackageColors.ToDictionary(item => item.Key, item => item.Key.Contains("All In", StringComparison.OrdinalIgnoreCase) ? "gold"
         : item.Key.Contains("Deluxe", StringComparison.OrdinalIgnoreCase) ? "red"
         : item.Key.Contains("Premium", StringComparison.OrdinalIgnoreCase) ? "blue"
-        : item.Value
         : item.Value, StringComparer.OrdinalIgnoreCase);
     string PackageName(Booking b) => !string.IsNullOrWhiteSpace(b.PackageName) ? b.PackageName : b.Service?.Name ?? "Package";
     string PackageKey(string name) => packageColors.TryGetValue(name, out var key) ? key : "pink";
@@ -19,7 +17,7 @@
     var confirmed = Model.Bookings.Where(b => b.Status == BookingStatus.Confirmed).ToList();
     var upcoming = confirmed
         .Where(b => b.EventDate.Date.Add(b.StartTime.TimeOfDay) >= now)
-        .OrderBy(b => b.EventDate).ThenBy(b => b.StartTime).ToList();
+        .OrderBy(b => b.EventDate).ThenBy(b => b.StartTime).ThenBy(b => b.Id).ToList();
     var dayData = confirmed.GroupBy(b => b.EventDate.Date).ToDictionary(
         g => g.Key.ToString("yyyy-MM-dd"),
         g => new {
@@ -34,6 +32,7 @@
     var dayDataJson = JsonSerializer.Serialize(dayData);
     var packageColorsJson = JsonSerializer.Serialize(packageColors);
     var blockedDatesJson = JsonSerializer.Serialize(ViewBag.BlockedDates ?? new List<object>());
+    var dateLimitsJson = JsonSerializer.Serialize(ViewBag.DateLimits ?? new Dictionary<string, int>());
 }
 
 @* FullCalendar 6 injects its CSS from the existing pinned JavaScript bundle. *@
@@ -45,7 +44,7 @@
         <div class="staff-calendar-toolbar">
             <h2 id="calendarHeading" class="visually-hidden">Confirmed booking calendar</h2>
             <div class="staff-calendar-nav" aria-label="Calendar navigation">
-                @if(User.IsInRole("Owner")){<a asp-action="Settings" class="btn btn-primary"><i class="bi bi-gear" aria-hidden="true"></i> Calendar Settings</a>}
+                @if(User.IsInRole("Owner")){<a asp-action="Settings" class="btn btn-primary owner-calendar-settings" aria-label="Calendar Settings" title="Calendar Settings"><i class="bi bi-gear" aria-hidden="true"></i><span>Calendar Settings</span></a>}
                 <button type="button" class="btn btn-outline-secondary" id="calPrev" aria-label="Previous month"><i class="bi bi-chevron-left" aria-hidden="true"></i></button>
                 <button type="button" class="btn btn-outline-secondary" id="calToday">Today</button>
                 <button type="button" class="btn btn-outline-secondary" id="calNext" aria-label="Next month"><i class="bi bi-chevron-right" aria-hidden="true"></i></button>
@@ -62,7 +61,7 @@
                         <span class="package-dot package-@item.Value"></span><span>@item.Key</span>
                     </button>
                 }
-                <span class="package-legend-blocked"><span class="blocked-legend-mark" aria-hidden="true">×</span> @(useStaffColors ? "Unavailable" : "Blocked / Unavailable")</span>
+                <span class="package-legend-blocked"><span class="blocked-legend-mark" aria-hidden="true">×</span> Unavailable</span>
             </div>
         </div>
         <div class="staff-calendar-loading" id="calendarLoading" role="status">
@@ -77,24 +76,18 @@
     </section>
 
     <section class="staff-upcoming-panel" aria-labelledby="upcomingHeading">
-        @if(useStaffColors){
         <h2 class="staff-final-upcoming-title" id="upcomingHeading">Upcoming Confirmed Bookings</h2>
-        }else{
-        <div class="staff-upcoming-heading">
-            <div>
-                <h2 id="upcomingHeading">Upcoming Confirmed Bookings</h2>
-                <p>Nearest event date and time first.</p>
-            </div>
-        </div>
-        }
-        @if (!upcoming.Any())
-        {
-            <div class="staff-upcoming-empty"><i class="bi bi-calendar2-check" aria-hidden="true"></i><span>No upcoming confirmed events.</span></div>
-        }
-        else
-        {
-            <div class="staff-upcoming-table-wrap">
-                <table class="table staff-upcoming-table" id="upcomingTable">
+            <div class="staff-data-table-frame staff-upcoming-table-frame">
+            <div class="staff-upcoming-table-wrap staff-data-table-scroll">
+                <table class="table staff-upcoming-table staff-data-table" id="upcomingTable">
+                    <colgroup>
+                        <col class="staff-col-booking" />
+                        <col class="staff-col-client" />
+                        <col class="staff-col-event" />
+                        <col class="staff-col-package" />
+                        <col class="staff-col-venue" />
+                        <col class="staff-col-action" />
+                    </colgroup>
                     <thead><tr><th scope="col">Booking</th><th scope="col">Client</th><th scope="col">Event Date & Time</th><th scope="col">Package</th><th scope="col">Location</th><th scope="col" class="text-end">Action</th></tr></thead>
                     <tbody>
                     @foreach (var booking in upcoming)
@@ -111,37 +104,30 @@
                             <td class="text-end"><a asp-controller="Bookings" asp-action="Details" asp-route-id="@booking.Id" class="btn btn-sm btn-outline-primary">View Details</a></td>
                         </tr>
                     }
+                    <tr class="staff-data-table-empty-row @(upcoming.Any() ? "d-none" : "")" id="upcomingFilteredEmpty">
+                        <td colspan="6">
+                            <div class="staff-data-table-empty" role="status">
+                                <i class="bi bi-inbox" aria-hidden="true"></i>
+                                <strong id="staffUpcomingEmptyTitle">No upcoming bookings</strong>
+                                <p id="staffUpcomingEmptyDescription">There are no upcoming bookings to display.</p>
+                            </div>
+                        </td>
+                    </tr>
                     </tbody>
                 </table>
             </div>
-            <div class="staff-upcoming-cards" id="upcomingCards">
-                @foreach (var booking in upcoming)
-                {
-                    var packageName = PackageName(booking);
-                    var colorKey = PackageKey(packageName);
-                    var bookingCode = $"BK-{booking.CreatedAt.Year}-{booking.Id:D3}";
-                    <article class="staff-upcoming-card js-upcoming-row" data-search="@(bookingCode) @(booking.Client?.FullName) @(booking.PartyVenue)" data-package="@packageName">
-                        <div class="staff-upcoming-card-head"><strong>@bookingCode</strong><span class="package-badge package-@colorKey">@packageName</span></div>
-                        <span>@(booking.Client?.FullName ?? "Unknown client")</span>
-                        <span><i class="bi bi-calendar-event" aria-hidden="true"></i> @booking.EventDate.ToString("MMM dd, yyyy") · @booking.StartTime.ToString("hh:mm tt")</span>
-                        <span><i class="bi bi-geo-alt" aria-hidden="true"></i> @booking.PartyVenue</span>
-                        <a asp-controller="Bookings" asp-action="Details" asp-route-id="@booking.Id" class="btn btn-sm btn-outline-primary">View Details</a>
-                    </article>
-                }
-            </div>
-            <div class="staff-upcoming-empty d-none" id="upcomingFilteredEmpty" role="status"><i class="bi bi-calendar-x" aria-hidden="true"></i><span>No confirmed bookings match the selected package.</span></div>
-            <nav class="staff-round2-calendar-pager @(useStaffColors ? "aries-five-pager" : "")" aria-label="Upcoming confirmed booking pages">
+            <nav class="staff-round2-calendar-pager aries-five-pager" aria-label="Upcoming confirmed booking pages">
+                <span class="aries-five-total" id="staffUpcomingTotal" role="status">@upcoming.Count matching record@(upcoming.Count == 1 ? "" : "s")</span>
                 <div class="aries-five-actions">
                     <button type="button" class="btn btn-outline-secondary" id="staffUpcomingPrev" aria-label="Previous confirmed booking page"><i class="bi bi-chevron-left" aria-hidden="true"></i></button>
                     <span class="aries-five-page" id="staffUpcomingPageInfo" aria-live="polite">Page 1 of 1</span>
                     <button type="button" class="btn btn-primary" id="staffUpcomingNext" aria-label="Next confirmed booking page"><i class="bi bi-chevron-right" aria-hidden="true"></i></button>
                 </div>
             </nav>
-        }
+            </div>
     </section>
     </div>
 </div>
-@if(useStaffColors){
 <div class="modal fade staff-preview-modal staff-final-booking-modal" id="bookingPreviewModal" tabindex="-1" aria-labelledby="bookingPreviewTitle" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -185,54 +171,13 @@
         </div>
     </div>
 </div>
- }else{
-<div class="modal fade staff-preview-modal" id="bookingPreviewModal" tabindex="-1" aria-labelledby="bookingPreviewTitle" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <div><span class="staff-preview-kicker">Quick Booking Preview</span><h2 class="modal-title fs-5" id="bookingPreviewTitle">Confirmed Booking</h2></div>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <div id="previewLoading" class="staff-preview-state"><span class="spinner-border spinner-border-sm"></span> Loading booking...</div>
-                <div id="previewError" class="staff-preview-state staff-preview-error d-none" role="alert">
-                    <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
-                    <span>Unable to load the event schedule. Please try again.</span>
-                    <button type="button" class="btn btn-sm btn-outline-danger" id="previewRetry">Retry</button>
-                </div>
-                <div id="previewContent" class="d-none">
-                    <div class="staff-preview-position" id="previewPosition"></div>
-                    <div class="staff-preview-grid">
-                        <div><span>Booking</span><strong id="previewBooking"></strong></div>
-                        <div><span>Client</span><strong id="previewClient"></strong></div>
-                        <div><span>Event Date</span><strong id="previewDate"></strong></div>
-                        <div><span>Start Time</span><strong id="previewStart"></strong></div>
-                        <div><span>Expected End Time</span><strong id="previewEnd"></strong></div>
-                        <div class="staff-preview-wide"><span>Package</span><strong><span id="previewPackage" class="package-badge"></span></strong></div>
-                        <div class="staff-preview-wide"><span>Venue</span><strong id="previewVenue"></strong></div>
-                        <div><span>Distance</span><strong id="previewDistance"></strong></div>
-                        <div><span>Status</span><strong><span class="status-badge status-confirmed">Confirmed · Upcoming</span></strong></div>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer staff-preview-footer">
-                <div class="staff-preview-browse">
-                    <button type="button" class="btn btn-outline-secondary" id="previewPrevious" aria-label="Previous booking"><i class="bi bi-arrow-left" aria-hidden="true"></i> Previous</button>
-                    <button type="button" class="btn btn-outline-secondary" id="previewNext" aria-label="Next booking">Next <i class="bi bi-arrow-right" aria-hidden="true"></i></button>
-                </div>
-                <a href="#" class="btn btn-primary" id="previewDetails">View Full Details</a>
-            </div>
-        </div>
-    </div>
-</div>
- }
 
 <div class="modal fade staff-blocked-modal" id="blockedDateModal" tabindex="-1" aria-labelledby="blockedDateTitle" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-sm">
         <div class="modal-content">
             <div class="modal-header">
                 <div><span class="staff-preview-kicker">Schedule Notice</span><h2 class="modal-title fs-5" id="blockedDateTitle">Schedule Unavailable</h2></div>
-                <button type="button" class="btn-close @(useStaffColors ? "btn-close-white" : "")" data-bs-dismiss="modal" aria-label="Close schedule notice"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close schedule notice"></button>
             </div>
             <div class="modal-body">
                 <div class="staff-blocked-date" id="blockedDateDisplay"></div>
@@ -243,7 +188,7 @@
     </div>
 </div>
 
-@if (useStaffColors) {<script src="~/lib/fullcalendar/index.global.min.js" asp-append-version="true"></script>} else {<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>}
+<script src="~/lib/fullcalendar/index.global.min.js" asp-append-version="true"></script>
 
 @section Scripts {
 <script>
@@ -252,12 +197,13 @@
     const dayData = @Html.Raw(dayDataJson);
     const packageColors = @Html.Raw(packageColorsJson);
     const blockedDates = @Html.Raw(blockedDatesJson);
+    const dateLimits = @Html.Raw(dateLimitsJson);
     const blockedDateMap = Object.fromEntries(blockedDates.map(item => [item.date, item]));
     const previewUrl = '@Url.Action("GetReservationsByDate", "Calendar")';
     let calendar;
     let activePackageFilter = '';
     let selectedDate = null;
-    const staffCalendar = @useStaffColors.ToString().ToLowerInvariant();
+    // Both permitted roles share Staff's month/grid/preview/pagination behavior.
     let selectedCell = null;
     let previewItems = [];
     let previewIndex = 0;
@@ -333,31 +279,6 @@
     }
 
     function renderPreview() {
-        if (!staffCalendar) {
-
-        const item = previewItems[previewIndex];
-        if (!item) return;
-        document.getElementById('previewLoading').classList.add('d-none');
-        document.getElementById('previewError').classList.add('d-none');
-        document.getElementById('previewContent').classList.remove('d-none');
-        document.getElementById('previewPosition').textContent = `Booking ${previewIndex + 1} of ${previewItems.length}`;
-        document.getElementById('previewBooking').textContent = item.bookingCode;
-        document.getElementById('previewClient').textContent = item.clientName;
-        document.getElementById('previewDate').textContent = item.eventDate;
-        document.getElementById('previewStart').textContent = item.startTime;
-        document.getElementById('previewEnd').textContent = item.endTime;
-        const pkg = document.getElementById('previewPackage');
-        pkg.className = `package-badge package-${packageKey(item.packageName)}`;
-        pkg.textContent = item.packageName;
-        document.getElementById('previewVenue').textContent = item.venue;
-        document.getElementById('previewDistance').textContent = item.distanceKm != null ? `${Number(item.distanceKm).toFixed(1)} KM` : 'Distance unavailable';
-        const details = document.getElementById('previewDetails');
-        details.href = item.detailsUrl || '#';
-        details.classList.toggle('disabled', !item.detailsUrl);
-        document.getElementById('previewPrevious').disabled = previewIndex === 0;
-        document.getElementById('previewNext').disabled = previewIndex >= previewItems.length - 1;
-            } else {
-
         const item = previewItems[previewIndex];
         if (!item) return;
         document.getElementById('previewLoading').classList.add('d-none');
@@ -378,7 +299,6 @@
         details.classList.toggle('disabled', !item.detailsUrl);
         document.getElementById('previewPrevious').disabled = previewIndex === 0;
         document.getElementById('previewNext').disabled = previewIndex >= previewItems.length - 1;
-            }
     }
 
     function renderDaySummary(cell, key) {
@@ -402,6 +322,11 @@
         const visibleItems = filteredDayItems(key);
         const date = new Date(`${key}T00:00:00`);
         const displayDate = date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+        const effectiveCapacity = dateLimits[key] ?? @BookingRules.MaximumDailyBookings;
+        const confirmedCount = dayData[key]?.count ?? 0;
+        const dailyCapacityLabel = displayDate + ': ' + confirmedCount + ' of ' + effectiveCapacity + ' confirmed bookings';
+        cell.setAttribute('aria-label', dailyCapacityLabel);
+        cell.setAttribute('title', dailyCapacityLabel);
 
         if (blocked) {
             cell.classList.add('staff-calendar-blocked');
@@ -440,7 +365,7 @@
             count.appendChild(word);
             box.append(dots, count);
             content.appendChild(box);
-            if (staffCalendar && !blocked) {
+            if (!blocked) {
                 const links = document.createElement('div');
                 links.className = 'staff-final-day-bookings';
                 visibleItems.slice(0, 2).forEach(item => {
@@ -472,7 +397,7 @@
             }
         }
 
-        if (staffCalendar && visibleItems.length && !blocked) {
+        if (visibleItems.length && !blocked) {
             // The per-booking triggers are the focusable controls. A parent button
             // here would create inaccessible nested interactive elements.
             frame.removeAttribute('role');
@@ -515,13 +440,12 @@
             initialView: 'dayGridMonth',
             headerToolbar: false,
             height: 'auto',
-            fixedWeekCount: staffCalendar,
+            fixedWeekCount: true,
             showNonCurrentDates: true,
             dayCellDidMount: mountDaySummary,
             dateClick: info => {
                 if (info.jsEvent?.target instanceof Element &&
                     info.jsEvent.target.closest('.staff-final-day-booking,.staff-final-day-more-button')) return;
-                if (!staffCalendar) { openDatePreview(info.dateStr, info.dayEl); return; }
                 openDatePreview(info.dateStr, info.dayEl);
             },
             datesSet: () => {
@@ -554,48 +478,16 @@
         });
     }
 
-    function initOwnerUpcomingFilters() {
-        const tableRows = [...document.querySelectorAll('#upcomingTable tbody .js-upcoming-row')];
-        const cards = [...document.querySelectorAll('#upcomingCards .js-upcoming-row')];
-        const empty = document.getElementById('upcomingFilteredEmpty');
-        const info = document.getElementById('staffUpcomingPageInfo');
-        const prev = document.getElementById('staffUpcomingPrev');
-        const next = document.getElementById('staffUpcomingNext');
-        let page = 1;
-        const matched = row => {
-            return !activePackageFilter || row.dataset.package === activePackageFilter;
-        };
-        applyUpcomingFilters = (resetPage = false) => {
-            if (resetPage === true) page = 1;
-            const size = 5;
-            const matching = tableRows.filter(matched);
-            const count = matching.length;
-            const totalPages = Math.max(1, Math.ceil(count / size));
-            page = Math.max(1, Math.min(page, totalPages));
-            const visible = new Set(matching.slice((page-1)*size,page*size));
-            tableRows.forEach((row,i) => row.classList.toggle('d-none', !visible.has(row)));
-            cards.forEach((card,i) => card.classList.toggle('d-none',
-                !tableRows[i] || !visible.has(tableRows[i])));
-            empty?.classList.toggle('d-none', count > 0);
-            if (info) info.textContent = 'Page ' + page + ' of ' + totalPages;
-            if (prev) prev.disabled = page <= 1;
-            if (next) next.disabled = page >= totalPages;
-        };
-        prev?.addEventListener('click', () => { page--;applyUpcomingFilters(); });
-        next?.addEventListener('click', () => { page++;applyUpcomingFilters(); });
-        applyUpcomingFilters(true);
-    }
-
-
     function initUpcomingFilters() {
-        if (!staffCalendar) { initOwnerUpcomingFilters(); return; }
         const tableRows = [...document.querySelectorAll('#upcomingTable tbody .js-upcoming-row')];
-        const cards = [...document.querySelectorAll('#upcomingCards .js-upcoming-row')];
         const empty = document.getElementById('upcomingFilteredEmpty');
         const pager = document.querySelector('.staff-round2-calendar-pager');
         const info = document.getElementById('staffUpcomingPageInfo');
         const prev = document.getElementById('staffUpcomingPrev');
         const next = document.getElementById('staffUpcomingNext');
+        const total = document.getElementById('staffUpcomingTotal');
+        const emptyTitle = document.getElementById('staffUpcomingEmptyTitle');
+        const emptyDescription = document.getElementById('staffUpcomingEmptyDescription');
         const size = 5;
         let page = 1;
         applyUpcomingFilters = (resetPage = false) => {
@@ -605,12 +497,17 @@
             page = Math.max(1, Math.min(page, pages));
             const visible = new Set(matching.slice((page - 1) * size, page * size));
             tableRows.forEach(row => row.classList.toggle('d-none', !visible.has(row)));
-            cards.forEach((card,i) => card.classList.toggle('d-none', !tableRows[i] || !visible.has(tableRows[i])));
             empty?.classList.toggle('d-none', matching.length > 0);
+            if (emptyTitle) emptyTitle.textContent = activePackageFilter
+                ? 'No matching upcoming bookings' : 'No upcoming bookings';
+            if (emptyDescription) emptyDescription.textContent = activePackageFilter
+                ? 'No upcoming bookings match the selected package.'
+                : 'There are no upcoming bookings to display.';
+            if (total) total.textContent = matching.length + ' matching record' + (matching.length === 1 ? '' : 's');
             if (info) info.textContent = 'Page ' + page + ' of ' + pages;
-            if (prev) prev.disabled = page <= 1;
-            if (next) next.disabled = page >= pages;
-            if (pager) pager.hidden = matching.length === 0;
+            if (prev) { prev.disabled = page <= 1; prev.hidden = pages <= 1; }
+            if (next) { next.disabled = page >= pages; next.hidden = pages <= 1; }
+            if (pager) pager.hidden = false;
         };
         prev?.addEventListener('click', () => { page--; applyUpcomingFilters(); });
         next?.addEventListener('click', () => { page++; applyUpcomingFilters(); });
@@ -628,7 +525,7 @@
                 });
                 setSelectedCell(null);
                 refreshDaySummaries();
-                applyUpcomingFilters();
+                applyUpcomingFilters(true);
             });
         });
     }

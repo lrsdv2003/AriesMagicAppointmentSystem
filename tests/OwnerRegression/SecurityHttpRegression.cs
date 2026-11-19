@@ -45,7 +45,12 @@ static class SecurityHttpRegression
                     using var response = await client.GetAsync(path);
                     check(response.StatusCode == (role == "Owner" || role == "Client" ? HttpStatusCode.NotFound : HttpStatusCode.Forbidden), role + " HTTP proof authorization " + path);
                 }
-                foreach (var action in new[] { "Verify", "Reject", "ApproveRefund", "MarkAsRefunded" })
+                foreach (var retired in new[] { "Reject", "ReanalyzeProof" })
+                {
+                    using var inactive = await client.PostAsync("/Payments/" + retired + "/0", new FormUrlEncodedContent([]));
+                    check(inactive.StatusCode == HttpStatusCode.NotFound, "Retired Owner payment action cannot be invoked by " + role + ": " + retired);
+                }
+                foreach (var action in new[] { "Verify", "ApproveRefund", "MarkAsRefunded" })
                 {
                     using var response = await client.PostAsync("/Payments/" + action + "/0", new FormUrlEncodedContent([]));
                     check(response.StatusCode == (role == "Owner" ? HttpStatusCode.BadRequest : HttpStatusCode.Forbidden), role + " HTTP financial POST authorization/CSRF " + action);

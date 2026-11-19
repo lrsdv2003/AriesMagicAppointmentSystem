@@ -1,19 +1,225 @@
 @model AriesMagicAppointmentSystem.ViewModels.CalendarIndexViewModel
 @using AriesMagicAppointmentSystem.Models
-@{ Layout = "_DashboardLayout"; ViewData["Title"] = "Calendar Settings"; var creators = ViewBag.BlockCreators as Dictionary<string,string> ?? new(); }
-<div class="admin-console">
-<header class="admin-heading"><div><h2>Calendar availability</h2></div><a asp-action="Index" class="btn btn-outline-secondary">Back to Calendar</a></header>
-<section class="admin-panel"><h3>Calendar rules</h3><dl class="admin-facts"><div><dt>Maximum daily bookings</dt><dd><strong>@BookingRules.MaximumDailyBookings</strong> <span class="admin-note">Fixed system rule</span></dd></div></dl></section>
-<section class="admin-panel"><h3>Add blocked date</h3>
-<form asp-action="BlockDateAjax" method="post" data-admin-ajax data-admin-confirm="Block this date for new bookings? Dates with confirmed bookings cannot be blocked.">
-@Html.AntiForgeryToken()
-<div class="admin-form-grid"><div><label for="blockDate">Date</label><input class="form-control" type="date" id="blockDate" name="BlockDate" min="@DateTime.Today.ToString("yyyy-MM-dd")" required /></div><div><label for="blockReason">Reason</label><input class="form-control" id="blockReason" name="BlockReason" maxlength="255" required /></div></div>
-<div class="admin-actions"><button class="btn btn-primary">Add Blocked Date</button></div><p class="admin-form-feedback" role="status" aria-live="polite"></p>
-</form></section>
-<section class="admin-panel"><h3>Blocked dates</h3>
-<div class="admin-table-wrap"><table class="admin-table"><thead><tr><th scope="col">Date</th><th scope="col">Reason</th><th scope="col">Created by</th><th scope="col">Status</th><th scope="col">Actions</th></tr></thead><tbody>
-@foreach(var item in Model.Manage.BlockedDates) {
-<tr><td data-label="Date">@item.Date.ToString("MMM d, yyyy")</td><td data-label="Reason">@item.Reason</td><td data-label="Created by">@creators.GetValueOrDefault(item.Id.ToString(), "Not recorded")</td><td data-label="Status"><span class="admin-badge @(item.Date.Date < DateTime.Today ? "admin-state-neutral" : "admin-state-warning")">@(item.Date.Date < DateTime.Today ? "Past" : "Blocked")</span></td><td data-label="Actions"><form asp-action="UnblockDateAjax" method="post" data-admin-ajax data-admin-confirm="Remove this blocked date?">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@item.Id" /><button class="btn btn-outline-danger">Unblock</button><p class="admin-form-feedback" role="status"></p></form></td></tr>
+@using AriesMagicAppointmentSystem.Services
+@{
+    Layout = "_DashboardLayout";
+    ViewData["Title"] = "Calendar Settings";
+    ViewData["HideWorkspaceHeading"] = true;
+    var bookedByDate = ViewBag.ConfirmedByDate as Dictionary<DateTime, int> ?? new();
+    var today = DateTime.Today;
+    var limits = Model.Manage.DateBookingLimits;
 }
-</tbody></table>@if(!Model.Manage.BlockedDates.Any()) { <p class="admin-empty">No blocked dates configured.</p> }</div></section>
+<div class="admin-console calendar-settings-page" data-calendar-limit-read-url="@Url.Action("GetDateLimit", "Calendar")">
+    <div id="calendarLimitSavedNotice" class="alert alert-success" role="status" aria-live="polite" hidden></div>
+    <div class="calendar-settings-toolbar">
+        <a asp-action="Index" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left" aria-hidden="true"></i> Back to Calendar
+        </a>
+    </div>
+
+    <section class="admin-panel calendar-settings-panel" aria-labelledby="calendarRulesTitle">
+        <h2 id="calendarRulesTitle">Daily booking capacity</h2>
+        <div class="calendar-capacity-overview">
+            <div>
+                <span>Default daily limit</span>
+                <strong>@BookingRules.MaximumDailyBookings bookings</strong>
+            </div>
+            <div class="calendar-capacity-add">
+                <label for="calendarLimitDatePicker">Select a date to configure</label>
+                <div class="calendar-capacity-add-controls">
+                    <input type="date" class="form-control" id="calendarLimitDatePicker"
+                           min="@today.ToString("yyyy-MM-dd")" value="@today.ToString("yyyy-MM-dd")" />
+                    <button class="btn btn-primary" type="button" id="calendarLimitCreate">
+                        Set daily limit
+                    </button>
+                </div>
+            </div>
+        </div>
+        <p class="calendar-limit-launch-feedback" id="calendarLimitLaunchFeedback" role="alert" aria-live="polite"></p>
+    </section>
+
+    <section class="admin-panel calendar-settings-panel" aria-labelledby="calendarLimitsTitle">
+        <div class="calendar-settings-section-heading">
+            <h2 id="calendarLimitsTitle">Date-specific limits</h2>
+            <span>@limits.Count configured</span>
+        </div>
+        <div class="admin-table-wrap calendar-settings-table-wrap">
+            <table class="admin-table calendar-settings-table">
+                <thead>
+                    <tr>
+                        <th scope="col">Date</th>
+                        <th scope="col">Daily limit</th>
+                        <th scope="col">Confirmed bookings</th>
+                        <th scope="col">Status</th>
+                        <th scope="col" class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                @if (!limits.Any())
+                {
+                    <tr class="calendar-settings-empty-row">
+                        <td colspan="5">
+                            <strong>No custom date settings</strong>
+                            <p>Date-specific booking limits will appear here when configured.</p>
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var item in limits)
+                    {
+                        var valid = DateBookingCapacity.IsValid(item.MaxBookings);
+                        var effective = valid ? item.MaxBookings : BookingRules.MaximumDailyBookings;
+                        var occupied = bookedByDate.GetValueOrDefault(item.Date.Date);
+                        <tr>
+                            <td data-label="Date"><strong>@item.Date.ToString("MMM d, yyyy")</strong></td>
+                            <td data-label="Daily limit">
+                                <strong>@effective bookings</strong>
+                                @if (!valid)
+                                {
+                                    <small>Saved value requires correction; default applies</small>
+                                }
+                            </td>
+                            <td data-label="Confirmed bookings">@occupied</td>
+                            <td data-label="Status">
+                                <span class="admin-badge @(item.Date.Date < today ? "admin-state-neutral" : "admin-state-warning")">
+                                    @(item.Date.Date < today ? "Past date" : occupied >= effective ? "Full" : "Available")
+                                </span>
+                            </td>
+                            <td data-label="Actions" class="text-end">
+                                @if (item.Date.Date >= today)
+                                {
+                                    <button class="btn btn-outline-primary" type="button"
+                                            data-limit-edit data-limit-date="@item.Date.ToString("yyyy-MM-dd")"
+                                            aria-label="Edit daily limit for @item.Date.ToString("MMMM d, yyyy")">Edit</button>
+                                }
+                                else
+                                {
+                                    <span class="calendar-date-readonly">Read-only</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                }
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="admin-panel calendar-settings-panel" aria-labelledby="calendarBlockTitle">
+        <h2 id="calendarBlockTitle">Add blocked date</h2>
+        <form asp-action="BlockDateAjax" method="post" data-admin-ajax
+              data-admin-confirm="Block this date for new bookings? Dates with confirmed bookings cannot be blocked.">
+            @Html.AntiForgeryToken()
+            <div class="admin-form-grid">
+                <div>
+                    <label for="blockDate">Date</label>
+                    <input class="form-control" type="date" id="blockDate" name="BlockDate"
+                           min="@today.ToString("yyyy-MM-dd")" required />
+                </div>
+                <div>
+                    <label for="blockReason">Reason</label>
+                    <input class="form-control" id="blockReason" name="BlockReason" maxlength="255" required />
+                </div>
+            </div>
+            <div class="admin-actions"><button class="btn btn-primary">Add Blocked Date</button></div>
+            <p class="admin-form-feedback" role="status" aria-live="polite"></p>
+        </form>
+    </section>
+
+    <section class="admin-panel calendar-settings-panel" aria-labelledby="calendarBlockedTitle">
+        <div class="calendar-settings-section-heading">
+            <h2 id="calendarBlockedTitle">Blocked dates</h2>
+        </div>
+        <div class="admin-table-wrap calendar-settings-table-wrap">
+            <table class="admin-table calendar-settings-table">
+                <thead>
+                    <tr>
+                        <th scope="col">Date</th>
+                        <th scope="col">Reason</th>
+                        <th scope="col">Status</th>
+                        <th scope="col" class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                @if (!Model.Manage.BlockedDates.Any())
+                {
+                    <tr class="calendar-settings-empty-row">
+                        <td colspan="4">No blocked dates configured.</td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var item in Model.Manage.BlockedDates)
+                    {
+                        <tr>
+                            <td data-label="Date">@item.Date.ToString("MMM d, yyyy")</td>
+                            <td data-label="Reason">@item.Reason</td>
+                            <td data-label="Status">
+                                <span class="admin-badge @(item.Date.Date < today ? "admin-state-neutral" : "admin-state-warning")">
+                                    @(item.Date.Date < today ? "Past" : "Blocked")
+                                </span>
+                            </td>
+                            <td data-label="Actions" class="text-end">
+                                <form asp-action="UnblockDateAjax" method="post" data-admin-ajax
+                                      data-admin-confirm="Remove this blocked date?">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@item.Id" />
+                                    <button class="btn btn-outline-danger" type="submit">Unblock</button>
+                                    <p class="admin-form-feedback" role="status"></p>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                }
+                </tbody>
+            </table>
+        </div>
+    </section>
 </div>
+
+<div class="modal fade calendar-limit-modal" id="calendarLimitModal" tabindex="-1"
+     aria-labelledby="calendarLimitModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form asp-action="SaveDateLimit" method="post" id="calendarLimitForm">
+                @Html.AntiForgeryToken()
+                <div class="modal-header">
+                    <h2 class="modal-title fs-5" id="calendarLimitModalTitle">Edit Daily Booking Limit</h2>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                            aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="calendar-limit-summary">
+                        <span>Selected date</span>
+                        <strong id="calendarLimitDisplayDate"></strong>
+                        <span>Current daily limit</span>
+                        <strong id="calendarLimitCurrent"></strong>
+                        <span>Confirmed bookings</span>
+                        <strong id="calendarLimitOccupied"></strong>
+                    </div>
+                    <input type="hidden" name="limitDate" id="calendarLimitFormDate" />
+                    <input type="hidden" name="recordId" id="calendarLimitRecordId" />
+                    <input type="hidden" name="expectedStoredLimit" id="calendarLimitExpectedStored" />
+                    <label for="calendarLimitValue" class="form-label">New daily limit</label>
+                    <input class="form-control" type="number" id="calendarLimitValue" name="newLimit"
+                           min="@DateBookingCapacity.MinimumLimit"
+                           max="@DateBookingCapacity.MaximumLimit" step="1" inputmode="numeric" required
+                           aria-describedby="calendarLimitValidation" />
+                    <p id="calendarLimitValidation" role="alert" aria-live="polite"></p>
+                    <p class="calendar-limit-blocked" id="calendarLimitBlocked" hidden>
+                        This date is blocked. Changing its limit will not remove the block.
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline-secondary" type="button" data-bs-dismiss="modal">Cancel</button>
+                    <button class="btn btn-primary" type="submit" id="calendarLimitSave">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/calendar-settings.js" asp-append-version="true"></script>
+}

@@ -1,237 +1,209 @@
-using AriesMagicAppointmentSystem.Data;
 using AriesMagicAppointmentSystem.Models;
+using AriesMagicAppointmentSystem.Services;
 using AriesMagicAppointmentSystem.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
-namespace AriesMagicAppointmentSystem.Controllers
+namespace AriesMagicAppointmentSystem.Controllers;
+
+[Authorize(Roles = "Client")]
+[ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+public sealed class ProfileController(
+    UserManager<ApplicationUser> users,
+    SignInManager<ApplicationUser> signIn,
+    IWebHostEnvironment environment,
+    ILogger<ProfileController> logger) : Controller
 {
-    [Authorize(Roles = "Client")]
-    public class ProfileController : Controller
+    private const long MaxPhotoSize = 2 * 1024 * 1024;
+
+    private async Task<InternalProfileViewModel> ModelAsync(ApplicationUser user, InternalPersonalInput? input = null)
     {
-        private readonly UserManager<ApplicationUser> _userManager;
-        private readonly ApplicationDbContext _context;
-        private readonly IWebHostEnvironment _env;
-
-        private const long MaxProfileImageSize = 2 * 1024 * 1024;
-        private static readonly string[] AllowedExtensions = { ".jpg", ".jpeg", ".png", ".webp" };
-        private static readonly string[] AllowedContentTypes = { "image/jpeg", "image/png", "image/webp" };
-
-        public ProfileController(UserManager<ApplicationUser> userManager, ApplicationDbContext context, IWebHostEnvironment env)
+        var passwordPolicy = users.Options.Password;
+        var rules = new List<string> { $"At least {Math.Max(12, passwordPolicy.RequiredLength)} characters." };
+        if (passwordPolicy.RequireUppercase) rules.Add("At least one uppercase letter.");
+        if (passwordPolicy.RequireLowercase) rules.Add("At least one lowercase letter.");
+        if (passwordPolicy.RequireDigit) rules.Add("At least one number.");
+        if (passwordPolicy.RequireNonAlphanumeric) rules.Add("At least one special character.");
+        if (passwordPolicy.RequiredUniqueChars > 1) rules.Add($"At least {passwordPolicy.RequiredUniqueChars} different characters.");
+        return new()
         {
-            _userManager = userManager;
-            _context = context;
-            _env = env;
+            DisplayName = string.IsNullOrWhiteSpace(user.FullName) ? "Your account" : user.FullName,
+            SavedFullName = user.FullName, SavedPhoneNumber = user.PhoneNumber ?? "",
+            Email = user.Email ?? "Not provided",
+            Role = string.Join(", ", await users.GetRolesAsync(user)),
+            Status = !user.IsActive ? "Inactive" : user.LockoutEnd > DateTimeOffset.UtcNow ? "Locked" : "Active",
+            Verified = user.EmailConfirmed,
+            HasPhoto = PhotoPath(user.ProfilePicturePath) is string resolvedPhoto && System.IO.File.Exists(resolvedPhoto),
+            CreatedAt = user.CreatedAt,
+            LastLoginAt = user.LastLoginAt,
+            PasswordRules = rules,
+            Personal = input ?? new InternalPersonalInput { FullName = user.FullName, PhoneNumber = user.PhoneNumber }
+        };
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> Index()
+    {
+        var user = await users.GetUserAsync(User);
+        return user == null ? Challenge() : View(await ModelAsync(user));
+    }
+
+    // Email, role, security flags and account identity are not bindable here.
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> Edit([Bind(Prefix = "Personal")] InternalPersonalInput input)
+    {
+        var user = await users.GetUserAsync(User);
+        if (user == null) return Challenge();
+        input.FullName = input.FullName?.Trim() ?? "";
+        if (input.FullName.Length < 2)
+            ModelState.AddModelError("Personal.FullName", "Enter your full name (at least 2 characters).");
+        if (!ModelState.IsValid) return View("Index", await ModelAsync(user, input));
+        var previousName = user.FullName;
+        var previousPhone = user.PhoneNumber;
+        user.FullName = input.FullName;
+        user.PhoneNumber = string.IsNullOrWhiteSpace(input.PhoneNumber) ? null : input.PhoneNumber.Trim();
+        var result = await users.UpdateAsync(user);
+        if (!result.Succeeded)
+        {
+            user.FullName = previousName; user.PhoneNumber = previousPhone;
+            foreach (var error in result.Errors) ModelState.AddModelError("", error.Description);
+            return View("Index", await ModelAsync(user, input));
         }
+        TempData["ProfileSuccess"] = "Profile updated successfully.";
+        return RedirectToAction(nameof(Index));
+    }
 
-        [HttpGet]
-        public async Task<IActionResult> Index()
+    [HttpGet]
+    public async Task<IActionResult> Photo()
+    {
+        var user = await users.GetUserAsync(User);
+        if (user == null) return Challenge();
+        var path = PhotoPath(user.ProfilePicturePath);
+        if (path == null || !System.IO.File.Exists(path)) return NotFound();
+        Response.Headers["X-Content-Type-Options"] = "nosniff";
+        Response.Headers["Cache-Control"] = "private, no-store";
+        var contentType = Path.GetExtension(path).ToLowerInvariant() switch
         {
-            var user = await _userManager.GetUserAsync(User);
-            if (user == null) return Challenge();
+            ".png" => "image/png",
+            ".webp" => "image/webp",
+            _ => "image/jpeg"
+        };
+        return PhysicalFile(path, contentType);
+    }
 
-            var bookings = await _context.Bookings
-                .Where(b => b.ApplicationUserId == user.Id)
-                .ToListAsync();
-
-            var completeness = 0;
-            if (!string.IsNullOrWhiteSpace(user.FullName)) completeness += 30;
-            if (!string.IsNullOrWhiteSpace(user.Email)) completeness += 20;
-            if (!string.IsNullOrWhiteSpace(user.PhoneNumber)) completeness += 20;
-            if (!string.IsNullOrWhiteSpace(user.ProfilePicturePath)) completeness += 30;
-
-            var vm = new ProfileViewModel
-            {
-                FullName = user.FullName,
-                Email = user.Email ?? "",
-                PhoneNumber = user.PhoneNumber ?? "",
-                ProfilePicturePath = user.ProfilePicturePath,
-                CreatedAt = user.CreatedAt,
-                LastLoginAt = user.LastLoginAt,
-                TotalBookings = bookings.Count,
-                CompletedBookings = bookings.Count(b => b.Status == BookingStatus.Completed),
-                PendingBookings = bookings.Count(b => b.Status == BookingStatus.Pending || b.Status == BookingStatus.AwaitingDownpayment || b.Status == BookingStatus.AwaitingVerification),
-                CompletionPercentage = completeness
-            };
-
-            ViewBag.EditModel = new EditProfileViewModel
-            {
-                FullName = user.FullName,
-                PhoneNumber = user.PhoneNumber ?? "",
-                Email = user.Email ?? ""
-            };
-            ViewBag.PasswordModel = new ChangePasswordViewModel();
-
-            return View(vm);
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(EditProfileViewModel model)
-        {
-            var user = await _userManager.GetUserAsync(User);
-            if (user == null) return Challenge();
-
-            if (!ModelState.IsValid)
-            {
-                TempData["Error"] = "Please check the highlighted fields.";
-                return RedirectToAction(nameof(Index));
-            }
-
-            bool emailChanged = !string.Equals(user.Email, model.Email, StringComparison.OrdinalIgnoreCase);
-            if (emailChanged)
-            {
-                var existing = await _userManager.FindByEmailAsync(model.Email);
-                if (existing != null && existing.Id != user.Id)
-                {
-                    TempData["Error"] = "An account with this email already exists.";
-                    return RedirectToAction(nameof(Index));
-                }
-            }
-
-            user.FullName = model.FullName.Trim();
-            user.PhoneNumber = model.PhoneNumber?.Trim();
-
-            if (emailChanged)
-            {
-                var emailResult = await _userManager.SetEmailAsync(user, model.Email.Trim());
-                if (!emailResult.Succeeded)
-                {
-                    TempData["Error"] = string.Join(" ", emailResult.Errors.Select(e => e.Description));
-                    return RedirectToAction(nameof(Index));
-                }
-                var userNameResult = await _userManager.SetUserNameAsync(user, model.Email.Trim());
-                if (!userNameResult.Succeeded)
-                {
-                    TempData["Error"] = string.Join(" ", userNameResult.Errors.Select(e => e.Description));
-                    return RedirectToAction(nameof(Index));
-                }
-                user.EmailConfirmed = false;
-            }
-
-            var result = await _userManager.UpdateAsync(user);
-            if (!result.Succeeded)
-            {
-                TempData["Error"] = string.Join(" ", result.Errors.Select(e => e.Description));
-                return RedirectToAction(nameof(Index));
-            }
-
-            if (emailChanged)
-            {
-                TempData["Success"] = "Profile updated. Please confirm your new email address.";
-            }
-            else
-            {
-                TempData["Success"] = "Profile updated successfully.";
-            }
-            return RedirectToAction(nameof(Index));
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        [RequestSizeLimit(2 * 1024 * 1024 + 65536)]
-        [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("uploads")]
-        public async Task<IActionResult> UploadPhoto(IFormFile? profileImage)
-        {
-            var user = await _userManager.GetUserAsync(User);
-            if (user == null) return Challenge();
-
-            var error = await ValidateImageAsync(profileImage);
-            if (error != null)
-            {
-                TempData["Error"] = error;
-                return RedirectToAction(nameof(Index));
-            }
-
-            var uploadsFolder = Path.Combine(_env.WebRootPath, "uploads", "profiles");
-            Directory.CreateDirectory(uploadsFolder);
-
-            var ext = Path.GetExtension(profileImage!.FileName).ToLowerInvariant();
-            var fileName = $"{Guid.NewGuid():N}{ext}";
-            var savePath = Path.Combine(uploadsFolder, fileName);
-            using (var stream = new FileStream(savePath, FileMode.Create))
-            {
-                await profileImage.CopyToAsync(stream);
-            }
-
-            // delete old photo
-            if (!string.IsNullOrWhiteSpace(user.ProfilePicturePath))
-            {
-                var oldFile = ResolveProfilePath(user.ProfilePicturePath);
-                if (System.IO.File.Exists(oldFile)) try { System.IO.File.Delete(oldFile); } catch { }
-            }
-
-            user.ProfilePicturePath = $"/uploads/profiles/{fileName}";
-            await _userManager.UpdateAsync(user);
-
-            TempData["Success"] = "Profile photo updated successfully.";
-            return RedirectToAction(nameof(Index));
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> RemovePhoto()
-        {
-            var user = await _userManager.GetUserAsync(User);
-            if (user == null) return Challenge();
-
-            if (!string.IsNullOrWhiteSpace(user.ProfilePicturePath))
-            {
-                var oldFile = ResolveProfilePath(user.ProfilePicturePath);
-                if (System.IO.File.Exists(oldFile)) try { System.IO.File.Delete(oldFile); } catch { }
-                user.ProfilePicturePath = null;
-                await _userManager.UpdateAsync(user);
-                TempData["Success"] = "Profile photo removed.";
-            }
-            return RedirectToAction(nameof(Index));
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ChangePassword(ChangePasswordViewModel model)
-        {
-            var user = await _userManager.GetUserAsync(User);
-            if (user == null) return Challenge();
-
-            if (!ModelState.IsValid)
-            {
-                TempData["Error"] = "Please check your password fields.";
-                return RedirectToAction(nameof(Index));
-            }
-
-            var result = await _userManager.ChangePasswordAsync(user, model.CurrentPassword, model.NewPassword);
-            if (!result.Succeeded)
-            {
-                TempData["Error"] = string.Join(" ", result.Errors.Select(e => e.Description));
-                return RedirectToAction(nameof(Index));
-            }
-
-            TempData["Success"] = "Password changed successfully.";
-            return RedirectToAction(nameof(Index));
-        }
-
-        private string? ResolveProfilePath(string storedPath)
-        {
-            if (!storedPath.StartsWith("/uploads/profiles/", StringComparison.Ordinal)) return null;
-            var root = Path.GetFullPath(Path.Combine(_env.WebRootPath, "uploads", "profiles")) + Path.DirectorySeparatorChar;
-            var fullPath = Path.GetFullPath(Path.Combine(_env.WebRootPath, storedPath.TrimStart('/').Replace('/', Path.DirectorySeparatorChar)));
-            return fullPath.StartsWith(root, StringComparison.OrdinalIgnoreCase) ? fullPath : null;
-        }
-
-        private async Task<string?> ValidateImageAsync(IFormFile? file)
-        {
-            if (file == null || file.Length == 0) return "Please select an image file.";
-            if (file.Length > MaxProfileImageSize) return "Image must be less than 2 MB.";
-            var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
-            if (!AllowedExtensions.Contains(ext)) return "Only JPG, PNG, and WEBP images are allowed.";
-            if (!AllowedContentTypes.Contains(file.ContentType.ToLowerInvariant())) return "Invalid image type.";
-            if (!await HasValidImageSignatureAsync(file)) return "The file does not appear to be a valid image.";
+    // Existing public profile paths remain readable only for the authenticated account.
+    // New uploads use the internal private storage scheme, not a public static folder.
+    private string? PhotoPath(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return null;
+        var prefix = value.StartsWith("/private-profiles/", StringComparison.Ordinal)
+            ? "/private-profiles/" : "/uploads/profiles/";
+        if (!value.StartsWith(prefix, StringComparison.Ordinal)) return null;
+        var name = value[prefix.Length..];
+        if (name != Path.GetFileName(name) || name.Contains('/') || name.Contains('\\') ||
+            !Guid.TryParseExact(Path.GetFileNameWithoutExtension(name), "N", out _) ||
+            !new[] { ".jpg", ".jpeg", ".png", ".webp" }.Contains(Path.GetExtension(name).ToLowerInvariant()))
             return null;
-        }
+        return prefix == "/private-profiles/"
+            ? Path.Combine(environment.ContentRootPath, "App_Data", "profiles", name)
+            : Path.Combine(environment.WebRootPath, "uploads", "profiles", name);
+    }
 
-        private Task<bool> HasValidImageSignatureAsync(IFormFile file)
-            => AriesMagicAppointmentSystem.Services.ImageUploadValidation.HasMatchingSignatureAsync(file);
+    [HttpPost, ValidateAntiForgeryToken, RequestSizeLimit(2 * 1024 * 1024 + 65536)]
+    [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("uploads")]
+    public async Task<IActionResult> UploadPhoto(IFormFile? photo)
+    {
+        var user = await users.GetUserAsync(User);
+        if (user == null) return Challenge();
+        if (photo == null || photo.Length < 12 || photo.Length > MaxPhotoSize ||
+            !new[] { ".jpg", ".jpeg", ".png", ".webp" }.Contains(Path.GetExtension(photo.FileName).ToLowerInvariant()) ||
+            !await ImageUploadValidation.HasMatchingSignatureAsync(photo))
+        {
+            ModelState.AddModelError("photo", "Choose a valid JPG, PNG or WEBP image up to 2 MB.");
+            return View("Index", await ModelAsync(user));
+        }
+        var folder = Path.Combine(environment.ContentRootPath, "App_Data", "profiles");
+        var filename = Guid.NewGuid().ToString("N") + Path.GetExtension(photo.FileName).ToLowerInvariant();
+        var path = Path.Combine(folder, filename);
+        var old = user.ProfilePicturePath;
+        try
+        {
+            Directory.CreateDirectory(folder);
+            await using (var stream = new FileStream(path, FileMode.CreateNew, FileAccess.Write))
+                await photo.CopyToAsync(stream);
+            user.ProfilePicturePath = "/private-profiles/" + filename;
+            var saved = await users.UpdateAsync(user);
+            if (!saved.Succeeded)
+            {
+                user.ProfilePicturePath = old;
+                DeletePhoto(path);
+                foreach (var error in saved.Errors) ModelState.AddModelError("", error.Description);
+                return View("Index", await ModelAsync(user));
+            }
+        }
+        catch (IOException ex)
+        {
+            user.ProfilePicturePath = old;
+            DeletePhoto(path);
+            logger.LogError(ex, "Client profile image save failed.");
+            ModelState.AddModelError("photo", "The photo could not be saved. Try again.");
+            return View("Index", await ModelAsync(user));
+        }
+        DeletePhoto(PhotoPath(old));
+        TempData["ProfileSuccess"] = "Profile photo updated successfully.";
+        return RedirectToAction(nameof(Index));
+    }
+
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> RemovePhoto()
+    {
+        var user = await users.GetUserAsync(User);
+        if (user == null) return Challenge();
+        var old = user.ProfilePicturePath;
+        user.ProfilePicturePath = null;
+        var result = await users.UpdateAsync(user);
+        if (!result.Succeeded)
+        {
+            user.ProfilePicturePath = old;
+            foreach (var error in result.Errors) ModelState.AddModelError("", error.Description);
+            return View("Index", await ModelAsync(user));
+        }
+        DeletePhoto(PhotoPath(old));
+        TempData["ProfileSuccess"] = "Profile photo removed.";
+        return RedirectToAction(nameof(Index));
+    }
+
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> ChangePassword([Bind(Prefix = "Password")] InternalPasswordInput input)
+    {
+        var user = await users.GetUserAsync(User);
+        if (user == null) return Challenge();
+        var nextPassword = input.NewPassword ?? "";
+        if (nextPassword.Length < Math.Max(12, users.Options.Password.RequiredLength))
+            ModelState.AddModelError("Password.NewPassword", $"Use at least {Math.Max(12, users.Options.Password.RequiredLength)} characters.");
+        if (ModelState.IsValid)
+        {
+            var result = await users.ChangePasswordAsync(user, input.CurrentPassword, nextPassword);
+            if (result.Succeeded)
+            {
+                await signIn.RefreshSignInAsync(user);
+                TempData["ProfileSuccess"] = "Password changed successfully.";
+                return RedirectToAction(nameof(Index), null, null, "security");
+            }
+            foreach (var error in result.Errors)
+                ModelState.AddModelError(error.Code == "PasswordMismatch" ? "Password.CurrentPassword" : "Password.NewPassword", error.Description);
+        }
+        // Identity credentials must not be reflected back into the form or response.
+        foreach (var key in new[] { "Password.CurrentPassword", "Password.NewPassword", "Password.ConfirmPassword" })
+            if (ModelState.TryGetValue(key, out var field)) field.RawValue = field.AttemptedValue = null;
+        return View("Index", await ModelAsync(user));
+    }
+
+    private void DeletePhoto(string? path)
+    {
+        if (path == null) return;
+        try { System.IO.File.Delete(path); }
+        catch (IOException ex) { logger.LogWarning(ex, "Client profile photo cleanup failed."); }
     }
 }

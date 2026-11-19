@@ -25,6 +25,8 @@ namespace AriesMagicAppointmentSystem.ViewModels
         public string EventType { get; set; } = string.Empty;
         public string PackageName { get; set; } = string.Empty;
         public DateTime EventDate { get; set; }
+        public TimeSpan StartTime { get; set; }
+        public TimeSpan EndTime { get; set; }
         public TrashReason Reason { get; set; }
         public string ReasonDisplay => Reason.ToString().Replace("_", " ");
         public string? ReasonNotes { get; set; }
@@ -39,8 +41,6 @@ namespace AriesMagicAppointmentSystem.ViewModels
     {
         public TrashHistoryFilterViewModel Filters { get; set; } = new();
         public List<TrashHistoryRowViewModel> Bookings { get; set; } = new();
-        public List<Service> ArchivedPackages { get; set; } = new();
-        public Dictionary<string, SystemActivity> PackageArchives { get; set; } = new();
         public int TotalCount { get; set; }
         public int TotalPages { get; set; }
         public List<ApplicationUser> AvailableStaff { get; set; } = new();

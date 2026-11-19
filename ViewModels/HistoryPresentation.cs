@@ -11,7 +11,7 @@ public static class HistoryPresentation
         ["SortBy"]=f.SortBy??"", ["Page"]=(page??f.Page).ToString(), ["PageSize"]="5"
     };
     public static bool Filtered(HistoryFilterViewModel f) => !string.IsNullOrWhiteSpace(f.Search) ||
-        !string.IsNullOrWhiteSpace(f.BookingStatus) || !string.IsNullOrWhiteSpace(f.DateRange) || f.ServiceId.HasValue ||
+        (!string.IsNullOrWhiteSpace(f.BookingStatus) && f.BookingStatus != BookingStatus.Completed) || !string.IsNullOrWhiteSpace(f.DateRange) || f.ServiceId.HasValue ||
         f.CompletedDateFrom.HasValue || f.CompletedDateTo.HasValue || !string.IsNullOrWhiteSpace(f.EventType) ||
         !string.IsNullOrWhiteSpace(f.PaymentStatus) || !string.IsNullOrWhiteSpace(f.RefundStatus);
     public static bool ShowEvent(string name, bool financial) => name is

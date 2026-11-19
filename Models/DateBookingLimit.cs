@@ -10,7 +10,7 @@ namespace AriesMagicAppointmentSystem.Models
         public DateTime Date { get; set; }
 
         [Required]
-        [Range(0, 20)]
+        [Range(1, 20)]
         public int MaxBookings { get; set; }
 
         public DateTime CreatedAt { get; set; } = DateTime.Now;

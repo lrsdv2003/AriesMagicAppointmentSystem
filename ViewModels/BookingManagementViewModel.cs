@@ -12,6 +12,8 @@ namespace AriesMagicAppointmentSystem.ViewModels
         public int Page { get; set; } = 1;
         public int PageSize { get; set; } = 5;
         public int TotalCount { get; set; }
+        // Empty search results can be distinguished from an entirely empty Staff queue.
+        public bool StaffHasAnyRequests { get; set; }
         public int TotalPages => Math.Max(1, (int)Math.Ceiling(TotalCount / (double)PageSize));
         public List<Service> AvailableServices { get; set; } = new();
         public List<BookingManagementRowViewModel> Bookings { get; set; } = new();

@@ -24,6 +24,13 @@
 @if(!string.IsNullOrEmpty(f.EventType)) { <input type="hidden" name="EventType" value="@f.EventType" /> }
 @if(User.IsInRole("Owner") && !string.IsNullOrEmpty(f.RefundStatus)) { <input type="hidden" name="RefundStatus" value="@f.RefundStatus" /> }
 <button type="submit" class="visually-hidden">Search history</button>
-<a asp-action="Index" asp-all-route-data="@AriesMagicAppointmentSystem.ViewModels.HistoryPresentation.Routes(f)" class="btn btn-outline-secondary aries-round3-refresh" aria-label="Refresh history"><i class="bi bi-arrow-clockwise" aria-hidden="true"></i><span>Refresh</span></a>
+<a asp-action="Index" asp-all-route-data="@AriesMagicAppointmentSystem.ViewModels.HistoryPresentation.Routes(f)"
+   class="btn btn-outline-secondary aries-round3-refresh @(User.IsInRole("Staff") && !User.IsInRole("Owner") ? "staff-history-refresh" : "owner-history-refresh")"
+   aria-label="@(User.IsInRole("Owner") ? "Refresh booking history" : "Refresh history")"
+   title="@(User.IsInRole("Owner") ? "Refresh booking history" : "Refresh history")"
+   data-owner-history-refresh="@(User.IsInRole("Owner") ? "true" : null)">
+    <i class="bi bi-arrow-clockwise" aria-hidden="true"></i>
+    @if (!User.IsInRole("Owner")) { <span class="visually-hidden">Refresh</span> }
+</a>
 </div>
 </form>

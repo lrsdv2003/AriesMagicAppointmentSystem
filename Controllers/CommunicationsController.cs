@@ -71,6 +71,48 @@ namespace AriesMagicAppointmentSystem.Controllers
             var userId = CurrentUserId();
             if (userId == null) return Challenge();
 
+            var (items, roleMap) = await LoadVisibleConversationsAsync(userId, filter, q);
+            var isInternal = IsInternalUser();
+
+            var model = new CommunicationCenterViewModel
+            {
+                Conversations = items,
+                Filter = string.IsNullOrWhiteSpace(filter) ? "all" : filter,
+                Search = q?.Trim() ?? string.Empty,
+                IsInternalUser = isInternal,
+                UnreadConversationCount = items.Count(x => x.UnreadCount > 0)
+            };
+
+            var selectedId = view == "inbox"
+                ? (int?)null : id.HasValue && items.Any(x => x.Id == id.Value)
+                ? id.Value
+                : items.FirstOrDefault()?.Id;
+
+            if (selectedId.HasValue)
+            {
+                model.SelectedConversation = await BuildConversationDetailAsync(selectedId.Value, userId, roleMap);
+                if (model.SelectedConversation != null &&
+                    relatedBookingId.HasValue &&
+                    model.SelectedConversation.BookingOptions.Any(b => b.Id == relatedBookingId.Value))
+                    model.SelectedConversation.SelectedRelatedBookingId = relatedBookingId;
+                var membership = await _context.ConversationParticipants
+                    .FirstOrDefaultAsync(p => p.ConversationId == selectedId.Value && p.UserId == userId);
+                if (membership != null)
+                {
+                    membership.LastReadAt = DateTime.UtcNow;
+                    await _context.SaveChangesAsync();
+                }
+            }
+
+            return View(model);
+        }
+
+        // The sidebar refresh reuses the same authorization, search and order rules
+        // as Index. It never selects/marks-read a thread or creates participants.
+        private async Task<(List<ConversationListItemViewModel> Items,
+            Dictionary<string, string> RoleMap)> LoadVisibleConversationsAsync(
+            string userId, string filter, string? q)
+        {
             var isInternal = IsInternalUser();
             // Search retains full message matching; ordinary inbox loads only each latest preview.
             var previewLimit = string.IsNullOrWhiteSpace(q) ? 1 : int.MaxValue;
@@ -114,43 +156,32 @@ namespace AriesMagicAppointmentSystem.Controllers
                 }).ToDictionaryAsync(p => p.ConversationId, HttpContext.RequestAborted);
             var items = memberships.Select(m => BuildListItem(m, userId, roleMap, counts[m.ConversationId].Unread, counts[m.ConversationId].Open)).ToList();
             items = ApplyFilter(items, filter).OrderByDescending(x => x.LastActivityAt).ToList();
+            return (items, roleMap);
+        }
 
-            var model = new CommunicationCenterViewModel
+        [HttpGet]
+        [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+        public async Task<IActionResult> ConversationSummaries(string filter = "all", string? q = null)
+        {
+            var userId = CurrentUserId();
+            if (userId == null) return Unauthorized();
+            var (items, _) = await LoadVisibleConversationsAsync(userId, filter, q);
+            return Json(new
             {
-                Conversations = items,
-                Filter = string.IsNullOrWhiteSpace(filter) ? "all" : filter,
-                Search = q?.Trim() ?? string.Empty,
-                IsInternalUser = isInternal,
-                UnreadConversationCount = items.Count(x => x.UnreadCount > 0)
-            };
-
-            if (isInternal)
-            {
-                model.InternalUsers = await GetInternalUserOptionsAsync(userId);
-            }
-
-            var selectedId = ((!isInternal || User.IsInRole("Staff")) && view == "inbox")
-                ? (int?)null : id.HasValue && items.Any(x => x.Id == id.Value)
-                ? id.Value
-                : items.FirstOrDefault()?.Id;
-
-            if (selectedId.HasValue)
-            {
-                model.SelectedConversation = await BuildConversationDetailAsync(selectedId.Value, userId, roleMap);
-                if (model.SelectedConversation != null &&
-                    relatedBookingId.HasValue &&
-                    model.SelectedConversation.BookingOptions.Any(b => b.Id == relatedBookingId.Value))
-                    model.SelectedConversation.SelectedRelatedBookingId = relatedBookingId;
-                var membership = await _context.ConversationParticipants
-                    .FirstOrDefaultAsync(p => p.ConversationId == selectedId.Value && p.UserId == userId);
-                if (membership != null)
+                items = items.Select(x => new
                 {
-                    membership.LastReadAt = DateTime.UtcNow;
-                    await _context.SaveChangesAsync();
-                }
-            }
-
-            return View(model);
+                    id = x.Id,
+                    displayName = x.DisplayName,
+                    displayRole = x.DisplayRole,
+                    subtitle = x.Subtitle,
+                    avatarUrl = x.AvatarUrl,
+                    initials = x.Initials,
+                    latestMessage = x.LatestMessage,
+                    lastActivityAt = x.LastActivityAt,
+                    unreadCount = x.UnreadCount
+                }),
+                unreadConversationCount = items.Count(x => x.UnreadCount > 0)
+            });
         }
 
         [HttpPost]
@@ -259,92 +290,6 @@ namespace AriesMagicAppointmentSystem.Controllers
             await _context.SaveChangesAsync();
             await transaction.CommitAsync();
             TempData["Success"] = "Your cancellation request was sent to Staff through your private support conversation. Staff will review it; no refund has been approved or paid.";
-            return RedirectToAction(nameof(Index), new { id = conversation.Id });
-        }
-
-        [HttpPost]
-        [Authorize(Roles = "Staff,Owner")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateInternal(
-            string[] participantIds,
-            string? title,
-            string? initialMessage,
-            string? requestType,
-            string? actionLink,
-            int? relatedBookingId)
-        {
-            var userId = CurrentUserId();
-            if (userId == null) return Challenge();
-
-            var allowedIds = await GetInternalUserIdsAsync(includeOwner: true);
-            var targets = participantIds
-                .Where(x => allowedIds.Contains(x) && x != userId)
-                .Distinct()
-                .ToList();
-
-            if (targets.Count == 0)
-            {
-                TempData["Error"] = "Select at least one team member.";
-                return RedirectToAction(nameof(Index));
-            }
-
-            var allParticipants = targets.Append(userId).Distinct().ToList();
-            var hasRequest = !string.IsNullOrWhiteSpace(requestType);
-            var type = hasRequest
-                ? ConversationTypes.OperationalRequest
-                : allParticipants.Count == 2 ? ConversationTypes.InternalDirect : ConversationTypes.InternalGroup;
-
-            if (type == ConversationTypes.InternalDirect)
-            {
-                var targetId = targets[0];
-                var existing = await _context.Conversations
-                    .Where(c => c.ConversationType == ConversationTypes.InternalDirect)
-                    .Where(c => c.Participants.Count == 2)
-                    .Where(c => c.Participants.Any(p => p.UserId == userId) && c.Participants.Any(p => p.UserId == targetId))
-                    .Select(c => c.Id)
-                    .FirstOrDefaultAsync();
-                if (existing > 0 && string.IsNullOrWhiteSpace(initialMessage))
-                    return RedirectToAction(nameof(Index), new { id = existing });
-            }
-
-            if ((type == ConversationTypes.InternalGroup || type == ConversationTypes.OperationalRequest) && string.IsNullOrWhiteSpace(title))
-                title = hasRequest ? requestType : "Team Conversation";
-
-            if (relatedBookingId.HasValue && !await _context.Bookings.AnyAsync(b => b.Id == relatedBookingId.Value))
-                relatedBookingId = null;
-
-            var conversation = new Conversation
-            {
-                ConversationType = type,
-                Title = title?.Trim(),
-                BookingId = relatedBookingId,
-                CreatedByUserId = userId,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
-            };
-            _context.Conversations.Add(conversation);
-            await _context.SaveChangesAsync();
-            await AddParticipantsAsync(conversation.Id, allParticipants);
-
-            if (!string.IsNullOrWhiteSpace(initialMessage))
-            {
-                var message = new Message
-                {
-                    ConversationId = conversation.Id,
-                    SenderId = userId,
-                    MessageContent = initialMessage.Trim()[..Math.Min(initialMessage.Trim().Length, 4000)],
-                    SentAt = DateTime.UtcNow,
-                    MessageType = hasRequest ? MessageTypes.ActionRequest : MessageTypes.Text,
-                    RequestType = hasRequest ? requestType?.Trim() : null,
-                    RequestStatus = hasRequest ? MessageRequestStatuses.Open : null,
-                    ActionLink = !string.IsNullOrWhiteSpace(actionLink) && Url.IsLocalUrl(actionLink) ? actionLink.Trim() : null
-                };
-                _context.Messages.Add(message);
-                conversation.UpdatedAt = message.SentAt;
-                await AddMessageNotificationsAsync(conversation, message, allParticipants.Where(x => x != userId));
-                await _context.SaveChangesAsync();
-            }
-
             return RedirectToAction(nameof(Index), new { id = conversation.Id });
         }
 
@@ -785,20 +730,6 @@ namespace AriesMagicAppointmentSystem.Controllers
             var ids = await _context.UserRoles.Where(ur => roleIds.Contains(ur.RoleId)).Select(ur => ur.UserId).Distinct().ToListAsync();
             var activeIds = await _context.Users.Where(u => u.IsActive && ids.Contains(u.Id)).Select(u => u.Id).ToListAsync();
             return activeIds.ToHashSet();
-        }
-
-        private async Task<List<CommunicationUserOptionViewModel>> GetInternalUserOptionsAsync(string currentUserId)
-        {
-            var ids = await GetInternalUserIdsAsync(includeOwner: true);
-            ids.Remove(currentUserId);
-            var users = await _context.Users.AsNoTracking().Where(u => ids.Contains(u.Id)).OrderBy(u => u.FullName).ToListAsync();
-            var roles = await GetRoleMapAsync(users.Select(u => u.Id).ToList());
-            return users.Select(u => new CommunicationUserOptionViewModel
-            {
-                UserId = u.Id,
-                Name = u.FullName,
-                Role = roles.GetValueOrDefault(u.Id, "Team")
-            }).ToList();
         }
 
         private async Task<Dictionary<string, string>> GetRoleMapAsync(IReadOnlyCollection<string> userIds)

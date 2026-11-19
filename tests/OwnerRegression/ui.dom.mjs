@@ -241,10 +241,15 @@ for(const name of ['Bookings-ClientDashboard','Bookings-MyBookings','Bookings-Cl
 }
 {
  const dom=fixture('Profile-Index'),d=dom.window.document;
- check(d.querySelector('#hubProfileForm[action="/Profile/Edit"] input[name=FullName]')&&d.querySelector('#profileEmail[name=Email]')&&d.querySelector('#profilePhoneNumber[name=PhoneNumber]'),'Profile inline form lost field contracts');
+ check(d.querySelector('#hubProfileForm[action="/Profile/Edit"] input[name="Personal.FullName"]')&&
+       d.querySelector('#hubProfileForm input[name="Personal.PhoneNumber"]')&&
+       d.querySelector('#upInformationHeading'),'Unified Profile inline form and read-only account section lost field contracts');
  check(!d.querySelector('input[name=Role],input[name=IsActive],input[name=EmailConfirmed]'),'Profile introduces privileged fields');
- check(d.querySelector('#profileNewPassword').minLength===12,'Profile password guidance differs from existing policy');
- check(d.querySelector('#photoForm input[type=file]').name==='profileImage'&&d.querySelector('#photoForm').enctype==='multipart/form-data','Profile upload contract changed');
+ check(d.querySelector('input[name="Password.NewPassword"]')?.minLength===12,
+       'Unified Profile password guidance differs from existing policy');
+ const photo=d.querySelector('form[action="/Profile/UploadPhoto"]');
+ check(photo?.querySelector('input[type=file][name=photo]')&&photo.enctype==='multipart/form-data',
+       'Unified Profile photo upload contract changed');
  dom.window.close();
 }
 {
@@ -274,8 +279,8 @@ console.log('PASS Midnight Concierge agreement and grouped navigation contracts'
 for(const role of ['Staff','Owner']){
  const dom=fixture('Dashboard-'+role),d=dom.window.document,w=dom.window;
  check(d.body.classList.contains('midnight-workspace'),role+': scoped workspace shell');
- check(d.querySelector('link[href*="internal-workspaces.css"]'),role+': shared workspace stylesheet');
- check(d.querySelector('h1')?.textContent===role+' Dashboard',role+': clear page heading');
+ check(d.querySelector('link[href*="/css/internal-core.css"]')&&d.querySelector('link[href*="/css/'+role.toLowerCase()+'.css"]'),role+': consolidated workspace stylesheets');
+ check(d.querySelector('.staff-round2-header-identity strong')?.textContent===role+' Dashboard',role+': accessible workspace identity');
  check(!d.querySelector('.dashboard-topbar input[type=search]'),role+': no unsupported global search');
  const nav=[...d.querySelectorAll('.sidebar-nav a')].map(a=>a.getAttribute('href'));
  for(const controller of role==='Staff'?['Bookings','Calendar','Services','RescheduleRequests','History']:['Payments','Calendar','Reports','Services','History','Personnel','SystemActivity','TrashHistory'])
@@ -294,22 +299,47 @@ for(const role of ['Staff','Owner']){
 }
 for(const name of ['Home-Index-Guest','Account-Login','Bookings-ClientDashboard','Bookings-Create']){
  const dom=fixture(name),d=dom.window.document;
- check(!d.body.classList.contains('midnight-workspace')&&!d.querySelector('link[href*="internal-workspaces.css"]'),name+': internal theme does not leak into approved Client UI');
+ check(!d.body.classList.contains('midnight-workspace')&&!d.querySelector('link[href*="/css/internal-core.css"]'),name+': internal theme does not leak into approved Client UI');
  dom.window.close();
 }
 console.log('PASS internal workspaces role navigation, review-only dashboards, drawer semantics and Client isolation');
 
-{const dom=fixture('Personnel-Index'),d=dom.window.document;check(d.querySelectorAll('#ownerPersonnelSearch').length===1&&d.querySelector('#ownerPersonnelSearch').name==='search','Personnel uses one search field for server filters and existing instant search');dom.window.close();}
-for(const name of ['Calendar-Settings','Personnel-EditStaff']){
- const dom=fixture(name),d=dom.window.document;
- check(!d.querySelector('a[href="/Dashboard/Admin"],a[href^="/UserManagement"]'),'Retired navigation must not return');
- if(name==='Calendar-Settings'){
-  check(d.querySelectorAll('form[data-admin-confirm]').length>=1,'Availability changes retain explicit confirmation');
-  check(!d.querySelector('[name=MaxBookingsPerDay],[name=Capacity]'),'Fixed daily capacity has no edit field');
- }else{
-  check(d.querySelector('[name=FullName]')&&d.querySelector('[name=PhoneNumber]'),'Staff contact editing retains approved fields');
-  check(!d.querySelector('[name=Role],[name=Email],[name=Password]'),'Contact editing cannot promote or replace login');
- }
+{
+ const dom=fixture('Personnel-Index'),d=dom.window.document;
+ check(d.querySelectorAll('#ownerPersonnelSearch').length===1
+     && d.querySelector('#ownerPersonnelSearch').name==='search'
+     && !!d.querySelector('[data-personnel-filters]')
+     && !!d.querySelector('[data-personnel-refresh]'),
+     'Personnel toolbar retains search, role selection and accessible refresh');
+ check([...d.querySelectorAll('#accountRole option')].map(x=>x.value).join('|')==='|Owner|Staff|Client',
+     'Personnel role dropdown contains only supported three roles plus All Roles');
+ check(!d.querySelector('#accountStatus,[name=statusFilter]')
+    && !d.body.textContent.includes('Account management audit')
+    && ![...d.querySelectorAll('#ownerPersonnelTable thead th')].some(x=>x.textContent.trim()==='Actions'),
+     'Personnel excludes retired status filters, audit panel and Actions column');
+ check(!!d.querySelector('.staff-data-table-frame[data-staff-table-capacity="5"]')
+     && !!d.querySelector('.aries-five-pager[data-page-size="5"]'),
+     'Personnel table reuses five-record Staff foundation and pagination');
+ check(!d.querySelector('a[href*="EditStaff"]')
+     && !d.body.textContent.includes('Edit Staff profile'),
+     'Removed Staff profile editing is not visible');
+ dom.window.close();
+}
+{
+ const dom=fixture('Personnel-Access'),d=dom.window.document;
+ check(!!d.querySelector('form[action="/Personnel/Resend"]') &&
+       !!d.querySelector('form[action="/Personnel/Manage"]'),
+       'Authorized account lifecycle controls remain on separate Staff Access screen');
+ check(!d.querySelector('form[action="/Personnel/EditStaff"]'),
+       'Separate lifecycle page does not recreate retired profile editing');
+ dom.window.close();
+}
+{
+ const dom=fixture('Calendar-Settings'),d=dom.window.document;
+ check(d.querySelectorAll('form[data-admin-confirm]').length>=1,
+       'Calendar blocked-date changes retain confirmation');
+ check(!!d.querySelector('#calendarLimitForm') && !!d.querySelector('[name=newLimit]'),
+       'Calendar date-specific limit editor remains available');
  dom.window.close();
 }
 console.log(`SUCCESS: ${checks} UI DOM checks passed.`);

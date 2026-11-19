@@ -2,20 +2,19 @@
 @using System.Globalization
 @{
     Layout = "_DashboardLayout";
-    ViewData["Title"] = "Edit Confirmed Booking";
+    ViewData["Title"] = $"BK-{Model.Booking.CreatedAt.Year}-{Model.Booking.Id:D3}";
+    ViewData["HideWorkspaceHeading"] = true;
     var booking = Model.Booking;
 }
-<div class="staff-booking-page confirmed-change-page">
-  <header class="confirmed-change-heading">
-    <div><p class="confirmed-change-eyebrow">BK-@booking.CreatedAt.Year-@booking.Id.ToString("D3") · Confirmed event</p>
-      <h1>Propose package or venue changes</h1>
-      <p>The booking will stay confirmed and unchanged until the Client accepts the revised quote.</p></div>
+<div class="confirmed-change-page owner-confirmed-change-page">
+  <header class="confirmed-change-heading owner-booking-detail-header">
+    <h1>BK-@booking.CreatedAt.Year-@booking.Id.ToString("D3")</h1>
     <a asp-controller="Bookings" asp-action="Details" asp-route-id="@booking.Id" class="btn btn-outline-secondary">Back to Booking Details</a>
   </header>
   @if(TempData["Error"] is string error){<div class="alert alert-danger" role="alert">@error</div>}
   <div class="confirmed-change-layout">
     <section class="confirmed-change-card" aria-labelledby="changeTitle">
-      <h2 id="changeTitle">Proposed booking details</h2>
+      <h2 id="changeTitle">Package and Venue</h2>
       <form asp-controller="BookingChanges" asp-action="Propose" method="post" id="confirmedChangeForm">
         @Html.AntiForgeryToken()
         <input type="hidden" name="BookingId" value="@booking.Id"/>
@@ -40,17 +39,15 @@
           <div id="confirmedPlaces" class="confirmed-change-places" role="status" aria-live="polite"></div>
         </div>
         <details class="confirmed-change-coordinates"><summary>Verify or enter the precise venue pin</summary>
-          <p>Use coordinates for the actual event location, not the center of a city. Staff must verify this information.</p>
+          <p>Use coordinates for the actual event location, not the center of a city.</p>
           <div class="confirmed-change-coordinate-row">
             <div><label for="confirmedLatitude">Latitude</label><input id="confirmedLatitude" name="Latitude" type="number" min="-90" max="90" step="any" class="form-control" value="@Model.Input.Latitude?.ToString(CultureInfo.InvariantCulture)"/></div>
             <div><label for="confirmedLongitude">Longitude</label><input id="confirmedLongitude" name="Longitude" type="number" min="-180" max="180" step="any" class="form-control" value="@Model.Input.Longitude?.ToString(CultureInfo.InvariantCulture)"/></div>
           </div>
         </details>
-        <div class="confirmed-change-field"><label for="confirmedReason">Reason and Staff verification notes</label>
-          <textarea id="confirmedReason" name="Reason" class="form-control" minlength="10" maxlength="700" required rows="3" placeholder="Explain the requested changes and how you verified the venue location."></textarea></div>
-        <div class="confirmed-change-notice" role="note"><strong>Payment safety</strong>
-          <p>Verified payments remain untouched. A change is blocked if the new total is below the amount already verified, or if payment, refund or reschedule review is active.</p></div>
-        <button type="submit" class="btn btn-primary confirmed-change-submit">Send proposal to Client</button>
+        <div class="confirmed-change-actions" aria-label="Submission actions">
+          <button type="submit" class="btn btn-primary confirmed-change-submit" data-loading-text="Sending...">Send proposal to Client</button>
+        </div>
       </form>
     </section>
     <aside class="confirmed-change-card confirmed-change-summary" aria-label="Current contract">
@@ -64,7 +61,6 @@
         <div><dt>Verified payments</dt><dd>&#8369;@Model.VerifiedPayments.ToString("N2")</dd></div>
         <div><dt>Remaining balance</dt><dd>&#8369;@Math.Max(0m,booking.FinalPrice-Model.VerifiedPayments).ToString("N2")</dd></div>
       </dl>
-      <p>On submission, the server recalculates the official price and validates serviceability and travel time. The Client receives the exact new total for approval.</p>
     </aside>
   </div>
 </div>

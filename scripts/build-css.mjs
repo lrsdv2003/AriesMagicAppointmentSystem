@@ -92,7 +92,7 @@ for (const [name, recipe] of allBundles) {
   modified++;
   console.log('GENERATED ' + name + ' (' + Buffer.byteLength(generated, 'utf8') + ' bytes)');
 }
-if (renderedSources !== 79 || sourceSections.size !== 41) {
+if (renderedSources !== 81 || sourceSections.size !== 42) {
   throw new Error('Unexpected source section count: ' + sourceSections.size + ' / ' + renderedSources);
 }
 if (stale && checking) {

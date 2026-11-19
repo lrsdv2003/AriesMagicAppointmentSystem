@@ -19,10 +19,5 @@ namespace AriesMagicAppointmentSystem.Services
 
         Task<HistorySummaryViewModel> GetSummaryAsync();
 
-        /// <summary>
-        /// Returns the same filtered/sorted result set as GetHistoryAsync but without paging,
-        /// for use by CSV/PDF/print exports.
-        /// </summary>
-        Task<List<HistoryRowViewModel>> GetHistoryForExportAsync(HistoryFilterViewModel filters);
     }
 }

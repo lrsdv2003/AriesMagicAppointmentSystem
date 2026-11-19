@@ -15,16 +15,17 @@ public sealed class InternalProfileController(UserManager<ApplicationUser> users
     private async Task<InternalProfileViewModel> ModelAsync(ApplicationUser user, InternalPersonalInput? input = null)
     {
         var policy = users.Options.Password;
-        var rules = new List<string> { $"At least {policy.RequiredLength} characters." };
+        var rules = new List<string> { $"At least {Math.Max(12, policy.RequiredLength)} characters." };
         if (policy.RequireUppercase) rules.Add("At least one uppercase letter.");
         if (policy.RequireLowercase) rules.Add("At least one lowercase letter.");
         if (policy.RequireDigit) rules.Add("At least one number.");
         if (policy.RequireNonAlphanumeric) rules.Add("At least one special character.");
         if (policy.RequiredUniqueChars > 1) rules.Add($"At least {policy.RequiredUniqueChars} different characters.");
         return new() { DisplayName = string.IsNullOrWhiteSpace(user.FullName) ? "Your account" : user.FullName,
+            SavedFullName = user.FullName, SavedPhoneNumber = user.PhoneNumber ?? "",
             Email = user.Email ?? "Not provided", Role = string.Join(", ", await users.GetRolesAsync(user)),
             Status = !user.IsActive ? "Inactive" : user.LockoutEnd > DateTimeOffset.UtcNow ? "Locked" : "Active",
-            Verified = user.EmailConfirmed, HasPhoto = PhotoPath(user.ProfilePicturePath) != null,
+            Verified = user.EmailConfirmed, HasPhoto = PhotoPath(user.ProfilePicturePath) is string resolvedPhoto && System.IO.File.Exists(resolvedPhoto),
             CreatedAt = user.CreatedAt, LastLoginAt = user.LastLoginAt, PasswordRules = rules,
             Personal = input ?? new() { FullName = user.FullName, PhoneNumber = user.PhoneNumber } };
     }
@@ -34,6 +35,16 @@ public sealed class InternalProfileController(UserManager<ApplicationUser> users
         var user = await users.GetUserAsync(User);
         return user == null ? Challenge() : View(await ModelAsync(user));
     }
+    // The Owner security card was retired from My Profile. Keep the existing
+    // authenticated password-change handler accessible without reintroducing
+    // that card; Staff continues to use the unified in-profile form.
+    [HttpGet, Authorize(Roles = "Owner")]
+    public async Task<IActionResult> Password()
+    {
+        var user = await users.GetUserAsync(User);
+        return user == null ? Challenge() : View(await ModelAsync(user));
+    }
+
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit([Bind(Prefix = "Personal")] InternalPersonalInput input)
     {
@@ -61,15 +72,20 @@ public sealed class InternalProfileController(UserManager<ApplicationUser> users
     {
         var user = await users.GetUserAsync(User);
         if (user == null) return Challenge();
+        var nextPassword = input.NewPassword ?? "";
+        if (nextPassword.Length < Math.Max(12, users.Options.Password.RequiredLength))
+            ModelState.AddModelError("Password.NewPassword", $"Use at least {Math.Max(12, users.Options.Password.RequiredLength)} characters.");
         if (ModelState.IsValid)
         {
-            var result = await users.ChangePasswordAsync(user, input.CurrentPassword, input.NewPassword);
+            var result = await users.ChangePasswordAsync(user, input.CurrentPassword, nextPassword);
             if (result.Succeeded)
             {
                 await signIn.RefreshSignInAsync(user);
                 await AuditAsync(user, SystemActivityType.PasswordChanged, "Account password changed.");
                 TempData["ProfileSuccess"] = "Password changed successfully.";
-                return RedirectToAction(nameof(Index), null, null, "security");
+                return User.IsInRole("Owner")
+                    ? RedirectToAction(nameof(Password))
+                    : RedirectToAction(nameof(Index), null, null, "security");
             }
             foreach (var error in result.Errors)
                 ModelState.AddModelError(error.Code == "PasswordMismatch" ? "Password.CurrentPassword" : "Password.NewPassword", error.Description);
@@ -77,7 +93,7 @@ public sealed class InternalProfileController(UserManager<ApplicationUser> users
         // Never send submitted passwords back in rendered HTML.
         foreach (var key in new[] { "Password.CurrentPassword", "Password.NewPassword", "Password.ConfirmPassword" })
             if (ModelState.TryGetValue(key, out var entry)) entry.RawValue = entry.AttemptedValue = null;
-        return View("Index", await ModelAsync(user));
+        return View(User.IsInRole("Owner") ? nameof(Password) : nameof(Index), await ModelAsync(user));
     }
     [HttpGet]
     public async Task<IActionResult> Photo()

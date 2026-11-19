@@ -36,27 +36,26 @@
                 <label class="visually-hidden" for="staffBookingSearch">Search bookings</label>
                 <i class="bi bi-search" aria-hidden="true"></i><input id="staffBookingSearch" type="search" name="search" value="@Model.Search" class="form-control" placeholder="Search booking ID, client, package, or venue" autocomplete="off" />
             </div>
-<div class="staff-part3-sort-control">
+<div class="staff-part3-sort-control staff-data-sort">
                 <label for="staffBookingSort">Sort by</label>
                 <select id="staffBookingSort" name="sortBy" class="form-select" aria-label="Sort booking requests">
-                    <option value="newest" selected="@((string?)ViewBag.StaffSort != "oldest")">Newest to Oldest</option>
-                    <option value="oldest" selected="@((string?)ViewBag.StaffSort == "oldest")">Oldest to Newest</option>
+                    <option value="newest" selected="@((string?)ViewBag.StaffSort != "oldest")">Newest first</option>
+                    <option value="oldest" selected="@((string?)ViewBag.StaffSort == "oldest")">Oldest first</option>
                 </select>
             </div><button type="button" class="btn btn-outline-secondary aries-refresh-now" aria-label="Refresh booking requests"><i class="bi bi-arrow-clockwise" aria-hidden="true"></i></button><button type="submit" class="visually-hidden">Search bookings</button></form>
     </div>
-    <div class="dashboard-panel staff-booking-table-panel">
-        @if (!requests.Any())
-        {
-            <div class="empty-state staff-booking-empty">
-                <i class="bi bi-check2-circle" aria-hidden="true"></i>
-                <h3>No booking requests currently require your attention.</h3>
-                <p>Confirmed events can be managed from the Calendar.</p>
-            </div>
-        }
-        else
-        {
-            <div class="table-responsive staff-booking-table-wrap">
-                <table class="table align-middle staff-booking-table">
+    <div class="staff-data-table-frame" data-staff-table-capacity="5">
+        <div class="dashboard-panel staff-booking-table-panel staff-data-table-panel">
+            <div class="table-responsive staff-booking-table-wrap staff-data-table-scroll">
+                <table class="table align-middle staff-booking-table staff-data-table">
+                    <colgroup>
+                        <col class="staff-col-booking" />
+                        <col class="staff-col-client" />
+                        <col class="staff-col-event" />
+                        <col class="staff-col-venue" />
+                        <col class="staff-col-status" />
+                        <col class="staff-col-actions" />
+                    </colgroup>
                     <thead>
                         <tr>
                             <th scope="col">Booking</th>
@@ -68,6 +67,29 @@
                         </tr>
                     </thead>
                     <tbody>
+                    @if (!requests.Any())
+                    {
+                        <tr class="staff-data-table-empty-row">
+                            <td colspan="6">
+                                <div class="staff-data-table-empty" role="status">
+                                    <i class="bi bi-inbox" aria-hidden="true"></i>
+                                    @if (!string.IsNullOrWhiteSpace(Model.Search) && Model.StaffHasAnyRequests)
+                                    {
+                                        <strong>No matching bookings</strong>
+                                        <p>Try adjusting your search.</p>
+                                        <a asp-controller="Bookings" asp-action="Index" class="staff-data-table-reset">Clear search</a>
+                                    }
+                                    else
+                                    {
+                                        <strong>No bookings found</strong>
+                                        <p>No booking records are available.</p>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
                     @foreach (var item in requests)
                     {
                         var venueText = string.IsNullOrWhiteSpace(item.VenueAddress) ? "Venue not provided" : item.VenueAddress;
@@ -100,17 +122,18 @@
                             </td>
                         </tr>
                     }
+                    }
                     </tbody>
                 </table>
             </div>
+        </div>
+        @{
+            var staffPager = new AriesMagicAppointmentSystem.ViewModels.QueuePaginationViewModel(
+                Model.TotalCount, Model.Page, 5, "Index", new Dictionary<string,string> {
+                    ["search"] = Model.Search ?? "",
+                    ["sortBy"] = (string?)ViewBag.StaffSort ?? "newest"
+                }) { ShowTotalForStaff = true, HideSinglePageControls = true };
         }
+        <partial name="_QueuePagination" model="staffPager" />
     </div>
 </div>
-@{
-    var staffPager = new AriesMagicAppointmentSystem.ViewModels.QueuePaginationViewModel(
-        Model.TotalCount, Model.Page, 5, "Index", new Dictionary<string,string> {
-            ["search"] = Model.Search ?? "",
-            ["sortBy"] = (string?)ViewBag.StaffSort ?? "newest"
-        });
-}
-<partial name="_QueuePagination" model="staffPager" />

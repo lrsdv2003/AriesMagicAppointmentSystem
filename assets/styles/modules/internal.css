@@ -696,3 +696,376 @@ body.internal-ui.midnight-workspace .staff-package-detail-facts strong{color:var
 .admin-console details p{max-width:40rem;white-space:pre-wrap;overflow-wrap:anywhere}
 @media(max-width:900px){.admin-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.admin-heading{align-items:flex-start}}
 @media(max-width:600px){.admin-heading{flex-direction:column}.admin-form-grid,.admin-facts{grid-template-columns:1fr}.admin-panel{padding:16px}.admin-table thead{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}.admin-table,.admin-table tbody{display:block}.admin-table tr{display:block;padding:12px;border-bottom:1px solid #dfe4ec}.admin-table td{display:grid;grid-template-columns:100px minmax(0,1fr);gap:10px;padding:7px 0;border:0}.admin-table td:before{content:attr(data-label);font-size:12px;font-weight:600;color:#596779}.admin-metrics{gap:10px}.admin-metrics a{padding:16px}.admin-pagination{justify-content:center;flex-wrap:wrap}}
+
+
+/* Shared Owner and Staff five-record table foundation; opt-in via staff-data-table-frame. */
+/* STAFF BOOKING TABLE FOUNDATION (opt-in):
+   Future Calendar/Reschedule/History work can opt in to .staff-data-table-frame,
+   .staff-data-table-scroll, .staff-data-table, .staff-data-table-empty and the
+   same footer. Column widths and module actions remain role/module-specific.
+   Five rows of 78px = 390px, plus 48px for the semantic table header. */
+body.internal-ui:is(.staff-dashboard,.owner-dashboard) .staff-data-table-frame {
+  --staff-list-header:48px;
+  --staff-list-row:78px;
+  --staff-list-five-rows:390px;
+  --staff-list-cell-x:12px;
+  width:100%;
+  min-width:0;
+  max-width:none;
+  background:#09283f;
+  border:1px solid #315973;
+  border-radius:0;
+  overflow:hidden;
+  box-shadow:none;
+}
+body.internal-ui:is(.staff-dashboard,.owner-dashboard) .staff-data-table-frame .staff-data-table-panel {
+  margin:0!important;
+  padding:0!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  min-width:0;
+  overflow:visible!important;
+}
+body.internal-ui:is(.staff-dashboard,.owner-dashboard) .staff-data-table-frame .staff-data-table-scroll {
+  width:100%;
+  min-width:0;
+  max-width:100%;
+  min-height:calc(var(--staff-list-header) + var(--staff-list-five-rows));
+  margin:0!important;
+  padding:0!important;
+  overflow-x:auto!important;
+  -webkit-overflow-scrolling:touch;
+  background:#09283f;
+}
+body.internal-ui:is(.staff-dashboard,.owner-dashboard) .staff-data-table-frame .staff-data-table {
+  width:100%!important;
+  min-width:1030px!important;
+  table-layout:fixed!important;
+  border-collapse:collapse!important;
+  border-spacing:0!important;
+  border-radius:0!important;
+  margin:0!important;
+}
+body.internal-ui:is(.staff-dashboard,.owner-dashboard) .staff-data-table-frame .staff-data-table thead tr {
+  height:var(--staff-list-header);
+}
+body.internal-ui:is(.staff-dashboard,.owner-dashboard) .staff-data-table-frame .staff-data-table thead th {
+  padding:10px var(--staff-list-cell-x)!important;
+  height:var(--staff-list-header);
+  line-height:1.3!important;
+  white-space:normal!important;
+  vertical-align:middle!important;
+  text-align:left;
+  border-radius:0!important;
+  background:#153852!important;
+  border-bottom:1px solid #395c75!important;
+}
+body.internal-ui:is(.staff-dashboard,.owner-dashboard) .staff-data-table-frame .staff-data-table tbody tr:not(.staff-data-table-empty-row) {
+  height:var(--staff-list-row);
+}
+body.internal-ui:is(.staff-dashboard,.owner-dashboard) .staff-data-table-frame .staff-data-table tbody td {
+  padding:10px var(--staff-list-cell-x)!important;
+  line-height:1.35!important;
+  vertical-align:middle!important;
+  border-bottom:1px solid #274c68!important;
+  overflow-wrap:anywhere;
+}
+body.internal-ui:is(.staff-dashboard,.owner-dashboard) .staff-data-table-frame .staff-data-table thead th:last-child,
+body.internal-ui:is(.staff-dashboard,.owner-dashboard) .staff-data-table-frame .staff-data-table tbody td:last-child {
+  text-align:right!important;
+}
+body.internal-ui:is(.staff-dashboard,.owner-dashboard) .staff-data-table-frame .staff-data-table tbody tr:last-child td {
+  border-bottom:0!important;
+}
+body.internal-ui:is(.staff-dashboard,.owner-dashboard) .staff-data-table-frame .staff-data-table tbody tr:not(.staff-data-table-empty-row):hover {
+  background:rgba(33,95,134,.22);
+}
+body.internal-ui:is(.staff-dashboard,.owner-dashboard) .staff-data-table-frame .staff-data-table tbody tr.staff-data-table-empty-row>td {
+  padding:0!important;
+  text-align:center!important;
+}
+body.internal-ui:is(.staff-dashboard,.owner-dashboard) .staff-data-table-frame .staff-data-table-empty {
+  box-sizing:border-box;
+  min-height:var(--staff-list-five-rows);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  padding:22px 16px;
+  text-align:center;
+  color:#c5dcec;
+}
+body.internal-ui:is(.staff-dashboard,.owner-dashboard) .staff-data-table-frame .staff-data-table-empty i {
+  font-size:25px;
+  color:#8dc7eb;
+  line-height:1.2;
+}
+body.internal-ui:is(.staff-dashboard,.owner-dashboard) .staff-data-table-frame .staff-data-table-empty strong {
+  font-size:16px;
+  color:#f3f9ff;
+}
+body.internal-ui:is(.staff-dashboard,.owner-dashboard) .staff-data-table-frame .staff-data-table-empty p {
+  margin:0;
+  font-size:12px;
+  color:#b5cddd;
+}
+body.internal-ui:is(.staff-dashboard,.owner-dashboard) .staff-data-table-frame .staff-data-table-reset {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-height:40px;
+  padding:8px 14px;
+  border:1px solid #4385ac;
+  border-radius:8px;
+  color:#eef8ff;
+  text-decoration:none;
+  font-size:12px;
+}
+body.internal-ui:is(.staff-dashboard,.owner-dashboard) .staff-data-table-frame .staff-data-table-reset:hover,
+body.internal-ui:is(.staff-dashboard,.owner-dashboard) .staff-data-table-frame .staff-data-table-reset:focus-visible {
+  background:#174764;
+  outline-offset:2px;
+}
+body.internal-ui:is(.staff-dashboard,.owner-dashboard) .staff-data-table-frame>.aries-five-pager {
+  display:flex!important;
+  justify-content:space-between!important;
+  align-items:center!important;
+  gap:12px!important;
+  flex-wrap:wrap;
+  width:100%;
+  min-height:50px!important;
+  padding:4px 12px!important;
+  margin:0!important;
+  border:0!important;
+  border-top:1px solid #315973!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+  background:#0e3048!important;
+}
+body.internal-ui:is(.staff-dashboard,.owner-dashboard) .staff-data-table-frame>.aries-five-pager .aries-five-actions {
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:8px;
+}
+body.internal-ui:is(.staff-dashboard,.owner-dashboard) .staff-data-table-frame>.aries-five-pager .aries-five-page {
+  min-width:0;
+  font-size:12px;
+  white-space:nowrap;
+  color:#d5e5f2;
+}
+body.internal-ui:is(.staff-dashboard,.owner-dashboard) .staff-data-table-frame>.aries-five-pager .btn {
+  width:40px!important;
+  min-width:40px!important;
+  height:40px!important;
+  min-height:40px!important;
+  max-height:40px!important;
+  border-radius:8px;
+}
+body.internal-ui:is(.staff-dashboard,.owner-dashboard) .staff-data-table-frame :is(a,button):focus-visible {
+  outline:3px solid #f6ca53;
+  outline-offset:2px;
+}
+
+/* ========== CANONICAL: unified-profile.css ========== */
+/* Shared Client, Staff and Owner Profile presentation. No global form changes. */
+body.client-hub .client-main:has(.unified-profile) .hub-content,
+body.client-hub .client-main:has(.unified-profile) .client-page-wrap {
+  max-width:none!important;
+  width:100%!important;
+  min-width:0;
+  margin:0!important;
+  padding:10px clamp(10px,1.2vw,18px) 20px!important;
+}
+body.internal-ui .dashboard-content:has(> .unified-profile) {
+  padding:10px clamp(10px,1.2vw,18px) 20px!important;
+  max-width:none!important;
+}
+.unified-profile {
+  --up-surface:#0a2942;
+  --up-border:#30516b;
+  --up-text:#f1f8ff;
+  --up-muted:#b7cbdc;
+  --up-highlight:#dfb968;
+  --up-input:#092238;
+  box-sizing:border-box;
+  color:var(--up-text);
+  width:100%;
+  max-width:none;
+  min-width:0;
+  margin:0;
+  padding:0;
+  font:inherit;
+  font-size:14px;
+  line-height:1.48;
+}
+.unified-profile *, .unified-profile *::before, .unified-profile *::after {box-sizing:border-box}
+.unified-profile .up-header {
+  display:flex;justify-content:space-between;align-items:center;gap:14px;
+  flex-wrap:wrap;margin:0 0 12px;padding:2px 0 12px;
+  border-bottom:1px solid var(--up-border);
+}
+.unified-profile .up-header h1 {
+  font-weight:700;line-height:1.2;
+  font-family:var(--app-font,inherit);
+  font-size:clamp(22px,2vw,27px);
+  color:var(--up-text);margin:0 0 4px;
+}
+.unified-profile .up-header p {margin:0;color:var(--up-muted);font-size:12px}
+.unified-profile .up-header form {margin:0}
+.unified-profile .up-grid {
+  display:grid;grid-template-columns:minmax(235px,28%) minmax(0,1fr);
+  align-items:start;gap:14px;min-width:0;
+}
+.unified-profile .up-card {
+  min-width:0;max-width:100%;padding:18px;border:1px solid var(--up-border);
+  background:var(--up-surface);border-radius:11px;
+  color:var(--up-text);box-shadow:none;
+}
+.unified-profile .up-management {display:grid;gap:14px;min-width:0}
+.unified-profile .up-lower {display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start;min-width:0}
+/* Owner-only: the retired security card no longer reserves a second column.
+   The existing password change form remains on its own Owner-only route. */
+.unified-profile[data-role="Owner"] .up-lower-single {
+  grid-template-columns:minmax(0,1fr);
+}
+.unified-profile[data-role="Owner"] .up-account-actions {
+  display:flex;flex-wrap:wrap;column-gap:18px;row-gap:2px;
+}
+.unified-profile.owner-password-workspace .owner-password-card {
+  max-width:650px;
+}
+.unified-profile .up-card-heading {
+  border-bottom:1px solid var(--up-border);padding:0 0 10px;margin:0 0 13px;
+}
+.unified-profile h2 {margin:0;font-size:16px;font-weight:700;line-height:1.35;color:var(--up-text);overflow-wrap:anywhere}
+.unified-profile .up-card-heading p {margin:3px 0 0;font-size:12px;color:var(--up-muted)}
+.unified-profile .up-identity {text-align:center}
+.unified-profile .up-identity h2 {font-size:18px;margin:8px 0 7px}
+.unified-profile .up-avatar {
+  display:flex;align-items:center;justify-content:center;
+  overflow:hidden;width:112px;height:112px;margin:0 auto 8px;
+  border:3px solid #47647d;border-radius:50%;
+  color:#f0d9a0;background:#183e5c;font-size:29px;font-weight:750;
+}
+.unified-profile .up-avatar img {display:block;width:100%;height:100%;object-fit:cover}
+.unified-profile .up-role {
+  display:inline-flex;align-items:center;justify-content:center;
+  min-height:25px;padding:3px 10px;
+  border-radius:100px;border:1px solid #6d634f;
+  font-size:11px;font-weight:750;color:#f5db9d;background:#302e2b;
+}
+.unified-profile .up-identity-email {font-size:12px;color:var(--up-muted);overflow-wrap:anywhere;margin:10px 0 0}
+.unified-profile .up-divider {height:1px;background:var(--up-border);margin:16px 0}
+.unified-profile .up-photo-form {display:grid;gap:7px;text-align:left}
+.unified-profile .up-label,
+.unified-profile .up-field label {
+  display:block;margin-bottom:5px;font-size:12px;font-weight:700;color:#dae9f7;
+}
+.unified-profile .up-photo-form .up-label {margin:0}
+.unified-profile input[type=file] {
+  display:block;width:100%;min-width:0;max-width:100%;
+  color:var(--up-muted);font-size:12px;
+  border:1px solid #40617a;border-radius:8px;background:var(--up-input);padding:7px;
+}
+.unified-profile .up-photo-form input[type=file].up-file-input {
+  position:absolute!important;width:1px!important;height:1px!important;
+  padding:0!important;margin:-1px!important;overflow:hidden!important;
+  clip:rect(0,0,0,0)!important;clip-path:inset(50%)!important;white-space:nowrap!important;
+}
+.unified-profile input[type=file]::file-selector-button {
+  background:#194767;color:#fff;border:0;border-radius:6px;
+  padding:6px 9px;margin-right:8px;cursor:pointer;
+}
+.unified-profile .up-photo-form .up-btn {width:100%}
+.unified-profile .up-remove-photo {margin:8px 0 0}
+.unified-profile .up-remove-photo .up-btn {width:100%}
+.unified-profile .up-preview {display:flex;gap:8px;align-items:center;justify-content:center;padding:6px}
+.unified-profile .up-preview[hidden] {display:none}
+.unified-profile .up-preview img {width:96px;height:96px;object-fit:cover;border-radius:9px}
+.unified-profile .up-identity-dates {
+  display:grid;gap:8px;margin-top:15px;border-top:1px solid var(--up-border);padding-top:13px;
+  text-align:left;
+}
+.unified-profile .up-identity-dates div {display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.unified-profile .up-identity-dates span {font-size:11px;color:var(--up-muted)}
+.unified-profile .up-identity-dates strong {font-size:11px;font-weight:650;text-align:right;color:#f1f8ff}
+.unified-profile .up-fields {display:grid;grid-template-columns:minmax(0,1fr);gap:3px}
+.unified-profile .up-field {min-width:0;margin:0 0 13px}
+.unified-profile .up-input {
+  display:block;width:100%;max-width:100%;min-width:0;
+  height:42px;min-height:42px;padding:9px 11px;
+  border:1px solid #456781;border-radius:8px;
+  background:var(--up-input);color:var(--up-text);
+  font:inherit;font-size:13px;box-shadow:none;
+}
+.unified-profile .up-input::placeholder {color:#90abc0}
+.unified-profile .up-input:focus {border-color:#85cafa;outline:2px solid #5da9df;outline-offset:1px}
+.unified-profile .up-help {font-size:11px;color:var(--up-muted);margin:5px 0 0;line-height:1.45}
+.unified-profile .up-error-text {font-size:12px;color:#ffb5c5;display:block}
+.unified-profile .up-error-text:empty {display:none}
+.unified-profile .up-actions {display:flex;flex-wrap:wrap;gap:9px;margin-top:4px;align-items:center}
+.unified-profile .up-btn {
+  display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  min-height:40px;padding:8px 13px;border:1px solid #427091;border-radius:8px;
+  background:transparent;color:var(--up-text);font:inherit;font-size:12px;
+  font-weight:700;text-decoration:none;cursor:pointer;line-height:1.3;
+}
+.unified-profile .up-btn-primary {background:#1572ad;border-color:#3789bf;color:#fff}
+.unified-profile .up-btn-outline {background:#112f49;color:#edf6ff}
+.unified-profile .up-btn:hover:not(:disabled) {filter:brightness(1.15);color:#fff}
+.unified-profile .up-btn:disabled {opacity:.52;cursor:not-allowed}
+.unified-profile :is(button,input,a):focus-visible {outline:3px solid #f2ce78;outline-offset:2px}
+.unified-profile .up-details {display:grid;gap:0;margin:0}
+.unified-profile .up-details div {
+  display:flex;justify-content:space-between;align-items:center;gap:8px;
+  padding:10px 0;border-bottom:1px solid #264a64;min-width:0;
+}
+.unified-profile .up-details div:first-child {padding-top:0}
+.unified-profile .up-details div:last-child {border-bottom:0;padding-bottom:0}
+.unified-profile .up-details dt {display:flex;align-items:center;gap:8px;font-size:11px;font-weight:600;color:var(--up-muted);min-width:0;margin:0}
+.unified-profile .up-details dt i {font-size:13px}
+.unified-profile .up-details dd {margin:0;color:var(--up-text);font-size:12px;font-weight:650;text-align:right;overflow-wrap:anywhere;min-width:0}
+.unified-profile .up-state {border:1px solid #537d85;border-radius:100px;padding:2px 8px;font-size:11px}
+.unified-profile .up-link {display:inline-block;margin-top:15px;color:#f3d396;text-decoration:underline;font-size:12px}
+.unified-profile .up-password {display:flex;align-items:stretch;gap:6px;min-width:0}
+.unified-profile .up-password .up-input {flex:1 1 0;width:1%;min-width:0}
+.unified-profile .up-password-toggle {
+  flex:none;min-width:47px;padding:5px 7px;
+  border:1px solid #456781;background:#173a54;color:#eaf5ff;border-radius:8px;
+  cursor:pointer;font-size:11px;font-weight:650;
+}
+.unified-profile .up-password-rules {padding-left:17px;font-size:11px;color:var(--up-muted);line-height:1.5;margin:1px 0 14px}
+.unified-profile .up-feedback {margin:0 0 12px;padding:10px 12px;border-radius:8px;font-size:12px;border:1px solid #52738f;background:#123d5a}
+.unified-profile .up-feedback:empty,.unified-profile .up-feedback.validation-summary-valid {display:none}
+.unified-profile .up-feedback.up-error {color:#ffd6dc;border-color:#9d5365}
+.unified-profile .up-feedback.up-warning {color:#ffe4af;border-color:#b5925e}
+.unified-profile .up-feedback.up-success {color:#c5fae5;border-color:#528a7b}
+@media(max-width:1200px) {
+  .unified-profile .up-lower {grid-template-columns:1fr}
+  .unified-profile .up-fields {grid-template-columns:1fr}
+}
+@media(max-width:800px) {
+  .unified-profile .up-grid {grid-template-columns:1fr}
+  .unified-profile .up-lower {grid-template-columns:1fr}
+  .unified-profile .up-identity {max-width:none}
+  .unified-profile .up-fields {grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:600px) {
+  body.client-hub .client-main:has(.unified-profile) .hub-content,
+  body.client-hub .client-main:has(.unified-profile) .client-page-wrap,
+  body.internal-ui .dashboard-content:has(> .unified-profile) {
+    padding:8px 8px 18px!important;
+  }
+  .unified-profile .up-grid,.unified-profile .up-management,.unified-profile .up-lower {gap:10px}
+  .unified-profile .up-card {padding:13px}
+  .unified-profile .up-fields {grid-template-columns:1fr;gap:0}
+  .unified-profile .up-header {gap:9px}
+  .unified-profile .up-header .up-btn {min-height:40px}
+  .unified-profile .up-actions {display:grid;grid-template-columns:1fr 1fr}
+  .unified-profile .up-actions .up-btn {min-width:0;width:100%}
+  .unified-profile .up-details div {align-items:flex-start}
+}

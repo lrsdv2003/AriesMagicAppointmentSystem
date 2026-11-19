@@ -1,5 +1,19 @@
 (() => {
     'use strict';
+    // Sorting submits only this read-only queue; paging resets to the first matching page.
+    document.querySelector('[data-owner-verification-sort]')?.addEventListener('change', event => {
+        event.currentTarget.form?.requestSubmit();
+    });
+    document.querySelector('[data-queue-refresh]')?.addEventListener('click', event => {
+        const link = event.currentTarget;
+        if (link.dataset.loading === 'true') {
+            event.preventDefault();
+            return;
+        }
+        link.dataset.loading = 'true';
+        link.setAttribute('aria-busy', 'true');
+        link.classList.add('is-loading');
+    });
     const modalElement = document.getElementById('financialProofModal');
     const image = document.getElementById('financialProofImage');
     const error = document.getElementById('financialProofError');
@@ -27,7 +41,7 @@
     modalElement?.addEventListener('shown.bs.modal', () => { fitWidth = image.clientWidth; });
     modalElement?.addEventListener('hidden.bs.modal', () => { image.removeAttribute('src'); opener?.focus(); });
     document.querySelectorAll('[data-proof-zoom]').forEach(button => button.addEventListener('click', () => zoom(Number(button.dataset.proofZoom))));
-    ['payment','refund'].forEach(prefix => {
+    ['refund'].forEach(prefix => {
         const preset = document.getElementById(prefix + 'RejectPreset');
         const reason = document.getElementById(prefix + 'RejectReason');
         preset?.addEventListener('change', () => { reason.value = preset.value === 'Other' ? '' : preset.value; reason.focus(); });

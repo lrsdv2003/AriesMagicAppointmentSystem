@@ -5,28 +5,23 @@
     ViewData["Title"] = "Owner Dashboard";
 }
 <div class="role-workspace owner-round1-dashboard" data-role="Owner">
-    <header class="owner-round1-heading">
-        <span class="dash-eyebrow">Owner Workspace</span>
-        <h1>Owner Dashboard</h1>
-        <p>Monitor finances and review pending requests.</p>
-    </header>
     <section class="owner-round3-metrics" aria-label="Authoritative financial summary">
         @if(Model.UnavailableSections.Contains("financial overview")) {
             <div class="dash-panel"><p class="dash-empty">Financial metrics unavailable. No estimated totals are shown.</p></div>
         } else {
-            <article class="dash-panel owner-round3-metric owner-round3-net"><span class="owner-round3-metric-icon"><i class="bi bi-wallet2" aria-hidden="true"></i></span><div><span>Net Collected</span><strong>&#8369;@Model.NetCollectedRevenue.ToString("N2")</strong><small>Verified collections less completed refunds</small></div></article>
-            <article class="dash-panel owner-round3-metric owner-round3-outstanding"><span class="owner-round3-metric-icon"><i class="bi bi-cash-stack" aria-hidden="true"></i></span><div><span>Outstanding Balance</span><strong>&#8369;@Model.OutstandingReceivables.ToString("N2")</strong><small>Eligible outstanding collections</small></div></article>
-            <article class="dash-panel owner-round3-metric owner-round3-value"><span class="owner-round3-metric-icon"><i class="bi bi-calendar3" aria-hidden="true"></i></span><div><span>Total Booking Value</span><strong>&#8369;@Model.BookingValue.ToString("N2")</strong><small>Total eligible booking value</small></div></article>
+            <article class="dash-panel owner-round3-metric owner-round3-net"><span class="owner-round3-metric-icon"><i class="bi bi-wallet2" aria-hidden="true"></i></span><div><span>Net Collected</span><strong>&#8369;@Model.NetCollectedRevenue.ToString("N2")</strong></div></article>
+            <article class="dash-panel owner-round3-metric owner-round3-outstanding"><span class="owner-round3-metric-icon"><i class="bi bi-cash-stack" aria-hidden="true"></i></span><div><span>Outstanding Balance</span><strong>&#8369;@Model.OutstandingReceivables.ToString("N2")</strong></div></article>
+            <article class="dash-panel owner-round3-metric owner-round3-value"><span class="owner-round3-metric-icon"><i class="bi bi-calendar3" aria-hidden="true"></i></span><div><span>Total Booking Value</span><strong>&#8369;@Model.BookingValue.ToString("N2")</strong></div></article>
         }
     </section>
     <div class="owner-round1-grid owner-round3-grid">
         <section class="dash-panel owner-round1-requests" aria-labelledby="ownerFinancialRequestsTitle">
             <div class="dash-section-heading">
-                <div><h2 id="ownerFinancialRequestsTitle"><i class="bi bi-credit-card" aria-hidden="true"></i> Financial Requests</h2><p>Review pending payment proofs and refund requests.</p></div>
+                <div><h2 id="ownerFinancialRequestsTitle"><i class="bi bi-credit-card" aria-hidden="true"></i> Financial Requests</h2></div>
             </div>
             <div class="owner-round1-tabs" role="tablist" aria-label="Financial request type">
-                <button id="ownerPaymentsTab" class="owner-round1-tab active" type="button" role="tab" aria-controls="ownerPaymentsPanel" aria-selected="true" data-owner-tab="payments">Verify Payments (@Model.PendingPayments)</button>
-                <button id="ownerRefundsTab" class="owner-round1-tab" type="button" role="tab" aria-controls="ownerRefundsPanel" aria-selected="false" tabindex="-1" data-owner-tab="refunds">Refund Requests (@(Model.PendingRefunds + Model.RefundProofsAwaitingVerification))</button>
+                <button id="ownerPaymentsTab" class="owner-round1-tab active" type="button" role="tab" aria-controls="ownerPaymentsPanel" aria-selected="true" data-owner-tab="payments">Verify Payments <span>@Model.PendingPayments</span></button>
+                <button id="ownerRefundsTab" class="owner-round1-tab" type="button" role="tab" aria-controls="ownerRefundsPanel" aria-selected="false" tabindex="-1" data-owner-tab="refunds">Refund Requests <span>@(Model.PendingRefunds + Model.RefundProofsAwaitingVerification)</span></button>
             </div>
             <div id="ownerPaymentsPanel" class="owner-round1-tabpanel" role="tabpanel" tabindex="0" aria-labelledby="ownerPaymentsTab" data-owner-panel="payments">
                 @if(Model.UnavailableSections.Contains("queues")){<p class="dash-empty">Unable to load payment requests.</p>}
@@ -36,7 +31,7 @@
                     @foreach(var payment in Model.RecentPaymentsToVerify) {
                         var ocr = payment.OcrVerifications.Where(o => o.VerificationPurpose == OcrVerificationPurposes.PaymentProof).OrderByDescending(o => o.ProcessedAt).FirstOrDefault();
                         var indicator = ocr?.VerificationResult == OcrVerificationResults.MismatchDetected ? "Receipt details conflict" : ocr?.VerificationResult == OcrVerificationResults.OcrFailed ? "OCR unclear" : ocr?.IsDuplicateReference == true || ocr?.IsDuplicateImage == true ? "Possible duplicate" : "Needs manual review";
-                        <article class="owner-round1-request-row">
+                        <article class="owner-round1-request-row owner-priority-item">
                             <div><strong class="owner-booking-code">BK-@(payment.Booking?.CreatedAt.Year)-@payment.BookingId.ToString("D3")</strong><span>@(payment.Booking?.Client?.FullName ?? "Client not recorded")</span></div>
                             <div><small>Claimed Amount</small><strong>&#8369;@((payment.ExpectedAmountAtUpload ?? payment.Amount).ToString("N2"))</strong></div>
                             <div><small>Submitted</small><span>@payment.UploadedAt.ToString("MMM d, yyyy")</span></div>
@@ -54,7 +49,7 @@
                 else {
                     <div class="owner-round1-request-list">
                     @foreach(var refund in Model.RecentRefundRequests) {
-                        <article class="owner-round1-request-row">
+                        <article class="owner-round1-request-row owner-priority-item">
                             <div><strong class="owner-booking-code">BK-@(refund.Booking?.CreatedAt.Year)-@refund.BookingId.ToString("D3")</strong><span>@(refund.Booking?.Client?.FullName ?? "Client not recorded")</span></div>
                             <div><small>Requested Refund</small><strong>&#8369;@refund.Amount.ToString("N2")</strong></div>
                             <div><small>Submitted</small><span>@refund.RequestedAt.ToString("MMM d, yyyy")</span><small>@refund.Status</small></div>
@@ -68,7 +63,7 @@
             </div>
         </section>
         <aside class="dash-panel owner-round3-upcoming" aria-labelledby="ownerUpcomingTitle">
-            <div class="dash-section-heading"><div><span class="dash-eyebrow">Your next scheduled events</span><h2 id="ownerUpcomingTitle"><i class="bi bi-calendar-event" aria-hidden="true"></i> Upcoming Events</h2><p>Next confirmed bookings with venue information.</p></div></div>
+            <div class="dash-section-heading"><div><h2 id="ownerUpcomingTitle"><i class="bi bi-calendar-event" aria-hidden="true"></i> Upcoming Events</h2></div></div>
             @if(Model.UnavailableSections.Contains("schedule")) {
                 <p class="dash-empty">Unable to load upcoming events.</p>
             } else {
@@ -77,7 +72,7 @@
                     .OrderBy(b => b.EventDate).ThenBy(b => b.StartTime).ThenBy(b => b.Id)
                     .Take(4).ToList();
                 if(nextEvents.Count == 0) {
-                    <p class="dash-empty">No upcoming confirmed events.</p>
+                    <p class="dash-empty">No upcoming events</p>
                 } else {
                     <ol class="owner-round3-event-list">
                     @foreach(var booking in nextEvents) {

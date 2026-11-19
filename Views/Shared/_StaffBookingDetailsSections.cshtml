@@ -1,0 +1,100 @@
+@model AriesMagicAppointmentSystem.Models.Booking
+@using AriesMagicAppointmentSystem.Models
+@using AriesMagicAppointmentSystem.Services
+@using System.Text.Json
+@{
+    var isPending = User.IsInRole("Staff") && Model.Status == BookingStatus.Pending;
+    var duration = Model.EndTime > Model.StartTime ? Model.EndTime - Model.StartTime : TimeSpan.Zero;
+    List<string> removedInclusions = new();
+    if (!string.IsNullOrWhiteSpace(Model.RemovedInclusionsJson))
+    {
+        try { removedInclusions = JsonSerializer.Deserialize<List<string>>(Model.RemovedInclusionsJson) ?? new(); }
+        catch (JsonException) { }
+    }
+}
+<div class="staff-detail-grid staff-unified-section-stack">
+        <section class="dashboard-panel staff-detail-section" aria-labelledby="clientInfoTitle">
+            <h2 id="clientInfoTitle"><i class="bi bi-person" aria-hidden="true"></i> Client Information</h2>
+            <div class="staff-detail-list">
+                <div><span>Client Name</span><strong>@(Model.Client?.FullName ?? "Not available")</strong></div>
+                <div><span>Contact Person</span><strong>@(string.IsNullOrWhiteSpace(Model.ContactPerson) ? "Not provided" : Model.ContactPerson)</strong></div>
+                <div><span>Contact Number</span><strong>@(string.IsNullOrWhiteSpace(Model.ContactNumber) ? "Not provided" : Model.ContactNumber)</strong></div>
+                <div><span>Email</span><strong>@(Model.Client?.Email ?? "Not available")</strong></div>
+            </div>
+        </section>
+        <section class="dashboard-panel staff-detail-section" aria-labelledby="eventInfoTitle">
+            <h2 id="eventInfoTitle"><i class="bi bi-calendar-event" aria-hidden="true"></i> Event Information</h2>
+            <div class="staff-detail-list staff-detail-list-2col">
+                <div><span>Event Type</span><strong>@Model.EventType</strong></div>
+                <div><span>Event Date</span><strong>@Model.EventDate.ToString("MMMM dd, yyyy")</strong></div>
+                <div><span>Start Time</span><strong>@Model.StartTime.ToString("hh:mm tt")</strong></div>
+                <div><span>Estimated End Time</span><strong>@Model.EndTime.ToString("hh:mm tt")</strong></div>
+                <div><span>Duration</span><strong>@(duration.TotalMinutes > 0 ? $"{duration.TotalHours:0.#} hour(s)" : "Not available")</strong></div>
+                <div><span>Guests / Pax</span><strong>@Model.PaxCount</strong></div>
+                <div><span>Motif</span><strong>@(string.IsNullOrWhiteSpace(Model.Motif) ? "Not provided" : Model.Motif)</strong></div>
+                <div><span>Party Theme</span><strong>@(string.IsNullOrWhiteSpace(Model.PartyTheme) ? "Not provided" : Model.PartyTheme)</strong></div>
+            </div>
+        </section>
+
+        <section class="dashboard-panel staff-detail-section" aria-labelledby="packageInfoTitle">
+            <h2 id="packageInfoTitle"><i class="bi bi-box-seam" aria-hidden="true"></i> Packing Information</h2>
+            <div class="staff-detail-list">
+                <div><span>Selected Package</span><strong>@Model.PackageName</strong></div>
+                <div><span>Package Price</span><strong>₱@Model.FinalPrice.ToString("N2")</strong></div>
+                <div>
+                    <span>Package Adjustments</span>
+                    <strong>@(removedInclusions.Any() ? string.Join(", ", removedInclusions.Select(x => $"Removed: {x}")) : "No package adjustments")</strong>
+                </div>
+            </div>
+        </section>
+
+        <section class="dashboard-panel staff-detail-section staff-detail-wide" aria-labelledby="venueInfoTitle">
+            <h2 id="venueInfoTitle"><i class="bi bi-signpost-split" aria-hidden="true"></i> Venue Travel Overview</h2>
+            <div class="booking-venue-overview">
+                <div class="booking-venue-status @(Model.RequiresManualReview ? "venue-awareness-review" : Model.IsServiceable ? "venue-awareness-serviceable" : "venue-awareness-unavailable")">
+                    <i class="bi @(Model.RequiresManualReview ? "bi-exclamation-triangle-fill" : Model.IsServiceable ? "bi-check-circle-fill" : "bi-x-circle-fill")" aria-hidden="true"></i>
+                    <div><span>Venue serviceability</span><strong>@(Model.RequiresManualReview ? "For staff review" : Model.IsServiceable ? "Serviceable" : "Not serviceable")</strong></div>
+                </div>
+                <div class="booking-venue-metrics">
+                    <div><span>Distance</span><strong>@(Model.DistanceKm.HasValue ? $"{Model.DistanceKm.Value:N1} km" : "Not available")</strong></div>
+                    <div><span>Service zone</span><strong>@(string.IsNullOrWhiteSpace(Model.ServiceZone) ? "Not available" : Model.ServiceZone)</strong></div>
+                    <div><span>Travel fee</span><strong>@(Model.TravelFeeStatus == VenueLocationPolicy.PendingReview ? "Pending Staff confirmation" : Model.TravelFee > 0 ? $"₱{Model.TravelFee:N2}" : "No travel fee")</strong></div>
+                </div>
+            </div>
+            <div class="staff-detail-list staff-detail-list-2col">
+                <div class="staff-detail-span-2"><span>Full Address</span><strong>@(string.IsNullOrWhiteSpace(Model.PartyVenue) ? "Not provided" : Model.PartyVenue)</strong></div>
+                <div><span>Selection method</span><strong>@(Model.VenueSelectionMethod ?? "Legacy / not recorded")</strong></div>
+                <div><span>Location review status</span><strong>@(Model.VenueVerificationStatus ?? "Legacy booking")</strong></div>
+                <div><span>Travel fee status</span><strong>@(Model.TravelFeeStatus ?? "Existing quote")</strong></div>
+                <div><span>Customer pin</span><strong>@(Model.VenueLatitude.HasValue && Model.VenueLongitude.HasValue ? $"{Model.VenueLatitude.Value:F5}, {Model.VenueLongitude.Value:F5}" : "Not provided")</strong></div>
+                @if(!string.IsNullOrWhiteSpace(Model.VenueDirections)){<div class="staff-detail-span-2"><span>Landmark / directions</span><strong>@Model.VenueDirections</strong></div>}
+                @if(Model.TravelFeeStatus == VenueLocationPolicy.PendingReview){<div class="staff-detail-span-2"><strong>Travel fee pending. Do not approve payment or treat the current estimate as final.</strong></div>}
+                @if(Model.TravelFeeStatus == VenueLocationPolicy.AwaitingCustomerAcceptance){<div class="staff-detail-span-2"><strong>Staff quote sent. Await the customer's acceptance before approving payment.</strong></div>}
+            </div>
+            @if(isPending && (Model.TravelFeeStatus == VenueLocationPolicy.PendingReview ||
+                Model.TravelFeeStatus == VenueLocationPolicy.AwaitingCustomerAcceptance))
+            {
+                <form asp-action="ResolveVenue" asp-route-id="@Model.Id" method="post" class="mt-3">
+                    @Html.AntiForgeryToken()
+                    <h3 class="h6">Resolve the venue and travel quote</h3>
+                    <p class="small">Confirm an actual venue pin and the written address with the customer. The normal service coverage rules are checked on the server. Travel charges cannot be collected before customer acceptance.</p>
+                    <div class="row g-2">
+                        <div class="col-md-6"><label class="form-label" for="locationLatitude">Confirmed latitude</label><input id="locationLatitude" name="latitude" class="form-control" type="number" step="any" min="4" max="22.5" value="@Model.VenueLatitude" required/></div>
+                        <div class="col-md-6"><label class="form-label" for="locationLongitude">Confirmed longitude</label><input id="locationLongitude" name="longitude" class="form-control" type="number" step="any" min="116" max="128" value="@Model.VenueLongitude" required/></div>
+                        <div class="col-12"><label class="form-label" for="locationAddress">Corrected address (optional)</label><input id="locationAddress" name="correctedAddress" class="form-control" maxlength="500" value="@Model.PartyVenue"/></div>
+                        <div class="col-md-6"><label class="form-label" for="manualTravelFee">Confirmed travel fee (₱, optional override)</label><input id="manualTravelFee" name="confirmedTravelFee" type="number" min="0" max="25000" step="0.01" class="form-control" placeholder="Use calculated amount if blank"/></div>
+                        <div class="col-12"><label class="form-label" for="locationReason">Review and correction reason</label><textarea id="locationReason" name="reviewReason" class="form-control" required minlength="10" maxlength="700" rows="2" placeholder="Where did you confirm the exact venue pin and travel fee?"></textarea></div>
+                    </div>
+                    <button type="submit" class="btn btn-primary mt-2">Submit quote for customer acceptance</button>
+                </form>
+            }
+        </section>
+        <section class="dashboard-panel staff-detail-section" aria-labelledby="requestInfoTitle">
+            <h2 id="requestInfoTitle"><i class="bi bi-card-text" aria-hidden="true"></i> Client Notes</h2>
+            <div class="staff-note-block staff-note-block-empty">
+                <i class="bi bi-info-circle" aria-hidden="true"></i>
+                <span>No notes provided.</span>
+            </div>
+        </section>
+
+</div>

@@ -1,6 +1,9 @@
 (() => {
   'use strict';
   document.querySelectorAll('form[data-aries-round3-filter="true"]').forEach(form => {
+    // Staff History already has one debounced AJAX form handler in staff-round2.
+    // Owner and other pages continue to use this conventional GET submission.
+    if (form.dataset.staffAutosearch === 'history' && document.body.classList.contains('staff-dashboard')) return;
     let submitting = false;
     const submit = () => {
       if (submitting) return;

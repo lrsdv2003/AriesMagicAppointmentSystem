@@ -56,10 +56,6 @@ namespace AriesMagicAppointmentSystem.Extensions
         public static bool CanViewHistory(this ClaimsPrincipal user) =>
             user.IsInRole("Owner") || user.IsInRole("Staff");
 
-        // Owner can export/print history reports. Staff can view but not export.
-        public static bool CanExportHistoryReports(this ClaimsPrincipal user) =>
-            user.IsInRole("Owner");
-
         // Presentation guard for historical links; destination endpoints enforce authorization.
         public static bool CanFollowModuleLink(this ClaimsPrincipal user, string? link)
         {

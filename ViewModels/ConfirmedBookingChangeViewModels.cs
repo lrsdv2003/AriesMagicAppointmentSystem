@@ -12,8 +12,6 @@ public sealed class ConfirmedBookingChangeInput
     public string Venue { get; set; } = string.Empty;
     public double? Latitude { get; set; }
     public double? Longitude { get; set; }
-    [Required, StringLength(700, MinimumLength = 10)]
-    public string Reason { get; set; } = string.Empty;
 }
 
 public sealed class ConfirmedBookingChangeEditViewModel

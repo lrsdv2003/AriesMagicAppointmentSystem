@@ -15,6 +15,11 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('[data-account-form]').forEach(form => {
         form.addEventListener('submit', event => {
             if (!form.checkValidity()) return;
+            if (form.hasAttribute('data-confirm-remove-photo') &&
+                !window.confirm('Remove your profile photo?')) {
+                event.preventDefault();
+                return;
+            }
             if (form.dataset.submitting) { event.preventDefault(); return; }
             form.dataset.submitting = 'true';
             form.querySelectorAll('[type=submit]').forEach(button => {
@@ -27,6 +32,21 @@ document.addEventListener('DOMContentLoaded', () => {
         delete form.dataset.submitting;
         form.querySelectorAll('[type=submit]').forEach(button => { button.disabled = false; if (button.dataset.original) button.textContent = button.dataset.original; });
     }));
+    document.querySelectorAll('.up-personal form').forEach(form => {
+        form.addEventListener('reset', event => {
+            event.preventDefault();
+            form.querySelectorAll('input[data-saved-value]').forEach(input => {
+                input.value = input.dataset.savedValue ?? '';
+                input.setCustomValidity('');
+                input.setAttribute('aria-invalid','false');
+            });
+            form.querySelectorAll('[data-valmsg-for]').forEach(error => {
+                error.textContent = '';
+                error.classList.remove('field-validation-error');
+                error.classList.add('field-validation-valid');
+            });
+        });
+    });
     const file = document.getElementById('profilePhoto');
     const panel = document.getElementById('photoPreviewPanel');
     const preview = document.getElementById('photoPreview');
@@ -36,6 +56,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (objectUrl) URL.revokeObjectURL(objectUrl);
         objectUrl = null; file.value = ''; panel.hidden = true; preview.removeAttribute('src'); error.textContent = '';
     };
+    document.getElementById('choosePhoto')?.addEventListener('click', () => file?.click());
     file?.addEventListener('change', () => {
         if (objectUrl) URL.revokeObjectURL(objectUrl);
         const selected = file.files[0]; panel.hidden = true; error.textContent = '';

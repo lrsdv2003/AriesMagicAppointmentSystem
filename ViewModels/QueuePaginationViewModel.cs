@@ -14,6 +14,9 @@ public sealed class QueuePaginationViewModel
     }
 
     public int TotalCount { get; }
+    // Optional presentation flags. Owner/other queues retain their existing footer.
+    public bool ShowTotalForStaff { get; init; }
+    public bool HideSinglePageControls { get; init; }
     public int Page { get; }
     public int PageSize { get; }
     public int TotalPages { get; }

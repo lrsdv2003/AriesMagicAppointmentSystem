@@ -3,6 +3,7 @@ using System.Security.Claims;
 using AriesMagicAppointmentSystem.Controllers;
 using AriesMagicAppointmentSystem.Data;
 using AriesMagicAppointmentSystem.Models;
+using AriesMagicAppointmentSystem.Services;
 using AriesMagicAppointmentSystem.ViewModels;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -62,6 +63,15 @@ static class SnapshotRenderer
                 ProofRevisions=[new(){Id=9001,PaymentId=payment.Id,ProofImagePath="private:synthetic",Amount=2000,PaymentMethod="GCash",Status=PaymentStatus.AdditionalEvidenceRequired,UploadedAt=DateTime.Now.AddDays(-1),ArchivedAtUtc=DateTime.UtcNow,ReviewerNote="Synthetic clearer-proof request"}]}),
             ("Payments","RefundRequests",new[] {refund}),
             ("Payments","RefundReview",refund),
+            ("Bookings","OwnerDetails",booking),
+            ("BookingChanges","Edit",new ConfirmedBookingChangeEditViewModel {
+                Booking=booking,AvailablePackages=publicPackages,VerifiedPayments=2000m,
+                Input=new ConfirmedBookingChangeInput{
+                    BookingId=booking.Id,ServiceId=displayPackage.Id,
+                    Venue="A very long but genuine-looking venue description used solely for responsive layout checks in Pasig City, Metro Manila, Philippines",
+                    Latitude=14.58125,Longitude=121.1258
+                }
+            }),
             ("Reports","Index",reports),
             ("Services","Index",new[] {displayPackage}),
             ("Services","Details",displayPackage),
@@ -82,7 +92,11 @@ static class SnapshotRenderer
         pages = pages.Concat(new (string Controller,string Action,object Model)[] {
             ("Personnel","Index",new AriesMagicAppointmentSystem.Controllers.PersonnelPage([
                 new("synthetic-staff","Synthetic Staff","staff@example.test","Staff","Active"),
-                new("synthetic-pending","Former personnel","pending@example.test","Legacy internal","Disabled")],[],true,true)),
+                new("synthetic-owner","Synthetic Owner","owner@example.test","Owner","Active")])
+                {Pagination=new AriesMagicAppointmentSystem.ViewModels.QueuePaginationViewModel(2,1,5,"Index",new()),HasEligibleAccounts=true,HasAccountsInSelectedRole=true}),
+            ("Personnel","Access",new AriesMagicAppointmentSystem.Controllers.StaffAccessPage([
+                new("synthetic-staff","Synthetic Staff","staff@example.test","Active",false,false,true,false),
+                new("synthetic-pending","Pending Staff","pending@example.test","Pending enrollment",true,true,false,false)])),
             ("PersonnelEnrollment","Accept",new AriesMagicAppointmentSystem.Controllers.PersonnelEnrollmentInput()),
             ("Feedback","Create",new FeedbackInput {BookingId=booking.Id,EventLabel=displayPackage.Name}),
             ("Feedback","Index",new ClientFeedbackPage([feedback],[feedbackBooking],1,1)),
@@ -103,7 +117,7 @@ static class SnapshotRenderer
             ("Bookings","Create",new BookingStepTwoViewModel {EventDate=DateTime.Today.AddDays(7),StartTime=new TimeSpan(10,0,0),PaxCount=50,ContactPerson="Fixture Client",ContactNumber="09000000000"}),
             ("Payments","Upload",new PaymentUploadViewModel {BookingId=1,Options=AriesMagicAppointmentSystem.ViewComponents.PaymentOptions.Build(10000,0),FixedDownpaymentAmount=2000,Amount=2000,GCashQrPath="/images/gcash-qr.jpeg",Bookings=[new(){Value="1",Text="Fixture booking — balance PHP 10,000"}]}),
             ("Payments","MyUploads",new[]{payment}),
-            ("Profile","Index",new ProfileViewModel {FullName="Fixture Client",Email="client@example.test",CreatedAt=DateTime.Today.AddYears(-1)}),
+            ("Profile","Index",new InternalProfileViewModel {DisplayName="Fixture Client",Email="client@example.test",Role="Client",Status="Active",CreatedAt=DateTime.UtcNow.AddYears(-1),Personal=new(){FullName="Fixture Client"},PasswordRules=["At least 12 characters."]}),
             ("Payments","RequestRefund",new RefundRequestViewModel()),
             ("Payments","MyRefundRequests",Array.Empty<RefundRequest>()),
             ("RescheduleRequests","MyRequests",Array.Empty<RescheduleRequest>()),
@@ -117,8 +131,8 @@ static class SnapshotRenderer
             ("RescheduleRequests","Index",new RescheduleRequestIndexViewModel()),
             ("RescheduleRequests","Details",new RescheduleRequestDetailsViewModel {Request=new RescheduleRequest {Id=44,Booking=booking,RequestedDate=DateTime.Today.AddDays(5),RequestedStartTime=DateTime.Today.AddDays(5).AddHours(10),RequestedEndTime=DateTime.Today.AddDays(5).AddHours(12)},Availability=new() {IsAvailable=true}}),
             ("History","Index",new HistoryIndexViewModel { AvailableServices = [package], TotalPages = 2, TotalCount = 16, Bookings = [new HistoryRowViewModel { Id=1,BookingCode="BK-2026-001",ClientName="Fixture Client",PackageName="History Package",Venue="Fixture Venue",EventDate=DateTime.Today.AddDays(-2),StartTime=DateTime.Today.AddHours(10),EndTime=DateTime.Today.AddHours(12),PaymentStatus="Verified",BookingStatus="Completed" }] }),
-            ("SystemActivity","Index",new SystemActivityIndexViewModel { Page = 1, PageSize = 20, TotalCount=21, TotalPages = 2, ActivityTypes=Enum.GetValues<SystemActivityType>().ToList(), Activities = [new SystemActivity {Type=SystemActivityType.PaymentVerified,PerformedByUserName="Test Owner",Description="Payment reviewed after proof comparison.",AffectedRecordType="Payment",AffectedRecordId="42",MetadataJson=System.Text.Json.JsonSerializer.Serialize(new { ActorRole="Owner" })}] }),
-            ("TrashHistory","Index",new TrashHistoryIndexViewModel { TotalPages = 2, ArchivedPackages=[new Service {Id=55,Name="Archived Fixture",IsArchived=true}], Bookings = [new TrashHistoryRowViewModel {Id=booking.Id,BookingStatus=BookingStatus.Cancelled,BookingCode="BK-2026-001",ClientName="Test Client",ArchiveDateRecorded=true,ArchivedAt=DateTime.UtcNow,ArchivedBy="Test Staff"}] }),
+            ("SystemActivity","Index",new SystemActivityIndexViewModel { Page = 1, PageSize = 5, TotalCount=21, TotalPages = 5, ActivityTypes=BusinessActivityTypes.All.ToList(), Activities = [new SystemActivity {Type=SystemActivityType.PaymentVerified,PerformedByUserName="Test Owner",Description="Payment reviewed after proof comparison.",AffectedRecordType="Payment",AffectedRecordId="42",CreatedAt=new DateTime(2026,11,18,8,30,0,DateTimeKind.Utc),MetadataJson=System.Text.Json.JsonSerializer.Serialize(new { ActorRole="Owner" })}] }),
+            ("TrashHistory","Index",new TrashHistoryIndexViewModel { TotalPages = 2, Bookings = [new TrashHistoryRowViewModel {Id=booking.Id,BookingStatus=BookingStatus.Cancelled,BookingCode="BK-2026-001",ClientName="Test Client",EventDate=new DateTime(2026,11,15),StartTime=TimeSpan.FromHours(10),EndTime=TimeSpan.FromHours(12),ArchiveDateRecorded=true,ArchivedAt=new DateTime(2026,11,16,10,0,0,DateTimeKind.Utc),ArchivedBy="Test Staff"}] }),
             ("Calendar","StaffIndex",new CalendarIndexViewModel { Bookings = Enumerable.Range(0,8).Select(i=>new Booking { Id = 990+i, Status = BookingStatus.Confirmed, EventDate = DateTime.Today.AddDays(i<6?2:1), StartTime = DateTime.Today.AddHours(10), EndTime = DateTime.Today.AddHours(12), PackageName = i%2==0?"Regression Package":"Other Package", PartyVenue = "Fixture Venue" }).ToList() }),
             ("History","Details",new HistoryDetailsViewModel {Booking=new Booking {Id=booking.Id,Client=booking.Client,Status=BookingStatus.Completed,EventType="Birthday",PartyVenue="Fixture Venue",PackageName=booking.PackageName,EventDate=booking.EventDate,StartTime=booking.StartTime,EndTime=booking.EndTime,FinalPrice=booking.FinalPrice,PaxCount=50},CompletedAt=DateTime.Today.AddDays(-2),BookingCode="BK-2026-001",AmountPaid=3000,RemainingBalance=7000,PaymentStatus="Verified",FinancialSummary=finance,Timeline=[new(){EventType="BookingCompleted",CreatedAt=DateTime.Today.AddDays(-2)},new(){EventType="PaymentVerified",Notes="Private financial marker",CreatedAt=DateTime.Today.AddDays(-3)}]}),
             ("Bookings","StaffDetails",new Booking {Id=booking.Id,CreatedAt=booking.CreatedAt,Client=booking.Client,Service=displayPackage,PackageName=displayPackage.Name,
@@ -127,9 +141,10 @@ static class SnapshotRenderer
                 CancellationRequestAtUtc=DateTime.UtcNow.AddHours(-1),CancellationRequestReason="The client has a documented venue conflict.",
                 Payments=[new(){Status=PaymentStatus.Verified,Amount=2000,InitialVerificationAtUtc=DateTime.UtcNow.AddHours(-25)}]}),
             ("Calendar","Settings",new CalendarIndexViewModel {Manage=new CalendarManageViewModel {MaxBookingsPerDay=3,BlockedDates=[new BlockedDate {Id=1,Date=DateTime.Today.AddDays(10),Reason="System maintenance"}]}}),
-            ("Personnel","EditStaff",new AriesMagicAppointmentSystem.Controllers.StaffProfileInput {Id="fixture-1",FullName="Test Staff",PhoneNumber="09123456789"}),
+
             ("TrashHistory","Details",new TrashHistoryDetailsViewModel {Trash=new TrashHistoryDetailViewModel {Id=booking.Id,CreatedAt=booking.CreatedAt,BookingStatus=BookingStatus.Cancelled,BookingCode="BK-2026-001",ClientName="Test Client",PackageName="Test Package",ReasonNotes="Request expired."}}),
-            ("InternalProfile","Index",new InternalProfileViewModel {DisplayName="Test Internal User",Email="internal@example.test",Role="Staff",Status="Active",Verified=true,CreatedAt=DateTime.UtcNow.AddYears(-1),Personal=new() {FullName="Test Internal User",PhoneNumber="09123456789"},PasswordRules=["At least 6 characters."]}),
+            ("InternalProfile","Index",new InternalProfileViewModel {DisplayName="Test Internal User",Email="internal@example.test",Role="Staff",Status="Active",Verified=true,CreatedAt=DateTime.UtcNow.AddYears(-1),Personal=new() {FullName="Test Internal User",PhoneNumber="09123456789"},PasswordRules=["At least 12 characters."]}),
+            ("InternalProfile","Password",new InternalProfileViewModel {DisplayName="Test Owner",Email="owner@example.test",Role="Owner",Status="Active",Verified=true,CreatedAt=DateTime.UtcNow.AddYears(-1),Personal=new() {FullName="Test Owner",PhoneNumber="09123456789"},PasswordRules=["At least 12 characters."]}),
             ("Communications","Index",new CommunicationCenterViewModel { IsInternalUser = true })
         };
         pages = pages.Concat(filterPages).ToArray();
@@ -143,15 +158,93 @@ static class SnapshotRenderer
             var roles = page.Controller == "Calendar" && page.Action == "StaffIndex" || page.Controller == "Bookings" && page.Action == "StaffDetails" ? new[] {"Staff", "Owner"} : page.Controller == "Account" ? new[] {"Guest"} : page.Controller == "Home" && (page.Action == "Index" || page.Action == "About" || page.Action == "Gallery") ? new[] {"Client","Guest"} : page.Controller == "History" ? new[] {"Owner","Staff"} : page.Controller == "InternalProfile" ? new[] { "Owner", "Staff" } : page.Controller == "Services" && page.Action is "Index" or "Details" ? new[] { "Owner", "Staff" } : page.Controller == "Communications" ? new[] { "Owner", "Staff", "Client" } : page.Controller == "Notifications" ? new[] { "Owner", "Client" } : new[] { defaultRole };
             foreach (var role in roles)
             {
-            foreach(var state in page.Controller == "Payments" && page.Action is "PendingVerification" or "RefundRequests" ? new[]{"populated","paged","empty"} : page.Controller == "Account" && page.Action == "Login" ? new[]{"populated","error","recovery-sent","reset-success","invalid-link","locked"} : page.Controller == "Account" && page.Action == "VerifyEmail" ? new[]{"populated","error","locked","expired"} : page.Controller == "Account" && page.Action is "Register" or "ResetPassword" ? new[]{"populated","error"} : page.Controller == "Home" && (page.Action == "Index" || page.Action == "About") ? new[]{"populated","published"} : page.Controller == "Home" && page.Action == "Packages" ? new[]{"populated","empty","edge"} : page.Controller == "Communications" ? (role=="Client" ? new[]{"populated","empty","inbox"} : new[]{"populated","empty"}) : page.Controller == "Dashboard" ? new[]{"populated","empty","error"} : page.Controller == "History" && page.Action == "Index" || page.Controller == "Bookings" && page.Action is "ClientDashboard" or "MyBookings" ? new[]{"populated","empty"} : new[]{"populated"})
+            foreach(var state in page.Controller == "Payments" && page.Action is "PendingVerification" or "RefundRequests" ? new[]{"populated","paged","empty"} : page.Controller == "Account" && page.Action == "Login" ? new[]{"populated","error","recovery-sent","reset-success","invalid-link","locked"} : page.Controller == "Account" && page.Action == "VerifyEmail" ? new[]{"populated","error","locked","expired"} : page.Controller == "Account" && page.Action is "Register" or "ResetPassword" ? new[]{"populated","error"} : page.Controller == "Home" && (page.Action == "Index" || page.Action == "About") ? new[]{"populated","published"} : page.Controller == "Home" && page.Action == "Packages" ? new[]{"populated","empty","edge"} : page.Controller == "Communications" ? (role=="Client" ? new[]{"populated","empty","inbox"} : new[]{"populated","empty"}) : page.Controller == "Dashboard" ? new[]{"populated","empty","error"} : page.Controller == "Reports" && page.Action=="Index" ? new[]{"populated","empty","filtered","five"} : page.Controller == "TrashHistory" && page.Action=="Index" ? new[]{"populated","empty","filtered","five"} : page.Controller == "SystemActivity" && page.Action=="Index" ? new[]{"populated","empty","filtered","five"} : page.Controller == "History" && page.Action == "Index" || page.Controller == "Bookings" && page.Action is "ClientDashboard" or "MyBookings" ? new[]{"populated","empty"} : new[]{"populated"})
             {
             object fixtureModel = page.Model;
+            if(page.Controller=="Reports" && page.Action=="Index" && state!="populated")
+            {
+                var financeFixture=new ReportDashboardViewModel{
+                    TotalBookingValue=reports.TotalBookingValue,TotalCollectedRevenue=reports.TotalCollectedRevenue,
+                    OutstandingReceivables=reports.OutstandingReceivables,RefundsIssued=reports.RefundsIssued,
+                    NetCollectedRevenue=reports.NetCollectedRevenue,TotalDownPaymentsCollected=reports.TotalDownPaymentsCollected,
+                    TotalBookings=reports.TotalBookings,ConfirmedBookings=reports.ConfirmedBookings,
+                    CompletedBookings=reports.CompletedBookings,CancelledBookings=reports.CancelledBookings,
+                    ExpiredBookings=reports.ExpiredBookings,AverageBookingValue=reports.AverageBookingValue,
+                    ConfirmationRate=reports.ConfirmationRate,CompletedBookingValue=reports.CompletedBookingValue,
+                    CompletedCollectedRevenue=reports.CompletedCollectedRevenue,
+                    CompletedOutstandingReceivables=reports.CompletedOutstandingReceivables,
+                    FullyPaidBookings=reports.FullyPaidBookings,PartiallyPaidBookings=reports.PartiallyPaidBookings,
+                    UnpaidBookings=reports.UnpaidBookings,PendingCount=reports.PendingCount,
+                    EvidenceRequiredCount=reports.EvidenceRequiredCount,VerifiedCount=reports.VerifiedCount,
+                    RejectedCount=reports.RejectedCount,
+                    MonthlyLabels=reports.MonthlyLabels,MonthlyBookingCounts=reports.MonthlyBookingCounts,
+                    MonthlyRevenue=reports.MonthlyRevenue,PackageLabels=reports.PackageLabels,
+                    PackageBookingCounts=reports.PackageBookingCounts,PackageRevenue=reports.PackageRevenue,
+                    AvailablePackages=reports.AvailablePackages,AvailableYears=reports.AvailableYears,
+                    AvailableBookingStatuses=reports.AvailableBookingStatuses,
+                    RecordSearch=state=="filtered"?"no-matching-financial-record":"",RecordPage=1,
+                    RecordsTotalCount=state=="five"?5:0
+                };
+                if(state=="five")
+                {
+                    financeFixture.BookingRecords=Enumerable.Range(0,5).Select(i=>new Booking{
+                        Id=9600+i,CreatedAt=new DateTime(2026,1,5).AddDays(i),
+                        EventDate=new DateTime(2026,11,18).AddDays(-i),
+                        Client=new User{FullName=i==0
+                          ? "Very long client name to check financial record cells remain readable on narrow screens"
+                          : "Finance Fixture Client "+i},
+                        PackageName=i==0?"Extended financial reporting package name with historical services":"Fixture Premium Package",
+                        Status=i%2==0?BookingStatus.Confirmed:BookingStatus.Completed,
+                        FinalPrice=12500000.50m+i*100m
+                    }).ToList();
+                    financeFixture.BookingFinancials=financeFixture.BookingRecords.ToDictionary(b=>b.Id,b=>
+                      new BookingFinancialSummaryViewModel{
+                        BookingTotal=b.FinalPrice,
+                        TotalVerifiedPayments=2650000.25m,
+                        RemainingBalance=b.FinalPrice-2650000.25m,
+                        CompletedRefunds=1250.50m
+                      });
+                }
+                fixtureModel=financeFixture;
+            }
+            if(page.Controller=="TrashHistory" && page.Action=="Index" && state!="populated")
+                fixtureModel=new TrashHistoryIndexViewModel{
+                    Filters=new TrashHistoryFilterViewModel{
+                        Search=state=="filtered"?"no-matching-archive":null,
+                        SortBy="newest",Page=1,PageSize=5
+                    },
+                    TotalCount=state=="five"?5:0,TotalPages=1,
+                    Bookings=state=="five" ? Enumerable.Range(0,5).Select(i=>new TrashHistoryRowViewModel{
+                        Id=9800+i,BookingCode="BK-2026-"+(9800+i),ClientName=i==0
+                            ? "Very long client name used to confirm archive table wrapping stays stable on narrow viewports"
+                            : "Fixture Archived Client "+i,
+                        EventDate=new DateTime(2026,11,17).AddDays(-i),
+                        StartTime=TimeSpan.FromHours(10),EndTime=TimeSpan.FromHours(12),
+                        ArchiveDateRecorded=i>0,ArchivedAt=new DateTime(2026,11,18).AddDays(-i),
+                        BookingStatus=i%3==0?BookingStatus.Cancelled:i%3==1?BookingStatus.Declined:BookingStatus.Expired,
+                        ArchivedBy="Historical Staff "+i,PackageName="Preserved historical package",Reason=TrashReason.BookingRequestExpired
+                    }).ToList():new List<TrashHistoryRowViewModel>()
+                };
+            if(page.Controller=="SystemActivity" && page.Action=="Index" && state!="populated")
+                fixtureModel=new SystemActivityIndexViewModel{
+                    Page=1,PageSize=5,TotalCount=state=="five"?5:0,TotalPages=1,
+                    SearchFilter=state=="filtered"?"no-matching-activity":null,
+                    ActivityTypes=BusinessActivityTypes.All.ToList(),
+                    Activities=state=="five" ? Enumerable.Range(0,5).Select(i=>new SystemActivity {
+                        Id=9400+i,Type=i%2==0?SystemActivityType.BookingApproved:SystemActivityType.PaymentVerified,
+                        PerformedByUserId="owner-snapshot",PerformedByUserName="Activity Actor "+i,
+                        Description=i==0?"Complete synthetic audit description: booking approved after all required checks were recorded, and all related event information remains available in the row.":"Synthetic event recorded after verification.",
+                        AffectedRecordType="Booking",AffectedRecordId="private-"+i,
+                        CreatedAt=new DateTime(2026,11,18,8,30,0,DateTimeKind.Utc).AddHours(-i),
+                        MetadataJson=System.Text.Json.JsonSerializer.Serialize(new{ActorRole="Owner"})
+                    }).ToList() : new List<SystemActivity>()
+                };
             if(page.Controller=="Payments" && page.Action=="PendingVerification" && state!="populated")
-                fixtureModel=state=="empty" ? Array.Empty<Payment>() : Enumerable.Range(26,25).Select(i=>new Payment {
+                fixtureModel=state=="empty" ? Array.Empty<Payment>() : Enumerable.Range(26,5).Select(i=>new Payment {
                     Id=8000+i,BookingId=booking.Id,Booking=booking,Amount=2000,ExpectedAmountAtUpload=2000,Status=PaymentStatus.Pending,
                     UploadedAt=DateTime.Now.AddMinutes(-i),ProofImagePath="synthetic-private-proof"}).ToArray();
             if(page.Controller=="Payments" && page.Action=="RefundRequests" && state!="populated")
-                fixtureModel=state=="empty" ? Array.Empty<RefundRequest>() : Enumerable.Range(26,25).Select(i=>new RefundRequest {
+                fixtureModel=state=="empty" ? Array.Empty<RefundRequest>() : Enumerable.Range(26,5).Select(i=>new RefundRequest {
                     Id=9000+i,BookingId=booking.Id,Booking=booking,Amount=2000,Status=RefundStatus.UnderReview,
                     RequestedAt=DateTime.Now.AddMinutes(-i),PaymentProofImagePath="synthetic-private-proof",ClientReason="Synthetic cancellation evidence"}).ToArray();
             if(page.Controller=="Account" && page.Action=="VerifyEmail" && state is "locked" or "expired") fixtureModel=new VerifyEmailViewModel {UserId="synthetic-user",MaskedEmail="c***@example.test",HasActiveCode=false,AttemptsLocked=state=="locked"};
@@ -167,7 +260,7 @@ static class SnapshotRenderer
                 IsInternalUser=role!="Client",
                 SelectedConversation=state is "empty" or "inbox" ? null : new ConversationDetailViewModel {Id=1,Title="Booking question",BookingId=booking.Id,CanSend=true,Participants=[new(){UserId="fixture-staff",Name="Fixture Staff",Role="Staff",Initials="FS"}],Messages=[new(){Id=1,SenderName="Fixture Staff",Content="Your booking update is ready.",SentAt=DateTime.Now}]},
                 Conversations=state=="empty" ? [] : [new(){Id=1,Title="Booking question",DisplayName="Fixture Staff",LatestMessage="Your booking update is ready.",LastActivityAt=DateTime.Now}],
-                InternalUsers=role=="Client" ? [] : [new(){UserId="fixture-staff",Name="Fixture Staff",Role="Staff"}]
+                // Manual New Conversation picker retired across all roles.
             };
             if(page.Controller=="History" && page.Action=="Index" && state=="empty") fixtureModel=new HistoryIndexViewModel {Filters=new() {Search="no matches"}};
             if(fixtureModel is InternalProfileViewModel account) account.Role=role;
@@ -191,7 +284,6 @@ static class SnapshotRenderer
             var result = engine.GetView(null, "/Views/"+page.Controller+"/"+page.Action+".cshtml",true);
             if (!result.Success) throw new Exception("Could not find snapshot view");
             var data = new ViewDataDictionary(provider.GetRequiredService<IModelMetadataProvider>(),new ModelStateDictionary()) {Model=fixtureModel};
-            data["EditModel"]=new EditProfileViewModel {FullName="Fixture Client",Email="client@example.test"};
             data["WizardPackages"]=new List<Service>{displayPackage}; data["EventTypes"]=new List<string>{"Birthday","Company Events","Bridal Shower","Gender Reveal","School Events","Halloween","Christmas Parties","Easter Events"};
             data["FinancialSummaries"]=new Dictionary<int,BookingFinancialSummaryViewModel>{[booking.Id]=finance};
             data["FinancialSummary"]=finance; data["ExpectedReceiver"]="Aries Magic"; data["Filter"]="awaiting";

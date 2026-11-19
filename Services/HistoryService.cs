@@ -9,7 +9,7 @@ namespace AriesMagicAppointmentSystem.Services
     /// <summary>
     /// Business logic for the History (archive) module. Controllers stay thin and only
     /// translate HTTP <-> this service; all archiving/query/sort/filter rules live here so
-    /// they are exercised the same way regardless of which page or export triggered them.
+    /// they are exercised consistently across History and Details pages.
     ///
     /// No new tables are introduced. History is simply the existing Booking table filtered
     /// to Completed bookings, with BookingTimeline supplying the read-only audit trail.
@@ -160,17 +160,6 @@ namespace AriesMagicAppointmentSystem.Services
             };
 
             return viewModel;
-        }
-
-        public async Task<List<HistoryRowViewModel>> GetHistoryForExportAsync(HistoryFilterViewModel filters)
-        {
-            await ArchiveDueBookingsAsync();
-
-            var query = BuildFilteredQuery(filters);
-            query = ApplySort(query, filters.SortBy);
-
-            var bookings = await query.ToListAsync();
-            return await BuildRowsAsync(bookings);
         }
 
         public async Task<HistoryDetailsViewModel?> GetDetailsAsync(int bookingId)

@@ -3,6 +3,8 @@ namespace AriesMagicAppointmentSystem.ViewModels;
 public sealed class InternalProfileViewModel
 {
     public string DisplayName { get; set; } = "";
+    public string SavedFullName { get; set; } = "";
+    public string SavedPhoneNumber { get; set; } = "";
     public string Email { get; set; } = "";
     public string Role { get; set; } = "";
     public string Status { get; set; } = "";
@@ -25,7 +27,7 @@ public sealed class InternalPasswordInput
 {
     [Required, DataType(DataType.Password), Display(Name = "Current password")]
     public string CurrentPassword { get; set; } = "";
-    [Required, DataType(DataType.Password), Display(Name = "New password")]
+    [Required, MinLength(12), DataType(DataType.Password), Display(Name = "New password")]
     public string NewPassword { get; set; } = "";
     [Required, DataType(DataType.Password), Compare(nameof(NewPassword), ErrorMessage = "Passwords do not match."), Display(Name = "Confirm new password")]
     public string ConfirmPassword { get; set; } = "";

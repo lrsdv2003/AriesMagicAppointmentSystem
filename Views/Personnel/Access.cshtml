@@ -1,0 +1,112 @@
+@model AriesMagicAppointmentSystem.Controllers.StaffAccessPage
+@{
+    Layout = "_DashboardLayout";
+    ViewData["Title"] = "Manage Staff Access";
+    ViewData["HideWorkspaceHeading"] = true;
+}
+<div class="admin-console personnel-console owner-personnel-access-page">
+    <div class="owner-personnel-access-toolbar">
+        <a asp-action="Index" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left" aria-hidden="true"></i> Back to Accounts
+        </a>
+        <h1>Manage Staff Access</h1>
+    </div>
+    @if (TempData["ErrorMessage"] is string error)
+    {
+        <div class="alert alert-danger" role="alert">@error</div>
+    }
+    @if (TempData["SuccessMessage"] is string success)
+    {
+        <div class="alert alert-success" role="status">@success</div>
+    }
+    <section class="owner-personnel-access-panel" aria-label="Authorized Staff access and enrollment management">
+        <div class="table-responsive" tabindex="0" role="region" aria-label="Staff access operations; scroll horizontally for actions">
+            <table class="table owner-personnel-access-table">
+                <thead>
+                    <tr>
+                        <th scope="col">Staff</th>
+                        <th scope="col">Status</th>
+                        <th scope="col">Authorized actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                @if (!Model.Accounts.Any())
+                {
+                    <tr><td colspan="3" class="text-center">No Staff access records require management.</td></tr>
+                }
+                else
+                {
+                    @foreach (var person in Model.Accounts)
+                    {
+                        <tr>
+                            <td>
+                                <strong>@person.FullName</strong>
+                                <span class="owner-personnel-access-email">@person.Email</span>
+                            </td>
+                            <td><span class="status-badge">@person.Status</span></td>
+                            <td>
+                                <div class="owner-personnel-access-actions">
+                                    @if (person.CanResend)
+                                    {
+                                        <form asp-action="Resend" method="post" data-personnel-confirm="Rotate and resend this Staff invitation? The previous link will become invalid.">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@person.Id" />
+                                            <button class="btn btn-outline-primary" type="submit">
+                                                <i class="bi bi-envelope" aria-hidden="true"></i> Resend invitation
+                                            </button>
+                                        </form>
+                                    }
+                                    @if (person.CanRevoke)
+                                    {
+                                        <form asp-action="Manage" method="post" data-personnel-confirm="Revoke this pending Staff invitation? The enrollment link will stop working.">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@person.Id" />
+                                            <input type="hidden" name="operation" value="Revoke" />
+                                            <button class="btn btn-outline-danger" type="submit">
+                                                <i class="bi bi-x-circle" aria-hidden="true"></i> Revoke invitation
+                                            </button>
+                                        </form>
+                                    }
+                                    @if (person.CanDeactivate)
+                                    {
+                                        <form asp-action="Manage" method="post" data-personnel-confirm="Revoke all existing Staff sessions?">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@person.Id" />
+                                            <input type="hidden" name="operation" value="RevokeSessions" />
+                                            <button class="btn btn-outline-secondary" type="submit">
+                                                <i class="bi bi-shield-lock" aria-hidden="true"></i> Revoke sessions
+                                            </button>
+                                        </form>
+                                        <form asp-action="Manage" method="post" data-personnel-confirm="Deactivate this Staff account and revoke its current sessions?">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@person.Id" />
+                                            <input type="hidden" name="operation" value="Deactivate" />
+                                            <button class="btn btn-outline-danger" type="submit">
+                                                <i class="bi bi-person-x" aria-hidden="true"></i> Deactivate
+                                            </button>
+                                        </form>
+                                    }
+                                    @if (person.CanReactivate)
+                                    {
+                                        <form asp-action="Manage" method="post" data-personnel-confirm="Reactivate this previously verified Staff account?">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@person.Id" />
+                                            <input type="hidden" name="operation" value="Reactivate" />
+                                            <button class="btn btn-outline-primary" type="submit">
+                                                <i class="bi bi-person-check" aria-hidden="true"></i> Reactivate
+                                            </button>
+                                        </form>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+@section Scripts {
+    <script src="~/js/personnel-accounts.js" asp-append-version="true"></script>
+}

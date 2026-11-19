@@ -4,43 +4,134 @@
     Layout = "_DashboardLayout";
     ViewData["Title"] = "History";
     var financial = User.IsInRole("Owner");
+    if (financial) ViewData["HideWorkspaceHeading"] = true;
+    var historyPager = new QueuePaginationViewModel(
+        Model.TotalCount, Model.Filters.Page, 5, "Index", HistoryPresentation.Routes(Model.Filters))
+    {
+        ShowTotalForStaff = !financial,
+        HideSinglePageControls = !financial
+    };
+    var filteredEmpty = financial ? HistoryPresentation.Filtered(Model.Filters) || Model.Summary.HistoryCount > 0 : Model.Summary.HistoryCount > 0;
 }
-<div class="ui-page history-page staff-final-round-history">
-@if(financial){<p>Completed events appear here. <a asp-controller="TrashHistory" asp-action="Index">View cancelled, declined and expired bookings in Archives.</a></p>}
-<partial name="_HistoryFilters" model="Model" />
-<div data-staff-search-results="history">
-@if(financial) {
-<div class="ui-toolbar">
-<p class="ui-result-count">@Model.TotalCount record@(Model.TotalCount==1?"":"s")</p>
-<div class="dropdown">
-<button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" id="historyExport">Export</button>
-<ul class="dropdown-menu dropdown-menu-end" aria-labelledby="historyExport">
-<li><a class="dropdown-item" asp-action="Print" asp-all-route-data="@HistoryPresentation.Routes(Model.Filters)" target="_blank">Print</a></li>
-<li><a class="dropdown-item" asp-action="ExportCsv" asp-all-route-data="@HistoryPresentation.Routes(Model.Filters)">CSV</a></li>
-<li><a class="dropdown-item" asp-action="ExportPdf" asp-all-route-data="@HistoryPresentation.Routes(Model.Filters)">PDF</a></li>
-</ul></div>
+<div class="ui-page history-page staff-final-round-history @(financial ? "owner-history-workspace" : "")">
+@if (financial)
+{
+    <div class="owner-history-toolbar">
+        <partial name="_HistoryFilters" model="Model" />
+        <a asp-controller="TrashHistory" asp-action="Index" class="btn btn-outline-secondary owner-history-archives">
+            <i class="bi bi-archive" aria-hidden="true"></i> Archives
+        </a>
+    </div>
+    <p id="ownerHistoryRefreshStatus" class="owner-history-refresh-feedback" role="alert" aria-live="assertive" hidden></p>
+}
+else
+{
+    <partial name="_HistoryFilters" model="Model" />
+}
+<div data-staff-search-results="history" id="historyResults">
+    <div class="staff-data-table-frame @(financial ? "owner-history-table-frame" : "staff-history-table-frame")"
+         data-staff-table-capacity="5">
+        <div class="ui-table-wrap staff-data-table-scroll" tabindex="0" role="region"
+             aria-label="Historical booking records; scroll horizontally to view all columns">
+            <table class="ui-table staff-data-table @(financial ? "owner-history-table" : "staff-history-table")">
+                <caption class="visually-hidden">Historical booking records</caption>
+                @if (financial)
+                {
+                    <colgroup>
+                        <col class="owner-history-col-booking" />
+                        <col class="owner-history-col-event" />
+                        <col class="owner-history-col-package" />
+                        <col class="owner-history-col-payment" />
+                        <col class="owner-history-col-status" />
+                        <col class="owner-history-col-actions" />
+                    </colgroup>
+                }
+                else
+                {
+                    <colgroup>
+                        <col class="staff-col-booking" />
+                        <col class="staff-col-event" />
+                        <col class="staff-col-package" />
+                        <col class="staff-col-client" />
+                        <col class="staff-col-status" />
+                        <col class="staff-col-actions" />
+                    </colgroup>
+                }
+                <thead>
+                    <tr>
+                        <th scope="col">@(financial ? "Booking / Client" : "Booking ID")</th>
+                        <th scope="col">Event date &amp; time</th>
+                        <th scope="col">Package</th>
+                        <th scope="col">@(financial ? "Payment status" : "Client Name")</th>
+                        <th scope="col">Final status</th>
+                        <th scope="col">Details</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Bookings.Any())
+                    {
+                        <tr class="staff-data-table-empty-row">
+                            <td colspan="6">
+                                <div class="staff-data-table-empty" role="status">
+                                    <i class="bi bi-inbox" aria-hidden="true"></i>
+                                    @if (filteredEmpty)
+                                    {
+                                        <strong>No matching records</strong>
+                                        <p>Try adjusting your search or filters.</p>
+                                        <a asp-controller="History" asp-action="Index" class="staff-data-table-reset">Clear filters</a>
+                                    }
+                                    else
+                                    {
+                                        <strong>No booking history</strong>
+                                        <p>No historical booking records are available.</p>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var row in Model.Bookings)
+                        {
+                            <tr>
+                                <td data-label="@(financial ? "Booking / Client" : "Booking ID")">
+                                    <strong>@row.BookingCode</strong>
+                                    @if (financial)
+                                    {
+                                        <span class="ui-cell-secondary">@row.ClientName</span>
+                                    }
+                                </td>
+                                <td data-label="Event">
+                                    <span>@row.EventDate.ToString("MMM d, yyyy")</span>
+                                    <span class="ui-cell-secondary">@row.StartTime.ToString("h:mm tt") &ndash; @row.EndTime.ToString("h:mm tt")</span>
+                                </td>
+                                <td data-label="Package">@row.PackageName</td>
+                                @if (financial)
+                                {
+                                    <td data-label="Payment status"><partial name="_StatusBadge" model="row.PaymentStatus" /></td>
+                                }
+                                else
+                                {
+                                    <td data-label="Client Name">@row.ClientName</td>
+                                }
+                                <td data-label="Final status"><partial name="_StatusBadge" model="row.BookingStatus" /></td>
+                                <td data-label="Details">
+                                    <a asp-action="Details" asp-route-id="@row.Id" class="btn btn-outline-primary"
+                                       aria-label="View Details for @row.BookingCode">View Details</a>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+        <partial name="_QueuePagination" model="historyPager" />
+    </div>
 </div>
-}
-@if(!Model.Bookings.Any()) {
-<div class="ui-empty" role="status"><p>@(HistoryPresentation.Filtered(Model.Filters) ? "No records match the selected filters." : "No history records found.")</p>
-@if(HistoryPresentation.Filtered(Model.Filters)) { <a asp-action="Index" class="btn btn-outline-secondary">Clear Filters</a> }</div>
-} else {
-<div class="ui-table-wrap">
-<table class="ui-table ui-table-responsive"><caption class="visually-hidden">Historical booking records</caption>
-<thead><tr>@if(financial){<th scope="col">Booking / Client</th>}else{<th scope="col">Booking ID</th>}<th scope="col">Event date &amp; time</th><th scope="col">Package</th>@if(financial){<th scope="col">Payment status</th>}else{<th scope="col">Client Name</th>}<th scope="col">Final status</th><th scope="col">Details</th></tr></thead>
-<tbody>@foreach(var row in Model.Bookings) {
-<tr><td data-label="@(financial ? "Booking / Client" : "Booking ID")"><strong>@row.BookingCode</strong>@if(financial){<span class="ui-cell-secondary">@row.ClientName</span>}</td>
-<td data-label="Event"><span>@row.EventDate.ToString("MMM d, yyyy")</span><span class="ui-cell-secondary">@row.StartTime.ToString("h:mm tt") &ndash; @row.EndTime.ToString("h:mm tt")</span></td>
-<td data-label="Package">@row.PackageName</td>
-@if(financial){<td data-label="Payment status"><partial name="_StatusBadge" model="row.PaymentStatus" /></td>}else{<td data-label="Client Name">@row.ClientName</td>}
-<td data-label="Final status"><partial name="_StatusBadge" model="row.BookingStatus" /></td>
-<td data-label="Details"><a asp-action="Details" asp-route-id="@row.Id" class="btn btn-outline-primary" aria-label="View Details for @row.BookingCode">View Details</a></td></tr>
-}</tbody></table></div>
-}
-@{
-    var historyPager = new AriesMagicAppointmentSystem.ViewModels.QueuePaginationViewModel(
-        Model.TotalCount, Model.Filters.Page, 5, "Index", HistoryPresentation.Routes(Model.Filters));
-}
-<partial name="_QueuePagination" model="historyPager" />
 </div>
-</div>
+@section Scripts {
+    @if (financial)
+    {
+        <script src="~/js/owner-history.js" asp-append-version="true"></script>
+    }
+}

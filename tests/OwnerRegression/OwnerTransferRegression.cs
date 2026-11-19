@@ -26,7 +26,7 @@ static class OwnerTransferRegression
   services.AddSingleton<Microsoft.AspNetCore.Mvc.Routing.IUrlHelperFactory,SnapshotUrls>();
   await using var provider=services.BuildServiceProvider();var users=provider.GetRequiredService<UserManager<ApplicationUser>>();var roles=provider.GetRequiredService<RoleManager<IdentityRole>>();
   var owner=await users.FindByNameAsync("admin-test-owner")??throw new Exception();owner.EmailConfirmed=true;await users.UpdateAsync(owner);
-  var staff=await users.FindByNameAsync("admin-test-staff")??throw new Exception();
+  var staff=await users.FindByNameAsync("admin-test-staff")??throw new Exception();staff.EmailConfirmed=true;staff.IsActive=true;await users.UpdateAsync(staff);
   var principal=new ClaimsPrincipal(new ClaimsIdentity([new(ClaimTypes.Role,"Owner"),new(ClaimTypes.NameIdentifier,owner.Id)],"Fixture"));
   var http=new DefaultHttpContext{User=principal,RequestServices=provider};var audit=new SystemActivityService(db);
   var provisioning=new PersonnelProvisioning(db,users,roles,audit,Options.Create(new PersonnelOptions()));
@@ -41,15 +41,18 @@ static class OwnerTransferRegression
   }
   var listing=(PersonnelPage)((ViewResult)await personnel.Index(roleFilter:"Owner")).Model!;check(listing.Accounts.Any(x=>x.Id==owner.Id),"Personnel reuses account listing for Owner read-only identity");
   var filtered=(PersonnelPage)((ViewResult)await personnel.Index(search:"Test Staff",roleFilter:"Staff")).Model!;check(filtered.Accounts.Any(x=>x.Id==staff.Id)&&filtered.Accounts.All(x=>x.Role=="Staff"),"Personnel search and role filter are authoritative");
-  var email=staff.Email;var hash=staff.PasswordHash;var stamp=staff.SecurityStamp;await provisioning.UpdateStaffProfileAsync(owner,staff.Id,"Updated Staff Contact","09123456789");
-  check(staff.FullName=="Updated Staff Contact"&&staff.Email==email&&staff.PasswordHash==hash&&staff.SecurityStamp!=stamp,"Owner Staff contact update preserves login credentials and revokes old sessions");
-  staff.FullName="Test Staff";await users.UpdateAsync(staff);
-  try{await provisioning.UpdateStaffProfileAsync(owner,owner.Id,"Tampered",null);throw new Exception("Owner edit accepted");}catch(UnauthorizedAccessException){check(owner.FullName=="Test Owner","Staff profile endpoint cannot overwrite final Owner");}
+  check(typeof(PersonnelController).GetMethods().All(x=>x.Name!="EditStaff")
+    && typeof(PersonnelProvisioning).GetMethod("UpdateStaffProfileAsync")==null
+    && typeof(PersonnelProvisioning).GetMethod("CanEditStaffProfileAsync")==null,
+    "Retired Owner-to-Staff profile-edit capability has no direct controller or provisioning entry point");
   var enrollment=await provisioning.InviteAsync(owner,"owner-transfer-staff@example.test","Transfer Staff","Staff");
   var invited=await users.FindByIdAsync(enrollment.UserId)??throw new Exception();check(!invited.IsActive&&(await users.GetRolesAsync(invited)).Count==0,"Owner Staff invitation remains inactive and unassigned before enrollment");
   var issuance=await db.SystemActivities.Where(x=>x.AffectedRecordId==invited.Id&&x.Type==SystemActivityType.UserCreated).Select(x=>(DateTime?)x.CreatedAt).SingleAsync();
   var invitedListing=(PersonnelPage)((ViewResult)await personnel.Index(search:"owner-transfer-staff@example.test")).Model!;
-  check(invitedListing.Accounts.Single().InvitedAtUtc==issuance && issuance.HasValue,"Personnel invitation date comes from recorded issuance audit");
+  check(invitedListing.Accounts.Count==0,"Pending, unverified invitation never appears in active Personnel Accounts");
+  var lifecycle=(StaffAccessPage)((ViewResult)await personnel.Access()).Model!;
+  check(lifecycle.Accounts.Any(x=>x.Id==invited.Id&&x.CanResend&&x.CanRevoke),
+      "Pending invitation can still be reissued or revoked through separate authorized Staff access workflow");
   check(filtered.Accounts.First(x=>x.Id==staff.Id).InvitedAtUtc==null,"Legacy account without issuance evidence has no invented invitation date");
   var password="Isolated!"+Guid.NewGuid().ToString("N")+"A7";
   check((await provisioning.EnrollAsync(enrollment.UserId,enrollment.Secret,password)).Succeeded&&invited.IsActive&&await users.IsInRoleAsync(invited,"Staff"),"Owner-issued Staff invitation completes verified single-use enrollment");

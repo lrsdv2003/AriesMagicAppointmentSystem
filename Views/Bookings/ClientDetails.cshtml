@@ -31,7 +31,7 @@
 @if(changeProposal != null && Model.Status == BookingStatus.Confirmed){
 <section class="booking-change-pending" aria-labelledby="clientChangeReviewTitle">
   <h2 id="clientChangeReviewTitle">Review your proposed confirmed booking change</h2>
-  <p>Staff proposed a change. Nothing has been altered yet. Your verified payments stay credited to this booking, and your acceptance updates the remaining balance.</p>
+  <p>A revision has been proposed. Nothing has been altered yet. Your verified payments stay credited to this booking, and your acceptance updates the remaining balance.</p>
   <dl>
     <div><dt>Package</dt><dd><span>@changeProposal.OriginalPackageName</span> → <strong>@changeProposal.NewPackageName</strong></dd></div>
     <div><dt>Venue</dt><dd><span>@changeProposal.OriginalVenue</span> → <strong>@changeProposal.NewVenue</strong></dd></div>
@@ -40,7 +40,7 @@
     <div><dt>Booking total</dt><dd>&#8369;@changeProposal.OriginalFinalPrice.ToString("N2") → <strong>&#8369;@changeProposal.NewFinalPrice.ToString("N2")</strong></dd></div>
     <div><dt>Already verified</dt><dd>&#8369;@changeProposal.VerifiedPaymentsAtProposal.ToString("N2")</dd></div>
     <div><dt>New balance due</dt><dd><strong>&#8369;@changeProposal.NewRemainingBalance.ToString("N2")</strong></dd></div>
-    <div><dt>Staff explanation</dt><dd>@changeProposal.Reason</dd></div>
+    @if(!string.IsNullOrWhiteSpace(changeProposal.Reason)){<div><dt>Previous explanation</dt><dd>@changeProposal.Reason</dd></div>}
   </dl>
   <div class="booking-change-actions">
     <form asp-controller="BookingChanges" asp-action="Accept" method="post">

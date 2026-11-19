@@ -1,0 +1,10 @@
+@model string
+<header class="owner-booking-detail-header">
+    <h1>@Model</h1>
+    <a asp-controller="@(ViewData["OwnerBookingBackController"] ?? "Bookings")"
+       asp-action="@(ViewData["OwnerBookingBackAction"] ?? "Index")"
+       class="btn btn-outline-secondary">
+       <i class="bi bi-arrow-left" aria-hidden="true"></i>
+       @(ViewData["OwnerBookingBackLabel"] ?? "Back to Bookings")
+    </a>
+</header>

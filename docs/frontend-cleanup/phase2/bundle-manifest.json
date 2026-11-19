@@ -38,7 +38,8 @@
       "client-experience.css",
       "feedback.css",
       "booking-concierge.css",
-      "client-hub.css"
+      "client-hub.css",
+      "unified-profile.css"
     ],
     "aries-final-ui.css": [
       "aries-final-ui.css"
@@ -74,7 +75,8 @@
       "internal-ui.css",
       "app-ui.css",
       "feedback.css",
-      "internal-workspaces.css"
+      "internal-workspaces.css",
+      "unified-profile.css"
     ],
     "staff.css": [
       "confirmed-booking-edit-20261109.css",

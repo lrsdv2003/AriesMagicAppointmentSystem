@@ -1,6 +1,5 @@
 using System.Reflection;
 using System.Security.Claims;
-using System.Text;
 using AriesMagicAppointmentSystem.Controllers;
 using AriesMagicAppointmentSystem.Data;
 using AriesMagicAppointmentSystem.Models;
@@ -58,13 +57,17 @@ static class HistoryRegression
         check((await history.GetHistoryAsync(new(){ServiceId=package.Id,PaymentStatus=PaymentStatus.Verified})).Bookings.Single().Id==complete.Id,"History payment review filter matches row status");
         check(await history.GetDetailsAsync(pending.Id)==null,"Active booking excluded from historical detail route");
         check(await history.GetDetailsAsync(cancel.Id)==null&&(await archives.GetDetailsAsync(cancel.Id))?.Trash.Id==cancel.Id,"Cancelled record remains readable through Archives, outside completed History");
-        check((await history.GetHistoryForExportAsync(new(){ServiceId=package.Id})).Select(b=>b.Id).SequenceEqual(new[]{complete.Id}),"History exports use the same completed-only classification");
+        check(typeof(IHistoryService).GetMethod("GetHistoryForExportAsync")==null
+            && typeof(HistoryService).GetMethod("GetHistoryForExportAsync")==null,
+            "Exclusive unpaged History export query has been retired without changing completed-only classification");
         var detail=(await history.GetDetailsAsync(complete.Id))!;
         check(detail.AmountPaid==3000 && detail.RemainingBalance==7000 && detail.FinancialSummary!=null,"Owner history uses shared verified-payment summary");
         check(detail.CompletedAt==DateTime.Today.AddDays(-10),"History completion date does not become archive date");
         var pages=await history.GetHistoryAsync(new(){ServiceId=package.Id,Page=999,PageSize=2});
         check(pages.Filters.Page==1 && pages.Bookings.Count==1 && pages.TotalPages==1,"History clamps pagination after excluding unsuccessful records");
-        var route=HistoryPresentation.Routes(new(){Search="Fixture",BookingStatus="Completed",DateRange="Year",Year=2026,ServiceId=package.Id,PaymentStatus="Verified",CompletedDateFrom=new(2026,1,1),PageSize=2},2);
+        check(!HistoryPresentation.Filtered(new(){BookingStatus=BookingStatus.Completed})
+            && HistoryPresentation.Filtered(new(){Search="nonexistent",BookingStatus=BookingStatus.Completed}),
+            "Default Completed-only History filter is not mistaken for a user-applied search on an empty dataset");        var route=HistoryPresentation.Routes(new(){Search="Fixture",BookingStatus="Completed",DateRange="Year",Year=2026,ServiceId=package.Id,PaymentStatus="Verified",CompletedDateFrom=new(2026,1,1),PageSize=2},2);
         check(route["Search"]=="Fixture" && route["Page"]=="2" && route["BookingStatus"]=="Completed" && route["Year"]=="2026" && route["PaymentStatus"]=="Verified" && route["CompletedDateFrom"]=="2026-01-01" && route["PageSize"]=="5","History links preserve all filters");
         check(!HistoryPresentation.ShowEvent(TimelineEventType.PaymentVerified,false) && !HistoryPresentation.ShowEvent(TimelineEventType.RefundRequested,false) && HistoryPresentation.ShowEvent(TimelineEventType.RescheduleApproved,false),"Staff timeline excludes financial events");
         check(HistoryPresentation.ShowEvent(TimelineEventType.PaymentVerified,true),"Owner timeline includes important financial events");
@@ -79,10 +82,12 @@ static class HistoryRegression
         var policy=await AuthorizationPolicy.CombineAsync(policies,typeof(HistoryController).GetCustomAttributes<AuthorizeAttribute>());
         foreach(var role in new[]{"Staff","Owner","Admin","Client"})
             check((await authorization.AuthorizeAsync(Principal(role),null,policy!)).Succeeded==(role is "Staff" or "Owner"),role+" History access");
-        check(await controller.ExportCsv(new()) is ForbidResult,"Staff cannot export financial history");
+        check(new[]{"ExportCsv","ExportPdf","Print"}.All(action=>
+            typeof(HistoryController).GetMethods().All(method=>method.Name!=action)),
+            "History Print, CSV and PDF endpoints are absent for both Staff and Owner");
         controller.HttpContext.User=Principal("Owner");
         check(await controller.Details(cancel.Id) is RedirectToActionResult {ControllerName:"TrashHistory",ActionName:"Details"},"Owner legacy History link redirects to the unsuccessful archive record");
-        var export=(FileContentResult)await controller.ExportCsv(new(){Search=code});
-        check(Encoding.UTF8.GetString(export.FileContents).Contains(",3000.00,7000.00,"),"History CSV exports amount paid, not booking price");
+        check(await controller.Details(complete.Id) is ViewResult,
+            "Retired History downloads do not affect completed booking Details");
     }
 }

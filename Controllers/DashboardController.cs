@@ -118,6 +118,8 @@ public class DashboardController : Controller
         });
     }
 
+    private const int StaffPriorityPreviewLimit = 5;
+
     [Authorize(Roles = "Staff")]
     public async Task<IActionResult> Staff()
     {
@@ -132,13 +134,17 @@ public class DashboardController : Controller
                     && p.Conversation != null
                     && p.Conversation.ConversationType == ConversationTypes.ClientSupport
                     && p.Conversation.SupportClientId != null);
-            model.UnreadClientConversations = await authorized.CountAsync(p =>
+            // Recent Client Messages includes both read and unread support threads.
+            // The tab shows all eligible threads; the separate summary shows only unread.
+            var eligible = authorized.Where(p => p.Conversation!.Messages.Any());
+            model.TotalClientConversations = await eligible.CountAsync();
+            model.UnreadClientConversations = await eligible.CountAsync(p =>
                 p.Conversation!.Messages.Any(m => m.SenderId != staffId
                     && (!p.LastReadAt.HasValue || m.SentAt > p.LastReadAt.Value)));
-            var threads = await authorized
-                .Where(p => p.Conversation!.Messages.Any())
+            var threads = await eligible
                 .OrderByDescending(p => p.Conversation!.Messages.Max(m => m.SentAt))
-                .Take(5).Select(p => new
+                .ThenByDescending(p => p.ConversationId)
+                .Take(StaffPriorityPreviewLimit).Select(p => new
                 {
                     p.ConversationId,
                     ClientId = p.Conversation!.SupportClientId!,
@@ -173,9 +179,12 @@ public class DashboardController : Controller
             model.PendingBookings = await pending.CountAsync();
             model.PendingReschedules = await _context.RescheduleRequests.CountAsync(r => r.Status == RescheduleRequestStatus.Pending);
             model.RecentBookingRequests = await pending.Include(b => b.Client).Include(b => b.Service)
-                .OrderBy(b => b.CreatedAt).ThenBy(b => b.Id).Take(4).ToListAsync();
+                .OrderBy(b => b.CreatedAt).ThenBy(b => b.Id)
+                .Take(StaffPriorityPreviewLimit).ToListAsync();
             model.RecentRescheduleRequests = await _context.RescheduleRequests.AsNoTracking().Include(r => r.Booking).ThenInclude(b => b!.Client)
-                .Where(r => r.Status == RescheduleRequestStatus.Pending).OrderBy(r => r.CreatedAt).Take(3).ToListAsync();
+                .Where(r => r.Status == RescheduleRequestStatus.Pending)
+                .OrderBy(r => r.CreatedAt).ThenBy(r => r.Id)
+                .Take(StaffPriorityPreviewLimit).ToListAsync();
         });
         await LoadScheduleAsync(model);
         await LoadActivityAsync(model, [SystemActivityType.BookingApproved, SystemActivityType.BookingDeclined,
@@ -221,10 +230,10 @@ public class DashboardController : Controller
             model.RefundProofsAwaitingVerification = await _context.RefundRequests.CountAsync(r => r.Status == RefundStatus.RefundProcessing);
             model.RecentPaymentsToVerify = await _context.Payments.AsNoTracking().Include(p => p.Booking).ThenInclude(b => b!.Client)
                 .Include(p => p.OcrVerifications).Where(p => p.Status == PaymentStatus.Pending)
-                .OrderBy(p => p.UploadedAt).ThenBy(p => p.Id).Take(4).ToListAsync();
+                .OrderBy(p => p.UploadedAt).ThenBy(p => p.Id).Take(5).ToListAsync();
             model.RecentRefundRequests = await _context.RefundRequests.AsNoTracking().Include(r => r.Booking).ThenInclude(b => b!.Client)
                 .Where(r => r.Status == RefundStatus.Pending || r.Status == RefundStatus.UnderReview || r.Status == RefundStatus.RefundProcessing)
-                .OrderBy(r => r.RequestedAt).ThenBy(r => r.Id).Take(4).ToListAsync();
+                .OrderBy(r => r.RequestedAt).ThenBy(r => r.Id).Take(5).ToListAsync();
         });
         await LoadAsync(model, "financial overview", async () =>
         {

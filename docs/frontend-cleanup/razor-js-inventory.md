@@ -154,7 +154,6 @@ Static file inventory (not a claim of manually exercising every feature).
 | `wwwroot/js/client-final-20261108.js` | `Views/Payments/RequestRefund.cshtml` |
 | `wwwroot/js/client-hub.js` | `Views/Shared/_ClientHubLayout.cshtml` |
 | `wwwroot/js/client-improvements-20261107.js` | `Views/Shared/_ClientHubLayout.cshtml`, `Views/Shared/_Layout.cshtml` |
-| `wwwroot/js/client-profile.js` | `Views/Profile/Index.cshtml` |
 | `wwwroot/js/client-reference-20261106.js` | `Views/Shared/_ClientHubLayout.cshtml` |
 | `wwwroot/js/client-round2-20261108.js` | `Views/Payments/Upload.cshtml`, `Views/RescheduleRequests/Create.cshtml` |
 | `wwwroot/js/client-ultra-20261108.js` | `Views/Bookings/Create.cshtml`, `Views/Payments/Upload.cshtml`, `Views/Shared/_ClientHubLayout.cshtml` |
@@ -165,7 +164,7 @@ Static file inventory (not a claim of manually exercising every feature).
 | `wwwroot/js/feedback.js` | `Views/Feedback/Create.cshtml` |
 | `wwwroot/js/filters.js` | `Views/Shared/_DashboardLayout.cshtml`, `Views/Shared/_Layout.cshtml` |
 | `wwwroot/js/gallery-portfolio.js` | `Views/Home/Gallery.cshtml` |
-| `wwwroot/js/internal-profile.js` | `Views/InternalProfile/Index.cshtml` |
+| `wwwroot/js/internal-profile.js` | `Views/InternalProfile/Index.cshtml`, `Views/Profile/Index.cshtml` |
 | `wwwroot/js/internal-workspaces.js` | `Views/Shared/_DashboardLayout.cshtml` |
 | `wwwroot/js/magic-client-v2.js` | `Views/Shared/_Layout.cshtml` |
 | `wwwroot/js/owner-email-confirm.js` | `Views/OwnerEmail/Confirm.cshtml` |

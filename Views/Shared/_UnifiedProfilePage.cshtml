@@ -1,0 +1,126 @@
+@model AriesMagicAppointmentSystem.ViewModels.InternalProfileViewModel
+@{
+    var isClient = User.IsInRole("Client");
+    var isOwner = User.IsInRole("Owner");
+    var profileController = isClient ? "Profile" : "InternalProfile";
+    var fullName = string.IsNullOrWhiteSpace(Model.DisplayName) ? "Your account" : Model.DisplayName;
+    var initials = string.Concat(fullName.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(part => char.ToUpperInvariant(part[0])));
+    if (string.IsNullOrWhiteSpace(initials)) initials = "AM";
+    var memberSince = Model.CreatedAt == default ? "Not recorded" : Model.CreatedAt.ToString("MMM d, yyyy");
+    var lastSignIn = Model.LastLoginAt.HasValue ? Model.LastLoginAt.Value.ToString("MMM d, yyyy h:mm tt") : "Not recorded";
+    var currentPhoto = Url.Action("Photo", profileController);
+    var successMessage = TempData["ProfileSuccess"] as string ?? TempData["Success"] as string;
+}
+<div class="unified-profile" data-unified-profile data-role="@Model.Role">
+    <header class="up-header">
+        <div><h1>My Profile</h1><p>@(isOwner ? "Manage your personal information." : "Manage your personal information and account security.")</p></div>
+        <form asp-controller="Account" asp-action="Logout" method="post">
+            @Html.AntiForgeryToken()
+            <button class="up-btn up-btn-outline" type="submit"><i class="bi bi-box-arrow-right" aria-hidden="true"></i> Sign Out</button>
+        </form>
+    </header>
+    @if (!string.IsNullOrWhiteSpace(successMessage))
+    {
+        <p class="up-feedback up-success" role="status">@successMessage</p>
+    }
+    @if (TempData["ProfileWarning"] is string warning)
+    {
+        <p class="up-feedback up-warning" role="status">@warning</p>
+    }
+    @if (TempData["Error"] is string error)
+    {
+        <p class="up-feedback up-error" role="alert">@error</p>
+    }
+    <div asp-validation-summary="ModelOnly" class="up-feedback up-error" role="alert"></div>
+    <div class="up-grid">
+        <aside class="up-card up-identity" aria-labelledby="upIdentityHeading">
+            <div class="up-avatar" role="img" aria-label="Profile avatar for @fullName">
+                @if(Model.HasPhoto)
+                {
+                    <img src="@currentPhoto" alt="" width="112" height="112" data-avatar-image />
+                }
+                else
+                {
+                    <span>@initials</span>
+                }
+            </div>
+            <h2 id="upIdentityHeading">@fullName</h2>
+            <span class="up-role">@Model.Role</span>
+            <p class="up-identity-email">@Model.Email</p>
+            <div class="up-divider"></div>
+            <form asp-controller="@profileController" asp-action="UploadPhoto" method="post" enctype="multipart/form-data" data-account-form class="up-photo-form">
+                @Html.AntiForgeryToken()
+                <label for="profilePhoto" class="visually-hidden">Profile Photo</label>
+                <input id="profilePhoto" class="up-file-input visually-hidden" name="photo" type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" aria-describedby="photoHelp photoError" required />
+                <p class="up-help" id="photoHelp">JPG, PNG or WEBP. Maximum 2 MB.</p>
+                <span id="photoError" class="up-error-text" role="alert">@Html.ValidationMessage("photo")</span>
+                <button class="up-btn up-btn-primary" type="button" id="choosePhoto"><i class="bi bi-camera" aria-hidden="true"></i> Change Photo</button>
+                <div id="photoPreviewPanel" class="up-preview" hidden>
+                    <img id="photoPreview" alt="New profile photo preview" width="96" height="96" />
+                    <div class="up-photo-preview-actions">
+                        <button class="up-btn up-btn-primary" type="submit" data-saving="Uploading...">Save Photo</button>
+                        <button type="button" class="up-btn up-btn-outline" id="cancelPhoto">Cancel selection</button>
+                    </div>
+                </div>
+                <noscript><button class="up-btn up-btn-primary" type="submit">Save Photo</button></noscript>
+            </form>
+            <form asp-controller="@profileController" asp-action="RemovePhoto" method="post" data-account-form data-confirm-remove-photo class="up-remove-photo">
+                @Html.AntiForgeryToken()
+                <button class="up-btn up-btn-outline" type="submit" disabled="@(!Model.HasPhoto)" data-saving="Removing...">Remove Photo</button>
+            </form>
+            <div class="up-identity-dates">
+                <div><span>Member Since</span><strong>@memberSince</strong></div>
+                <div><span>Last Sign-in (UTC)</span><strong>@lastSignIn</strong></div>
+            </div>
+        </aside>
+        <div class="up-management">
+            <section class="up-card up-personal" aria-labelledby="upPersonalHeading">
+                <div class="up-card-heading"><h2 id="upPersonalHeading">Personal Information</h2><p>Update your basic personal details.</p></div>
+                <form asp-controller="@profileController" asp-action="Edit" method="post" data-account-form id="hubProfileForm">
+                    @Html.AntiForgeryToken()
+                    <div class="up-fields">
+                        <div class="up-field">
+                            <label for="Personal_FullName">Full Name</label>
+                            <input asp-for="Personal.FullName" class="up-input" data-saved-value="@Model.SavedFullName" autocomplete="name" required minlength="2" maxlength="100" />
+                            <span asp-validation-for="Personal.FullName" class="up-error-text"></span>
+                        </div>
+                        <div class="up-field">
+                            <label for="Personal_PhoneNumber">Contact Number</label>
+                            <input asp-for="Personal.PhoneNumber" class="up-input" data-saved-value="@Model.SavedPhoneNumber" type="tel" inputmode="numeric" autocomplete="tel-national" pattern="09[0-9]{9}" maxlength="11" />
+                            <p class="up-help">Optional. 11 digits starting with 09.</p>
+                            <span asp-validation-for="Personal.PhoneNumber" class="up-error-text"></span>
+                        </div>
+                    </div>
+                    <div class="up-actions"><button type="submit" class="up-btn up-btn-primary" data-saving="Saving...">Save Changes</button><button type="reset" class="up-btn up-btn-outline">Cancel</button></div>
+                </form>
+            </section>
+            <div class="up-lower @(isOwner ? "up-lower-single" : "")">
+                <section class="up-card up-information" aria-labelledby="upInformationHeading">
+                    <div class="up-card-heading"><h2 id="upInformationHeading">Account Information</h2><p>Your account details and status.</p></div>
+                    <dl class="up-details">
+                        <div><dt><i class="bi bi-envelope" aria-hidden="true"></i>Email address</dt><dd>@Model.Email</dd></div>
+                        <div><dt><i class="bi bi-person-badge" aria-hidden="true"></i>Role</dt><dd>@Model.Role</dd></div>
+                        <div><dt><i class="bi bi-shield-check" aria-hidden="true"></i>Account status</dt><dd><span class="up-state">@Model.Status</span></dd></div>
+                        <div><dt><i class="bi bi-check-circle" aria-hidden="true"></i>Email verification</dt><dd>@(Model.Verified ? "Verified" : "Unverified")</dd></div>
+                        <div><dt><i class="bi bi-calendar3" aria-hidden="true"></i>Member Since</dt><dd>@memberSince</dd></div>
+                        <div><dt><i class="bi bi-clock-history" aria-hidden="true"></i>Last Sign-in (UTC)</dt><dd>@lastSignIn</dd></div>
+                    </dl>
+                    @if(isOwner)
+                    {
+                        <div class="up-account-actions">
+                            <a asp-controller="OwnerEmail" asp-action="Index" class="up-link">Manage login email securely</a>
+                            <a asp-controller="InternalProfile" asp-action="Password" class="up-link">Change Password</a>
+                        </div>
+                    }
+                </section>
+                @if (!isOwner)
+                {
+                <section class="up-card up-security" id="security" aria-labelledby="upPasswordHeading">
+                    <div class="up-card-heading"><h2 id="upPasswordHeading">Change Password</h2><p>Update your password to keep your account secure.</p></div>
+                    <partial name="_UnifiedPasswordForm" model="Model" />
+                </section>
+                }
+            </div>
+        </div>
+    </div>
+</div>

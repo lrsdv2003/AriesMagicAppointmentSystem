@@ -2,6 +2,13 @@
 @{
     Layout = "_DashboardLayout";
     ViewData["Title"] = "Financial Summary";
+    ViewData["HideWorkspaceHeading"] = true;
+    var financialRecordFiltersActive =
+        Model.StartDate.HasValue || Model.EndDate.HasValue || Model.Month.HasValue ||
+        Model.Year.HasValue || !string.IsNullOrWhiteSpace(Model.PackageFilter) ||
+        !string.IsNullOrWhiteSpace(Model.BookingStatusFilter) ||
+        !string.IsNullOrWhiteSpace(Model.RecordSearch) ||
+        !string.IsNullOrWhiteSpace(Model.RecordStatus);
 }
 <div class="owner-reports-page">
     @if(!ViewData.ModelState.IsValid){<div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>}
@@ -65,8 +72,11 @@
         <p>Awaiting review: @Model.PendingCount; Verified: @Model.VerifiedCount; Rejected: @Model.RejectedCount; Additional evidence required: @Model.EvidenceRequiredCount.</p>
     </details>
 
-    <section class="owner-report-section" aria-labelledby="recordsTitle">
-        <div class="owner-report-heading"><div><h2>Booking Financial Records</h2><p>All matching booking financial records, including payment and refund context.</p></div><span>Showing @Model.BookingRecords.Count of @Model.RecordsTotalCount records</span></div>
+    <section class="owner-report-section owner-report-records-section" aria-labelledby="recordsTitle">
+        <div class="owner-report-heading owner-report-records-heading">
+            <div><h2 id="recordsTitle">Booking Financial Records</h2></div>
+            <span>Showing @Model.BookingRecords.Count of @Model.RecordsTotalCount records</span>
+        </div>
         <form asp-action="Index" method="get" class="am-filter-bar am-filter-row aries-round3-toolbar" data-aries-round3-filter="true" role="search" aria-label="Search financial booking records">
             <input type="hidden" name="startDate" value="@(Model.StartDate?.ToString("yyyy-MM-dd"))" />
             <input type="hidden" name="endDate" value="@(Model.EndDate?.ToString("yyyy-MM-dd"))" />
@@ -102,10 +112,65 @@
                asp-route-recordSearch="@Model.RecordSearch" asp-route-recordStatus="@Model.RecordStatus"
                asp-route-page="@Model.RecordPage" aria-label="Refresh booking financial records"><i class="bi bi-arrow-clockwise" aria-hidden="true"></i><span>Refresh</span></a>
         </form>
-        @if(!Model.BookingRecords.Any()){<div class="owner-empty-state"><i class="bi bi-bar-chart" aria-hidden="true"></i><h2>No report data found for the selected filters.</h2></div>}
-        else{<div class="table-responsive"><table class="table owner-audit-table align-middle"><thead><tr><th scope="col">Booking</th><th scope="col">Client</th><th scope="col">Package</th><th scope="col">Event Date</th><th scope="col">Booking Value</th><th scope="col">Collected</th><th scope="col">Outstanding</th><th scope="col">Status</th><th scope="col">Action</th></tr></thead><tbody>
-        @foreach(var booking in Model.BookingRecords){Model.BookingFinancials.TryGetValue(booking.Id,out var finance);<tr><td><strong class="owner-booking-code">BK-@booking.CreatedAt.Year-@booking.Id.ToString("D3")</strong></td><td>@(booking.Client?.FullName??"Unknown Client")</td><td>@booking.PackageName</td><td>@booking.EventDate.ToString("MMM dd, yyyy")</td><td>₱@((finance?.BookingTotal??booking.FinalPrice).ToString("N2"))</td><td>₱@((finance?.TotalVerifiedPayments??0m).ToString("N2"))</td><td>₱@((booking.Status is AriesMagicAppointmentSystem.Models.BookingStatus.Cancelled or AriesMagicAppointmentSystem.Models.BookingStatus.Declined or AriesMagicAppointmentSystem.Models.BookingStatus.Expired ? 0m : finance?.RemainingBalance??booking.FinalPrice).ToString("N2"))</td><td><span class="status-badge status-read">@booking.Status</span></td><td><a asp-controller="Bookings" asp-action="Details" asp-route-id="@booking.Id" class="btn btn-sm btn-primary">Details</a></td></tr>}
-        </tbody></table></div>}
+        <div class="staff-data-table-frame owner-financial-records-frame" data-staff-table-capacity="5">
+            <div class="staff-data-table-scroll owner-financial-records-scroll" tabindex="0" role="region"
+                 aria-label="Booking financial records; scroll horizontally to view all columns">
+                <table class="staff-data-table owner-audit-table owner-financial-records-table">
+                    <caption class="visually-hidden">Financial information for matching booking records</caption>
+                    <colgroup>
+                        <col class="owner-financial-col-booking" />
+                        <col class="owner-financial-col-client" />
+                        <col class="owner-financial-col-package" />
+                        <col class="owner-financial-col-date" />
+                        <col class="owner-financial-col-value" />
+                        <col class="owner-financial-col-collected" />
+                        <col class="owner-financial-col-outstanding" />
+                        <col class="owner-financial-col-status" />
+                        <col class="owner-financial-col-action" />
+                    </colgroup>
+                    <thead>
+                        <tr>
+                            <th scope="col">Booking</th>
+                            <th scope="col">Client</th>
+                            <th scope="col">Package</th>
+                            <th scope="col">Event Date</th>
+                            <th scope="col" class="owner-financial-amount">Booking Value</th>
+                            <th scope="col" class="owner-financial-amount">Collected</th>
+                            <th scope="col" class="owner-financial-amount">Outstanding</th>
+                            <th scope="col">Status</th>
+                            <th scope="col">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.BookingRecords.Any())
+                        {
+                            <tr class="staff-data-table-empty-row">
+                                <td colspan="9">
+                                    <div class="staff-data-table-empty" role="status">
+                                        <i class="bi bi-inbox" aria-hidden="true"></i>
+                                        @if (financialRecordFiltersActive)
+                                        {
+                                            <strong>No matching financial records</strong>
+                                            <p>Try adjusting your search or filters.</p>
+                                            <a asp-action="Index" class="staff-data-table-reset">Clear filters</a>
+                                        }
+                                        else
+                                        {
+                                            <strong>No financial records</strong>
+                                            <p>No financial records are available to display.</p>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach(var booking in Model.BookingRecords){Model.BookingFinancials.TryGetValue(booking.Id,out var finance);<tr><td data-label="Booking"><strong class="owner-booking-code">BK-@booking.CreatedAt.Year-@booking.Id.ToString("D3")</strong></td><td data-label="Client">@(booking.Client?.FullName??"Unknown Client")</td><td data-label="Package">@booking.PackageName</td><td data-label="Event Date">@booking.EventDate.ToString("MMM dd, yyyy")</td><td class="owner-financial-amount" data-label="Booking Value">₱@((finance?.BookingTotal??booking.FinalPrice).ToString("N2"))</td><td class="owner-financial-amount" data-label="Collected">₱@((finance?.TotalVerifiedPayments??0m).ToString("N2"))</td><td class="owner-financial-amount" data-label="Outstanding">₱@((booking.Status is AriesMagicAppointmentSystem.Models.BookingStatus.Cancelled or AriesMagicAppointmentSystem.Models.BookingStatus.Declined or AriesMagicAppointmentSystem.Models.BookingStatus.Expired ? 0m : finance?.RemainingBalance??booking.FinalPrice).ToString("N2"))</td><td data-label="Status"><span class="status-badge status-read">@booking.Status</span></td><td data-label="Action"><a asp-controller="Bookings" asp-action="Details" asp-route-id="@booking.Id" class="btn btn-sm btn-primary">Details</a></td></tr>}
+
+                        }
+                    </tbody>
+                </table>
+            </div>
         @{
             var recordsPager = new AriesMagicAppointmentSystem.ViewModels.QueuePaginationViewModel(
                 Model.RecordsTotalCount, Model.RecordPage, 5, "Index", new Dictionary<string,string> {
@@ -120,6 +185,7 @@
                 });
         }
         <partial name="_QueuePagination" model="recordsPager" />
+        </div>
     </section>
 </div>
 @section Scripts{

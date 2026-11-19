@@ -71,13 +71,25 @@
       window.clearTimeout(timer);
       timer = window.setTimeout(search, 350);
     });
-    // The two-option Staff sort control must apply immediately without a separate Filter button.
-    form.querySelectorAll('select[name="sortBy"]').forEach(sort => {
-      sort.addEventListener("change", () => {
+    // Keep the existing two-option Staff sort working without a duplicate
+    // full-page submit, and apply Staff History's actual filter fields as well.
+    const filterControls = scope === "history" && document.body.classList.contains("staff-dashboard")
+      ? 'select[name="SortBy"], select[name="ServiceId"], select[name="DateRange"], input[name="Year"]'
+      : 'select[name="sortBy"]';
+    form.querySelectorAll(filterControls).forEach(control => {
+      control.addEventListener("change", () => {
         window.clearTimeout(timer);
         search();
       });
     });
+    if (scope === "history" && document.body.classList.contains("staff-dashboard")) {
+      const refresh = form.querySelector(".staff-history-refresh");
+      // After AJAX filtering, the original server-rendered href would otherwise
+      // contain stale filters. Reload the *current* URL to retain the active query.
+      refresh?.addEventListener("click", () => {
+        refresh.href = window.location.href;
+      });
+    }
     form.addEventListener("submit", event => {
       if (event.submitter?.classList.contains("staff-search-standard-submit")) return;
       event.preventDefault();window.clearTimeout(timer);search();

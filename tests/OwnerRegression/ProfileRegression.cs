@@ -55,7 +55,17 @@ static class ProfileRegression
                     ControllerContext=new ControllerContext {HttpContext=http},TempData=new TempDataDictionary(http,new EmptyTempData())
                 };
                 var vm=(InternalProfileViewModel)((ViewResult)await controller.Index()).Model!;
-                check(vm.Role==role && vm.PasswordRules.SequenceEqual(new[]{"At least 6 characters."}),role+" profile reflects role and configured password policy");
+                check(vm.Role==role && vm.PasswordRules.SequenceEqual(new[]{"At least 12 characters."}),role+" profile reflects role and configured password policy");
+                if(role=="Owner")
+                {
+                    var dedicated=(ViewResult)await controller.Password();
+                    var ownerVm=(InternalProfileViewModel)dedicated.Model!;
+                    check(ownerVm.Role=="Owner" && ownerVm.Email==user.Email,
+                        "Owner-only Change Password view loads the authenticated Owner's account without an Account Security card");
+                    var endpoint=typeof(InternalProfileController).GetMethod(nameof(InternalProfileController.Password))!;
+                    check(endpoint.GetCustomAttributes<AuthorizeAttribute>().Any(attr=>attr.Roles=="Owner"),
+                        "Dedicated Change Password GET requires Owner role in addition to the shared controller policy");
+                }
                 await controller.Edit(new() {FullName="Updated "+role,PhoneNumber="09123456789"});
                 check(user.FullName=="Updated "+role && other.FullName=="Other User" && user.Email=="profile-"+role+"@example.test" && user.IsActive && user.EmailConfirmed && (await manager.GetRolesAsync(user)).SequenceEqual(new[]{role}),role+" updates only authenticated account and permitted fields");
                 controller.ModelState.Clear();
@@ -64,8 +74,12 @@ static class ProfileRegression
                 controller.ModelState.Clear();
                 var invalidPhone=new InternalPersonalInput {FullName="Test User",PhoneNumber="invalid"};
                 check(!Validator.TryValidateObject(invalidPhone,new ValidationContext(invalidPhone),new List<ValidationResult>(),true),"Phone format validates on server");
-                await controller.ChangePassword(new() {CurrentPassword="wrong",NewPassword="newpass",ConfirmPassword="newpass"});
+                await controller.ChangePassword(new() {CurrentPassword="wrong",NewPassword="newpass12!Abc",ConfirmPassword="newpass12!Abc"});
                 check(!controller.ModelState.IsValid && await manager.CheckPasswordAsync(user,"initial"),role+" incorrect current password rejected");
+                controller.ModelState.Clear();
+                var invalidResult=(ViewResult)await controller.ChangePassword(new() {CurrentPassword="wrong",NewPassword="newpass12!Abc",ConfirmPassword="newpass12!Abc"});
+                check(invalidResult.ViewName==(role=="Owner"?"Password":"Index"),
+                    role+" invalid password feedback returns to the existing accessible form location");
                 controller.ModelState.Clear();
                 await controller.ChangePassword(new() {CurrentPassword="initial",NewPassword="short",ConfirmPassword="short"});
                 check(!controller.ModelState.IsValid && await manager.CheckPasswordAsync(user,"initial"),role+" Identity password policy preserved");
@@ -73,8 +87,8 @@ static class ProfileRegression
                 var mismatch=new InternalPasswordInput {CurrentPassword="initial",NewPassword="newpass",ConfirmPassword="different"};
                 check(!Validator.TryValidateObject(mismatch,new ValidationContext(mismatch),new List<ValidationResult>(),true),"Password confirmation validates on server");
                 var oldStamp=user.SecurityStamp;
-                var changed=(RedirectToActionResult)await controller.ChangePassword(new() {CurrentPassword="initial",NewPassword="newpass",ConfirmPassword="newpass"});
-                check(await manager.CheckPasswordAsync(user,"newpass") && !await manager.CheckPasswordAsync(user,"initial") && signIn.Refreshed && oldStamp!=user.SecurityStamp && changed.Fragment=="security",role+" password change rotates security stamp and refreshes current sign-in");
+                var changed=(RedirectToActionResult)await controller.ChangePassword(new() {CurrentPassword="initial",NewPassword="newpass12!Abc",ConfirmPassword="newpass12!Abc"});
+                check(await manager.CheckPasswordAsync(user,"newpass12!Abc") && !await manager.CheckPasswordAsync(user,"initial") && signIn.Refreshed && oldStamp!=user.SecurityStamp && (role=="Owner" ? changed.ActionName=="Password" && string.IsNullOrEmpty(changed.Fragment) : changed.Fragment=="security"),role+" password change rotates security stamp and refreshes current sign-in");
                 FormFile Photo(byte[] data,string name,string type) => new(new MemoryStream(data),0,data.Length,"photo",name){Headers=new HeaderDictionary(),ContentType=type};
                 controller.ModelState.Clear();
                 await controller.UploadPhoto(Photo(new byte[20],"fake.png","image/png"));

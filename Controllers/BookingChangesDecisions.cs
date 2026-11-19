@@ -28,14 +28,14 @@ public sealed partial class BookingChangesController
             || Paid(booking)!=pending.VerifiedPaymentsAtProposal
             || PaidCount(booking)!=pending.VerifiedPaymentCountAtProposal
             || !ConfirmedBookingChangePolicy.IsSafeTotal(pending.NewFinalPrice,Paid(booking)))
-            return Deny(id,"The booking or payments changed. Staff must review and send a fresh proposal.");
+            return Deny(id,"The booking or payments changed. Submit a fresh proposal after review.");
         if(pending.PackageChanged){
             var service=await _db.Services.AsNoTracking().FirstOrDefaultAsync(s=>
                 s.Id==pending.NewServiceId&&!s.IsArchived);
             if(service==null||service.Price!=pending.NewBasePrice
                 ||service.Name!=pending.NewPackageName
                 ||booking.StartTime.AddHours(service.DurationInHours)!=pending.NewEndTime)
-                return Deny(id,"The package or duration changed after Staff's quote. Ask Staff to propose again.");
+                return Deny(id,"The package or duration changed after the quote. A fresh proposal is needed.");
         }
         var route=await CheckRouteAsync(booking,pending.NewEndTime,
             pending.NewLatitude,pending.NewLongitude,pending.VenueChanged);
@@ -44,7 +44,7 @@ public sealed partial class BookingChangesController
            && (route.Quote==null||route.Quote.TravelFee!=pending.NewTravelFee
                ||route.Quote.ServiceZone!=pending.NewServiceZone
                ||route.Quote.RequiresManualReview!=pending.NewRequiresManualReview))
-            return Deny(id,"Travel pricing or review requirements changed. Staff must send a new quote.");
+            return Deny(id,"Travel pricing or review requirements changed. Submit a new quote.");
 
         booking.ServiceId=pending.NewServiceId;
         booking.PackageName=pending.NewPackageName;
@@ -72,7 +72,7 @@ public sealed partial class BookingChangesController
             BookingId=id,EventType=ConfirmedBookingChangePolicy.Accepted,
             Notes=token.ToString("D"),CreatedAt=DateTime.UtcNow
         });
-        await NotifyStaffAsync(booking,"Confirmed booking change accepted",
+        await NotifyInternalAsync(booking,"Confirmed booking change accepted",
             $"Client accepted the change for BK-{booking.CreatedAt.Year}-{id:D3}. Revised total: PHP {booking.FinalPrice:N2}.");
         await _db.SaveChangesAsync();
         await tx.CommitAsync();
@@ -93,14 +93,14 @@ public sealed partial class BookingChangesController
             BookingId=id,EventType=ConfirmedBookingChangePolicy.Rejected,
             Notes=token.ToString("D"),CreatedAt=DateTime.UtcNow
         });
-        await NotifyStaffAsync(booking,"Client declined confirmed booking change",
+        await NotifyInternalAsync(booking,"Client declined confirmed booking change",
             $"The Client declined the proposed changes for BK-{booking.CreatedAt.Year}-{id:D3}. Original terms were preserved.");
         await _db.SaveChangesAsync();await tx.CommitAsync();
         TempData["Success"]="Proposal declined. Your existing confirmed booking and verified payments are unchanged.";
         return RedirectToAction("Details","Bookings",new{id});
     }
 
-    [HttpPost,Authorize(Roles="Staff"),ValidateAntiForgeryToken]
+    [HttpPost,Authorize(Roles="Staff,Owner"),ValidateAntiForgeryToken]
     public async Task<IActionResult> Withdraw(int id,Guid token)
     {
         await using var tx=await _db.Database.BeginTransactionAsync(IsolationLevel.Serializable);
@@ -115,7 +115,7 @@ public sealed partial class BookingChangesController
         if(!string.IsNullOrWhiteSpace(booking.ApplicationUserId)){
             _db.Notifications.Add(new Notification{
                 UserId=booking.ApplicationUserId,Title="Confirmed booking change withdrawn",
-                Message=$"Staff withdrew the proposed changes for BK-{booking.CreatedAt.Year}-{id:D3}. Your original booking is unchanged.",
+                Message=$"{(User.IsInRole("Owner") ? "Owner" : "Staff")} withdrew the proposed changes for BK-{booking.CreatedAt.Year}-{id:D3}. Your original booking is unchanged.",
                 Link=$"/Bookings/Details/{id}",CreatedAt=DateTime.Now
             });
         }
@@ -124,10 +124,11 @@ public sealed partial class BookingChangesController
         return RedirectToAction("Details","Bookings",new{id});
     }
 
-    private async Task NotifyStaffAsync(Booking booking,string title,string message)
+    private async Task NotifyInternalAsync(Booking booking,string title,string message)
     {
         var staff=await _users.GetUsersInRoleAsync("Staff");
-        foreach(var user in staff.Where(u=>u.IsActive)){
+        var owners=await _users.GetUsersInRoleAsync("Owner");
+        foreach(var user in staff.Concat(owners).Where(u=>u.IsActive).DistinctBy(u=>u.Id)){
             _db.Notifications.Add(new Notification{
                 UserId=user.Id,Title=title,Message=message,
                 Link=$"/Bookings/Details/{booking.Id}",CreatedAt=DateTime.Now

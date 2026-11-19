@@ -634,7 +634,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                 };
             }
 
-            var maxPerDay = BookingRules.MaximumDailyBookings;
+            var maxPerDay = await DateBookingCapacity.EffectiveLimitAsync(_context, requestedStart.Date);
             var confirmedCount = await _context.Bookings
                 .CountAsync(b => b.Status == BookingStatus.Confirmed
                             && b.Id != currentBookingId
@@ -732,7 +732,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             var isBlocked = blockedEntry != null;
             var blockReason = blockedEntry?.Reason;
 
-            var maxPerDay = BookingRules.MaximumDailyBookings;
+            var maxPerDay = await DateBookingCapacity.EffectiveLimitAsync(_context, date);
 
             var confirmedCount = await _context.Bookings
                 .CountAsync(b => b.Status == BookingStatus.Confirmed

@@ -65,6 +65,14 @@ internal static class ReleaseIntegrationRunner
         if(args.SequenceEqual(new[]{"--pro-max-refund-seed"})) { await ProMaxRefundFixtureSeed.RunAsync(); return; }
         if(args.SequenceEqual(new[]{"--age-release-payment-window"})) { await PaymentWindowFixtureAdjust.RunAsync(); return; }
         if(args.SequenceEqual(new[]{"--unified-messaging-only"})) { await UnifiedMessagingTests.RunAsync(); return; }
+        if(args.SequenceEqual(new[]{"--unified-messaging-redesign-only"})) { await UnifiedMessagingRedesignTests.RunAsync(); return; }
+        if(args.SequenceEqual(new[]{"--unified-profile-only"})) { await UnifiedProfileIntegrationTests.RunAsync(); return; }
+        if(args.SequenceEqual(new[]{"--staff-priority-only"})) { await StaffPriorityWorkspaceTests.RunAsync(); return; }
+        if(args.SequenceEqual(new[]{"--staff-bookings-table-only"})) { await StaffBookingsTableTests.RunAsync(); return; }
+        if(args.SequenceEqual(new[]{"--staff-unified-booking-details-only"})) { await StaffUnifiedBookingDetailsTests.RunAsync(); return; }
+        if(args.SequenceEqual(new[]{"--staff-calendar-table-only"})) { await StaffCalendarTableTests.RunAsync(); return; }
+        if(args.SequenceEqual(new[]{"--staff-reschedules-table-only"})) { await StaffRescheduleTableTests.RunAsync(); return; }
+        if(args.SequenceEqual(new[]{"--staff-history-table-only"})) { await StaffHistoryTableTests.RunAsync(); return; }
         if(args.SequenceEqual(new[]{"--internal-workspaces-ui-fixture"})) { await InternalWorkspaceFixture.RunAsync(); return; }
         if(args.SequenceEqual(new[]{"--internal-workspaces-empty-fixture"})) { await InternalWorkspaceFixture.RunAsync(empty:true); return; }
         if(args.SequenceEqual(new[]{"--auth-ui-fixture"})) { await AuthBrowserFixture.RunAsync(); return; }
@@ -144,6 +152,13 @@ internal static class ReleaseIntegrationRunner
             var clientToken=await GetToken(client,"/Account/Login");
             var staffToken=await GetToken(staff,"/Dashboard/Staff");
             var ownerToken=await GetToken(owner,"/Dashboard/Owner");
+            await OwnerFinancialQueueStagingChecks.EmptyAsync(owner,staff,client,Check);
+            await OwnerCalendarLimitHttpChecks.RunAsync(owner,staff,client,ownerToken,db,Check);
+            await OwnerPersonnelAccountsHttpChecks.RunAsync(owner,staff,client,scope.ServiceProvider,db,Check);
+            await OwnerProfileCleanupHttpChecks.RunAsync(owner,staff,client,ownerToken,Check);
+            await OwnerBusinessActivityHttpChecks.RunAsync(owner,staff,client,db,Check);
+            await OwnerArchivesHttpChecks.RunAsync(owner,staff,client,db,Check);
+            await OwnerFinancialSummaryHttpChecks.RunAsync(owner,staff,client,db,Check);
             using (var support = await Post(client,"/Communications/StartSupport",clientToken))
                 Check(support.StatusCode==HttpStatusCode.Redirect,"Client starts support through authenticated anti-forgery POST");
             var supportId=await db.Conversations.Where(c=>c.ConversationType==ConversationTypes.ClientSupport).Select(c=>c.Id).SingleAsync();
@@ -161,7 +176,7 @@ internal static class ReleaseIntegrationRunner
                 Check(reply.StatusCode==HttpStatusCode.Redirect,"Staff reply persists through the existing endpoint");
             using (var inbox=await client.GetAsync("/Communications/Index?view=inbox")) {
                 var html=await inbox.Content.ReadAsStringAsync();
-                Check(inbox.StatusCode==HttpStatusCode.OK&&!html.Contains("id=\"commComposer\"")&&html.Contains("data-conversation-id=\"0\"")&&html.Contains("hub-messages")&&html.Contains("Your inbox"),"Client inbox shows conversations without automatically opening a thread");
+                Check(inbox.StatusCode==HttpStatusCode.OK&&!html.Contains("id=\"commComposer\"")&&html.Contains("data-conversation-id=\"0\"")&&html.Contains("comm-workspace")&&html.Contains("Select a conversation")&&html.Contains("comm-conversation-list"),"Client inbox shows conversations without automatically opening a thread");
             }
             using (var unread=await client.GetAsync("/Communications/UnreadCount"))
                 Check((await unread.Content.ReadAsStringAsync()).Contains("\"count\":1"),"Opening the inbox preserves an unread staff reply");
@@ -220,11 +235,15 @@ internal static class ReleaseIntegrationRunner
             using(var proof=await owner.GetAsync($"/Payments/PaymentProof/{payment.Id}")) Check(proof.StatusCode==HttpStatusCode.OK && proof.Headers.CacheControl?.NoStore==true && (await proof.Content.ReadAsByteArrayAsync()).SequenceEqual(png),"Real Owner cookie reads exact original private proof bytes through protected HTTP route");
             using(var proof=await staff.GetAsync($"/Payments/PaymentProof/{payment.Id}")) Check(proof.StatusCode==HttpStatusCode.Redirect,"Staff cookie denied private financial proof");
             Check(payment.ExpectedAmountAtUpload==2000m,"Selected payment amount is preserved separately from OCR and later Owner-confirmed amount");
+            await OwnerFinancialQueueStagingChecks.PaymentPendingAsync(owner,db,payment.Id,booking.Id,Check);
+            await OwnerUnifiedBookingDetailsHttpChecks.PaymentReviewAsync(owner,staff,client,db,booking.Id,payment.Id,Check);
             using(var reanalysis=await Post(owner,$"/Payments/ReanalyzeProof/{payment.Id}",ownerToken))
-                Check(reanalysis.StatusCode==HttpStatusCode.Redirect,"Owner can safely reanalyze a pending receipt");
-            Check(await db.OcrVerifications.CountAsync(o=>o.PaymentId==payment.Id&&o.VerificationPurpose==OcrVerificationPurposes.PaymentProof)==2
+                Check(reanalysis.StatusCode==HttpStatusCode.NotFound,"Retired manual OCR reanalysis route cannot be invoked");
+            using(var retiredReject=await Post(owner,$"/Payments/Reject/{payment.Id}",ownerToken,("rejectionReason","Retired page action")))
+                Check(retiredReject.StatusCode==HttpStatusCode.NotFound,"Retired Reject Payment route cannot be invoked");
+            Check(await db.OcrVerifications.CountAsync(o=>o.PaymentId==payment.Id&&o.VerificationPurpose==OcrVerificationPurposes.PaymentProof)==1
                 && await db.Payments.AnyAsync(p=>p.Id==payment.Id&&p.Status==PaymentStatus.Pending&&p.Amount==2000m),
-                "Reanalysis creates new advisory OCR evidence without crediting funds");
+                "Original automatic OCR result stays preserved and retired routes cannot credit or reject funds");
             using(var invalidCorrection=await Post(owner,$"/Payments/Verify/{payment.Id}",ownerToken,("verifiedAmount","3500")))
                 Check(invalidCorrection.StatusCode==HttpStatusCode.Redirect&&await db.Payments.AnyAsync(p=>p.Id==payment.Id&&p.Status==PaymentStatus.Pending),
                     "Unexplained change from PHP 2,000 to PHP 3,500 cannot approve or credit payment");
@@ -236,6 +255,8 @@ internal static class ReleaseIntegrationRunner
                 &&p.ExpectedAmountAtUpload==2000m&&p.Amount==2000m),
                 "Correction preserves original expected amount and Owner confirmed financial ledger");
             Check(await db.Bookings.AsNoTracking().AnyAsync(b=>b.Id==booking.Id&&b.Status==BookingStatus.Confirmed),"Verified downpayment confirms booking in SQL");
+            await OwnerUnifiedBookingDetailsHttpChecks.ConfirmedAsync(owner,staff,client,db,booking.Id,payment.Id,Check);
+            await OwnerConfirmedBookingEditHttpChecks.RunAsync(owner,staff,client,db,Check);
             using(var contextPage=await client.GetAsync($"/RescheduleRequests/Create?bookingId={booking.Id}")) {
                 var html=await contextPage.Content.ReadAsStringAsync();var payload=Regex.Match(html,"id=\"clientBookingContext\">(.*?)</script>",RegexOptions.Singleline).Groups[1].Value;
                 using var doc=System.Text.Json.JsonDocument.Parse(payload);var row=doc.RootElement.EnumerateArray().Single();
@@ -270,6 +291,7 @@ internal static class ReleaseIntegrationRunner
             using(var response=await client.PostAsync("/Payments/RequestRefund",refundForm)) Check(response.StatusCode==HttpStatusCode.Redirect,"Client requests review for the verified payment linked to the recorded cancellation");
             var refund=await db.RefundRequests.AsNoTracking().SingleAsync();
             Check(refund.EligibilityReason=="ClientCancellationWithin24Hours"&&refund.Amount==payment.Amount&&refund.OriginalPaymentId==payment.Id,"Refund amount and reason come from the verified eligible payment record");
+            await OwnerFinancialQueueStagingChecks.RefundPendingAsync(owner,db,refund.Id,booking.Id,Check);
             using(var response=await Post(owner,$"/Payments/ApproveRefund/{refund.Id}",ownerToken)) Check(response.StatusCode==HttpStatusCode.Redirect,"Owner approves only the verified eligible receipt over HTTP");
             using(var form=new MultipartFormDataContent()) {
                 form.Add(new StringContent(ownerToken),"__RequestVerificationToken");
@@ -280,6 +302,7 @@ internal static class ReleaseIntegrationRunner
             using(var response=await Post(owner,$"/Payments/MarkAsRefunded/{refund.Id}",ownerToken)) Check(response.StatusCode==HttpStatusCode.Redirect,"Owner completes reviewed refund over HTTP");
             var completed=await db.RefundRequests.AsNoTracking().SingleAsync(x=>x.Id==refund.Id);
             Check(completed.Status==RefundStatus.Refunded&&completed.ApprovedAmount==2000&&completed.RefundCompletedAt!=null,"Refund amount, final status and audit timestamps persist");
+            await OwnerFinancialQueueStagingChecks.RefundCompletedAsync(owner,refund.Id,Check);
             await OwnerUiRound2HttpChecks.RunAsync(owner,staff,client,db,booking.Id,payment.Id,refund.Id,Check);
             using(var response=await Post(owner,$"/Payments/MarkAsRefunded/{refund.Id}",ownerToken)) Check(response.StatusCode==HttpStatusCode.Redirect,"Duplicate refund completion safely redirects");
             Check((await db.RefundRequests.AsNoTracking().SingleAsync(x=>x.Id==refund.Id)).RefundCompletedAt==completed.RefundCompletedAt,"Duplicate refund does not change original completion");

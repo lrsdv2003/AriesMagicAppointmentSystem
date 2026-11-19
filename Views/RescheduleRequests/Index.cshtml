@@ -39,11 +39,11 @@
             <div class="am-filter-search"><i class="bi bi-search" aria-hidden="true"></i><input id="rescheduleSearch" type="search" name="search" value="@Model.Search" class="form-control" placeholder="Booking ID, client, or package" /></div>
 @if (staffOnly)
             {
-                <div class="staff-part3-sort-control">
+                <div class="staff-part3-sort-control staff-data-sort">
                     <label for="rescheduleSort">Sort by</label>
                     <select id="rescheduleSort" name="sortBy" class="form-select" aria-label="Sort pending reschedule requests">
-                        <option value="newest" selected="@(Model.SortBy != "oldest")">Newest to Oldest</option>
-                        <option value="oldest" selected="@(Model.SortBy == "oldest")">Oldest to Newest</option>
+                        <option value="newest" selected="@(Model.SortBy != "oldest")">Newest first</option>
+                        <option value="oldest" selected="@(Model.SortBy == "oldest")">Oldest first</option>
                     </select>
                 </div>
             }
@@ -66,7 +66,8 @@
             }<button type="button" class="btn btn-outline-secondary aries-refresh-now"><i class="bi bi-arrow-clockwise" aria-hidden="true"></i><span class="visually-hidden">Refresh requests</span></button><button type="submit" class="visually-hidden">Search reschedules</button></form>
     </div>
 
-    <div class="dashboard-panel staff-reschedule-table-panel">
+    <div class="@(staffOnly ? "staff-data-table-frame staff-reschedule-table-frame" : "staff-reschedule-owner-list")" style="@(!staffOnly ? "display:contents" : null)" data-staff-table-capacity="@(staffOnly ? "5" : null)">
+    <div class="dashboard-panel staff-reschedule-table-panel @(staffOnly ? "staff-data-table-panel" : "")">
         @if (!staffOnly)
         {
             <div class="staff-reschedule-panel-heading">
@@ -80,7 +81,7 @@
             </div>
         }
 
-        @if (!Model.Requests.Any())
+        @if (!Model.Requests.Any() && !staffOnly)
         {
             <div class="empty-state staff-reschedule-empty">
                 <i class="bi bi-calendar2-check" aria-hidden="true"></i>
@@ -90,8 +91,20 @@
         }
         else
         {
-            <div class="table-responsive staff-reschedule-table-wrap">
-                <table class="table align-middle staff-reschedule-table">
+            <div class="table-responsive staff-reschedule-table-wrap @(staffOnly ? "staff-data-table-scroll" : "")">
+                <table class="table align-middle staff-reschedule-table @(staffOnly ? "staff-data-table" : "")">
+                    @if(staffOnly)
+                    {
+                        <colgroup>
+                            <col class="staff-col-booking" />
+                            <col class="staff-col-client" />
+                            <col class="staff-col-original" />
+                            <col class="staff-col-requested" />
+                            <col class="staff-col-submitted" />
+                            <col class="staff-col-status" />
+                            <col class="staff-col-actions" />
+                        </colgroup>
+                    }
                     <thead>
                         <tr>
                             <th scope="col">Booking</th>
@@ -104,6 +117,29 @@
                         </tr>
                     </thead>
                     <tbody>
+                    @if(staffOnly && !Model.Requests.Any())
+                    {
+                        <tr class="staff-data-table-empty-row">
+                            <td colspan="7">
+                                <div class="staff-data-table-empty" role="status">
+                                    <i class="bi bi-inbox" aria-hidden="true"></i>
+                                    @if(Model.PendingCount > 0 && (!string.IsNullOrWhiteSpace(Model.Search) || Model.RequestedDate.HasValue))
+                                    {
+                                        <strong>No matching requests</strong>
+                                        <p>Try adjusting your search or filters.</p>
+                                        <a asp-controller="RescheduleRequests" asp-action="Index" class="staff-data-table-reset">Clear search</a>
+                                    }
+                                    else
+                                    {
+                                        <strong>No reschedule requests</strong>
+                                        <p>There are no reschedule requests to display.</p>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
                     @foreach (var item in Model.Requests)
                     {
                         var request = item.Request;
@@ -120,20 +156,40 @@
                             <td data-label="Booking"><strong class="staff-booking-code">@bookingCode</strong></td>
                             <td data-label="Client"><strong>@(booking.Client?.FullName ?? "Unknown client")</strong></td>
                             <td data-label="Original schedule">
-                                <div class="reschedule-schedule neutral">
-                                    <strong>@originalDisplay.Split('|')[0]</strong>
-                                    <small>@originalDisplay.Split('|')[1]</small>
-                                </div>
+                                @if(staffOnly)
+                                {
+                                    <div class="staff-date-stack staff-reschedule-date-plain">
+                                        <strong>@originalDisplay.Split('|')[0]</strong>
+                                        <span>@originalDisplay.Split('|')[1]</span>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="reschedule-schedule neutral">
+                                        <strong>@originalDisplay.Split('|')[0]</strong>
+                                        <small>@originalDisplay.Split('|')[1]</small>
+                                    </div>
+                                }
                             </td>
                             <td data-label="Requested schedule">
-                                <div class="reschedule-schedule requested">
-                                    <strong>@requestedDisplay.Split('|')[0]</strong>
-                                    <small>@requestedDisplay.Split('|')[1]</small>
-                                    @if (request.Status == RescheduleRequestStatus.Pending)
-                                    {
-                                        <span class="reschedule-availability @AvailabilityClass(item.Availability.State)"><i class="bi @(item.Availability.IsAvailable ? "bi-check-circle" : "bi-exclamation-triangle")" aria-hidden="true"></i> @item.Availability.State</span>
-                                    }
-                                </div>
+                                @if(staffOnly)
+                                {
+                                    <div class="staff-date-stack staff-reschedule-date-plain">
+                                        <strong>@requestedDisplay.Split('|')[0]</strong>
+                                        <span>@requestedDisplay.Split('|')[1]</span>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="reschedule-schedule requested">
+                                        <strong>@requestedDisplay.Split('|')[0]</strong>
+                                        <small>@requestedDisplay.Split('|')[1]</small>
+                                        @if (request.Status == RescheduleRequestStatus.Pending)
+                                        {
+                                            <span class="reschedule-availability @AvailabilityClass(item.Availability.State)"><i class="bi @(item.Availability.IsAvailable ? "bi-check-circle" : "bi-exclamation-triangle")" aria-hidden="true"></i> @item.Availability.State</span>
+                                        }
+                                    </div>
+                                }
                             </td>
                             <td data-label="Requested on"><time datetime="@request.CreatedAt.ToString("O")">@request.CreatedAt.ToString("MMM d, yyyy")</time></td>
                             <td data-label="Status"><span class="status-badge @StatusClass(request.Status)">@request.Status</span></td>
@@ -142,10 +198,13 @@
                             </td>
                         </tr>
                     }
+                    }
                     </tbody>
                 </table>
             </div>
 
+            @if(!staffOnly)
+            {
             <div class="staff-reschedule-cards">
                 @foreach (var item in Model.Requests)
                 {
@@ -172,6 +231,7 @@
                     </article>
                 }
             </div>
+            }
         }
     </div>
 @{
@@ -181,7 +241,8 @@
             ["search"] = Model.Search ?? "",
             ["requestedDate"] = Model.RequestedDate?.ToString("yyyy-MM-dd") ?? "",
             ["sortBy"] = Model.SortBy
-        });
+        }) { ShowTotalForStaff = staffOnly, HideSinglePageControls = staffOnly };
 }
 <partial name="_QueuePagination" model="reschedulePager" />
+    </div>
 </div>

@@ -540,6 +540,8 @@ namespace AriesMagicAppointmentSystem.Controllers
                     .OrderByDescending(o => o.ProcessedAt).ThenByDescending(o => o.Id).Select(o => o.VerificationResult).FirstOrDefault() == OcrVerificationResults.OcrFailed)
             };
             ViewData["QueuePage"] = pagination;
+            if (pagination.TotalCount == 0)
+                ViewBag.HasOtherPayments = await _context.Payments.AsNoTracking().AnyAsync();
             var sortedPayments = sortBy == "oldest"
                 ? query.OrderBy(p => p.UploadedAt).ThenBy(p => p.Id)
                 : query.OrderByDescending(p => p.UploadedAt).ThenByDescending(p => p.Id);
@@ -558,6 +560,8 @@ namespace AriesMagicAppointmentSystem.Controllers
                     .ThenInclude(b => b!.Client)
                 .Include(p => p.Booking)
                     .ThenInclude(b => b!.Service)
+                .Include(p => p.Booking)
+                    .ThenInclude(b => b!.TimelineEvents)
                 .Include(p => p.OcrVerifications)
                 .Include(p => p.ProofRevisions)
                 .FirstOrDefaultAsync(p => p.Id == id);
@@ -572,6 +576,7 @@ namespace AriesMagicAppointmentSystem.Controllers
         [Authorize(Roles = "Owner")]
         [ValidateAntiForgeryToken]
         [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("account")]
+        [NonAction]
         public async Task<IActionResult> ReanalyzeProof(int id)
         {
             var payment = await _context.Payments.AsNoTracking().FirstOrDefaultAsync(p => p.Id == id);
@@ -678,7 +683,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                 var blocked = await _context.BlockedDates.AnyAsync(d => d.Date.Date == booking.EventDate.Date);
                 var conflicts = await _context.Bookings.AnyAsync(b => b.Id != booking.Id && b.Status == BookingStatus.Confirmed
                     && booking.StartTime < b.EndTime.AddHours(1) && booking.EndTime.AddHours(1) > b.StartTime);
-                if (blocked || conflicts || occupied >= BookingRules.MaximumDailyBookings)
+                if (blocked || conflicts || occupied >= await DateBookingCapacity.EffectiveLimitAsync(_context, booking.EventDate))
                 {
                     TempData["Error"] = "This date is unavailable. Resolve the booking schedule before verifying payment.";
                     return RedirectToAction(nameof(Verify), new { id });
@@ -780,6 +785,7 @@ namespace AriesMagicAppointmentSystem.Controllers
         [HttpPost, ActionName("Reject")]
         [Authorize(Roles = "Owner")]
         [ValidateAntiForgeryToken]
+        [NonAction]
         public async Task<IActionResult> RejectConfirmed(int id, string? rejectionReason)
         {
             if (string.IsNullOrWhiteSpace(rejectionReason) || rejectionReason.Trim().Length > 1000)
@@ -1002,6 +1008,8 @@ namespace AriesMagicAppointmentSystem.Controllers
                 AwaitingFinalVerificationCount = await query.CountAsync(r => r.Status == RefundStatus.RefundProcessing)
             };
             ViewData["QueuePage"] = pagination;
+            if (pagination.TotalCount == 0)
+                ViewBag.HasOtherRefundRequests = await _context.RefundRequests.AsNoTracking().AnyAsync();
             var sortedRefunds = sortBy == "oldest"
                 ? query.OrderBy(r => r.RequestedAt).ThenBy(r => r.Id)
                 : query.OrderByDescending(r => r.RequestedAt).ThenByDescending(r => r.Id);

@@ -25,8 +25,8 @@ namespace AriesMagicAppointmentSystem.Controllers
         }
 
         /// <summary>
-        /// Owner Settings manages blocked dates; fixed capacity remains unchanged.
-        /// For Staff/Owner: shows operational calendar with bookings.
+        /// Owner Settings manages blocked dates and validated date-specific capacity;
+        /// Staff/Owner Index shows operational confirmed bookings.
         /// </summary>
        [HttpGet]
         public async Task<IActionResult> Index(bool showHistorical = false)
@@ -45,6 +45,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                 .Where(b => statusesToShow.Contains(b.Status))
                 .OrderBy(b => b.EventDate)
                 .ThenBy(b => b.StartTime)
+                .ThenBy(b => b.Id)
                 .ToListAsync();
 
             var activePackageNames = await _context.Services
@@ -69,8 +70,10 @@ namespace AriesMagicAppointmentSystem.Controllers
                 })
                 .ToListAsync();
 
-            var dateLimits = new List<DateBookingLimit>();
-            var dateLimitsForCalendar = new Dictionary<string, int>();
+            var dateLimits = await _context.DateBookingLimits.AsNoTracking()
+                .OrderBy(x => x.Date).ThenBy(x => x.Id).ToListAsync();
+            var dateLimitsForCalendar = DateBookingCapacity.Overrides(dateLimits)
+                .ToDictionary(x => x.Key.ToString("yyyy-MM-dd"), x => x.Value);
 
             var dailyCounts = bookings
                 .GroupBy(b => b.EventDate.Date)
@@ -127,16 +130,122 @@ namespace AriesMagicAppointmentSystem.Controllers
                     BlockedDates = await _context.BlockedDates
                         .OrderByDescending(x => x.Date)
                         .ToListAsync(),
-                    DateBookingLimits = new List<DateBookingLimit>()
+                    DateBookingLimits = await _context.DateBookingLimits.AsNoTracking()
+                        .OrderBy(x => x.Date).ThenBy(x => x.Id).ToListAsync()
                 }
             };
 
-            var creatorLogs = await _context.SystemActivities.AsNoTracking()
-                .Where(a => a.AffectedRecordType == "BlockedDate" && a.Description.StartsWith("Blocked date"))
-                .OrderBy(a => a.CreatedAt).ToListAsync();
-            ViewBag.BlockCreators = creatorLogs.GroupBy(a => a.AffectedRecordId ?? "")
-                .ToDictionary(g => g.Key, g => g.First().PerformedByUserName ?? "Not recorded");
+            ViewBag.ConfirmedByDate = await _context.Bookings.AsNoTracking()
+                .Where(x => x.Status == BookingStatus.Confirmed)
+                .GroupBy(x => x.EventDate.Date)
+                .Select(x => new { Date = x.Key, Count = x.Count() })
+                .ToDictionaryAsync(x => x.Date, x => x.Count);
             return View("Settings",model);
+        }
+
+        // A date may have one configured override. Legacy duplicate rows are
+        // reported rather than silently overwritten or deleted.
+        [Authorize(Roles = "Owner")]
+        [HttpGet]
+        public async Task<IActionResult> GetDateLimit(DateTime date)
+        {
+            if (!ModelState.IsValid || date == default || date.Date < DateTime.Today || date.Date == DateTime.MaxValue.Date)
+                return BadRequest(new { success = false, message = "Select today or a future date." });
+
+            var existing = await _context.DateBookingLimits.AsNoTracking()
+                .Where(x => x.Date.Date == date.Date)
+                .OrderByDescending(x => x.CreatedAt).ThenByDescending(x => x.Id)
+                .Take(2).ToListAsync();
+            if (existing.Count > 1)
+                return Conflict(new { success = false, message = "Multiple limits exist for this date. Resolve the duplicate records before editing." });
+
+            var confirmed = await _context.Bookings.AsNoTracking()
+                .CountAsync(x => x.Status == BookingStatus.Confirmed && x.EventDate.Date == date.Date);
+            var isBlocked = await _context.BlockedDates.AsNoTracking()
+                .AnyAsync(x => x.Date.Date == date.Date);
+            var configured = existing.FirstOrDefault();
+            return Json(new {
+                success = true,
+                date = date.ToString("yyyy-MM-dd"),
+                id = configured?.Id ?? 0,
+                storedLimit = configured?.MaxBookings ?? 0,
+                effectiveLimit = configured != null && DateBookingCapacity.IsValid(configured.MaxBookings)
+                    ? configured.MaxBookings : BookingRules.MaximumDailyBookings,
+                confirmedCount = confirmed,
+                isBlocked
+            });
+        }
+
+        [Authorize(Roles = "Owner")]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SaveDateLimit(DateTime limitDate, int recordId, int expectedStoredLimit, int newLimit)
+        {
+            if (!ModelState.IsValid || limitDate == default || limitDate.Date < DateTime.Today || limitDate.Date == DateTime.MaxValue.Date)
+                return BadRequest(new { success = false, message = "Select a valid current or future date." });
+            if (!DateBookingCapacity.IsValid(newLimit))
+                return BadRequest(new { success = false,
+                    message = $"Enter a whole number from {DateBookingCapacity.MinimumLimit} to {DateBookingCapacity.MaximumLimit}. Block dates separately to close availability." });
+            if (recordId < 0)
+                return BadRequest(new { success = false, message = "Invalid date setting. Reload and try again." });
+
+            try
+            {
+                await using var transaction = await _context.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
+                var start = limitDate.Date;
+                var next = start.AddDays(1);
+                // SQL Server update/range locks serialize simultaneous changes for the same date,
+                // including two concurrent attempts to create its first override.
+                var entries = await _context.DateBookingLimits
+                    .FromSqlInterpolated($"SELECT * FROM [DateBookingLimits] WITH (UPDLOCK, HOLDLOCK) WHERE [Date] >= {start} AND [Date] < {next}")
+                    .OrderByDescending(x => x.CreatedAt).ThenByDescending(x => x.Id)
+                    .Take(2).ToListAsync();
+
+                if (entries.Count > 1)
+                    return Conflict(new { success = false, message = "Multiple limits exist for this date. No change was made." });
+
+                var current = entries.FirstOrDefault();
+                if ((current?.Id ?? 0) != recordId || (current?.MaxBookings ?? 0) != expectedStoredLimit)
+                    return Conflict(new { success = false,
+                        message = "This date was changed by another request. Reload its latest limit before saving." });
+
+                var occupied = await _context.Bookings.AsNoTracking()
+                    .CountAsync(x => x.Status == BookingStatus.Confirmed && x.EventDate.Date == start);
+                if (newLimit < occupied)
+                    return Conflict(new { success = false,
+                        message = $"This date already has {occupied} confirmed booking(s). The daily limit cannot be lower." });
+
+                if (current == null)
+                {
+                    current = new DateBookingLimit { Date = start, MaxBookings = newLimit };
+                    _context.DateBookingLimits.Add(current);
+                }
+                else
+                {
+                    current.MaxBookings = newLimit;
+                }
+
+                await _context.SaveChangesAsync();
+                await _activityService.LogAsync(
+                    SystemActivityType.CalendarModified,
+                    $"Daily booking limit for {start:MMMM dd, yyyy}: {(recordId == 0 ? BookingRules.MaximumDailyBookings : expectedStoredLimit)} to {newLimit} confirmed bookings",
+                    User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "Unknown",
+                    User.Identity?.Name ?? "Unknown",
+                    current.Id.ToString(),
+                    "DateBookingLimit");
+                await transaction.CommitAsync();
+                return Json(new { success = true, message = $"Daily booking limit for {start:MMM d, yyyy} saved as {newLimit}.", newLimit });
+            }
+            catch (Exception ex) when (ex is DbUpdateException || ex is Microsoft.Data.SqlClient.SqlException)
+            {
+                _logger?.LogWarning(ex, "Concurrent Calendar Settings limit update was rejected.");
+                return Conflict(new { success = false, message = "The date setting changed or is temporarily unavailable. Reload and retry." });
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Calendar Settings daily-limit update failed.");
+                return StatusCode(500, new { success = false, message = "Unable to save this date's booking limit. Please try again." });
+            }
         }
 
         [Authorize(Roles = "Staff,Owner")]
