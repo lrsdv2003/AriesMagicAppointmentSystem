@@ -41,4 +41,9 @@
  else{<div class="staff-round1-event-list">@foreach(var b in upcoming){<article class="staff-round1-event"><span class="staff-round2-event-icon" aria-hidden="true"><i class="bi bi-journal-bookmark"></i></span><div><a class="staff-round1-booking-code" asp-controller="Bookings" asp-action="Details" asp-route-id="@b.Id">BK-@b.CreatedAt.Year-@b.Id.ToString("D3")</a><strong><time datetime="@b.EventDate.ToString("yyyy-MM-dd")">@b.EventDate.ToString("MMM d, yyyy")</time> <span aria-hidden="true">·</span> @b.StartTime.ToString("h:mm tt") – @b.EndTime.ToString("h:mm tt")</strong><p title="@b.PartyVenue">@(string.IsNullOrWhiteSpace(b.PartyVenue)?"Venue not recorded":b.PartyVenue)</p></div></article>}</div>}
  <a asp-controller="Calendar" asp-action="Index" class="staff-round1-calendar-link"><i class="bi bi-calendar-week" aria-hidden="true"></i> View Calendar</a>
 </aside>
-</div></div>
+</div>
+
+<partial name="_DashboardRecentActivity" model="Model" />
+<partial name="_WorkspaceQuickAccess" model="Model" />
+
+</div>

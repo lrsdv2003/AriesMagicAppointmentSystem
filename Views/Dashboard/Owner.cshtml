@@ -1,8 +1,9 @@
 @model AriesMagicAppointmentSystem.ViewModels.RoleDashboardViewModel
 @using AriesMagicAppointmentSystem.Models
 @{
-    Layout = "_DashboardLayout";
+     Layout = "_DashboardLayout";
     ViewData["Title"] = "Owner Dashboard";
+    var events = Model.TodayEvents.Concat(Model.UpcomingEvents).Take(3).ToList();
 }
 <div class="role-workspace owner-round1-dashboard" data-role="Owner">
     <section class="owner-round3-metrics" aria-label="Authoritative financial summary">
@@ -90,4 +91,91 @@
             }
         </aside>
     </div>
+        <partial name="_DashboardRecentActivity" model="Model" />
+
+    <section class="dash-panel workspace-main-panel">
+        <div class="dash-section-heading">
+            <h2>
+                <i class="bi bi-calendar-check" aria-hidden="true"></i>
+                Business overview
+            </h2>
+            <a asp-controller="Calendar" asp-action="Index">
+                Open calendar
+                <i class="bi bi-arrow-right" aria-hidden="true"></i>
+            </a>
+        </div>
+
+        @if (Model.UnavailableSections.Contains("business overview"))
+        {
+            <p class="dash-empty">Unable to load business overview.</p>
+        }
+        else
+        {
+            <div class="dash-business-facts">
+                <div>
+                    <span>Confirmed this month</span>
+                    <strong>@Model.ConfirmedBookings</strong>
+                </div>
+                <div>
+                    <span>Completed this month</span>
+                    <strong>@Model.CompletedBookings</strong>
+                </div>
+                <div>
+                    <span>Most booked package this month</span>
+                    <strong>@Model.MostBookedPackage</strong>
+                    <small>Confirmed and completed events</small>
+                </div>
+            </div>
+
+            @if (Model.BookingTrend.Any())
+            {
+                <figure class="dash-trend">
+                    <figcaption>
+                        Booking volume by event month
+                        <span>All statuses · Latest six months</span>
+                    </figcaption>
+
+                    <div class="dash-trend-rows">
+                        @foreach (var point in Model.BookingTrend)
+                        {
+                            <div class="dash-trend-row">
+                                <span>@point.Label</span>
+                                <meter min="0"
+                                       max="@Math.Max(1, Model.BookingTrend.Max(p => p.Count))"
+                                       value="@point.Count"
+                                       aria-label="@point.Label bookings">
+                                    @point.Count
+                                </meter>
+                                <strong>@point.Count</strong>
+                            </div>
+                        }
+                    </div>
+                </figure>
+            }
+        }
+    </section>
+
+    <section class="dash-panel">
+        <div class="dash-section-heading">
+            <h2>
+                <i class="bi bi-calendar3" aria-hidden="true"></i>
+                Upcoming confirmed events
+            </h2>
+        </div>
+
+        @if (Model.UnavailableSections.Contains("schedule"))
+        {
+            <p class="dash-empty">Unable to load upcoming events.</p>
+        }
+        else if (!events.Any())
+        {
+            <p class="dash-empty">No upcoming confirmed events.</p>
+        }
+        else
+        {
+            <partial name="_DashboardEvents" model="events" />
+        }
+    </section>
+
+    <partial name="_WorkspaceQuickAccess" model="Model" />
 </div>

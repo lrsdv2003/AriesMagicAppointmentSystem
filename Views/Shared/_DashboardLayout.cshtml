@@ -22,13 +22,15 @@
             ("Operations", "Calendar", "Calendar", "Index", "bi-calendar3"),
             ("Operations", "Reschedule requests", "RescheduleRequests", "Index", "bi-arrow-left-right"),
             ("Operations", "Packages", "Services", "Index", "bi-box-seam"),
-            ("Operations", "History", "History", "Index", "bi-clock-history") });
+            ("Operations", "History", "History", "Index", "bi-clock-history"),
+            ("Operations", "Testimonials & feedback", "Testimonials", "Index", "bi-chat-square-quote") });
     }
     if (User.IsInRole("Owner")) {
         navigation.AddRange(new[] {
             ("Financial operations", "Dashboard", "Dashboard", "Owner", "bi-house-door"),
             ("Financial operations", "Verify payments", "Payments", "PendingVerification", "bi-credit-card"),
             ("Financial operations", "Refund requests", "Payments", "RefundRequests", "bi-arrow-counterclockwise"),
+            ("Overview", "Booking overview", "Bookings", "Index", "bi-journal-text"),
             ("Overview", "Calendar", "Calendar", "Index", "bi-calendar3"),
             ("Overview", "Financial summary", "Reports", "Index", "bi-bar-chart"),
             ("Overview", "Packages", "Services", "Index", "bi-box-seam"),
