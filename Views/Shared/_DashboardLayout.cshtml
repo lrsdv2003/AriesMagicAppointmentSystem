@@ -78,12 +78,15 @@
 <a class="ui-skip-link" href="#mainContent">Skip to content</a>
 <div class="dashboard-shell">
     <header class="dashboard-topbar @(role == "Owner" ? "aries-staff-header" : "")">
-        <a class="workspace-brand" asp-controller="Home" asp-action="Index" aria-label="Aries d’ Magic Artist home">
+        <a class="workspace-brand" asp-controller="Home" asp-action="Index" aria-label="Aries D'Magic Artist home">
             <img src="~/images/client/wonder-studio/brand-original.jpeg" width="48" height="48" alt="" />
         </a>
         <div class="topbar-left">
             <button type="button" class="btn btn-outline-secondary ui-menu-toggle" data-bs-toggle="offcanvas" data-bs-target="#internalSidebar" aria-controls="internalSidebar" aria-expanded="false" aria-label="Open navigation"><i class="bi bi-list" aria-hidden="true"></i></button>
-            <span class="staff-round2-header-identity"><strong>@ViewData["Title"]</strong></span>
+            <div class="staff-round2-header-identity">
+                <a class="workspace-brand-title" asp-controller="Home" asp-action="Index">Aries D'Magic Artist</a>
+                <strong>@ViewData["Title"]</strong>
+            </div>
         </div>
         <div class="topbar-right">
             <a asp-controller="Communications" asp-action="Index" class="topbar-icon topbar-message-link" aria-label="Messages, @unreadMessageCount unread conversations"><i class="bi bi-chat-dots" aria-hidden="true"></i><span class="communication-unread-badge" @(unreadMessageCount == 0 ? "hidden" : null)>@(unreadMessageCount > 99 ? "99+" : unreadMessageCount)</span></a>

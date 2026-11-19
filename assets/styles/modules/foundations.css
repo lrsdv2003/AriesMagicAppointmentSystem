@@ -8124,6 +8124,15 @@ body.client-hub .hub-sidebar {
   bottom:0!important;
   height:calc(100dvh - 76px)!important;
 }
+:is(.hub-topbar,.dashboard-topbar) .staff-round2-header-identity .workspace-brand-title {
+  display:block;
+  color:#c5dcec;
+  font-size:clamp(.75rem,1.15vw,.875rem);
+  font-weight:650;
+  line-height:1.25;
+  overflow-wrap:anywhere;
+  text-decoration:none;
+}
 :is(body.client-hub .hub-topbar.aries-staff-header,
     body.internal-ui.owner-dashboard .dashboard-topbar.aries-staff-header) .workspace-brand {
   display:flex!important;

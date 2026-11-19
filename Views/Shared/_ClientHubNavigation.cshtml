@@ -9,11 +9,6 @@
         ("Refund requests", "Payments", "MyRefundRequests", "bi-arrow-return-left")
     };
 }
-<div class="hub-brand">
-    <a asp-controller="Home" asp-action="Index" class="client-brand" aria-label="Aries d’ Magic Artist home">
-        <img class="ws-brand-logo" src="~/images/client/wonder-studio/brand-original.jpeg" alt="" width="48" height="48" />
-    </a>
-</div>
 <nav class="hub-navigation" aria-label="Client navigation">
     <div class="hub-nav-group">
         @foreach (var (label, linkController, linkAction, icon) in links)

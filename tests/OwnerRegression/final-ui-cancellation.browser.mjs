@@ -43,6 +43,26 @@ async function layout(page, role, width) {
   const dimensions = await page.evaluate(() => ({width: innerWidth, content: document.documentElement.scrollWidth}));
   check(dimensions.content <= dimensions.width + 1, role + ' has no horizontal overflow at ' + width + 'px');
 }
+async function brandHeader(page, role) {
+  const state = await page.$eval('header .workspace-brand-title', title => {
+    const header = title.closest('header');
+    const range = document.createRange();
+    range.selectNodeContents(title);
+    const brand = range.getBoundingClientRect();
+    const pageTitle = title.nextElementSibling.getBoundingClientRect();
+    const bounds = header.getBoundingClientRect();
+    const controls = header.querySelector('.topbar-right,.hub-topbar-actions').getBoundingClientRect();
+    return {
+      title: title.textContent.trim(),
+      visible: brand.width > 0 && brand.height > 0 && brand.left >= bounds.left
+        && brand.right <= controls.left && brand.top >= bounds.top && brand.bottom <= pageTitle.top,
+      count: header.querySelectorAll('.workspace-brand-title').length,
+      home: title.href === header.querySelector('.workspace-brand').href
+    };
+  });
+  check(state.title === "Aries D'Magic Artist" && state.visible && state.count === 1 && state.home,
+    role + ' shows the full brand title once above the page title');
+}
 
 try {
   const client = await signIn('Client');
@@ -53,6 +73,11 @@ try {
   check(await client.$('main a[href*="CreateStepOne"]'), 'My Bookings keeps its plan-an-event link');
   check(await client.$$eval('.hub-sidebar nav a', links => links.length === 4), 'Client sidebar keeps all four module links');
   check(!(await client.$('.hub-sidebar .brand-copy,.hub-sidebar .hub-nav-caption,.hub-rail-footer,.hub-topbar-heading small')), 'Client shell has no redundant captions');
+  check(await client.$$eval('.hub-topbar .workspace-brand img', images => images.length === 1)
+    && !(await client.$('.hub-sidebar img,#hubDrawer img,#hubFallback img')), 'Client logo appears only in the header');
+  await brandHeader(client, 'Client desktop');
+  await client.setViewport({width: 320, height: 850});
+  await brandHeader(client, 'Client 320px');
   await layout(client, 'Client', 360);
   await client.click('#hubMenu');
   await client.waitForSelector('#hubDrawer[open]');
@@ -77,6 +102,9 @@ try {
     await visit(page, dashboard);
     check(!(await page.$('.workspace-sidebar-footer,.workspace-nav-group>p,.staff-round2-header-identity small')), role + ' shell removes duplicate group and branding captions');
     check(await page.$$eval('.sidebar-nav a', links => links.length >= 6), role + ' retains its workspace routes');
+    await brandHeader(page, role + ' desktop');
+    await page.setViewport({width: 320, height: 850});
+    await brandHeader(page, role + ' 320px');
     await layout(page, role, 360);
     await visit(page, dashboard);
     const menuState = await page.$eval('.ui-menu-toggle', button => {
