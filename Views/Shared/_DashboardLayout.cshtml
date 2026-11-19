@@ -78,13 +78,10 @@
 <a class="ui-skip-link" href="#mainContent">Skip to content</a>
 <div class="dashboard-shell">
     <header class="dashboard-topbar @(role == "Owner" ? "aries-staff-header" : "")">
-        <a class="workspace-brand" asp-controller="Home" asp-action="Index" aria-label="Aries D'Magic Artist home">
-            <img src="~/images/client/wonder-studio/brand-original.jpeg" width="48" height="48" alt="" />
-        </a>
         <div class="topbar-left">
             <button type="button" class="btn btn-outline-secondary ui-menu-toggle" data-bs-toggle="offcanvas" data-bs-target="#internalSidebar" aria-controls="internalSidebar" aria-expanded="false" aria-label="Open navigation"><i class="bi bi-list" aria-hidden="true"></i></button>
             <div class="staff-round2-header-identity">
-                <a class="workspace-brand-title" asp-controller="Home" asp-action="Index">Aries D'Magic Artist</a>
+                <partial name="_WorkspaceBrand" />
                 <strong>@ViewData["Title"]</strong>
             </div>
         </div>

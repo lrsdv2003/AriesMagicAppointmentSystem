@@ -44,24 +44,32 @@ async function layout(page, role, width) {
   check(dimensions.content <= dimensions.width + 1, role + ' has no horizontal overflow at ' + width + 'px');
 }
 async function brandHeader(page, role) {
+  await page.waitForFunction(() => document.querySelector('header .workspace-brand img')?.naturalWidth > 0);
   const state = await page.$eval('header .workspace-brand-title', title => {
     const header = title.closest('header');
+    const home = title.closest('a');
+    const logo = home.querySelector('img').getBoundingClientRect();
     const range = document.createRange();
     range.selectNodeContents(title);
     const brand = range.getBoundingClientRect();
-    const pageTitle = title.nextElementSibling.getBoundingClientRect();
+    const pageTitle = home.nextElementSibling.getBoundingClientRect();
     const bounds = header.getBoundingClientRect();
     const controls = header.querySelector('.topbar-right,.hub-topbar-actions').getBoundingClientRect();
     return {
       title: title.textContent.trim(),
-      visible: brand.width > 0 && brand.height > 0 && brand.left >= bounds.left
-        && brand.right <= controls.left && brand.top >= bounds.top && brand.bottom <= pageTitle.top,
-      count: header.querySelectorAll('.workspace-brand-title').length,
-      home: title.href === header.querySelector('.workspace-brand').href
+      besideLogo: logo.width > 0 && brand.left >= logo.right
+        && Math.abs(logo.top + logo.bottom - brand.top - brand.bottom) < 8,
+      fits: brand.width > 0 && brand.height > 0 && logo.left >= bounds.left
+        && brand.right <= controls.left + 1 && brand.top >= bounds.top && brand.bottom <= bounds.bottom
+        && (brand.right <= pageTitle.left + 1 || brand.bottom <= pageTitle.top + 1),
+      count: header.querySelectorAll('.workspace-brand').length,
+      home: home.classList.contains('workspace-brand') && new URL(home.href).pathname === '/'
     };
   });
-  check(state.title === "Aries D'Magic Artist" && state.visible && state.count === 1 && state.home,
-    role + ' shows the full brand title once above the page title');
+  check(state.title === "Aries D'Magic Artist" && state.besideLogo && state.fits && state.count === 1 && state.home,
+    role + ' shows the full brand title beside one logo in the Home link ' + JSON.stringify(state));
+  const brand = await page.$('header .workspace-brand');
+  await brand.screenshot({path: path.join(evidence, `brand-${role.toLowerCase().replaceAll(' ', '-')}.png`)});
 }
 
 try {
@@ -76,6 +84,8 @@ try {
   check(await client.$$eval('.hub-topbar .workspace-brand img', images => images.length === 1)
     && !(await client.$('.hub-sidebar img,#hubDrawer img,#hubFallback img')), 'Client logo appears only in the header');
   await brandHeader(client, 'Client desktop');
+  await client.setViewport({width: 768, height: 850});
+  await brandHeader(client, 'Client tablet');
   await client.setViewport({width: 320, height: 850});
   await brandHeader(client, 'Client 320px');
   await layout(client, 'Client', 360);
@@ -103,6 +113,8 @@ try {
     check(!(await page.$('.workspace-sidebar-footer,.workspace-nav-group>p,.staff-round2-header-identity small')), role + ' shell removes duplicate group and branding captions');
     check(await page.$$eval('.sidebar-nav a', links => links.length >= 6), role + ' retains its workspace routes');
     await brandHeader(page, role + ' desktop');
+    await page.setViewport({width: 768, height: 850});
+    await brandHeader(page, role + ' tablet');
     await page.setViewport({width: 320, height: 850});
     await brandHeader(page, role + ' 320px');
     await layout(page, role, 360);

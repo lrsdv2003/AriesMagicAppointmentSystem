@@ -57,8 +57,12 @@ try {
                 assert.equal(columns, 3, 'Owner packages must use three desktop columns');
             }
             if (name === 'Calendar-StaffIndex' && width === 390) {
-                const brandDisplay = await page.$eval('.dashboard-topbar .workspace-brand', e=>getComputedStyle(e).display);
-                assert.equal(brandDisplay, 'none', 'Staff mobile header must avoid doubled overlapping branding');
+                const brandVisible = await page.$eval('.dashboard-topbar .workspace-brand', e => {
+                    const logo = e.querySelector('img').getBoundingClientRect();
+                    const title = e.querySelector('.workspace-brand-title').getBoundingClientRect();
+                    return logo.width > 0 && title.width > 0 && title.left >= logo.right;
+                });
+                assert(brandVisible, 'Staff mobile header must show the brand title beside the logo');
             }
             if (name === 'Bookings-MyBookings') {
                 const rects = await page.evaluate(() => [document.querySelector('#bookingSearch'), document.querySelector('.aries-client-round3-toolbar .dropdown'),
