@@ -12,28 +12,25 @@
         HideSinglePageControls = !financial
     };
     var filteredEmpty = financial ? HistoryPresentation.Filtered(Model.Filters) || Model.Summary.HistoryCount > 0 : Model.Summary.HistoryCount > 0;
+    var pageClass = financial ? "owner-financial-page owner-queue-page owner-history-workspace" : "ui-page history-page staff-final-round-history";
+    var tableClass = financial ? "table owner-audit-table staff-data-table align-middle owner-history-table" : "ui-table staff-data-table staff-history-table";
 }
-<div class="ui-page history-page staff-final-round-history @(financial ? "owner-history-workspace" : "")">
+<div class="@pageClass">
+<partial name="_HistoryFilters" model="Model" />
 @if (financial)
 {
-    <div class="owner-history-toolbar">
-        <partial name="_HistoryFilters" model="Model" />
-        <a asp-controller="TrashHistory" asp-action="Index" class="btn btn-outline-secondary owner-history-archives">
-            <i class="bi bi-archive" aria-hidden="true"></i> Archives
-        </a>
-    </div>
     <p id="ownerHistoryRefreshStatus" class="owner-history-refresh-feedback" role="alert" aria-live="assertive" hidden></p>
 }
-else
-{
-    <partial name="_HistoryFilters" model="Model" />
-}
 <div data-staff-search-results="history" id="historyResults">
-    <div class="staff-data-table-frame @(financial ? "owner-history-table-frame" : "staff-history-table-frame")"
+    <div class="staff-data-table-frame @(financial ? "owner-queue-table-frame owner-history-table-frame" : "staff-history-table-frame")"
          data-staff-table-capacity="5">
-        <div class="ui-table-wrap staff-data-table-scroll" tabindex="0" role="region"
+        @if (financial)
+        {
+            @:<div class="dashboard-panel owner-table-panel staff-data-table-panel">
+        }
+        <div class="@(financial ? "table-responsive" : "ui-table-wrap") staff-data-table-scroll" tabindex="0" role="region"
              aria-label="Historical booking records; scroll horizontally to view all columns">
-            <table class="ui-table staff-data-table @(financial ? "owner-history-table" : "staff-history-table")">
+            <table class="@tableClass">
                 <caption class="visually-hidden">Historical booking records</caption>
                 @if (financial)
                 {
@@ -64,7 +61,7 @@ else
                         <th scope="col">Package</th>
                         <th scope="col">@(financial ? "Payment status" : "Client Name")</th>
                         <th scope="col">Final status</th>
-                        <th scope="col">Details</th>
+                        <th scope="col" class="@(financial ? "text-end" : null)">Details</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -95,15 +92,15 @@ else
                         {
                             <tr>
                                 <td data-label="@(financial ? "Booking / Client" : "Booking ID")">
-                                    <strong>@row.BookingCode</strong>
+                                    <strong class="@(financial ? "owner-booking-code" : null)">@row.BookingCode</strong>
                                     @if (financial)
                                     {
-                                        <span class="ui-cell-secondary">@row.ClientName</span>
+                                        <span class="owner-cell-subtext">@row.ClientName</span>
                                     }
                                 </td>
                                 <td data-label="Event">
                                     <span>@row.EventDate.ToString("MMM d, yyyy")</span>
-                                    <span class="ui-cell-secondary">@row.StartTime.ToString("h:mm tt") &ndash; @row.EndTime.ToString("h:mm tt")</span>
+                                    <span class="@(financial ? "owner-cell-subtext" : "ui-cell-secondary")">@row.StartTime.ToString("h:mm tt") &ndash; @row.EndTime.ToString("h:mm tt")</span>
                                 </td>
                                 <td data-label="Package">@row.PackageName</td>
                                 @if (financial)
@@ -115,8 +112,8 @@ else
                                     <td data-label="Client Name">@row.ClientName</td>
                                 }
                                 <td data-label="Final status"><partial name="_StatusBadge" model="row.BookingStatus" /></td>
-                                <td data-label="Details">
-                                    <a asp-action="Details" asp-route-id="@row.Id" class="btn btn-outline-primary"
+                                <td data-label="Details" class="@(financial ? "text-end" : null)">
+                                    <a asp-action="Details" asp-route-id="@row.Id" class="@(financial ? "btn btn-sm btn-primary" : "btn btn-outline-primary")"
                                        aria-label="View Details for @row.BookingCode">View Details</a>
                                 </td>
                             </tr>
@@ -125,6 +122,10 @@ else
                 </tbody>
             </table>
         </div>
+        @if (financial)
+        {
+            @:</div>
+        }
         <partial name="_QueuePagination" model="historyPager" />
     </div>
 </div>

@@ -1,36 +1,64 @@
 @model AriesMagicAppointmentSystem.ViewModels.HistoryIndexViewModel
 @using AriesMagicAppointmentSystem.Models
-@{ var f = Model.Filters; }
-<form method="get" asp-action="Index" class="am-filter-bar staff-final-filter-toolbar aries-round3-toolbar" data-aries-round3-filter="true" data-staff-autosearch="history" role="search">
-<div class="am-filter-row">
-<div class="am-filter-search"><i class="bi bi-search" aria-hidden="true"></i><label for="historySearch" class="visually-hidden">Search booking or client</label><input id="historySearch" name="Search" value="@f.Search" placeholder="Search booking ID, client, or package" autocomplete="off" class="form-control" /></div>
+@using Microsoft.AspNetCore.Mvc.Rendering
+@{
+    var f = Model.Filters;
+    var isOwner = User.IsInRole("Owner");
+    var staffAutoSearch = isOwner ? null : "history";
+    var toolbarClass = isOwner ? "am-filter-bar am-filter-row aries-round3-toolbar" : "am-filter-bar staff-final-filter-toolbar aries-round3-toolbar";
+    var menuClass = isOwner ? "dropdown-menu dropdown-menu-end p-3" : "dropdown-menu dropdown-menu-end";
+    var fieldLabelClass = isOwner ? "form-label" : null;
+    var selectClass = isOwner ? "form-select mb-3" : "form-select";
+    var sortOptions = new List<SelectListItem>
+    {
+        new("Newest event", "Newest", f.SortBy == "Newest" || string.IsNullOrEmpty(f.SortBy)),
+        new("Oldest event", "Oldest", f.SortBy == "Oldest")
+    };
+    if (isOwner || !User.IsInRole("Staff"))
+        sortOptions.Add(new("Client name", "ClientName", f.SortBy == "ClientName"));
+}
+<form method="get" asp-action="Index" class="@toolbarClass" data-aries-round3-filter="true" data-staff-autosearch="@staffAutoSearch" role="search" aria-label="History filters">
+@if (!isOwner) {
+    @:<div class="am-filter-row">
+}
+<div class="am-filter-search"><i class="bi bi-search" aria-hidden="true"></i><label for="historySearch" class="visually-hidden">Search booking ID, client, or package</label><input type="@(isOwner ? "search" : null)" id="historySearch" name="Search" value="@f.Search" placeholder="Search booking ID, client, or package" autocomplete="off" class="@(isOwner ? null : "form-control")" /></div>
 <div class="dropdown">
 <button type="button" class="btn btn-outline-secondary dropdown-toggle" id="historyFilterToggle" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false"><i class="bi bi-funnel" aria-hidden="true"></i> Filters</button>
-<div class="dropdown-menu dropdown-menu-end" aria-labelledby="historyFilterToggle">
-<div><label for="historyPackage">Package</label><select class="form-select" id="historyPackage" name="ServiceId"><option value="">All packages</option>@foreach(var service in Model.AvailableServices) { <option value="@service.Id" selected="@(f.ServiceId==service.Id)">@service.Name</option> }</select></div>
+<div class="@menuClass" aria-labelledby="historyFilterToggle">
+<div><label class="@fieldLabelClass" for="historyPackage">Package</label><select class="@selectClass" id="historyPackage" name="ServiceId"><option value="">All packages</option>@foreach(var service in Model.AvailableServices) { <option value="@service.Id" selected="@(f.ServiceId==service.Id)">@service.Name</option> }</select></div>
 <input type="hidden" name="BookingStatus" value="Completed" />
-<div><label for="historyDate">Event date</label><select class="form-select" id="historyDate" name="DateRange"><option value="">Any time</option><option value="Today" selected="@(f.DateRange=="Today")">Today</option><option value="ThisWeek" selected="@(f.DateRange=="ThisWeek")">This week</option><option value="ThisMonth" selected="@(f.DateRange=="ThisMonth")">This month</option><option value="Year" selected="@(f.DateRange=="Year")">Selected year</option></select></div>
-<div><label for="historyYear">Year (with selected year)</label><input class="form-control" id="historyYear" name="Year" type="number" min="1900" max="9999" value="@(f.Year??DateTime.Today.Year)" /></div>
-@if(User.IsInRole("Owner")) {
-<div><label for="historyPayment">Payment review state</label><select class="form-select" id="historyPayment" name="PaymentStatus"><option value="">All states</option>@foreach(var status in new[]{"No Payment",PaymentStatus.Pending,PaymentStatus.Verified,PaymentStatus.Rejected,PaymentStatus.AdditionalEvidenceRequired}) { <option value="@status" selected="@(f.PaymentStatus==status)">@AriesMagicAppointmentSystem.ViewModels.BusinessActivityPresentation.Label(status)</option> }</select></div>
-}
-<div><label for="historySort">Sort by</label><select class="form-select" id="historySort" name="SortBy"><option value="Newest" selected="@(f.SortBy=="Newest"||string.IsNullOrEmpty(f.SortBy))">Newest event</option><option value="Oldest" selected="@(f.SortBy=="Oldest")">Oldest event</option>@if (!User.IsInRole("Staff") || User.IsInRole("Owner")) { <option value="ClientName" selected="@(f.SortBy=="ClientName")">Client name</option> }</select></div>
+<div><label class="@fieldLabelClass" for="historyDate">Event date</label><select class="@selectClass" id="historyDate" name="DateRange"><option value="">Any time</option><option value="Today" selected="@(f.DateRange=="Today")">Today</option><option value="ThisWeek" selected="@(f.DateRange=="ThisWeek")">This week</option><option value="ThisMonth" selected="@(f.DateRange=="ThisMonth")">This month</option><option value="Year" selected="@(f.DateRange=="Year")">Selected year</option></select></div>
+<div><label class="@fieldLabelClass" for="historyYear">Year (with selected year)</label><input class="@(isOwner ? "form-control mb-3" : "form-control")" id="historyYear" name="Year" type="number" min="1900" max="9999" value="@(f.Year??DateTime.Today.Year)" /></div>
+@if (isOwner) {
+<div><label class="@fieldLabelClass" for="historyPayment">Payment review state</label><select class="@selectClass" id="historyPayment" name="PaymentStatus"><option value="">All states</option>@foreach(var status in new[]{"No Payment",PaymentStatus.Pending,PaymentStatus.Verified,PaymentStatus.Rejected,PaymentStatus.AdditionalEvidenceRequired}) { <option value="@status" selected="@(f.PaymentStatus==status)">@AriesMagicAppointmentSystem.ViewModels.BusinessActivityPresentation.Label(status)</option> }</select></div>
+<a asp-action="Index" class="btn btn-outline-secondary btn-sm">Reset filters</a>
+} else {
+<div><label for="historySort">Sort by</label><select class="form-select" id="historySort" name="SortBy" asp-items="sortOptions"></select></div>
 <div class="am-filter-actions"><a asp-action="Index" class="btn btn-outline-secondary btn-sm">Reset filters</a></div>
+}
 </div>
 </div>
+@if (isOwner) {
+<div class="owner-queue-sort">
+    <label for="historySort">Sort by</label>
+    <select class="form-select" id="historySort" name="SortBy" asp-items="sortOptions"></select>
+</div>
+}
 <input type="hidden" name="PageSize" value="@f.PageSize" />
 @if(f.CompletedDateFrom.HasValue) { <input type="hidden" name="CompletedDateFrom" value="@f.CompletedDateFrom.Value.ToString("yyyy-MM-dd")" /> }
 @if(f.CompletedDateTo.HasValue) { <input type="hidden" name="CompletedDateTo" value="@f.CompletedDateTo.Value.ToString("yyyy-MM-dd")" /> }
 @if(!string.IsNullOrEmpty(f.EventType)) { <input type="hidden" name="EventType" value="@f.EventType" /> }
-@if(User.IsInRole("Owner") && !string.IsNullOrEmpty(f.RefundStatus)) { <input type="hidden" name="RefundStatus" value="@f.RefundStatus" /> }
+@if(isOwner && !string.IsNullOrEmpty(f.RefundStatus)) { <input type="hidden" name="RefundStatus" value="@f.RefundStatus" /> }
 <button type="submit" class="visually-hidden">Search history</button>
 <a asp-action="Index" asp-all-route-data="@AriesMagicAppointmentSystem.ViewModels.HistoryPresentation.Routes(f)"
-   class="btn btn-outline-secondary aries-round3-refresh @(User.IsInRole("Staff") && !User.IsInRole("Owner") ? "staff-history-refresh" : "owner-history-refresh")"
-   aria-label="@(User.IsInRole("Owner") ? "Refresh booking history" : "Refresh history")"
-   title="@(User.IsInRole("Owner") ? "Refresh booking history" : "Refresh history")"
-   data-owner-history-refresh="@(User.IsInRole("Owner") ? "true" : null)">
+   class="btn btn-outline-secondary @(isOwner ? "owner-queue-refresh" : "aries-round3-refresh staff-history-refresh")"
+   aria-label="@(isOwner ? "Refresh booking history" : "Refresh history")"
+   title="@(isOwner ? "Refresh booking history" : "Refresh history")"
+   data-owner-history-refresh="@(isOwner ? "true" : null)">
     <i class="bi bi-arrow-clockwise" aria-hidden="true"></i>
-    @if (!User.IsInRole("Owner")) { <span class="visually-hidden">Refresh</span> }
+    @if (!isOwner) { <span class="visually-hidden">Refresh</span> }
 </a>
-</div>
+@if (!isOwner) {
+    @:</div>
+}
 </form>

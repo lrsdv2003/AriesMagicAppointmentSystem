@@ -15,7 +15,7 @@
         PaymentStatus.Pending => "AWAITING REVIEW", PaymentStatus.AdditionalEvidenceRequired => "ADDITIONAL EVIDENCE REQUIRED",
         PaymentStatus.Verified => "VERIFIED", PaymentStatus.Rejected => "REJECTED", _ => status.ToUpperInvariant() };
 }
-<div class="owner-financial-page owner-payment-verification">
+<div class="owner-financial-page owner-queue-page">
 
     @if(TempData["Success"]!=null){<div class="alert alert-success" role="status">@TempData["Success"]</div>}
     @if(TempData["Error"]!=null){<div class="alert alert-danger" role="alert">@TempData["Error"]</div>}
@@ -31,7 +31,7 @@
                 <a asp-action="PendingVerification" class="btn btn-outline-secondary btn-sm">Reset filters</a>
             </div>
         </div>
-        <div class="owner-verification-sort">
+        <div class="owner-queue-sort">
             <label for="round3Sort_Payments">Sort by</label>
             <select class="form-select" id="round3Sort_Payments" name="sortBy" data-owner-verification-sort aria-label="Sort payments by submission date">
                 <option value="newest" selected="@((string?)ViewBag.SortBy != "oldest")">Newest to Oldest</option>
@@ -39,9 +39,9 @@
             </select>
         </div>
         <button class="visually-hidden" type="submit">Search</button>
-        <a class="btn btn-outline-secondary owner-verification-refresh" asp-action="PendingVerification" asp-all-route-data="pagination.Routes()" data-queue-refresh aria-label="Refresh payment verification records" title="Refresh payment verification records"><i class="bi bi-arrow-clockwise" aria-hidden="true"></i></a>
+        <a class="btn btn-outline-secondary owner-queue-refresh" asp-action="PendingVerification" asp-all-route-data="pagination.Routes()" data-queue-refresh aria-label="Refresh payment verification records" title="Refresh payment verification records"><i class="bi bi-arrow-clockwise" aria-hidden="true"></i></a>
     </form>
-    <div class="staff-data-table-frame owner-verification-table-frame" data-staff-table-capacity="5">
+    <div class="staff-data-table-frame owner-queue-table-frame owner-verification-table-frame" data-staff-table-capacity="5">
         <div class="dashboard-panel owner-table-panel staff-data-table-panel">
             <div class="table-responsive staff-data-table-scroll" tabindex="0" role="region" aria-label="Payment records; scroll horizontally for all columns">
                 <table class="table owner-audit-table staff-data-table align-middle">

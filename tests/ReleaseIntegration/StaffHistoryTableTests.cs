@@ -174,11 +174,15 @@ internal static class StaffHistoryTableTests
                 {
                     using(var ownerEmpty=await owner.GetAsync("/History/Index"))
                     {
-                        var content=OwnerTable(await ownerEmpty.Content.ReadAsStringAsync());
+                        var ownerHtml=await ownerEmpty.Content.ReadAsStringAsync();
+                        var content=OwnerTable(ownerHtml);
                         Check(content.Contains("No booking history",StringComparison.Ordinal)
                               && content.Contains("No historical booking records are available.",StringComparison.Ordinal),
                               "Owner zero-record History shows the intended default in-table empty state");
+                        await Save("owner-history-0",ownerHtml);
                     }
+                    if(fixtures!=null)
+                        await Save("owner-payment-0",await owner.GetStringAsync("/Payments/PendingVerification"));
                     using(var baseline=await owner.GetAsync("/History/Index?BookingStatus=Completed"))
                         Check(OwnerTable(await baseline.Content.ReadAsStringAsync())
                               .Contains("No booking history",StringComparison.Ordinal),
@@ -301,12 +305,14 @@ internal static class StaffHistoryTableTests
                 var html=await ownerPage.Content.ReadAsStringAsync();
                 var table=OwnerTable(html);
                 Check(ownerPage.StatusCode==HttpStatusCode.OK
-                    && html.Contains("staff-data-table-frame owner-history-table-frame",StringComparison.Ordinal)
+                    && html.Contains("staff-data-table-frame owner-queue-table-frame owner-history-table-frame",StringComparison.Ordinal)
+                    && html.Contains("dashboard-panel owner-table-panel staff-data-table-panel",StringComparison.Ordinal)
                     && html.Contains("staff-data-table-scroll",StringComparison.Ordinal)
                     && html.Contains("data-staff-table-capacity=\"5\"",StringComparison.Ordinal)
+                    && table.Contains("owner-audit-table",StringComparison.Ordinal)
                     && table.Contains("<colgroup>",StringComparison.Ordinal)
                     && Regex.Matches(table,"<th scope=\"col\"").Count==6,
-                    "Owner adopts six-column Staff Bookings table foundation");
+                    "Owner History uses the shared Verify Payment table shell with all six History columns");
                 Check(DetailIds(table).Count==5 && html.Contains("10 matching records",StringComparison.Ordinal)
                     && html.Contains("Page 1 of 2",StringComparison.Ordinal),
                     "Owner History displays five results and accurate server pagination");
@@ -315,11 +321,14 @@ internal static class StaffHistoryTableTests
                     && !html.Contains(">Refresh</span>",StringComparison.Ordinal)
                     && html.Contains("/js/owner-history.js",StringComparison.Ordinal),
                     "Owner Refresh is icon-only and provides in-place refresh behavior");
-                Check(html.Contains("href=\"/TrashHistory",StringComparison.Ordinal)
+                var workspace=Regex.Match(html,@"<main\b[^>]*>.*?</main>",RegexOptions.Singleline);
+                Check(workspace.Success
+                    && !workspace.Value.Contains("href=\"/TrashHistory",StringComparison.Ordinal)
+                    && html.Contains("href=\"/TrashHistory",StringComparison.Ordinal)
                     && !html.Contains("Completed events appear here.",StringComparison.Ordinal)
                     && !html.Contains("id=\"historyExport\"",StringComparison.Ordinal)
                     && !html.Contains("asp-action=\"Export",StringComparison.Ordinal),
-                    "History description/export removed while Archives navigation remains");
+                    "History omits the Archives control and retired export while the sidebar Archives link remains");
                 await Save("owner-history-10",html);
             }
             using(var ownerPage2=await owner.GetAsync("/History/Index?Page=2&SortBy=Oldest"))
@@ -354,6 +363,7 @@ internal static class StaffHistoryTableTests
                 Check(OwnerTable(html).Contains("No matching records",StringComparison.Ordinal)
                     && OwnerTable(html).Contains("Try adjusting your search or filters.",StringComparison.Ordinal),
                     "Owner empty search shows contextual in-table empty state");
+                await Save("owner-history-no-match",html);
             }
             using(var ownerDetail=await owner.GetAsync("/History/Details/"+sought.Id))
                 Check(ownerDetail.StatusCode==HttpStatusCode.OK,
@@ -378,6 +388,18 @@ internal static class StaffHistoryTableTests
             Check(await db.Payments.AsNoTracking().CountAsync()==0 &&
                 await db.RefundRequests.AsNoTracking().CountAsync()==0,
                 "History UI change does not create payment/refund entries");
+            if (fixtures != null)
+            {
+                db.Payments.AddRange(bookings.Take(5).Select(booking => new Payment
+                {
+                    BookingId = booking.Id,
+                    Amount = 2000m,
+                    Status = PaymentStatus.Pending,
+                    ProofImagePath = "synthetic-history-payment.png"
+                }));
+                await db.SaveChangesAsync();
+                await Save("owner-payment-5", await owner.GetStringAsync("/Payments/PendingVerification"));
+            }
             Console.WriteLine($"STAFF_HISTORY_INTEGRATION_PASS: {checks} isolated SQL/Razor checks");
         }
         finally
