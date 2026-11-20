@@ -3,11 +3,38 @@
 @{
  Layout="_ClientHubLayout";ViewData["Title"]="Upload payment";
  var payable=ViewBag.PayableBookingOptions as List<SelectListItem>??new();
+ var replacements = Model.Where(payment => payment.Status == PaymentStatus.AdditionalEvidenceRequired).ToList();
+ var awaitingReview = Model.Any(payment => payment.Status == PaymentStatus.Pending);
 }
 <div class="cn-page cn-payment-page client-round2-action-page">
 
  @if(TempData["Success"] is string success){<div class="cn-success" role="status"><strong>Receipt submitted.</strong> @success <a asp-controller="Bookings" asp-action="MyBookings">Track this in My Bookings</a></div>}
  @if(TempData["Error"] is string error){<div class="cn-error-summary" role="alert">@error</div>}
+ @foreach (var payment in replacements)
+ {
+     var sectionId = $"replace-proof-{payment.Id}";
+     var fileId = $"{sectionId}-image";
+     var helpId = $"{sectionId}-help";
+     var headingId = $"{sectionId}-title";
+     var bookingCode = payment.Booking is { } booking
+         ? $"BK-{booking.CreatedAt.Year}-{booking.Id:D3}"
+         : $"Booking #{payment.BookingId}";
+     <section id="@sectionId" class="hub-card r2-select-card mb-3" aria-labelledby="@headingId">
+         <h2 id="@headingId">Replace payment proof</h2>
+         <p><a asp-controller="Bookings" asp-action="Details" asp-route-id="@payment.BookingId">@bookingCode</a> · Receipt for ₱@payment.Amount.ToString("N2")</p>
+         <p>@(string.IsNullOrWhiteSpace(payment.ReviewerNote) ? "The Owner requested a clearer image of your receipt." : payment.ReviewerNote)</p>
+         <form asp-action="ReplaceProof" method="post" enctype="multipart/form-data" class="r2-selection-form" data-booking-submit>
+             <input type="hidden" name="id" value="@payment.Id" />
+             <div class="cn-field">
+                 <label for="@fileId">Choose a replacement receipt</label>
+                 <input id="@fileId" name="proofImage" class="form-control" type="file"
+                        accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" aria-describedby="@helpId" required />
+                 <div id="@helpId" class="cn-help">Use a JPG, PNG, or WEBP image up to 5 MB for the same payment.</div>
+             </div>
+             <button type="submit" class="cn-button cn-primary">Submit replacement proof</button>
+         </form>
+     </section>
+ }
  @if(payable.Any()){
  <section class="hub-card r2-select-card">
   <div class="r2-card-icon"><i class="bi bi-wallet2" aria-hidden="true"></i></div>
@@ -18,7 +45,18 @@
    <button class="cn-button cn-primary" type="submit">Continue to payment <i class="bi bi-arrow-right" aria-hidden="true"></i></button>
   </form>
  </section>}
- else{
- <section class="hub-card r2-empty-action" role="status"><i class="bi bi-check2-circle" aria-hidden="true"></i><h2>No payments needed right now</h2><p>You currently have no bookings requiring payment submission. View My Bookings to check booking statuses, previous receipts and verified balances.</p><a asp-controller="Bookings" asp-action="MyBookings" class="cn-button cn-primary">View my bookings <i class="bi bi-arrow-right" aria-hidden="true"></i></a></section>}
+ else if (replacements.Count == 0) {
+ <section class="hub-card r2-empty-action" role="status"><i class="bi bi-check2-circle" aria-hidden="true"></i>
+  <h2>@(awaitingReview ? "Awaiting payment verification" : "No payments needed right now")</h2>
+  <p>@(awaitingReview ? "Your payment proof is with the Owner for review." : "You currently have no bookings requiring payment submission. View My Bookings to check booking statuses, previous receipts and verified balances.")</p>
+  <a asp-controller="Bookings" asp-action="MyBookings" class="cn-button cn-primary">View my bookings <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+ </section>}
 
 </div>
+
+@section Scripts {
+    @if (replacements.Count > 0)
+    {
+        <script src="~/js/booking-experience.js" asp-append-version="true"></script>
+    }
+}

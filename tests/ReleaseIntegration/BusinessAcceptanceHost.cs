@@ -97,10 +97,30 @@ internal static class BusinessAcceptanceHost
             await Verified(reschedule,DateTime.UtcNow.AddHours(-30));
             await Verified(cancel,DateTime.UtcNow.AddHours(-1));
             db.BookingTimelines.Add(new(){BookingId=overdue.Id,EventType=TimelineEventType.PaymentWindowOpened,CreatedAt=DateTime.UtcNow.AddHours(-26),Notes="Isolated overdue fixture"});
+            Payment? replacementProof = null;
+            if (finalUi)
+            {
+                var replacementBooking = NewBooking(92, BookingStatus.AwaitingVerification);
+                var originalPath = "payments/" + Guid.NewGuid().ToString("N") + ".png";
+                File.Copy(proofSource, Path.Combine(privateRoot, "financial-proofs", originalPath));
+                replacementProof = new Payment
+                {
+                    Booking = replacementBooking, Amount = 2000, ExpectedAmountAtUpload = 2000,
+                    ProofImagePath = originalPath, Status = PaymentStatus.Pending,
+                    UploadedAt = DateTime.Now.AddHours(-25)
+                };
+                db.Payments.Add(replacementProof);
+                db.BookingTimelines.Add(new BookingTimeline
+                {
+                    Booking = replacementBooking, EventType = TimelineEventType.PaymentWindowOpened,
+                    CreatedAt = DateTime.UtcNow.AddHours(-26), Notes = "Initial receipt arrived before the deadline"
+                });
+            }
             await db.SaveChangesAsync();
             var state=new{
                 url=host.ClientOptions.BaseAddress!.ToString().TrimEnd('/'),database=name,privateRoot,packageId=package.Id,
                 bookings=new{decline=decline.Id,reschedule=reschedule.Id,cancel=cancel.Id,overdue=overdue.Id,competing=competing.Id},
+                replacementProof = replacementProof == null ? null : new { paymentId = replacementProof.Id, bookingId = replacementProof.BookingId },
                 requestedDate=DateTime.Today.AddDays(87).ToString("yyyy-MM-dd"),
                 credentials=passwords,doneFile=Path.GetFullPath(done)};
             await File.WriteAllTextAsync(handoff,JsonSerializer.Serialize(state,new JsonSerializerOptions{WriteIndented=true}));
@@ -120,6 +140,12 @@ internal static class BusinessAcceptanceHost
                     && await db.Payments.AnyAsync(p => p.BookingId == cancel.Id && p.Status == PaymentStatus.Verified)
                     && !await db.RefundRequests.AnyAsync(r => r.BookingId == cancel.Id),
                     "Browser cancellation persisted in SQL with its verified payment and no refund");
+                var replaced = await db.Payments.AsNoTracking().SingleAsync(p => p.Id == replacementProof!.Id);
+                Check(replaced.Status == PaymentStatus.Pending && replaced.Amount == replacementProof!.Amount
+                    && replaced.ProofImagePath != replacementProof.ProofImagePath
+                    && await db.PaymentProofRevisions.AnyAsync(p => p.PaymentId == replaced.Id && p.ProofImagePath == replacementProof.ProofImagePath)
+                    && await db.Payments.CountAsync(p => p.BookingId == replaced.BookingId) == 1,
+                    "Browser replaced the receipt after the initial deadline, retaining one payment and its former proof");
                 return;
             }
             var all=await db.Bookings.AsNoTracking().Where(b=>new[]{decline.Id,reschedule.Id,cancel.Id,overdue.Id,competing.Id}.Contains(b.Id)).ToListAsync();

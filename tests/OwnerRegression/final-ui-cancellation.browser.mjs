@@ -194,6 +194,41 @@ try {
   check(!(await owner.$(trigger)) && (await owner.$eval('main', element => element.innerText)).includes('No refund was approved or issued'), 'Cancellation removes the upcoming event and explains the separate financial review');
   await visit(client, '/Notifications');
   check((await client.$eval('main', element => element.innerText)).includes('Any refund is handled separately'), 'Affected Client sees the cancellation and refund distinction');
+
+  const proof = fixture.replacementProof;
+  const replacementSection = '#replace-proof-' + proof.paymentId;
+  await visit(owner, '/Payments/Verify/' + proof.paymentId);
+  await owner.click('[data-bs-target="#evidencePaymentModal"]');
+  await owner.waitForSelector('#evidencePaymentModal.show');
+  const instructions = 'Please include the complete transaction number.';
+  await owner.type('#evidenceReason', instructions);
+  await Promise.all([owner.waitForNavigation({waitUntil: 'domcontentloaded'}), owner.click('#evidencePaymentModal button[type=submit]')]);
+  await client.setViewport({width: 390, height: 850});
+  await visit(client, '/Notifications');
+  const notificationAction = await client.$$eval('article.notice-row', elements =>
+    elements.find(element => element.querySelector('h2')?.textContent === 'Additional Payment Proof Required')
+      ?.querySelector('form')?.getAttribute('action'));
+  check(notificationAction, 'Client receives an actionable replacement request notification');
+  await Promise.all([client.waitForNavigation({waitUntil: 'domcontentloaded'}), client.click(`form[action="${notificationAction}"] button`)]);
+  check(new URL(client.url()).hash === replacementSection, 'Notification opens the flagged payment in Client Payments');
+  const picker = replacementSection + ' input[type=file]';
+  check(await client.$eval(picker, input => input.required && input.labels.length === 1
+    && input.name === 'proofImage' && input.form.enctype === 'multipart/form-data'
+    && !!input.form.querySelector('[name="__RequestVerificationToken"]')), 'Replacement picker is labelled and posts a protected multipart form');
+  check((await client.$eval(replacementSection, element => element.innerText)).includes(instructions)
+    && !(await client.$eval('main', element => element.innerText)).includes('No payments needed right now'),
+    'Client sees the Owner instructions even with no new payment due');
+  await layout(client, 'Replacement payment proof', 390);
+  await client.screenshot({path: path.join(evidence, 'replacement-proof-mobile.png')});
+  await visit(client, '/Bookings/Details/' + proof.bookingId);
+  await Promise.all([client.waitForNavigation({waitUntil: 'domcontentloaded'}), client.click(`a[href="/Payments/MyUploads${replacementSection}"]`)]);
+  check(new URL(client.url()).hash === replacementSection, 'Booking Details opens the same replacement form');
+  const file = await client.$(picker);
+  await file.uploadFile(path.resolve('tests/ReleaseIntegration/Fixtures/payment.png'));
+  await Promise.all([client.waitForNavigation({waitUntil: 'domcontentloaded'}), client.click(replacementSection + ' button[type=submit]')]);
+  check(!(await client.$(replacementSection)) && (await client.$eval('main', element => element.innerText))
+    .includes('Your new payment proof was submitted and is awaiting Owner verification.'),
+    'Client submits the replacement and sees that it is awaiting Owner verification');
   passed = true;
 } finally {
   await browser.close();

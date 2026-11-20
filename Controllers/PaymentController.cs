@@ -441,7 +441,9 @@ namespace AriesMagicAppointmentSystem.Controllers
             payment.VerifiedByUserName = User.Identity?.Name;
             await _context.SaveChangesAsync();
             if (!string.IsNullOrWhiteSpace(payment.Booking?.ApplicationUserId))
-                await CreateNotificationAsync(payment.Booking.ApplicationUserId, "Additional Payment Proof Required", "We were unable to fully verify your payment proof. Please upload a clearer screenshot or provide additional payment information.", "/Payments/MyUploads");
+                await CreateNotificationAsync(payment.Booking.ApplicationUserId, "Additional Payment Proof Required",
+                    "Please upload a new receipt image for the same payment. Open Payments to view the Owner's instructions.",
+                    $"/Payments/MyUploads#replace-proof-{payment.Id}");
             await LogActivityAsync(SystemActivityType.PaymentAdditionalEvidenceRequested, $"Owner requested additional evidence for payment #{id}.", id.ToString(), "Payment", new { PreviousStatus = previousStatus, NewStatus = payment.Status, OwnerUserId = payment.VerifiedByUserId, OwnerName = payment.VerifiedByUserName, ReviewNotes = payment.ReviewerNote });
             await transaction.CommitAsync();
             TempData["Success"] = "Client was asked to submit additional payment evidence.";

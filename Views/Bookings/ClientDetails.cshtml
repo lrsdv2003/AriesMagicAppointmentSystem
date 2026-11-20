@@ -9,6 +9,8 @@
     var paymentDeadline = ViewBag.PaymentDeadline as DateTime?;
     var clientRefunds = ViewBag.ClientRefunds as List<RefundRequest> ?? new();
     var changeProposal = ViewBag.PendingConfirmedChange as ConfirmedBookingChangeProposal;
+    var paymentToReplace = Model.Payments.Where(payment => payment.Status == PaymentStatus.AdditionalEvidenceRequired)
+        .OrderByDescending(payment => payment.UploadedAt).ThenByDescending(payment => payment.Id).FirstOrDefault();
     var canCancel = new[] { BookingStatus.Pending, BookingStatus.AwaitingDownpayment, BookingStatus.AwaitingVerification, BookingStatus.Confirmed }.Contains(Model.Status);
     var canDirectCancel = ViewBag.CanDirectCancel is bool direct && direct;
     var directCancelDeadline = ViewBag.CancellationDeadline as DateTime?;
@@ -139,8 +141,8 @@
 @if(canPay && finance?.TotalVerifiedPayments<=0){
  <a asp-controller="Payments" asp-action="Upload" asp-route-bookingId="@Model.Id" class="cn-button cn-primary"><i class="bi bi-upload" aria-hidden="true"></i> Upload Payment</a>
 }
-@if(finance?.HasAdditionalEvidenceRequired==true && finance.TotalVerifiedPayments<=0){
- <a asp-controller="Payments" asp-action="MyUploads" class="cn-button cn-primary"><i class="bi bi-arrow-clockwise" aria-hidden="true"></i> Replace Payment Proof</a>
+@if(paymentToReplace != null){
+ <a asp-controller="Payments" asp-action="MyUploads" asp-fragment="@($"replace-proof-{paymentToReplace.Id}")" class="cn-button cn-primary"><i class="bi bi-arrow-clockwise" aria-hidden="true"></i> Replace Payment Proof</a>
 }
 <form asp-controller="Communications" asp-action="StartBookingConversation" method="post" class="cn-support">
  @Html.AntiForgeryToken()<input type="hidden" name="bookingId" value="@Model.Id"/>

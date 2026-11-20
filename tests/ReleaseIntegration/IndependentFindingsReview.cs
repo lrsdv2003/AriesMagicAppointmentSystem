@@ -135,10 +135,28 @@ static class IndependentFindingsReview
             using(var r=await Upload(client,replacementBooking,token))Check(r.StatusCode==HttpStatusCode.Redirect,"PAY-03 separate initial proof enters review");
             var replacement=await db.Payments.AsNoTracking().Where(p=>p.BookingId==replacementBooking.Id&&p.Status==PaymentStatus.Pending).SingleAsync();
             using(var r=await Post(owner,"/Payments/RequestAdditionalEvidence/"+replacement.Id,ownerToken,("reason","Synthetic clearer-proof request")))Check(r.StatusCode==HttpStatusCode.Redirect,"PAY-03 Owner requests replacement evidence");
+            var replacementAnchor = $"replace-proof-{replacement.Id}";
+            var replacementPage = await client.GetStringAsync("/Payments/MyUploads");
+            Check(replacementPage.Contains($"id=\"{replacementAnchor}\"")
+                && replacementPage.Contains("action=\"/Payments/ReplaceProof\"")
+                && replacementPage.Contains("enctype=\"multipart/form-data\"")
+                && replacementPage.Contains("Synthetic clearer-proof request"),
+                "PAY-04 Client Payments renders the protected replacement form and Owner instructions");
+            var details = await client.GetStringAsync($"/Bookings/Details/{replacementBooking.Id}");
+            Check(details.Contains($"/Payments/MyUploads#{replacementAnchor}")
+                && !await db.Notifications.AnyAsync(n => n.Link == $"/Payments/MyUploads#{replacementAnchor}"
+                    && n.UserId != replacementBooking.ApplicationUserId)
+                && await db.Notifications.AnyAsync(n => n.Link == $"/Payments/MyUploads#{replacementAnchor}"),
+                "PAY-04 Booking details and the affected Client's notification point to the replacement form");
+            Check(!(await other.GetStringAsync("/Payments/MyUploads")).Contains($"id=\"{replacementAnchor}\""),
+                "PAY-04 Another Client cannot see the flagged proof or its replacement form");
             using(var form=new MultipartFormDataContent()){
                 form.Add(new StringContent(token),"__RequestVerificationToken");var image=new ByteArrayContent(png);image.Headers.ContentType=new("image/png");form.Add(image,"proofImage","replacement.png");using var r=await client.PostAsync("/Payments/ReplaceProof/"+replacement.Id,form);
                 Check(r.StatusCode==HttpStatusCode.Redirect&&await db.Payments.CountAsync(p=>p.BookingId==replacementBooking.Id)==1,"PAY-04 authorized replacement preserves the existing payment record");
             }
+            Check(!(await client.GetStringAsync("/Payments/MyUploads")).Contains($"id=\"{replacementAnchor}\"")
+                && await db.Payments.AnyAsync(p=>p.Id==replacement.Id&&p.Status==PaymentStatus.Pending),
+                "PAY-04 Replacement returns the original payment to Owner review and removes the upload action");
             Check(await db.PaymentProofRevisions.AnyAsync(r=>r.PaymentId==replacement.Id&&r.ProofImagePath==replacement.ProofImagePath),"PAY-04 replacement retains original proof revision");
             using(var history=await owner.GetAsync("/Payments/ProofHistory/"+replacement.Id))Check(history.StatusCode==HttpStatusCode.OK,"Owner can inspect protected proof revision history");
             Check((await new PaymentFinancialService(db).GetSummaryAsync(installment.Id)).TotalVerifiedPayments==2000,"PAY-06 pending installment and replacement never double-count verified funds");
