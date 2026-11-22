@@ -3,6 +3,7 @@
     var action = ViewContext.RouteData.Values["action"]?.ToString();
     var links = new[]
     {
+        ("Dashboard", "Bookings", "Dashboard", "bi-house-door"),
         ("My bookings", "Bookings", "MyBookings", "bi-calendar2-event"),
         ("Payments", "Payments", "MyUploads", "bi-wallet2"),
         ("Rescheduling", "RescheduleRequests", "MyRequests", "bi-calendar2-week"),
@@ -14,6 +15,8 @@
         @foreach (var (label, linkController, linkAction, icon) in links)
         {
             var active = controller == linkController;
+            if (controller == "Bookings" && linkController == "Bookings")
+                active = action is "Dashboard" or "ClientDashboard" ? linkAction == "Dashboard" : linkAction == "MyBookings";
             if (controller == "Payments" && linkController == "Payments")
                 active = action is "MyRefundRequests" or "RequestRefund" ? linkAction == "MyRefundRequests" : linkAction == "MyUploads";
 

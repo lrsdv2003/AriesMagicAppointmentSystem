@@ -7,6 +7,7 @@ using AriesMagicAppointmentSystem.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 
 namespace AriesMagicAppointmentSystem.Controllers
@@ -331,10 +332,11 @@ namespace AriesMagicAppointmentSystem.Controllers
         {
             try
             {
-                if (!eventDate.HasValue || !startTime.HasValue)
-                    return BadRequest(new { success=false, message="Select your event date and time." });
+                var error = ScheduleInputError(eventDate, startTime, FeedbackPolicy.BusinessNow.Date);
+                if (!ModelState.IsValid || error != null)
+                    return BadRequest(new { success=false, message=error ?? "Choose a valid event date and time." });
                 var eval = await EvaluateVenueAsync(partyVenue,venueSelectionMethod,
-                    venueLatitude,venueLongitude,eventDate.Value,startTime.Value,
+                    venueLatitude,venueLongitude,eventDate!.Value,startTime!.Value,
                     manualStreet,manualBarangay,manualCity,manualProvince,manualPostalCode,manualVenueName);
                 var distance = eval.Distance;
                 return Json(new
@@ -349,8 +351,10 @@ namespace AriesMagicAppointmentSystem.Controllers
                     locationVerificationStatus=eval.VerificationStatus,
                     travelFeeStatus=eval.FeeStatus,
                     travelFeePending=eval.FeeStatus==VenueLocationPolicy.PendingReview,
-                    distanceKm=distance?.DistanceKm,
-                    travelFee=distance?.TravelFee,
+                    distanceKm=distance?.OriginLatitude != null ? distance.DistanceKm : (double?)null,
+                    travelFee=distance?.IsServiceable == true ? distance.TravelFee : (decimal?)null,
+                    outsideCoverage=distance?.OriginLatitude != null && distance.ServiceZone == "Zone D",
+                    travelTimeInsufficient=distance?.HasSufficientTravelTime == false,
                     serviceZone=distance?.ServiceZone,
                     isServiceable=eval.IsServiceable,
                     requiresManualReview=eval.FeeStatus==VenueLocationPolicy.PendingReview
@@ -376,13 +380,20 @@ namespace AriesMagicAppointmentSystem.Controllers
 
         [Authorize(Roles = "Client")]
         [HttpGet]
-        public async Task<IActionResult> CreateStepOne(int? serviceId)
+        public async Task<IActionResult> CreateStepOne(int? serviceId, DateTime? date = null, TimeSpan? startTime = null)
         {
+            var today = FeedbackPolicy.BusinessNow.Date;
+            var prefill = ModelState.IsValid && ScheduleInputError(date, startTime, today) is null;
+            if (!prefill)
+            {
+                ModelState.Remove(nameof(date));
+                ModelState.Remove(nameof(startTime));
+            }
             var user = await _userManager.GetUserAsync(User);
             return await ClientWizardViewAsync(new BookingStepTwoViewModel
             {
-                EventDate = DateTime.Today.AddDays(3),
-                StartTime = new TimeSpan(10, 0, 0),
+                EventDate = prefill ? date!.Value.Date : today.AddDays(BookingRules.MinimumAdvanceDays),
+                StartTime = prefill ? startTime!.Value : new TimeSpan(10, 0, 0),
                 ContactPerson = user?.FullName ?? string.Empty,
                 ContactNumber = user?.PhoneNumber ?? string.Empty,
                 PaxCount = 1,
@@ -399,22 +410,65 @@ namespace AriesMagicAppointmentSystem.Controllers
             return View("Create", model);
         }
 
+        private static string? ScheduleInputError(DateTime? date, TimeSpan? time, DateTime today)
+        {
+            if (!date.HasValue || !time.HasValue || time < TimeSpan.Zero || time >= TimeSpan.FromDays(1))
+                return "Choose a valid event date and start time.";
+            if (date.Value.Date < today.AddDays(BookingRules.MinimumAdvanceDays))
+                return $"Bookings must be made at least {BookingRules.MinimumAdvanceDays} days in advance.";
+            if (date.Value.Date > today.AddYears(BookingRules.MaximumAdvanceYears))
+                return $"Bookings can be requested up to {BookingRules.MaximumAdvanceYears} years in advance.";
+            return null;
+        }
+
         [Authorize(Roles = "Client")]
         [HttpGet]
-        public async Task<IActionResult> CheckScheduleAvailability(DateTime date, TimeSpan startTime, int? serviceId)
+        [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+        public async Task<IActionResult> CheckScheduleAvailability(DateTime? date, TimeSpan? startTime, int? serviceId,
+            bool suggest = false)
         {
-            if (!ModelState.IsValid || date.Date < DateTime.Today.AddDays(3) || startTime < TimeSpan.Zero || startTime >= TimeSpan.FromDays(1))
-                return Json(new { available = false, message = "Choose a valid time and a date at least 3 days from today." });
-            if (await _context.BlockedDates.AnyAsync(d => d.Date.Date == date.Date) || await HasReachedDailyConfirmedLimit(date))
-                return Json(new { available = false, message = "This date is unavailable. Please choose another date." });
-            var packages = await _context.Services.AsNoTracking().Where(s => !s.IsArchived).ToListAsync();
-            if (serviceId.HasValue && serviceId.Value > 0) packages = packages.Where(s => s.Id == serviceId.Value).ToList();
-            var availableIds = new List<int>();
-            var start = date.Date.Add(startTime);
-            foreach (var package in packages)
-                if (!await HasBookingConflict(start, start.AddHours(package.DurationInHours))) availableIds.Add(package.Id);
-            return Json(new { available = availableIds.Count > 0, availableIds,
-                message = availableIds.Count > 0 ? "This time is available to request. Your booking is subject to review and payment confirmation." : "No package fits this time. Please choose another time." });
+            var today = FeedbackPolicy.BusinessNow.Date;
+            var error = ScheduleInputError(date, startTime, today);
+            if (!ModelState.IsValid || error != null)
+                return Json(new { available = false, status = "invalid", message = error ?? "Choose a valid date and time." });
+
+            var requested = date!.Value.Date.Add(startTime!.Value);
+            var packages = await _context.Services.AsNoTracking()
+                .Where(s => !s.IsArchived && (!serviceId.HasValue || serviceId <= 0 || s.Id == serviceId))
+                .Select(s => new { s.Id, s.DurationInHours }).ToListAsync();
+            var unavailableDates = (await GetUnavailableBookingDatesAsync()).ToHashSet();
+            var firstDay = suggest ? requested.Date.AddDays(-7) : requested.Date;
+            var lastDay = suggest ? requested.Date.AddDays(7) : requested.Date;
+            var earliestEnd = firstDay.AddHours(-BookingRules.TurnaroundHours);
+            var latestEnd = lastDay.AddDays(1).AddHours(packages.Select(p => p.DurationInHours).DefaultIfEmpty().Max() + BookingRules.TurnaroundHours);
+            var occupied = await ScheduleOccupancy()
+                .Where(b => b.EndTime > earliestEnd && b.StartTime < latestEnd)
+                .Select(b => new { b.StartTime, b.EndTime }).ToListAsync();
+
+            IEnumerable<int> AvailablePackages(DateTime start)
+            {
+                if (unavailableDates.Contains(start.ToString("yyyy-MM-dd")))
+                    return Enumerable.Empty<int>();
+                return packages.Where(p => !occupied.Any(b => OverlapsWithBuffer(start,
+                    start.AddHours(p.DurationInHours), b.StartTime, b.EndTime))).Select(p => p.Id);
+            }
+
+            var availableIds = AvailablePackages(requested).ToArray();
+            var available = availableIds.Length > 0;
+            var alternatives = new List<object>();
+            if (suggest && !available && packages.Count > 0)
+            {
+                var candidates = Enumerable.Range(-7, 15).Select(day => requested.AddDays(day))
+                    .SelectMany(day => Enumerable.Range(-3, 7).Select(hour => day.AddHours(hour))
+                        .Where(slot => slot.Date == day.Date))
+                    .Where(slot => slot != requested && ScheduleInputError(slot.Date, slot.TimeOfDay, today) is null)
+                    .OrderBy(slot => Math.Abs((slot - requested).Ticks)).ThenBy(slot => slot);
+                foreach (var slot in candidates.Where(slot => AvailablePackages(slot).Any()).Take(3))
+                    alternatives.Add(new { date = slot.ToString("yyyy-MM-dd"), time = slot.ToString("HH:mm:ss"),
+                        label = slot.ToString("MMM d · h:mm tt", System.Globalization.CultureInfo.GetCultureInfo("en-PH")) });
+            }
+            return Json(new { available, availableIds, alternatives, status = available ? "available" : "unavailable",
+                message = available ? "Your selected schedule is currently available." : "Your selected schedule is unavailable." });
         }
 
         [Authorize(Roles = "Client")]
@@ -425,16 +479,17 @@ namespace AriesMagicAppointmentSystem.Controllers
             SetCreateStepOneViewBags();
 
             ViewBag.UnavailableDates = await GetUnavailableBookingDatesAsync();
-            if (model.EventDate.Date < DateTime.Today.AddDays(3))
+            if (ScheduleInputError(model.EventDate, model.StartTime, FeedbackPolicy.BusinessNow.Date) is string scheduleError)
             {
-            ModelState.AddModelError("EventDate", "Bookings must be made at least 3 days in advance.");
+                ModelState.AddModelError(nameof(model.EventDate), scheduleError);
+                return View(model);
             }
             var requestedStart = model.EventDate.Date.Add(model.StartTime);
             var requestedEnd = requestedStart.AddHours(3);
 
             if (await HasBookingConflict(requestedStart, requestedEnd))
             {
-                ModelState.AddModelError("StartTime", "The selected time conflicts with an existing confirmed booking.");
+                ModelState.AddModelError("StartTime", "The selected time conflicts with an existing booking.");
             }
 
             var isBlocked = await _context.BlockedDates
@@ -448,11 +503,6 @@ namespace AriesMagicAppointmentSystem.Controllers
             if (await HasReachedDailyConfirmedLimit(model.EventDate))
             {
                 ModelState.AddModelError("EventDate", "This date has already reached the maximum number of bookings.");
-            }
-
-            if (model.EventDate.Date == DateTime.Today && model.StartTime < DateTime.Now.TimeOfDay)
-            {
-                ModelState.AddModelError("StartTime", "You cannot select a past time for today.");
             }
 
             ValidateEventSpecificFields(model);
@@ -616,6 +666,12 @@ namespace AriesMagicAppointmentSystem.Controllers
                 return await ClientWizardViewAsync(model);
             }
 
+            if (ScheduleInputError(model.EventDate, model.StartTime, FeedbackPolicy.BusinessNow.Date) is string scheduleError)
+            {
+                ModelState.AddModelError(nameof(model.EventDate), scheduleError);
+                return await ClientWizardViewAsync(model);
+            }
+
             if (!model.CustomerConfirmedLocation)
             {
                 ModelState.AddModelError(nameof(model.CustomerConfirmedLocation), "Confirm the selected location or manual address before submitting.");
@@ -666,19 +722,6 @@ namespace AriesMagicAppointmentSystem.Controllers
             {
                 ModelState.AddModelError("EventDate", "This date is unavailable for booking.");
             }
-
-            if (model.EventDate.Date < DateTime.Today.AddDays(3))
-            {
-                ModelState.AddModelError("EventDate", "Bookings must be made at least 3 days in advance.");
-            }
-
-            if (model.EventDate.Date == DateTime.Today && model.StartTime < DateTime.Now.TimeOfDay)
-            {
-                ModelState.AddModelError("StartTime", "You cannot select a past time for today.");
-            }
-
-            if (model.StartTime < TimeSpan.Zero || model.StartTime >= TimeSpan.FromDays(1))
-                ModelState.AddModelError(nameof(model.StartTime), "Choose a valid event time.");
 
             ValidateEventSpecificFields(model);
 
@@ -795,15 +838,16 @@ namespace AriesMagicAppointmentSystem.Controllers
                 return RedirectToAction(nameof(MyBookings));
             }
 
-            if (await HasReachedDailyConfirmedLimit(model.EventDate))
+            if (await _context.BlockedDates.AnyAsync(d => d.Date.Date == model.EventDate.Date) ||
+                await HasReachedDailyConfirmedLimit(model.EventDate))
             {
-                ModelState.AddModelError("", "This date has reached its daily confirmed-booking limit.");
+                ModelState.AddModelError("", "This date is blocked or has reached its daily confirmed-booking limit.");
                 return await ClientWizardViewAsync(model);
             }
 
             if (await HasBookingConflict(startDateTime, endDateTime))
             {
-                ModelState.AddModelError("", "The selected time conflicts with an existing confirmed booking, including the 1-hour buffer.");
+                ModelState.AddModelError("", "The selected time conflicts with an existing booking, including the 1-hour buffer.");
                 return await ClientWizardViewAsync(model);
             }
 
@@ -898,7 +942,28 @@ namespace AriesMagicAppointmentSystem.Controllers
         }
 
         [Authorize(Roles = "Client")]
-        public IActionResult Dashboard() => RedirectToAction(nameof(MyBookings));
+        public async Task<IActionResult> Dashboard()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId)) return Forbid();
+
+            await HttpContext.RequestServices.GetRequiredService<IBookingExpirationService>().ExpireOverdueBookingsAsync();
+            var now = FeedbackPolicy.BusinessNow;
+            var bookings = await _context.Bookings.AsNoTracking()
+                .Include(b => b.RescheduleRequests)
+                .Where(b => b.ApplicationUserId == userId && b.EndTime > now &&
+                    (b.Status == BookingStatus.Pending || b.Status == BookingStatus.AwaitingDownpayment ||
+                     b.Status == BookingStatus.AwaitingVerification || b.Status == BookingStatus.Confirmed))
+                .OrderBy(b => b.StartTime).ThenBy(b => b.Id).ToListAsync();
+
+            ViewBag.DashboardPackages = await _context.Services.AsNoTracking().Where(s => !s.IsArchived)
+                .OrderBy(s => s.Name).Select(s => new SelectListItem(s.Name, s.Id.ToString())).ToListAsync();
+            if (bookings.Count == 0) return View("ClientDashboard", bookings);
+
+            ViewBag.UnavailableBookingIds = await GetUnavailableBookingIdsAsync(bookings);
+            ViewBag.FinancialSummaries = await _financialService.GetSummariesAsync(bookings.Select(b => b.Id));
+            return View("ClientDashboard", bookings);
+        }
 
         [Authorize(Roles = "Client")]
         public async Task<IActionResult> MyBookings()
@@ -929,19 +994,7 @@ namespace AriesMagicAppointmentSystem.Controllers
         }
         private async Task<List<int>> GetUnavailableBookingIdsAsync(IEnumerable<Booking> bookings)
         {
-            var lockingPaymentStatuses = new[]
-            {
-                PaymentStatus.Pending,
-                PaymentStatus.Verified
-            };
-
-            var lockedBookings = await _context.Payments
-                .Include(p => p.Booking)
-                .Where(p => lockingPaymentStatuses.Contains(p.Status))
-                .Where(p => p.Booking != null)
-                .Select(p => p.Booking!)
-                .Where(b => b.Status != BookingStatus.Cancelled || b.CancellationSource != BookingCancellationPolicy.OwnerCancellationSource)
-                .ToListAsync();
+            var lockedBookings = await PaymentLockedBookings().ToListAsync();
 
             var unavailableBookingIds = new List<int>();
 
@@ -1181,6 +1234,14 @@ namespace AriesMagicAppointmentSystem.Controllers
                 TempData["Error"]="The venue and travel quote must be reviewed and accepted before payment can be enabled.";
                 return RedirectToAction(nameof(Details),new { id });
             }
+            if (await _context.BlockedDates.AnyAsync(d => d.Date.Date == booking.EventDate.Date)
+                || await HasReachedDailyConfirmedLimit(booking.EventDate)
+                || await HasBookingConflict(booking.StartTime, booking.EndTime, booking.Id))
+            {
+                TempData["Error"] = "This schedule is no longer available. Resolve the schedule before opening payment.";
+                return RedirectToAction(nameof(Details), new { id });
+            }
+
             var now = DateTime.Now;
             var staffUserId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "Unknown";
             var staffAccount = await _userManager.GetUserAsync(User);
@@ -1724,26 +1785,27 @@ namespace AriesMagicAppointmentSystem.Controllers
                    ?? $"This venue is outside the maximum service distance of {distance.MaximumServiceDistanceKm:0.##} KM. Please select another venue or contact Aries Magic for assistance.";
         }
 
-        private async Task<bool> HasBookingConflict(DateTime requestedStart, DateTime requestedEnd)
+        private IQueryable<Booking> PaymentLockedBookings() => _context.Payments.AsNoTracking()
+            .Where(p => p.Status == PaymentStatus.Pending || p.Status == PaymentStatus.Verified)
+            .Where(p => p.Booking != null)
+            .Select(p => p.Booking!)
+            .Where(b => b.Status != BookingStatus.Cancelled || b.CancellationSource != BookingCancellationPolicy.OwnerCancellationSource);
+
+        private IQueryable<Booking> ScheduleOccupancy()
         {
-            var confirmedBookings = await _context.Bookings
-                .Where(b => b.Status == BookingStatus.Confirmed)
-                .ToListAsync();
+            var lockedIds = PaymentLockedBookings().Select(booking => booking.Id);
+            return _context.Bookings.AsNoTracking()
+                .Where(booking => booking.Status == BookingStatus.Confirmed || lockedIds.Contains(booking.Id));
+        }
 
-            foreach (var booking in confirmedBookings)
-            {
-                var existingStart = booking.StartTime;
-                var existingEndWithBuffer = booking.EndTime.AddHours(1);
+        private static bool OverlapsWithBuffer(DateTime start, DateTime end, DateTime existingStart, DateTime existingEnd) =>
+            start < existingEnd.AddHours(BookingRules.TurnaroundHours) && end.AddHours(BookingRules.TurnaroundHours) > existingStart;
 
-                bool overlaps = requestedStart < existingEndWithBuffer && requestedEnd > existingStart;
-
-                if (overlaps)
-                {
-                    return true;
-                }
-            }
-
-            return false;
+        private async Task<bool> HasBookingConflict(DateTime requestedStart, DateTime requestedEnd, int? ignoreBookingId = null)
+        {
+            var earliestEnd = requestedStart.AddHours(-BookingRules.TurnaroundHours);
+            return await ScheduleOccupancy().AnyAsync(b => b.Id != ignoreBookingId
+                && b.EndTime > earliestEnd && b.StartTime < requestedEnd.AddHours(BookingRules.TurnaroundHours));
         }
 
         private async Task<bool> HasReachedDailyConfirmedLimit(DateTime eventDate)

@@ -5009,6 +5009,118 @@ body.client-hub :is(.cn-record,.ref-refund-proof,.comm-chat-panel,.comm-conversa
 }
 @media(prefers-reduced-motion:reduce){body.client-hub *{transition:none!important;animation:none!important}}
 
+/* Client event planning dashboard */
+body.client-body.client-hub.client-bookings-dashboard .hub-content.container {
+  max-width: none !important;
+  padding: clamp(12px, 1.3vw, 22px) !important;
+}
+.event-dashboard {
+  display: grid;
+  gap: 16px;
+  color: #f4f8ff;
+  --event-dashboard-gold: #ffd373;
+}
+.event-dashboard [hidden] { display: none !important; }
+body.client-hub .event-dashboard .hub-card {
+  min-width: 0;
+  padding: clamp(15px, 1.35vw, 20px);
+  border: 1px solid #405d85 !important;
+  border-radius: 14px !important;
+  background: linear-gradient(155deg, #152e51, #0a1930 78%) !important;
+}
+body.client-hub .event-dashboard .event-dashboard-hero,
+body.client-hub .event-dashboard .event-dashboard-support {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: clamp(12px, 2vw, 24px);
+  align-items: center;
+  background: radial-gradient(ellipse at 90% 120%, #113d80, transparent 50%),
+              linear-gradient(110deg, #142e55, #091933 72%) !important;
+}
+body.client-body.client-hub .event-dashboard-hero h1 {
+  font-family: Georgia, serif;
+  font-size: clamp(1.8rem, 3.3vw, 3rem) !important;
+  line-height: 1.12;
+  margin: 0 0 8px;
+}
+.event-dashboard-hero .event-dashboard-accent { color: var(--event-dashboard-gold); font-style: italic; }
+body.client-body.client-hub .event-dashboard h2 {
+  font-size: clamp(1.12rem, 1.55vw, 1.5rem) !important;
+  line-height: 1.2;
+  margin: 0 0 4px;
+}
+.event-dashboard p { margin: 0; color: #d8e6fa; line-height: 1.45; }
+.event-dashboard-icon { color: var(--event-dashboard-gold); font-size: clamp(1.5rem, 2.4vw, 2.25rem); }
+.event-dashboard-heading { display: flex; align-items: flex-start; gap: 13px; margin-bottom: 14px; }
+.event-dashboard-heading .bi { line-height: 1.2; }
+.event-dashboard-checkers { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.event-dashboard-checkers .hub-card { display: flex; flex-direction: column; gap: 12px; }
+.event-dashboard-checkers .event-dashboard-heading { margin-bottom: 0; }
+.event-dashboard-schedule-fields, .event-dashboard-venue-fields { display: grid; gap: 10px; align-items: end; }
+.event-dashboard-schedule-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.event-dashboard-venue-fields { grid-template-columns: minmax(0, 1fr) auto; }
+.event-dashboard .cn-field { min-width: 0; margin: 0; }
+.event-dashboard .cn-input { width: 100%; }
+.event-dashboard .cn-button { min-height: 44px; justify-content: center; text-align: center; gap: 8px; }
+body.client-hub .event-dashboard .cn-button.cn-primary {
+  background: linear-gradient(#2168d5, #0846ad) !important;
+  border: 1px solid #77afff !important;
+  color: #fff !important;
+}
+body.client-hub .event-dashboard .cn-button.cn-primary:hover { background: #155bc5 !important; }
+.event-dashboard .event-dashboard-note {
+  margin-top: auto;
+  padding: 9px 11px;
+  border-radius: 8px;
+  background: #1a3254;
+  font-size: .88rem;
+}
+.event-dashboard-note i { margin-right: 5px; }
+.event-dashboard-result {
+  padding: 10px 13px;
+  border: 1px solid #4a6790;
+  border-radius: 9px;
+  background: #172e4f;
+  overflow-wrap: anywhere;
+}
+.event-dashboard-result[data-state="available"] { background: #143c39; border-color: #4e9b7b; }
+.event-dashboard-result[data-state="unavailable"] { background: #412939; border-color: #bd7788; }
+.event-dashboard-result[data-state="review"] { background: #3c3425; border-color: #ab8a55; }
+.event-dashboard-result p { margin-top: 3px; font-size: .9rem; }
+.event-dashboard-alternatives { background: #10294c; border-radius: 9px; padding: 9px; }
+.event-dashboard-alternatives h3 { font-size: 1rem; margin: 0 0 8px; }
+#dashboardAlternativeChoices { display: flex; flex-wrap: wrap; gap: 8px; }
+.event-dashboard-matches:not(:empty) { display: grid; gap: 5px; margin-top: 8px; }
+.event-dashboard-matches .cn-button { white-space: normal; justify-content: flex-start; text-align: left; }
+.event-dashboard-travel { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 0; }
+.event-dashboard-travel > div { border: 1px solid #3b5579; border-radius: 8px; padding: 8px 10px; }
+.event-dashboard dl dt { color: #d8e6fa; font-size: .87rem; font-weight: 500; margin-bottom: 4px; }
+.event-dashboard dl dd { margin: 0; font-weight: 700; overflow-wrap: anywhere; }
+.event-dashboard-booking { display: flex; gap: 15px; align-items: center; border-top: 1px solid #405d85; padding-top: 12px; }
+.event-dashboard-booking dl { flex: 1; display: grid; grid-template-columns: .85fr 1.05fr 1fr 1fr 1.5fr; margin: 0; }
+.event-dashboard-booking dl > div { min-width: 0; padding: 0 12px; border-left: 1px solid #405d85; }
+.event-dashboard-booking dl > div:first-child { border-left: 0; padding-left: 0; }
+.event-dashboard-booking dd :is(strong, a) { color: var(--event-dashboard-gold); }
+.event-dashboard-booking dd small { display: block; color: #d8e6fa; font-weight: 400; margin-top: 4px; }
+@media (max-width: 1200px) {
+  .event-dashboard-booking { align-items: flex-start; flex-direction: column; }
+  .event-dashboard-booking dl { width: 100%; }
+  .event-dashboard-venue-fields { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 900px) {
+  .event-dashboard-checkers { grid-template-columns: minmax(0, 1fr); }
+  .event-dashboard-venue-fields { grid-template-columns: minmax(0, 1fr) auto; }
+}
+@media (max-width: 600px) {
+  body.client-hub .event-dashboard .event-dashboard-hero,
+  body.client-hub .event-dashboard .event-dashboard-support { grid-template-columns: auto minmax(0, 1fr); }
+  .event-dashboard-hero .cn-button, .event-dashboard-support .cn-button { grid-column: 1 / -1; }
+  .event-dashboard-venue-fields { grid-template-columns: minmax(0, 1fr); }
+  .event-dashboard-package, .event-dashboard-schedule-fields > button { grid-column: 1 / -1; }
+  .event-dashboard-booking dl { grid-template-columns: minmax(0, 1fr); }
+  .event-dashboard-booking dl > div { padding: 8px 0; border-left: 0; border-bottom: 1px solid #405d85; }
+}
+
 /* ========== CANONICAL: client-improvements-20261107.css ========== */
 /* Client UI Improvement/Fixes — 2026-11-07. Scopes: Client Hub + booking/payment/reschedule experience. */
 body.client-hub{

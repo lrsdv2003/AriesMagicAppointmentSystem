@@ -12,6 +12,16 @@ const axe=async label=>{await page.addScriptTag({path:process.env.AXE_CORE_PATH}
 const capture=async(label,width)=>{await page.evaluate(()=>{document.activeElement?.blur();scrollTo(0,0);});const m=await page.evaluate(()=>({width:innerWidth,height:document.documentElement.scrollHeight,scrollWidth:document.documentElement.scrollWidth,font:getComputedStyle(document.body).fontFamily,background:getComputedStyle(document.body).backgroundColor,h1s:document.querySelectorAll('h1').length,hub:document.body.classList.contains('client-hub'),duplicate:[...document.querySelectorAll('[id]')].map(x=>x.id).filter((id,i,a)=>a.indexOf(id)!==i),broken:[...document.querySelectorAll('main img[src]')].filter(x=>!x.closest('details:not([open])')&&x.getClientRects().length&&!x.naturalWidth).map(x=>x.getAttribute('src')),internalLeak:document.querySelector('main').textContent.includes('INTERNAL_HUB_NOTE_MUST_NOT_BE_VISIBLE')}));check(m.scrollWidth<=width+1,label+' no overflow '+width);check(m.h1s===1&&m.hub,label+' one H1 and Client hub');check(!m.duplicate.length&&!m.broken.length&&!m.internalLeak,label+' safe IDs/media/data');check(m.font.includes('DM Sans'),label+' DM Sans');check(!await page.$eval('main',x=>/â‚|â€|Â·|â†/.test(x.textContent)),label+' correct UTF-8 display');check(await page.$$eval('.client-navbar-wrap,.cx-account-nav,.client-footer',xs=>!xs.length),'No duplicate marketing/account bars');renders.push({label,...m});await page.screenshot({path:path.join(out,`${label}-${width}-full.png`),fullPage:true});await page.screenshot({path:path.join(out,`${label}-${width}-viewport.png`)});console.log('PASS screen',label,width);if(width===390||width===1440)await axe(label+' '+width);};
 try{
  await login(page,s.Email);
+ await go('/Bookings/Dashboard');
+ await field('dashboardDate',s.BlockedDate);
+ await field('dashboardTime','10:00');
+ await page.click('#dashboardSchedule button[type=submit]');
+ await page.waitForSelector('#dashboardScheduleResult[data-state=unavailable]');
+ check(await page.$$eval('#dashboardAlternativeChoices button', xs=>xs.length>0 && xs.length<=3), 'Blocked date offers up to three alternatives');
+ await page.click('#dashboardAlternativeChoices button');
+ await page.waitForSelector('#dashboardScheduleResult[data-state=available]');
+ check(await page.$eval('#dashboardPlan', x=>new URL(x.href).searchParams.has('date')), 'Verified alternative prefills the booking date');
+
  for(const width of [1440,390,320,375,430,768,1024]){await page.setViewport({width,height:width<768?932:1000});for(const [label,url] of [['overview','/Bookings/Dashboard'],['bookings','/Bookings/MyBookings'],['details','/Bookings/Details/'+s.ConfirmedId],['payments','/Payments/MyUploads'],['notifications','/Notifications'],['messages','/Communications?id='+s.Hub.ConversationId],['profile','/Profile'],['feedback','/Feedback'],['feedback-form','/Feedback/Create?bookingId='+s.Hub.CompleteId]]){await go(url);await capture(label,width);}}
  await page.setViewport({width:390,height:932});await go('/Bookings/Dashboard');await page.focus('#hubMenu');await page.keyboard.press('Enter');check(await page.$eval('#hubDrawer',x=>x.open),'Keyboard opens modal navigation');check(await page.$eval('#hubMenu',x=>x.getAttribute('aria-expanded')==='true'),'Navigation announces expanded state');await axe('Navigation open');await page.screenshot({path:path.join(out,'navigation-390.png')});await page.keyboard.press('Escape');check(await page.$eval('#hubMenu',x=>x===document.activeElement&&x.getAttribute('aria-expanded')==='false'),'Escape closes drawer and returns focus');
  await go('/Bookings/MyBookings?group=past');check(await page.$eval('#bookingGroup',x=>x.value==='past'),'Past event entry initializes existing filter');check(await page.$$eval('.cr-booking-item:not([hidden])',xs=>xs.every(x=>x.dataset.group==='past')),'Past filter uses actual groups');await field('bookingSearch','no-such-synthetic-result');check(await page.$eval('#bookingListEmpty',x=>!x.hidden),'No matching bookings state');
@@ -19,7 +29,32 @@ try{
  await go('/Communications?id='+s.Hub.ConversationId);check(await page.$eval('#commMessageHistory',x=>x.scrollHeight-x.scrollTop-x.clientHeight<30),'Messages initially at latest without page jump');await page.$eval('#commMessageHistory',x=>x.scrollTop=0);check(await page.$eval('#commMessageHistory',x=>x.scrollTop===0),'Older messages stay scrollable');
  await go('/Profile');await page.click('[data-bs-target="#passwordModal"]');await page.waitForSelector('#passwordModal.show');check(await page.$eval('#passwordModal',x=>x.contains(document.activeElement)),'Password dialog receives focus');check(await page.$eval('#profileNewPassword',x=>x.minLength===12),'Profile guidance matches actual minimum');await axe('Password modal');await page.keyboard.press('Escape');await page.waitForFunction(()=>!document.getElementById('passwordModal').classList.contains('show'));await page.click('[data-bs-target="#photoModal"]');await page.waitForSelector('#photoModal.show');await axe('Photo modal');await page.keyboard.press('Escape');
  await page.emulateMediaFeatures([{name:'prefers-reduced-motion',value:'reduce'}]);check(await page.$eval('.hub-navigation a',x=>getComputedStyle(x).transitionDuration==='0s'),'Reduced motion');
- for(const [name,id] of Object.entries(s.Hub.Cases)){const context=await b.createBrowserContext();const p=await context.newPage();await protect(p);await login(p,name+'@example.test');await go('/Bookings/Dashboard',p);const action=await p.$eval('[data-hub-next]',x=>({href:new URL(x.href).pathname,text:x.textContent}));const expected={pending:'/Bookings/Details/'+id,payment:'/Payments/Upload',verification:'/Payments/MyUploads',upcoming:'/Bookings/Details/'+id,completed:'/Feedback/Create',reschedule:'/RescheduleRequests/MyRequests',declined:'/Bookings/Details/'+id,cancelled:'/Bookings/Details/'+id,evidence:'/Payments/MyUploads'};check(action.href===expected[name],'Actual '+name+' next action');for(const width of [390,1440]){await p.setViewport({width,height:1000});await p.screenshot({path:path.join(out,`overview-${name}-${width}-full.png`),fullPage:true});}await context.close();}
+ const activeActions = {
+  pending: null, payment: '/Payments/Upload', verification: '/Payments/MyUploads',
+  upcoming: null, reschedule: '/RescheduleRequests/MyRequests', evidence: '/Payments/MyUploads'
+ };
+ for (const [name, id] of Object.entries(s.Hub.Cases)) {
+  const context = await b.createBrowserContext();
+  const p = await context.newPage();
+  await protect(p);
+  await login(p, name + '@example.test');
+  await go('/Bookings/Dashboard', p);
+  const booking = await p.$('[data-focus-booking]');
+  if (Object.hasOwn(activeActions, name)) {
+   check(booking && await booking.evaluate(x => Number(x.dataset.focusBooking)) === id, 'Actual active booking for ' + name);
+   const action = await p.$('[data-hub-next]');
+   const actual = action ? await action.evaluate(x => new URL(x.href).pathname) : null;
+   check(actual === activeActions[name], 'Actual next action for ' + name);
+   check(await booking.$('a[href="/Bookings/Details/' + id + '"]'), 'View Booking for ' + name);
+  } else {
+   check(!booking, 'No active summary for ' + name);
+  }
+  for (const width of [390, 1440]) {
+   await p.setViewport({width, height:1000});
+   await p.screenshot({path:path.join(out,'overview-' + name + '-' + width + '-full.png'),fullPage:true});
+  }
+  await context.close();
+ }
  const emptyContext=await b.createBrowserContext();const empty=await emptyContext.newPage();await protect(empty);await login(empty,'other@example.test');for(const [name,url] of [['overview','/Bookings/Dashboard'],['bookings','/Bookings/MyBookings'],['payments','/Payments/MyUploads'],['notifications','/Notifications'],['messages','/Communications?view=inbox'],['feedback','/Feedback'],['reschedules','/RescheduleRequests/MyRequests']]){await go(url,empty);check(!await empty.$('[data-hub-next]'),'Empty Client no invented task '+name);await empty.setViewport({width:390,height:932});await empty.screenshot({path:path.join(out,`empty-${name}-390-full.png`),fullPage:true});}const denied=await empty.goto(s.BaseUrl+'/Bookings/Details/'+s.ConfirmedId);check(denied.status()===404,'Other Client cannot read booking details');await emptyContext.close();
  check(!errors.length,'No browser script errors');await fs.writeFile(path.join(out,'metrics.json'),JSON.stringify({checks,renders,scans,errors,Fixture:'Synthetic isolated SQL; no authoritative production inclusion content'},null,2));console.log(JSON.stringify({checks,renders:renders.length,scans:scans.length,violations:scans.flatMap(s=>s.violations).length,errors,out}));
 }catch(e){await page.screenshot({path:path.join(out,'failure.png'),fullPage:true});await fs.writeFile(path.join(out,'failure.json'),JSON.stringify({message:e.message,checks,scans,errors},null,2));throw e;}finally{await b.close();}

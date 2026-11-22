@@ -3,6 +3,10 @@
   const form = document.getElementById('clientBookingWizard');
   if (!form) return;
   const $ = id => document.getElementById(id);
+  if (location.hash.startsWith('#venue=') && !$('PartyVenue').value) {
+    const venue = new URLSearchParams(location.hash.slice(1)).get('venue');
+    if (venue?.length <= 500) $('PartyVenue').value = venue;
+  }
   const terms = $('fullBookingTerms'), consent = $('termsModalConsent'), agree = $('confirmBookingTerms');
   let termsAccepted = false, previousOverflow = '';
   function openTerms(){

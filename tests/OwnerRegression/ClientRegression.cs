@@ -38,7 +38,9 @@ static class ClientRegression
         check(await controller.Details(mine.Id) is ViewResult {ViewName:"ClientDetails"},"Client opens their own dedicated booking details");
         var listing=(ViewResult)await controller.MyBookings();
         check(((IEnumerable<Booking>)listing.Model!).All(b=>b.ApplicationUserId=="client-ui-mine"),"Client list excludes other accounts");
-        check(controller.Dashboard() is RedirectToActionResult {ActionName:"MyBookings"},"Client dashboard redirects to scoped booking list");
+        var dashboard = (ViewResult)await controller.Dashboard();
+        check(dashboard.ViewName == "ClientDashboard" && ((IEnumerable<Booking>)dashboard.Model!).Select(b => b.Id).SequenceEqual(new[] { mine.Id }),
+            "Dashboard renders only the authenticated client's active bookings");
         var home=new HomeController(db);
         var catalog=(ViewResult)await home.Packages();
         check(!((IEnumerable<Service>)catalog.Model!).Any(s=>s.IsArchived),"Public catalog excludes archived packages");
@@ -49,8 +51,22 @@ static class ClientRegression
         check(ids.Contains(shortPackage.Id)&&!ids.Contains(longPackage.Id),"Package availability respects each package's duration");
         check(!Json(await controller.CheckScheduleAvailability(DateTime.Today,new TimeSpan(10,0,0),shortPackage.Id)).GetProperty("available").GetBoolean(),"Availability enforces three-day advance notice");
         check(!Json(await controller.CheckScheduleAvailability(date,new TimeSpan(12,30,0),shortPackage.Id)).GetProperty("available").GetBoolean(),"Existing confirmed event blocks overlapping requests");
+        check(!Json(await controller.CheckScheduleAvailability(date, TimeSpan.FromHours(13), shortPackage.Id))
+            .GetProperty("available").GetBoolean(), "Availability enforces the turnaround buffer after a confirmed booking");
+        check(!Json(await controller.CheckScheduleAvailability(date, TimeSpan.FromMinutes(630), shortPackage.Id))
+            .GetProperty("available").GetBoolean(), "Availability leaves a turnaround buffer before the next confirmed event");
         db.BlockedDates.Add(new BlockedDate {Date=date.AddDays(1),Reason="Client fixture"});await db.SaveChangesAsync();
         check(!Json(await controller.CheckScheduleAvailability(date.AddDays(1),new TimeSpan(10,0,0),shortPackage.Id)).GetProperty("available").GetBoolean(),"Blocked dates reject availability requests");
+        var suggestions = Json(await controller.CheckScheduleAvailability(date.AddDays(1), TimeSpan.FromHours(10), shortPackage.Id, suggest: true))
+            .GetProperty("alternatives").EnumerateArray().ToList();
+        check(suggestions.Count is > 0 and <= 3, "Blocked date offers up to three nearby alternatives");
+        foreach (var slot in suggestions)
+            check(Json(await controller.CheckScheduleAvailability(slot.GetProperty("date").GetDateTime(),
+                TimeSpan.Parse(slot.GetProperty("time").GetString()!), shortPackage.Id)).GetProperty("available").GetBoolean(),
+                "Suggested schedule passes the same package availability check");
+        check(Json(await controller.CheckScheduleAvailability(FeedbackPolicy.BusinessNow.Date.AddYears(5).AddDays(1),
+            TimeSpan.FromHours(10), shortPackage.Id)).GetProperty("status").GetString() == "invalid",
+            "Availability rejects dates beyond five Philippine calendar years");
         var errors=new List<ValidationResult>();
         var invalidBooking = new BookingStepTwoViewModel();
         check(!Validator.TryValidateObject(invalidBooking,new ValidationContext(invalidBooking),errors,true)&&new[]{"EventType","PartyVenue","ContactPerson","ContactNumber","PaxCount"}.All(field=>errors.Any(error=>error.MemberNames.Contains(field))),"Single-page booking still requires event, venue, contact, and guest data");
