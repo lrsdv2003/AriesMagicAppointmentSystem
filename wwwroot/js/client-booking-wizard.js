@@ -103,7 +103,6 @@
       }
       return;
     }
-    const targetState=event.state;
     // Restore the current wizard history entry while the user decides. No recursive popstate loop.
     window.history.pushState({...window.history.state,ariesConciergeStep:step,ariesBookingGuard:true},'');
     openBackConfirmation();
