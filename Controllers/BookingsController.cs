@@ -392,7 +392,7 @@ namespace AriesMagicAppointmentSystem.Controllers
             var user = await _userManager.GetUserAsync(User);
             return await ClientWizardViewAsync(new BookingStepTwoViewModel
             {
-                EventDate = prefill ? date!.Value.Date : today.AddDays(BookingRules.MinimumAdvanceDays),
+                EventDate = prefill ? date!.Value.Date : today,
                 StartTime = prefill ? startTime!.Value : new TimeSpan(10, 0, 0),
                 ContactPerson = user?.FullName ?? string.Empty,
                 ContactNumber = user?.PhoneNumber ?? string.Empty,
@@ -403,6 +403,9 @@ namespace AriesMagicAppointmentSystem.Controllers
 
         private async Task<IActionResult> ClientWizardViewAsync(BookingStepTwoViewModel model)
         {
+            var user = await _userManager.GetUserAsync(User);
+            model.ContactNumber = user?.PhoneNumber ?? string.Empty;
+            ModelState.Remove(nameof(model.ContactNumber));
             var packages = await _context.Services.AsNoTracking().Include(s => s.Inclusions)
                 .Where(s => !s.IsArchived).OrderBy(s => s.Price).ToListAsync();
             ViewBag.WizardPackages = packages;
@@ -414,8 +417,8 @@ namespace AriesMagicAppointmentSystem.Controllers
         {
             if (!date.HasValue || !time.HasValue || time < TimeSpan.Zero || time >= TimeSpan.FromDays(1))
                 return "Choose a valid event date and start time.";
-            if (date.Value.Date < today.AddDays(BookingRules.MinimumAdvanceDays))
-                return $"Bookings must be made at least {BookingRules.MinimumAdvanceDays} days in advance.";
+            if (date.Value.Date < today)
+                return "Event date cannot be earlier than today.";
             if (date.Value.Date > today.AddYears(BookingRules.MaximumAdvanceYears))
                 return $"Bookings can be requested up to {BookingRules.MaximumAdvanceYears} years in advance.";
             return null;
@@ -455,6 +458,12 @@ namespace AriesMagicAppointmentSystem.Controllers
 
             var availableIds = AvailablePackages(requested).ToArray();
             var available = availableIds.Length > 0;
+            var longestRequestedDuration = packages.Select(p => p.DurationInHours).DefaultIfEmpty().Max();
+            var pendingReviewEnd = requested.AddHours(longestRequestedDuration);
+            var hasPendingReview = await _context.Bookings.AsNoTracking().AnyAsync(b =>
+                b.Status == BookingStatus.Pending
+                && b.EndTime > requested.AddHours(-BookingRules.TurnaroundHours)
+                && b.StartTime < pendingReviewEnd.AddHours(BookingRules.TurnaroundHours));
             var alternatives = new List<object>();
             if (suggest && !available && packages.Count > 0)
             {
@@ -465,10 +474,16 @@ namespace AriesMagicAppointmentSystem.Controllers
                     .OrderBy(slot => Math.Abs((slot - requested).Ticks)).ThenBy(slot => slot);
                 foreach (var slot in candidates.Where(slot => AvailablePackages(slot).Any()).Take(3))
                     alternatives.Add(new { date = slot.ToString("yyyy-MM-dd"), time = slot.ToString("HH:mm:ss"),
-                        label = slot.ToString("MMM d � h:mm tt", System.Globalization.CultureInfo.GetCultureInfo("en-PH")) });
+                        label = slot.ToString("MMM d · h:mm tt", System.Globalization.CultureInfo.GetCultureInfo("en-PH")) });
             }
-            return Json(new { available, availableIds, alternatives, status = available ? "available" : "unavailable",
-                message = available ? "Your selected schedule is currently available." : "Your selected schedule is unavailable." });
+            var status = !available ? "unavailable" : hasPendingReview ? "pending-review" : "available";
+            var message = status switch
+            {
+                "unavailable" => "Your selected schedule is unavailable.",
+                "pending-review" => "A booking request for this time is awaiting administrative review. It is not a confirmed reservation.",
+                _ => "No confirmed or payment-locked schedule conflict was found at the time of checking."
+            };
+            return Json(new { available, availableIds, alternatives, status, hasPendingReview, message });
         }
 
         [Authorize(Roles = "Client")]
@@ -477,6 +492,11 @@ namespace AriesMagicAppointmentSystem.Controllers
         public async Task<IActionResult> CreateStepOne(BookingStepOneViewModel model)
         {
             SetCreateStepOneViewBags();
+            var authenticatedClient = await _userManager.GetUserAsync(User);
+            model.ContactNumber = authenticatedClient?.PhoneNumber ?? string.Empty;
+            ModelState.Remove(nameof(model.ContactNumber));
+            if (string.IsNullOrWhiteSpace(model.ContactNumber))
+                ModelState.AddModelError(nameof(model.ContactNumber), "Add a registered contact number to your account before booking.");
 
             ViewBag.UnavailableDates = await GetUnavailableBookingDatesAsync();
             if (ScheduleInputError(model.EventDate, model.StartTime, FeedbackPolicy.BusinessNow.Date) is string scheduleError)
@@ -644,6 +664,17 @@ namespace AriesMagicAppointmentSystem.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> SubmitBooking(BookingStepTwoViewModel model)
         {
+            var appUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var appUser = await _userManager.GetUserAsync(User);
+            if (string.IsNullOrEmpty(appUserId) || appUser == null)
+                return Challenge();
+
+            // The submitted phone field is never authoritative. Persist the authenticated account value.
+            model.ContactNumber = appUser.PhoneNumber ?? string.Empty;
+            ModelState.Remove(nameof(model.ContactNumber));
+            if (string.IsNullOrWhiteSpace(model.ContactNumber))
+                ModelState.AddModelError(nameof(model.ContactNumber), "Add a registered contact number to your account before booking.");
+
             var packages = await _context.Services
                 .Where(s => !s.IsArchived)
                 .OrderBy(s => s.Name)
@@ -760,7 +791,7 @@ namespace AriesMagicAppointmentSystem.Controllers
                 Id = i.Id,
                 Name = i.Name,
 
-                // Display fixed ₱2,000 deduction for removable inclusions.
+                // Display fixed â±2,000 deduction for removable inclusions.
                 DeductionAmount = i.IsRemovable ? FixedInclusionDeduction : 0,
 
                 IsRemovable = i.IsRemovable,
@@ -787,14 +818,6 @@ namespace AriesMagicAppointmentSystem.Controllers
                         .Select(e => e.ErrorMessage));
 
                 return await ClientWizardViewAsync(model);
-            }
-
-            var appUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var appUser = await _userManager.GetUserAsync(User);
-
-            if (string.IsNullOrEmpty(appUserId) || appUser == null)
-            {
-                return Challenge();
             }
 
             await using var transaction = await _context.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
