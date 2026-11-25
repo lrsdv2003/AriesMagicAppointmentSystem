@@ -205,16 +205,17 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
 // Explicit development initialization only; deployments manage schema separately.
+
+// Explicit development initialization only; deployments manage schema separately.
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
     var dbContext = services.GetRequiredService<ApplicationDbContext>();
 
-    // Production migrations are a separately reviewed deployment step.
-    if (app.Environment.IsDevelopment() && builder.Configuration.GetValue<bool>("Database:InitializeOnStartup"))
+    if (app.Environment.IsDevelopment() &&
+        builder.Configuration.GetValue<bool>("Database:InitializeOnStartup"))
     {
         await dbContext.Database.MigrateAsync();
-        await IdentitySeeder.SeedAsync(services);
         await ServiceSeeder.SeedAsync(dbContext);
     }
 
@@ -224,6 +225,19 @@ using (var scope = app.Services.CreateScope())
             services.GetRequiredService<DbContextOptions<ApplicationDbContext>>(), app.Logger);
     }
 }
+
+// Separate development-only Client account initialization.
+if (app.Environment.IsDevelopment() &&
+    builder.Configuration.GetValue<bool>("DevelopmentSeed:Enabled"))
+{
+    using var developmentSeedScope = app.Services.CreateScope();
+
+    var seedServices = developmentSeedScope.ServiceProvider;
+
+    await IdentitySeeder.SeedAsync(seedServices);
+    await DevelopmentClientSeeder.SeedAsync(seedServices);
+}
+
 
 app.Run();
 

@@ -24,7 +24,11 @@ static class BookingBrowserFixture
   var baseUrl=releaseReview?"http://127.0.0.1:5310":midnightPreview?"http://127.0.0.1:5299":hubPreview?"http://127.0.0.1:5298":manualPreview?"http://127.0.0.1:5295":"http://127.0.0.1:5297";
   if(File.Exists(statePath))throw new InvalidOperationException("Stop the previous booking fixture first.");
   var database="AriesBookingVisual_"+Guid.NewGuid().ToString("N");
-  var connection=@"Server=(localdb)\MSSQLLocalDB;Database="+database+";Integrated Security=True;TrustServerCertificate=True";
+ var useDefaultSql = Environment.GetEnvironmentVariable("ARIES_BOOKING_FIXTURE_USE_DEFAULT_SQL") == "true";
+
+var connection = useDefaultSql
+    ? $"Server=.;Database={database};Integrated Security=True;TrustServerCertificate=True"
+    : $@"Server=(localdb)\MSSQLLocalDB;Database={database};Integrated Security=True;TrustServerCertificate=True";
   var directory=Path.Combine(root,".tmp-owner-build",database);Directory.CreateDirectory(directory);
   await using var db=new ApplicationDbContext(new DbContextOptionsBuilder<ApplicationDbContext>().UseSqlServer(connection).Options);
   await using var smtp=new SmtpFixture();smtp.Start();
@@ -89,9 +93,27 @@ static class BookingBrowserFixture
     db.Bookings.Add(expiredExample);
     await db.SaveChangesAsync();
    }
-   var environment=scope.ServiceProvider.GetRequiredService<IWebHostEnvironment>().EnvironmentName;
-   var effectiveConnection=scope.ServiceProvider.GetRequiredService<ApplicationDbContext>().Database.GetDbConnection();
-   if(environment!="Development"||effectiveConnection.DataSource!=@"(localdb)\MSSQLLocalDB"||effectiveConnection.Database!=database)throw new InvalidOperationException("Preview isolation verification failed.");
+   var environment = scope.ServiceProvider
+    .GetRequiredService<IWebHostEnvironment>().EnvironmentName;
+
+var effectiveConnection = scope.ServiceProvider
+    .GetRequiredService<ApplicationDbContext>().Database.GetDbConnection();
+
+var expectedDataSource = useDefaultSql
+    ? "."
+    : @"(localdb)\MSSQLLocalDB";
+
+var validDatabaseName = Regex.IsMatch(
+    database,
+    "^AriesBookingVisual_[0-9a-f]{32}$");
+
+if (environment != "Development" ||
+    !string.Equals(effectiveConnection.DataSource, expectedDataSource, StringComparison.OrdinalIgnoreCase) ||
+    effectiveConnection.Database != database ||
+    !validDatabaseName)
+{
+    throw new InvalidOperationException("Preview isolation verification failed.");
+}
    if(releaseReview) {
     var catalog=await db.Services.AsNoTracking().Where(s=>!s.IsArchived).OrderBy(s=>s.Price)
      .Select(s=>new{s.Id,s.Name,s.Price,s.DurationInHours,s.Description,Inclusions=s.Inclusions.OrderBy(i=>i.Id).Select(i=>new{i.Id,i.Name}).ToList()}).ToListAsync();
