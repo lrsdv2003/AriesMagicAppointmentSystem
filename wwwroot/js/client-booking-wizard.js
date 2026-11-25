@@ -80,9 +80,8 @@
     if(index===3)review();
   }
   const backDialog = $('bookingBackConfirm');
-  let pendingBackState = null, allowBrowserBack = false;
-  function openBackConfirmation(targetState){
-    pendingBackState = targetState;
+  let allowBrowserBack = false;
+  function openBackConfirmation(){
     if(backDialog?.showModal)backDialog.showModal();
     else {
       if(window.confirm('Are you sure you want to go back to the previous step? Your current booking progress may be affected.')){
@@ -90,7 +89,7 @@
       }
     }
   }
-  $('stayOnBooking')?.addEventListener('click',()=>{pendingBackState=null;backDialog.close();});
+  $('stayOnBooking')?.addEventListener('click',()=>{backDialog.close();});
   $('confirmBookingBack')?.addEventListener('click',()=>{
     backDialog.close();allowBrowserBack=true;window.history.back();
   });
@@ -107,7 +106,7 @@
     const targetState=event.state;
     // Restore the current wizard history entry while the user decides. No recursive popstate loop.
     window.history.pushState({...window.history.state,ariesConciergeStep:step,ariesBookingGuard:true},'');
-    openBackConfirmation(targetState);
+    openBackConfirmation();
   });
   function valid(panel) { for (const input of panel.querySelectorAll('input,select')) { if(!input.disabled && !input.checkValidity()) { input.setAttribute('aria-invalid','true'); input.reportValidity(); return false; } } return true; }
   async function json(url, options) { const response = await fetch(url, options); if(!response.ok || !response.headers.get('content-type')?.includes('application/json')) throw new Error('This check is unavailable. Please try again or sign in again.'); return response.json(); }
@@ -303,7 +302,7 @@
   }));
   form.querySelectorAll('[data-back]').forEach(button=>button.addEventListener('click',()=>{
     if(step<=0)return;
-    openBackConfirmation({ariesConciergeStep:step-1,ariesBookingGuard:true});
+    openBackConfirmation();
   }));
   form.addEventListener('submit',event=>{
     if(form.getAttribute('aria-busy')==='true'){event.preventDefault();return;}
