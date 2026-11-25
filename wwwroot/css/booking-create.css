@@ -896,3 +896,14 @@ body.client-body .client-main:has(.hub-profile-layout,.comm-page-client) .hub-co
     padding-inline:10px!important;
  }
 }
+
+
+/* Booking wizard notices and scroll-gated terms. */
+.cn-terms-full-text{max-height:min(52dvh,480px);overflow-y:auto;overscroll-behavior:contain;padding:0 10px 0 0;scrollbar-gutter:stable}
+.cn-terms-full-text:focus-visible{outline:2px solid #82cdf8;outline-offset:3px}
+.cn-booking-notice-dialog{width:min(560px,calc(100vw - 32px));}
+.cn-booking-notice-dialog>p{color:var(--mc-text,#e9f6ff);font-size:14px;line-height:1.7;margin:0 0 16px}
+.cn-booking-notice-dialog .cn-actions{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap;margin-top:22px}
+.cn-booking-notice-dialog .cn-actions .cn-button{min-height:44px}
+.cn-booking-notice-dialog .cn-notice{padding:12px;border-radius:9px;background:var(--mc-warning-surface,#6545114d);border:1px solid var(--mc-line,#385f7a)}
+@media(max-width:600px){.cn-booking-notice-dialog .cn-actions{display:grid;grid-template-columns:1fr}.cn-booking-notice-dialog .cn-actions .cn-button{width:100%}.cn-terms-full-text{max-height:48dvh}}
