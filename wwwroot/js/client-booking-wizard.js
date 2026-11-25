@@ -9,14 +9,29 @@
   }
   const terms = $('fullBookingTerms'), consent = $('termsModalConsent'), agree = $('confirmBookingTerms');
   let termsAccepted = false, previousOverflow = '';
+  const termsText = $('bookingTermsText'), termsScrollHelp = $('termsScrollHelp');
+  function updateTermsScrollGate(){
+    if(!termsText || !consent || !agree)return;
+    const atBottom = termsText.scrollTop + termsText.clientHeight >= termsText.scrollHeight - 4;
+    const fitsWithoutScroll = termsText.scrollHeight <= termsText.clientHeight + 4;
+    const reachedEnd = atBottom || fitsWithoutScroll;
+    consent.disabled = !reachedEnd;
+    if(!reachedEnd)consent.checked = false;
+    agree.disabled = !reachedEnd || !consent.checked;
+    if(termsScrollHelp)termsScrollHelp.hidden = reachedEnd;
+  }
   function openTerms(){
     termsAccepted = false; $('AcceptTerms').value = 'false';
-    consent.checked = false;agree.disabled = true;
+    consent.checked = false;consent.disabled = true;agree.disabled = true;
+    if(termsText)termsText.scrollTop = 0;
+    if(termsScrollHelp)termsScrollHelp.hidden = false;
     previousOverflow = document.body.style.overflow;
     terms.showModal();document.body.style.overflow = 'hidden';
+    requestAnimationFrame(updateTermsScrollGate);
   }
   if(terms?.showModal){
-    consent.addEventListener('change',()=>{agree.disabled=!consent.checked;});
+    termsText?.addEventListener('scroll',updateTermsScrollGate,{passive:true});
+    consent.addEventListener('change',()=>{agree.disabled=consent.disabled||!consent.checked;});
     terms.querySelectorAll('[data-close-terms]').forEach(b=>b.addEventListener('click',()=>terms.close()));
     terms.addEventListener('click',e=>{if(e.target===terms){const r=terms.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)terms.close();}});
     terms.addEventListener('close',()=>{
@@ -64,17 +79,74 @@
     error('');if(focus)panels[index].querySelector('h2').focus();
     if(index===3)review();
   }
+  const backDialog = $('bookingBackConfirm');
+  let pendingBackState = null, allowBrowserBack = false;
+  function openBackConfirmation(targetState){
+    pendingBackState = targetState;
+    if(backDialog?.showModal)backDialog.showModal();
+    else {
+      if(window.confirm('Are you sure you want to go back to the previous step? Your current booking progress may be affected.')){
+        allowBrowserBack = true;window.history.back();
+      }
+    }
+  }
+  $('stayOnBooking')?.addEventListener('click',()=>{pendingBackState=null;backDialog.close();});
+  $('confirmBookingBack')?.addEventListener('click',()=>{
+    backDialog.close();allowBrowserBack=true;window.history.back();
+  });
   window.addEventListener('popstate',event=>{
-    const index=event.state?.ariesConciergeStep;
-    if(!Number.isInteger(index)||index<0||index>furthestStep)return;
-    if(index>0&&verifiedKey!==key()){show(0,true,'replace');error('Check your venue and date again before continuing.');return;}
-    show(index,true,'none');
+    if(allowBrowserBack){
+      allowBrowserBack=false;
+      const index=event.state?.ariesConciergeStep;
+      if(Number.isInteger(index)&&index>=0&&index<=furthestStep){
+        if(index>0&&verifiedKey!==key()){show(0,true,'none');error('Check your venue and date again before continuing.');return;}
+        show(index,true,'none');
+      }
+      return;
+    }
+    const targetState=event.state;
+    // Restore the current wizard history entry while the user decides. No recursive popstate loop.
+    window.history.pushState({...window.history.state,ariesConciergeStep:step,ariesBookingGuard:true},'');
+    openBackConfirmation(targetState);
   });
   function valid(panel) { for (const input of panel.querySelectorAll('input,select')) { if(!input.disabled && !input.checkValidity()) { input.setAttribute('aria-invalid','true'); input.reportValidity(); return false; } } return true; }
   async function json(url, options) { const response = await fetch(url, options); if(!response.ok || !response.headers.get('content-type')?.includes('application/json')) throw new Error('This check is unavailable. Please try again or sign in again.'); return response.json(); }
   function invalidate() { verifiedKey = ''; venueResult = null; availableIds = []; $('locationResult').textContent = 'Continue to check travel and schedule availability.'; summary(); }
   window.AriesLocation.init(invalidate,error);
-  ['EventDate','StartTime'].forEach(id=>$(id).addEventListener('change',invalidate));
+  let availabilityRequest = 0;
+  const availabilityDialog = $('bookingAvailabilityNotice');
+  function closeAvailabilityNotice(){if(availabilityDialog?.open)availabilityDialog.close();}
+  $('closeAvailabilityNotice')?.addEventListener('click',closeAvailabilityNotice);
+  async function refreshAvailabilityNotice(){
+    const date=$('EventDate').value,time=$('StartTime').value;
+    const request=++availabilityRequest;
+    if(!date||!time)return;
+    const status=$('bookingAvailabilityStatus'),message=$('bookingAvailabilityMessage');
+    status.textContent='Checking the selected date and time…';
+    message.textContent='Submitting a booking request does not guarantee a reservation. Administrative review is required.';
+    if(availabilityDialog?.showModal&&!availabilityDialog.open)availabilityDialog.showModal();
+    try{
+      const result=await json(form.dataset.scheduleUrl+'?'+new URLSearchParams({date,startTime:time}));
+      if(request!==availabilityRequest)return;
+      if(result.status==='invalid'){
+        status.textContent='Date or time needs attention';
+      }else if(!result.available){
+        status.textContent='Unavailable — this slot cannot be selected';
+      }else if(result.hasPendingReview){
+        status.textContent='Pending administrative review — not confirmed';
+      }else{
+        status.textContent='No confirmed or payment-locked conflict found at this time';
+      }
+      message.textContent=result.message+' All requests remain subject to administrative review and final confirmation.';
+    }catch{
+      if(request!==availabilityRequest)return;
+      status.textContent='Availability could not be verified';
+      message.textContent='Please try again. Do not assume the date or time is available until the server confirms it.';
+    }
+  }
+  ['EventDate','StartTime'].forEach(id=>{
+    $(id).addEventListener('change',()=>{invalidate();refreshAvailabilityNotice();});
+  });
   function updateEventPreview(){
     const eventDate=$('EventDate')?.value;
     const date=eventDate?new Date(eventDate+'T12:00:00'):null;
@@ -82,7 +154,8 @@
     if($('r2EventDate'))$('r2EventDate').textContent=date&&!Number.isNaN(date.getTime())?date.toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric'}):'Choose an event date';
     if($('r2EventTime'))$('r2EventTime').textContent=time||'Choose a start time';
     if($('r2EventVenue'))$('r2EventVenue').textContent=$('PartyVenue')?.value||'Choose an event venue';
-    if($('r2EventAvailability'))$('r2EventAvailability').textContent=venueResult?.success?'Available after venue and schedule checks':'Not yet verified';
+    if($('r2EventAvailability'))$('r2EventAvailability').textContent=venueResult?.success
+      ?'Schedule checked; subject to administrative confirmation':'Not yet verified';
   }
   for(const id of ['EventDate','StartTime','PartyVenue'])$(id)?.addEventListener('input',updateEventPreview);
 
@@ -108,6 +181,12 @@
       $('locationResult').textContent=(pending?'Location received for Staff review. Travel fee pending. ':
         'Location confirmed by customer. Estimated distance: '+Number(venue.distanceKm).toFixed(2)+
         ' km · Travel fee: '+money(venue.travelFee)+'. ')+schedule.message;
+      if($('bookingAvailabilityStatus')){
+        $('bookingAvailabilityStatus').textContent=schedule.status==='pending-review'
+          ?'Pending administrative review — not confirmed'
+          :schedule.available?'No confirmed or payment-locked conflict found at this time':'Unavailable — this slot cannot be selected';
+        $('bookingAvailabilityMessage').textContent=schedule.message+' Your booking request is not a confirmed reservation.';
+      }
       for(const option of form.querySelectorAll('[data-package-option]')){
         const input=option.querySelector('input');
         input.disabled=!availableIds.includes(Number(input.value));option.hidden=input.disabled;
@@ -222,7 +301,10 @@
       show(step+1);
     } catch(e) { error(e.message); } finally { button.disabled=false;button.replaceChildren(...oldNodes); }
   }));
-  form.querySelectorAll('[data-back]').forEach(button=>button.addEventListener('click',()=>{if(window.history.state?.ariesConciergeStep===step&&step>0)window.history.back();else show(step-1,true,'replace');}));
+  form.querySelectorAll('[data-back]').forEach(button=>button.addEventListener('click',()=>{
+    if(step<=0)return;
+    openBackConfirmation({ariesConciergeStep:step-1,ariesBookingGuard:true});
+  }));
   form.addEventListener('submit',event=>{
     if(form.getAttribute('aria-busy')==='true'){event.preventDefault();return;}
     if(step!==3||verifiedKey!==key()){event.preventDefault();show(0);error('Check your location and date before submitting.');return;}
@@ -240,4 +322,6 @@
     window.BookingExperience?.busy(form,event);
   });
   renderInclusions(true); eventFields(); show(0,false,'replace');
+  if(window.history?.replaceState)window.history.replaceState({...window.history.state,ariesConciergeStep:0,ariesBookingGuard:true},'');
+  if($('EventDate')?.value&&$('StartTime')?.value)refreshAvailabilityNotice();
 })();
