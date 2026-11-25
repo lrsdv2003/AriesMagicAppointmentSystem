@@ -51,7 +51,7 @@ namespace AriesMagicAppointmentSystem.ViewModels
         [Range(1, 120)]
         public int? Age { get; set; }
 
-        [Range(1, 10000)]
+        [Range(1, 5000, ErrorMessage = "Maximum event capacity is 5,000 participants.")]
         [Display(Name = "# of Pax")]
         public int PaxCount { get; set; }
 
