@@ -238,6 +238,12 @@
 
                            class="form-control"
 
+                           type="number"
+
+                           min="1"
+
+                           max="5000"
+
                            placeholder="Number of guests"
 
                            required />
@@ -456,7 +462,11 @@
 
                            class="form-control"
 
-                           placeholder="Enter contact number"
+                           placeholder="Registered contact number"
+
+                           readonly
+
+                           aria-readonly="true"
 
                            required />
 
@@ -1735,6 +1745,14 @@
 
                  */
 
+                const bookingMinDate = new Date();
+
+                bookingMinDate.setHours(0, 0, 0, 0);
+
+                const bookingMaxDate = new Date(bookingMinDate);
+
+                bookingMaxDate.setFullYear(bookingMaxDate.getFullYear() + 5);
+
                 flatpickr(
 
                     "#eventDateInput",
@@ -1743,9 +1761,9 @@
 
                         dateFormat: "Y-m-d",
 
-                        minDate:
+                        minDate: bookingMinDate,
 
-                            new Date().fp_incr(3),
+                        maxDate: bookingMaxDate,
 
                         disable:
 
