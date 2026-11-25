@@ -51,7 +51,7 @@ else
         <fieldset class="cn-fieldset"><legend>Your date & time</legend><div class="cn-fields">
             <div class="cn-field"><label asp-for="EventDate">Event date</label><input asp-for="EventDate" type="date" min="@AriesMagicAppointmentSystem.Services.FeedbackPolicy.BusinessNow.Date.AddDays(AriesMagicAppointmentSystem.Models.BookingRules.MinimumAdvanceDays).ToString("yyyy-MM-dd")" max="@AriesMagicAppointmentSystem.Services.FeedbackPolicy.BusinessNow.Date.AddYears(AriesMagicAppointmentSystem.Models.BookingRules.MaximumAdvanceYears).ToString("yyyy-MM-dd")" class="cn-input" required aria-describedby="dateHelp EventDateError"/><span asp-validation-for="EventDate" id="EventDateError" class="cn-field-error"></span></div>
             <div class="cn-field"><label asp-for="StartTime">Start time</label><input asp-for="StartTime" type="time" class="cn-input" required/><span asp-validation-for="StartTime" id="StartTimeError" class="cn-field-error"></span></div>
-        </div><p class="cn-help" id="dateHelp">Please allow at least three days before your event.</p></fieldset>
+        </div><p class="cn-help" id="dateHelp">Choose a date from today through the next five years.</p></fieldset>
         <fieldset class="cn-fieldset cn-location-selector"><legend>Your venue</legend>
             <input asp-for="VenueSelectionMethod" type="hidden" id="VenueSelectionMethod"/>
             <input asp-for="VenueLatitude" type="hidden"/>
@@ -136,11 +136,11 @@ else
             <div class="cn-field" data-event-field="theme"><label asp-for="PartyTheme">Party theme (optional)</label><input asp-for="PartyTheme" class="cn-input"/><span asp-validation-for="PartyTheme" id="PartyThemeError" class="cn-field-error"></span></div>
             <div class="cn-field" data-event-field="celebrant"><label asp-for="CelebrantName">Celebrant name</label><input asp-for="CelebrantName" class="cn-input"/><span asp-validation-for="CelebrantName" id="CelebrantNameError" class="cn-field-error"></span></div>
             <div class="cn-field" data-event-field="age"><label asp-for="Age">Celebrant age (optional)</label><input asp-for="Age" type="number" min="1" max="120" class="cn-input"/><span asp-validation-for="Age" id="AgeError" class="cn-field-error"></span></div>
-            <div class="cn-field"><label asp-for="PaxCount">Number of guests</label><input asp-for="PaxCount" type="number" min="1" max="10000" class="cn-input" required/><span asp-validation-for="PaxCount" id="PaxCountError" class="cn-field-error"></span></div>
+            <div class="cn-field"><label asp-for="PaxCount">Number of guests</label><input asp-for="PaxCount" type="number" min="1" max="5000" class="cn-input" required/><span asp-validation-for="PaxCount" id="PaxCountError" class="cn-field-error"></span></div>
         </div></fieldset>
         <fieldset class="cn-fieldset"><legend>Your point of contact</legend><div class="cn-fields">
             <div class="cn-field"><label asp-for="ContactPerson">Contact person</label><input asp-for="ContactPerson" class="cn-input" autocomplete="name" required/><span asp-validation-for="ContactPerson" id="ContactPersonError" class="cn-field-error"></span></div>
-            <div class="cn-field"><label asp-for="ContactNumber">Contact number</label><input asp-for="ContactNumber" type="tel" class="cn-input" autocomplete="tel" required/><span asp-validation-for="ContactNumber" id="ContactNumberError" class="cn-field-error"></span></div>
+            <div class="cn-field"><label asp-for="ContactNumber">Contact number</label><input asp-for="ContactNumber" type="tel" class="cn-input" autocomplete="tel" readonly aria-readonly="true" required/><span asp-validation-for="ContactNumber" id="ContactNumberError" class="cn-field-error"></span></div>
         </div></fieldset>
         <div class="cn-actions"><button type="button" class="cn-button cn-secondary" data-back>Back</button><button type="button" class="cn-button cn-primary" data-next>Review request <span aria-hidden="true">→</span></button></div>
     </section>
@@ -157,11 +157,23 @@ else
     </div>
     </div>
 </form>
+<dialog id="bookingBackConfirm" class="cn-terms-dialog cn-booking-notice-dialog" aria-labelledby="bookingBackTitle">
+    <header><h2 id="bookingBackTitle">Leave Booking Process?</h2></header>
+    <p>Are you sure you want to go back to the previous step? Your current booking progress may be affected.</p>
+    <div class="cn-actions"><button type="button" id="stayOnBooking" class="cn-button cn-secondary">Stay on This Page</button><button type="button" id="confirmBookingBack" class="cn-button cn-primary">Go Back</button></div>
+</dialog>
+<dialog id="bookingAvailabilityNotice" class="cn-terms-dialog cn-booking-notice-dialog" aria-labelledby="bookingAvailabilityTitle">
+    <header><h2 id="bookingAvailabilityTitle">Booking Availability Notice</h2></header>
+    <p id="bookingAvailabilityStatus" class="cn-notice" role="status" aria-live="polite"></p>
+    <p id="bookingAvailabilityMessage">Please be informed that your selected event date and time are subject to availability and administrative confirmation.</p>
+    <p>Your booking request is not yet a confirmed reservation. You will receive a notification once your request has been reviewed.</p>
+    <div class="cn-actions"><button type="button" id="closeAvailabilityNotice" class="cn-button cn-primary">Understood</button></div>
+</dialog>
 <script type="application/json" id="wizardPackages">@Html.Raw(JsonSerializer.Serialize(packageData))</script>
 <script type="application/json" id="wizardRemoved">@Html.Raw(JsonSerializer.Serialize(Model.RemovedInclusionIds))</script>
 <script type="application/json" id="wizardEventRules">@Html.Raw(JsonSerializer.Serialize(eventTypes.ToDictionary(type => type, type => AriesMagicAppointmentSystem.Services.BookingEventDetailsPolicy.For(type))))</script>
 }
-<dialog id="fullBookingTerms" class="cn-terms-dialog" aria-labelledby="fullBookingTermsTitle"><header><h2 id="fullBookingTermsTitle">Full Terms &amp; Conditions</h2><button type="button" data-close-terms aria-label="Close full terms">×</button></header><div class="cn-terms-full-text" id="bookingTermsText" tabindex="0" role="region" aria-label="Complete booking Terms and Conditions"><partial name="_BookingTermsText"/></div><label class="cn-check client-terms-consent"><input type="checkbox" id="termsModalConsent"/><span>I have read and agree to the Terms and Conditions for this booking.</span></label><div class="cn-actions"><button type="button" data-close-terms class="cn-button cn-secondary">Cancel</button><button type="button" id="confirmBookingTerms" class="cn-button cn-primary" disabled>Agree and submit booking</button></div></dialog>
+<dialog id="fullBookingTerms" class="cn-terms-dialog" aria-labelledby="fullBookingTermsTitle"><header><h2 id="fullBookingTermsTitle">Full Terms &amp; Conditions</h2><button type="button" data-close-terms aria-label="Close full terms">×</button></header><div class="cn-terms-full-text" id="bookingTermsText" tabindex="0" role="region" aria-label="Complete booking Terms and Conditions"><partial name="_BookingTermsText"/></div><p class="cn-help" id="termsScrollHelp">Please scroll to the bottom to enable the agreement option.</p><label class="cn-check client-terms-consent"><input type="checkbox" id="termsModalConsent" disabled/><span>I have read and agree to the Terms and Conditions for this booking.</span></label><div class="cn-actions"><button type="button" data-close-terms class="cn-button cn-secondary">Cancel</button><button type="button" id="confirmBookingTerms" class="cn-button cn-primary" disabled>Agree and submit booking</button></div></dialog>
 </div>
 @section Scripts {
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
